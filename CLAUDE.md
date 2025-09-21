@@ -119,7 +119,45 @@ This project includes Model Context Protocol configuration:
 3. **Implement with existing patterns** → Maintain consistency
 4. **Auto-update documentation** → System handles synchronization
 
+## 🛡️ Component Resilience System
+
+### 자동 컴포넌트 복구 (Automatic Component Recovery)
+
+**🚨 CRITICAL RULE**: 컴포넌트가 누락된 경우 자동으로 처리합니다.
+
+#### 처리 프로세스
+1. **감지**: import 에러 또는 컴포넌트 누락 감지
+2. **설치**: `npx shadcn@latest add [component-name]` 자동 실행
+3. **통합**: 현재 프로젝트 패턴에 맞게 자동 조정
+   - 중앙화 시스템 적용 (brand.ts, constants.ts)
+   - 현재 컴포넌트 페이지 스타일 패턴 적용
+   - TypeScript 타입 정의 확인
+4. **문서화**: claude.md 파일 자동 업데이트
+
+#### 예외 처리 규칙
+```typescript
+// 컴포넌트 누락 시 처리 패턴
+if (!componentExists) {
+  1. Run: npx shadcn@latest add [component-name]
+  2. Update: src/components/ui/claude.md에 추가
+  3. Apply: 중앙화 텍스트 시스템 적용
+  4. Verify: TypeScript 컴파일 확인
+}
+```
+
+#### 스타일 일관성 유지
+- **참조 파일**: `src/app/components/page.tsx`
+- **패턴 준수**: Card 구조, 그리드 레이아웃, 간격 시스템
+- **텍스트 중앙화**: 모든 텍스트는 brand.ts에 추가
+- **상수 중앙화**: 모든 설정값은 constants.ts에 추가
+
 ## 🔄 Recent Changes
+
+- **2025-09-21**: Component Resilience System 추가
+  - 누락 컴포넌트 자동 감지 및 설치 시스템
+  - 스타일 패턴 자동 적용 규칙
+  - 예외 처리 워크플로우 문서화
+  - Merge 브랜치 전략 추가
 
 - **2025-09-19**: Components page major refactoring - Centralization system improvement
   - Added 100+ new text entries to brand.ts

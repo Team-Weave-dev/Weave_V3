@@ -177,6 +177,57 @@ const buttonVariants = cva(
 
 ## 🚀 컴포넌트 추가 가이드
 
+### 🛡️ 누락 컴포넌트 자동 처리 시스템
+
+**🚨 CRITICAL**: 컴포넌트가 누락된 경우 아래 프로세스를 자동으로 수행합니다.
+
+#### 자동 감지 및 복구 프로세스
+```typescript
+// 컴포넌트 누락 감지 시 자동 실행
+if (componentNotFound) {
+  // 1. 자동 설치
+  await exec('npx shadcn@latest add [component-name]')
+
+  // 2. 중앙화 시스템 적용
+  updateBrandTs(componentTexts)
+  updateConstantsTs(componentSettings)
+
+  // 3. 스타일 패턴 적용
+  applyProjectPatterns(component)
+
+  // 4. 문서 업데이트
+  updateClaudeDocumentation(component)
+}
+```
+
+#### 스타일 일관성 규칙
+누락된 컴포넌트 추가 시 반드시 준수해야 할 패턴:
+
+1. **Card 구조 패턴** (src/app/components/page.tsx 참조)
+   ```tsx
+   <Card>
+     <CardHeader>
+       <CardTitle>{getComponentText.title('ko')}</CardTitle>
+       <CardDescription>{getComponentText.description('ko')}</CardDescription>
+     </CardHeader>
+     <CardContent>
+       {/* 컴포넌트 구현 */}
+     </CardContent>
+   </Card>
+   ```
+
+2. **텍스트 중앙화 패턴**
+   - 절대 하드코딩 금지
+   - 모든 텍스트는 brand.ts에 추가
+   - getComponentText 헬퍼 함수 사용
+
+3. **그리드 레이아웃 패턴**
+   ```tsx
+   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+     {/* 컴포넌트들 */}
+   </div>
+   ```
+
 ### 새 shadcn/ui 컴포넌트 설치
 ```bash
 # shadcn CLI를 사용한 컴포넌트 추가

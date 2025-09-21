@@ -13,7 +13,9 @@
     "docs:update": "node scripts/update-claude-docs.js",
     "docs:watch": "node scripts/watch-and-update.js",
     "docs:status": "node scripts/watch-and-update.js --status",
-    "dev:docs": "concurrently \"npm run dev\" \"npm run docs:watch\""
+    "dev:docs": "concurrently \"npm run dev\" \"npm run docs:watch\"",
+    "check:components": "node scripts/check-and-install-components.js",
+    "components:install": "node scripts/check-and-install-components.js"
   },
   "keywords": [],
   "author": "",
