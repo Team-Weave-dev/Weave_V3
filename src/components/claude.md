@@ -237,6 +237,56 @@ npx shadcn@latest add [component-name]
 npx shadcn@latest add command
 npx shadcn@latest add popover
 npx shadcn@latest add calendar
+
+# h2 브랜치 작업 시 자동 실행
+npm run check:components  # 누락된 컴포넌트 자동 감지 및 설치
+```
+
+### 🔀 h2 브랜치 컴포넌트 마이그레이션
+
+**🚨 CRITICAL**: h2 브랜치 병합 시 자동으로 활성화되는 프로세스입니다.
+
+#### 자동 감지 트리거
+- h2 브랜치 체크아웃 또는 병합 시
+- 네이티브 HTML 요소 사용 감지 시 (`<button>`, `<input>`, `<table>`)
+- 하드코딩된 클래스 감지 시 (`px-4`, `text-2xl` 등)
+
+#### 자동 변환 매핑
+```typescript
+// Claude가 자동으로 적용하는 컴포넌트 매핑
+const COMPONENT_MAPPING = {
+  '<button': Button,
+  '<input': Input,
+  '<select': Select,
+  '<textarea': Textarea,
+  '<table': Table,
+  '<form': Form,
+  '<dialog': Dialog,
+  '<nav': NavigationMenu,
+}
+
+// 자동 리팩토링 예시
+// Before (h2 브랜치)
+<button className="px-4 py-2 bg-blue-500">클릭</button>
+
+// After (자동 변환)
+import { Button } from '@/components/ui/button'
+<Button>클릭</Button>  // 텍스트는 brand.ts로 이동 예정
+```
+
+#### 마이그레이션 도구 활용
+```bash
+# h2 브랜치 컴포넌트 분석
+npm run migrate:analyze
+
+# 마이그레이션 가이드 생성 (자동 생성됨)
+cat migration-guide.md
+
+# 컴포넌트별 리팩토링 우선순위
+1. Button, Input, Select (기본 컴포넌트)
+2. Card, Dialog, Sheet (컨테이너 컴포넌트)
+3. Table, Form (데이터 컴포넌트)
+4. NavigationMenu, DropdownMenu (네비게이션)
 ```
 
 ### 커스텀 컴포넌트 생성 프로세스

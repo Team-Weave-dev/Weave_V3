@@ -39,6 +39,13 @@ npm run docs:watch   # Real-time documentation sync
 npm run dev:docs     # Dev server + documentation watch
 ```
 
+### UI Migration Commands (h2 브랜치 통합용)
+```bash
+npm run check:components    # 누락된 컴포넌트 확인 및 자동 설치
+npm run migrate:analyze     # 현재 프로젝트 UI 마이그레이션 분석
+npm run migrate:h2          # h2 브랜치 코드 분석 및 리팩토링 가이드 생성
+```
+
 ## 🏗️ Technology Stack
 
 - **Framework**: Next.js 15 with App Router
@@ -83,6 +90,7 @@ NEW_UI_Components/
 | **🎨 UI Implementation** | [`src/components/ui/claude.md`](./src/components/ui/claude.md) | shadcn/ui components, styling, and design system |
 | **🪝 Custom Hooks** | [`src/hooks/claude.md`](./src/hooks/claude.md) | React hooks library and state management patterns |
 | **📚 Utilities** | [`src/lib/claude.md`](./src/lib/claude.md) | Helper functions and common utilities |
+| **🔧 Automation Scripts** | [`scripts/claude.md`](./scripts/claude.md) | UI migration tools and component installation scripts |
 
 ## 🤖 Claude Workflow System
 
@@ -151,7 +159,63 @@ if (!componentExists) {
 - **텍스트 중앙화**: 모든 텍스트는 brand.ts에 추가
 - **상수 중앙화**: 모든 설정값은 constants.ts에 추가
 
+## 🔀 h2 브랜치 UI 마이그레이션 시스템
+
+### 🎯 자동 감지 및 처리 (Automatic Detection & Processing)
+
+**🚨 CRITICAL**: h2 브랜치 또는 UI 중앙화 실패한 코드를 병합할 때 자동으로 활성화됩니다.
+
+#### 자동 감지 트리거
+- **키워드 감지**: "h2 브랜치", "UI 중앙화", "마이그레이션", "리팩토링"
+- **파일 패턴**: 하드코딩된 텍스트/스타일 감지 시
+- **병합 작업**: git merge 또는 checkout 명령 감지 시
+
+#### 자동 처리 워크플로우
+```bash
+# Claude가 자동으로 실행하는 프로세스
+if (h2_branch_detected || ui_migration_needed) {
+  1. npm run migrate:analyze      # 현재 상태 분석
+  2. npm run check:components      # 누락 컴포넌트 설치
+  3. Generate migration plan       # 마이그레이션 계획 생성
+  4. Apply centralization          # 중앙화 시스템 적용
+  5. npm run type-check           # TypeScript 검증
+  6. Update documentation         # 문서 자동 업데이트
+}
+```
+
+#### UI 마이그레이션 도구
+| 명령어 | 목적 | 자동 실행 조건 |
+|--------|------|---------------|
+| `npm run check:components` | 누락 컴포넌트 확인/설치 | 컴포넌트 import 에러 시 |
+| `npm run migrate:analyze` | UI 리팩토링 필요 항목 분석 | 하드코딩 감지 시 |
+| `npm run migrate:h2` | h2 브랜치 전용 분석 | h2 브랜치 작업 시 |
+
+#### 리팩토링 패턴
+```typescript
+// 자동 변환 예시
+// Before (h2 브랜치 - 하드코딩)
+<button className="px-4 py-2 bg-blue-500">송장 생성</button>
+
+// After (중앙화 적용 - Claude 자동 처리)
+import { Button } from '@/components/ui/button'
+import { getInvoiceText } from '@/config/brand'
+<Button>{getInvoiceText.create('ko')}</Button>
+```
+
+#### 관련 문서
+- **📋 워크플로우**: [`docs/h2-branch-ui-migration-workflow.md`](./docs/h2-branch-ui-migration-workflow.md)
+- **🔧 스크립트**: [`scripts/ui-migration-helper.js`](./scripts/ui-migration-helper.js)
+- **✅ 가이드**: 실행 시 자동 생성되는 `migration-guide.md`
+
 ## 🔄 Recent Changes
+
+- **2025-09-22**: h2 브랜치 UI 마이그레이션 시스템 구축
+  - UI 마이그레이션 자동 감지 시스템 추가
+  - `ui-migration-helper.js` 스크립트 생성
+  - `scripts/claude.md` 문서 생성
+  - 모든 claude.md 파일에 h2 브랜치 처리 지침 추가
+  - 자동 리팩토링 워크플로우 문서화
+  - `npm run migrate:analyze`, `npm run migrate:h2` 명령어 추가
 
 - **2025-09-21**: Component Resilience System 추가
   - 누락 컴포넌트 자동 감지 및 설치 시스템

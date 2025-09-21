@@ -15,7 +15,9 @@
     "docs:status": "node scripts/watch-and-update.js --status",
     "dev:docs": "concurrently \"npm run dev\" \"npm run docs:watch\"",
     "check:components": "node scripts/check-and-install-components.js",
-    "components:install": "node scripts/check-and-install-components.js"
+    "components:install": "node scripts/check-and-install-components.js",
+    "migrate:analyze": "node scripts/ui-migration-helper.js",
+    "migrate:h2": "node scripts/ui-migration-helper.js src"
   },
   "keywords": [],
   "author": "",

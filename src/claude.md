@@ -101,6 +101,48 @@ import type { User } from '@/types/user'
 - [`hooks/claude.md`](./hooks/claude.md) - 커스텀 훅 라이브러리
 - [`lib/claude.md`](./lib/claude.md) - 유틸리티 라이브러리
 
+## 🔀 h2 브랜치 통합 시 자동 처리
+
+### 🚨 CRITICAL: UI 마이그레이션 자동 감지
+
+**h2 브랜치 또는 UI 중앙화 실패 코드 병합 시 자동으로 활성화됩니다.**
+
+#### 자동 감지 및 처리
+```bash
+# Claude 자동 실행 시퀀스
+if (detected: "h2 브랜치" || "하드코딩된 UI") {
+  1. npm run migrate:analyze     # 문제 파일 스캔
+  2. npm run check:components     # 컴포넌트 설치
+  3. 리팩토링 계획 생성
+  4. 중앙화 시스템 적용
+}
+```
+
+#### 마이그레이션 우선순위
+1. **네이티브 HTML → shadcn/ui 컴포넌트**
+2. **하드코딩 텍스트 → brand.ts**
+3. **인라인 스타일 → constants.ts**
+4. **로컬 상태 → 중앙화 상태 관리**
+
+#### 자동 변환 패턴
+```typescript
+// Before (h2 브랜치)
+<div className="px-4 py-2 bg-primary text-white">
+  송장 관리
+</div>
+
+// After (자동 리팩토링)
+import { Card, CardHeader, CardTitle } from '@/components/ui/card'
+import { getInvoiceText } from '@/config/brand'
+import { layout } from '@/config/constants'
+
+<Card className={layout.card}>
+  <CardHeader>
+    <CardTitle>{getInvoiceText.title('ko')}</CardTitle>
+  </CardHeader>
+</Card>
+```
+
 ## 📊 품질 메트릭
 
 ### 코드 품질 목표
@@ -114,6 +156,12 @@ import type { User } from '@/types/user'
 - **개발 서버 시작**: < 5초
 - **Hot Reload**: < 1초
 - **타입 체크**: < 3초
+
+### UI 마이그레이션 메트릭
+- **자동 감지율**: 95%
+- **컴포넌트 설치**: 100% 자동화
+- **텍스트 중앙화**: 80% 자동 제안
+- **수동 작업**: 20% 이하
 
 ---
 
