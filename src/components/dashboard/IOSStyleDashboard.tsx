@@ -257,7 +257,7 @@ export function IOSStyleDashboard({
         <div className="flex items-center gap-4">
           <h2 className="text-2xl font-bold">대시보드</h2>
           <p className="text-muted-foreground hidden sm:block">
-            위젯 시스템
+            프로젝트와 비즈니스를 한눈에 확인하세요.
           </p>
         </div>
         <div className="flex items-center gap-2">
