@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🌐 최우선 규칙: 한글로 소통하기 (TOP PRIORITY: Communicate in Korean)
+
+**모든 응답과 설명은 반드시 한글로 작성하세요. 코드 주석과 변수명은 영어를 유지합니다.**
+- 사용자와의 모든 대화: 한글 사용
+- 코드 설명 및 문서: 한글 작성
+- 코드 내부 (변수명, 함수명, 주석): 영어 유지
+- 에러 메시지 설명: 한글로 번역하여 설명
+
 ## 🚨 CRITICAL: 필수 읽기 지시사항 (MANDATORY READING INSTRUCTION)
 
 **이 파일은 작업 시작 전 반드시 읽어야 합니다. 이 지시를 무시하면 작업이 실패합니다.**

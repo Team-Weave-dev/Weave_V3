@@ -1,5 +1,6 @@
 "use client"
 
+import { HeaderNavigation } from "@/components/ui/header-navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -94,81 +95,11 @@ export default function ComponentsPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        {/* Navigation Header */}
-        <header className="border-b bg-card">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={brand.logo.favicon}
-                    alt={getLogoAlt('ko')}
-                    className={layout.heights.logoSmall}
-                  />
-                  <h1 className="text-2xl font-bold text-primary">{getBrandName('ko')}</h1>
-                </div>
-                <Badge variant="secondary">{getBadgeText.shadcnBased('ko')}</Badge>
-              </div>
-
-              <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger showDropdownIcon={false}>{getNavText.home('ko')}</NavigationMenuTrigger>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger showDropdownIcon={false}>{getNavText.docs('ko')}</NavigationMenuTrigger>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger>{getNavText.projects('ko')}</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <NavigationMenuLink className="block p-4 w-64">
-                        <div className="space-y-2">
-                          <h4 className="font-medium">{getNavText.activeProjects('ko')}</h4>
-                          <p className="text-sm text-muted-foreground">{getNavText.activeProjectsDesc('ko')}</p>
-                        </div>
-                      </NavigationMenuLink>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger showDropdownIcon={false}>{getNavText.team('ko')}</NavigationMenuTrigger>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
-
-              <div className="flex items-center space-x-4">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <Bell className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{getNotificationText.center('ko')}</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Avatar className="cursor-pointer">
-                      <AvatarImage src="https://github.com/shadcn.png" />
-                      <AvatarFallback>UI</AvatarFallback>
-                    </Avatar>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>내 계정</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>프로필</DropdownMenuItem>
-                    <DropdownMenuItem>설정</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>로그아웃</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="container mx-auto px-4 py-8">
+        {/* 헤더 네비게이션 추가 */}
+        <HeaderNavigation />
+        
+        {/* 메인 콘텐츠 - 헤더 높이만큼 패딩 추가 */}
+        <div className="container mx-auto px-4 py-8 pt-20">
           <div className="grid lg:grid-cols-4 gap-6">
             {/* Sidebar */}
             <div className="lg:col-span-1">
@@ -951,6 +882,79 @@ export default function ComponentsPage() {
                 </TabsContent>
 
                 <TabsContent value="layout" className="space-y-6">
+                  {/* 헤더 네비게이션 */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>헤더 네비게이션</CardTitle>
+                      <CardDescription>브랜드 로고와 메인 메뉴가 포함된 반응형 헤더 네비게이션</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">기본 헤더 네비게이션</h4>
+                        <div className="border rounded-lg overflow-hidden relative" style={{ minHeight: '64px' }}>
+                          <HeaderNavigation />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          브랜드 로고 및 이름 표시 • 메인 네비게이션 메뉴 (데스크톱/모바일 반응형) • 사용자 프로필 드롭다운 • 모바일 햄버거 메뉴
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">주요 기능</h4>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="p-3 bg-muted/30 rounded-lg">
+                            <strong className="text-primary">📱 반응형 디자인</strong>
+                            <p className="text-xs text-muted-foreground mt-1">모바일과 데스크톱에 최적화된 레이아웃</p>
+                          </div>
+                          <div className="p-3 bg-muted/30 rounded-lg">
+                            <strong className="text-primary">🎨 브랜드 중앙화</strong>
+                            <p className="text-xs text-muted-foreground mt-1">config/brand.ts에서 모든 텍스트 관리</p>
+                          </div>
+                          <div className="p-3 bg-muted/30 rounded-lg">
+                            <strong className="text-primary">👤 사용자 메뉴</strong>
+                            <p className="text-xs text-muted-foreground mt-1">프로필, 설정, 로그아웃 드롭다운</p>
+                          </div>
+                          <div className="p-3 bg-muted/30 rounded-lg">
+                            <strong className="text-primary">📍 고정 포지션</strong>
+                            <p className="text-xs text-muted-foreground mt-1">스크롤 시에도 상단 고정</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">사용 예시</h4>
+                        <pre className="text-xs bg-muted/50 p-3 rounded-lg overflow-x-auto">
+{`import { HeaderNavigation } from '@/components/ui/header-navigation'
+
+export function AppLayout({ children }) {
+  return (
+    <div className="min-h-screen bg-background">
+      <HeaderNavigation />
+      <main className="pt-14 sm:pt-16">
+        {children}
+      </main>
+    </div>
+  )
+}`}
+                        </pre>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">컴포넌트 구조</h4>
+                        <div className="p-3 bg-muted/30 rounded-lg">
+                          <code className="text-xs block space-y-1">
+                            <div>{'<header className="fixed top-0 z-50 w-full">'}</div>
+                            <div className="ml-4">{'├── Logo & Brand Name'}</div>
+                            <div className="ml-4">{'├── Desktop Navigation (hidden on mobile)'}</div>
+                            <div className="ml-4">{'├── User Profile Dropdown'}</div>
+                            <div className="ml-4">{'└── Mobile Menu (Sheet)'}</div>
+                            <div>{'</header>'}</div>
+                          </code>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* 히어로 섹션들 */}
                   <Card>
                     <CardHeader>
