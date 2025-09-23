@@ -665,6 +665,99 @@ export const uiText = {
     }
   },
 
+  // 홈 페이지
+  home: {
+    hero: {
+      badge: { ko: "프리랜서 & 1인 기업 필수 툴", en: "Essential for Freelancers & Solopreneurs" },
+      title: { ko: "나를 위한 단 하나의 업무 플랫폼", en: "Your One and Only Work Platform" },
+      subtitle: { ko: "프로젝트 관리부터 세무 신고까지", en: "From Project Management to Tax Filing" },
+      description: { 
+        ko: "프리랜서와 1인 기업이 클라이언트, 프로젝트 관리, 세무 업무를 한 곳에서 해결할 수 있는 통합 솔루션입니다.", 
+        en: "An integrated solution for solopreneurs and freelancers to manage clients, track projects, and handle taxes all in one place." 
+      },
+      primaryAction: { ko: "무료로 시작하기", en: "Start for Free" },
+      secondaryAction: { ko: "더 알아보기", en: "Learn More" }
+    },
+    features: {
+      title: { ko: "프리랜서를 위한 핵심 기능", en: "Essential Features for Freelancers" },
+      subtitle: { ko: "1인 기업 운영에 필요한 모든 것", en: "Everything you need to run your solo business" },
+      project: {
+        title: { ko: "클라이언트 & 프로젝트", en: "Clients & Projects" },
+        description: { ko: "다수의 클라이언트와 프로젝트를 체계적으로 관리", en: "Manage multiple clients and projects systematically" }
+      },
+      tax: {
+        title: { ko: "간편한 세무 신고", en: "Simple Tax Filing" },
+        description: { ko: "프리랜서 종합소득세, 부가세 신고 자동화", en: "Automated freelancer income tax and VAT filing" }
+      },
+      analytics: {
+        title: { ko: "수익 분석", en: "Income Analytics" },
+        description: { ko: "프로젝트별 수익성과 현금흐름 파악", en: "Track profitability and cash flow by project" }
+      },
+      integration: {
+        title: { ko: "올인원 대시보드", en: "All-in-One Dashboard" },
+        description: { ko: "견적서부터 세금계산서까지 한 곳에서", en: "From quotes to tax invoices in one place" }
+      }
+    },
+    carousel: {
+      items: [
+        {
+          title: { ko: "견적서 & 계약서 관리", en: "Quotes & Contracts" },
+          description: { ko: "클라이언트별 견적서와 계약서를 체계적으로 관리", en: "Manage quotes and contracts by client systematically" }
+        },
+        {
+          title: { ko: "자동 세금계산서", en: "Automated Tax Invoices" },
+          description: { ko: "매출 발생 시 세금계산서 자동 생성 및 발송", en: "Auto-generate and send tax invoices on sales" }
+        },
+        {
+          title: { ko: "프로젝트 타임트래킹", en: "Project Time Tracking" },
+          description: { ko: "프로젝트별 작업 시간 기록으로 정확한 수익성 분석", en: "Track work hours by project for accurate profitability" }
+        },
+        {
+          title: { ko: "세무 일정 알림", en: "Tax Calendar Alerts" },
+          description: { ko: "부가세, 종합소득세 신고 일정 자동 알림", en: "Auto reminders for VAT and income tax filing dates" }
+        }
+      ]
+    },
+    cta: {
+      title: { ko: "프리랜서 생활, 이제 쉽게 관리하세요", en: "Manage Your Freelance Life with Ease" },
+      subtitle: { ko: "1인 기업과 프리랜서를 위한 맞춤형 솔루션", en: "Tailored solution for solopreneurs and freelancers" },
+      button: { ko: "무료로 시작하기", en: "Start for Free" },
+      features: [
+        { ko: "✓ 월 10개 프로젝트까지 무료", en: "✓ Free for up to 10 projects/month" },
+        { ko: "✓ 세무 신고 자동화 지원", en: "✓ Automated tax filing support" },
+        { ko: "✓ 1:1 온보딩 지원", en: "✓ 1-on-1 onboarding support" }
+      ]
+    },
+    stats: {
+      users: { label: { ko: "프리랜서 사용자", en: "Freelancer Users" }, value: "5,000+" },
+      projects: { label: { ko: "완료된 프로젝트", en: "Completed Projects" }, value: "50,000+" },
+      satisfaction: { label: { ko: "세무 처리 정확도", en: "Tax Filing Accuracy" }, value: "99.8%" },
+      uptime: { label: { ko: "평균 시간 절약", en: "Average Time Saved" }, value: "15시간/월" }
+    },
+    targetUsers: {
+      title: { ko: "이런 분들에게 완벽합니다", en: "Perfect for These Professionals" },
+      subtitle: { ko: "1인 비즈니스를 운영하는 모든 분들을 위한 솔루션", en: "A solution for all solo business operators" },
+      users: [
+        {
+          title: { ko: "프리랜서 개발자", en: "Freelance Developers" },
+          description: { ko: "여러 프로젝트와 클라이언트를 동시에 관리", en: "Manage multiple projects and clients simultaneously" }
+        },
+        {
+          title: { ko: "디자이너", en: "Designers" },
+          description: { ko: "견적서 작성부터 세금계산서 발행까지 한번에", en: "From quotes to tax invoices in one flow" }
+        },
+        {
+          title: { ko: "1인 기업 대표", en: "Solo Business Owners" },
+          description: { ko: "비즈니스 운영에 필요한 모든 도구를 하나로", en: "All business operation tools in one place" }
+        },
+        {
+          title: { ko: "컨설턴트", en: "Consultants" },
+          description: { ko: "고객 관리와 수익 분석을 체계적으로", en: "Systematic client management and revenue analysis" }
+        }
+      ]
+    }
+  },
+
   // 세무 관리 페이지 텍스트
   taxManagement: {
     title: {
@@ -918,6 +1011,76 @@ export const getWidgetText = {
     addProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.addProject[lang],
     projectsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.projectsInProgress[lang],
     viewProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.viewProgress[lang]
+  }
+}
+
+// 홈 페이지 텍스트 헬퍼들
+export const getHomeText = {
+  hero: {
+    badge: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.badge[lang],
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.title[lang],
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.subtitle[lang],
+    description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.description[lang],
+    primaryAction: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.primaryAction[lang],
+    secondaryAction: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.secondaryAction[lang]
+  },
+  features: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.title[lang],
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.subtitle[lang],
+    project: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.project.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.project.description[lang]
+    },
+    tax: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.tax.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.tax.description[lang]
+    },
+    analytics: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.analytics.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.analytics.description[lang]
+    },
+    integration: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.integration.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.integration.description[lang]
+    }
+  },
+  carousel: {
+    getItem: (index: number, lang: 'ko' | 'en' = defaultLanguage) => ({
+      title: uiText.home.carousel.items[index].title[lang],
+      description: uiText.home.carousel.items[index].description[lang]
+    })
+  },
+  cta: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.cta.title[lang],
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.cta.subtitle[lang],
+    button: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.cta.button[lang],
+    getFeature: (index: number, lang: 'ko' | 'en' = defaultLanguage) => uiText.home.cta.features[index][lang]
+  },
+  stats: {
+    users: {
+      label: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.stats.users.label[lang],
+      value: uiText.home.stats.users.value
+    },
+    projects: {
+      label: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.stats.projects.label[lang],
+      value: uiText.home.stats.projects.value
+    },
+    satisfaction: {
+      label: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.stats.satisfaction.label[lang],
+      value: uiText.home.stats.satisfaction.value
+    },
+    uptime: {
+      label: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.stats.uptime.label[lang],
+      value: uiText.home.stats.uptime.value
+    }
+  },
+  targetUsers: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.targetUsers.title[lang],
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.targetUsers.subtitle[lang],
+    getUser: (index: number, lang: 'ko' | 'en' = defaultLanguage) => ({
+      title: uiText.home.targetUsers.users[index].title[lang],
+      description: uiText.home.targetUsers.users[index].description[lang]
+    })
   }
 }
 
