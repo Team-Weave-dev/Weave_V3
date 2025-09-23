@@ -18,7 +18,7 @@ export interface WidgetSize {
 
 export interface Widget {
   id: string;
-  type: 'stats' | 'chart' | 'quickActions' | 'progress' | 'list' | 'custom';
+  type: 'stats' | 'chart' | 'quickActions' | 'progress' | 'list' | 'custom' | 'projectSummary';
   title: string;
   position: WidgetPosition;
   size: WidgetSize;
@@ -61,4 +61,33 @@ export interface QuickAction {
   icon?: React.ReactNode;
   onClick: () => void;
   variant?: 'default' | 'outline' | 'ghost';
+}
+
+// 프로젝트 요약 위젯 인터페이스
+export interface ProjectReview {
+  id: string;
+  projectId: string;
+  projectName: string;
+  client: string;
+  pm: string;
+  status: 'critical' | 'warning' | 'normal' | 'completed';
+  statusLabel: string;
+  progress: number;
+  deadline: Date;
+  daysRemaining: number;
+  budget: {
+    total: number;
+    spent: number;
+    currency: string;
+  };
+  currentStatus: string;
+  issues?: string[];
+  nextActions?: string[];
+}
+
+export interface ProjectSummaryWidgetProps {
+  projects: ProjectReview[];
+  title?: string;
+  lang?: 'ko' | 'en';
+  onProjectClick?: (project: ProjectReview) => void;
 }

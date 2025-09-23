@@ -15,8 +15,8 @@ export const wiggleAnimation: Variants = {
     scale: 1,
   },
   wiggle: {
-    rotate: [-2, 2, -2, 2, 0],
-    scale: [1, 0.98, 1, 0.98, 1],
+    rotate: [-1.5, 1.5, -1.5, 1.5, 0],
+    scale: [1, 0.99, 1, 0.99, 1],
     transition: {
       rotate: {
         duration: 1.2,
@@ -129,6 +129,37 @@ export const deleteButtonAnimation: Variants = {
   },
   tap: {
     scale: 0.9,
+  },
+};
+
+/**
+ * 리사이즈 핸들 애니메이션
+ */
+export const resizeHandleAnimation: Variants = {
+  hidden: {
+    scale: 0,
+    opacity: 0,
+  },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      damping: 15,
+      stiffness: 300,
+      delay: 0.15,
+    },
+  },
+  hover: {
+    scale: 1.1,
+    backgroundColor: 'hsl(var(--primary))',
+    transition: {
+      duration: 0.2,
+    },
+  },
+  dragging: {
+    scale: 1.2,
+    backgroundColor: 'hsl(var(--primary))',
   },
 };
 

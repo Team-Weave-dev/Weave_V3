@@ -479,6 +479,41 @@ export const uiText = {
     }
   },
 
+  // 프로젝트 요약 위젯 텍스트
+  projectWidget: {
+    title: {
+      ko: "프로젝트 요약",
+      en: "Project Summary"
+    },
+    status: {
+      critical: { ko: "긴급", en: "Critical" },
+      warning: { ko: "주의", en: "Warning" },
+      normal: { ko: "정상", en: "Normal" },
+      completed: { ko: "완료", en: "Completed" }
+    },
+    labels: {
+      client: { ko: "클라이언트", en: "Client" },
+      manager: { ko: "프로젝트 매니저", en: "Project Manager" },
+      progress: { ko: "진행률", en: "Progress" },
+      deadline: { ko: "마감일", en: "Deadline" },
+      daysRemaining: { ko: "남은 일수", en: "Days Remaining" },
+      budget: { ko: "예산", en: "Budget" },
+      spent: { ko: "사용", en: "Spent" },
+      remaining: { ko: "남음", en: "Remaining" },
+      currentStatus: { ko: "현재 상태", en: "Current Status" },
+      issues: { ko: "이슈", en: "Issues" },
+      nextActions: { ko: "다음 조치", en: "Next Actions" },
+      noIssues: { ko: "이슈 없음", en: "No Issues" },
+      noActions: { ko: "조치 필요 없음", en: "No Actions Required" }
+    },
+    messages: {
+      overBudget: { ko: "예산 초과", en: "Over Budget" },
+      onTrack: { ko: "정상 진행", en: "On Track" },
+      delayed: { ko: "지연", en: "Delayed" },
+      urgent: { ko: "긴급 처리 필요", en: "Urgent Action Required" }
+    }
+  },
+
   // 사용법 안내 텍스트
   usage: {
     title: {

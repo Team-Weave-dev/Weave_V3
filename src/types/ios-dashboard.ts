@@ -36,7 +36,7 @@ export interface EditModeState {
  */
 export interface IOSStyleWidget {
   id: string;
-  type: string;
+  type: string | 'stats' | 'chart' | 'quickActions' | 'projectSummary';
   title?: string;
   position: FlexibleWidgetPosition & {
     x?: number;
