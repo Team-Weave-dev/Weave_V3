@@ -58,21 +58,23 @@ npm run dev:docs     # Dev server + documentation watch
 ## 📁 Project Architecture
 
 ```
-NEW_UI_Components/
+Weave_V3/
 ├── 📋 CLAUDE.md                    # 🎯 This file - Project navigation hub
 ├── 📁 src/                         # Source code root
 │   ├── 📋 claude.md                # 📚 Source architecture guide
-│   ├── 📱 app/ (2개)               # Next.js App Router pages
-│   │   └── 📋 claude.md            # 🌐 Pages & routing guide
+│   ├── 📱 app/                     # Next.js App Router pages
+│   │   ├── 📋 claude.md            # 🌐 Pages & routing guide
+│   │   ├── 📊 projects/             # Project management page
+│   │   └── components/page.tsx     # Components demo
 │   ├── ⚙️ config/ (2개)           # Centralized configuration
 │   │   └── 📋 claude.md            # 🔧 Configuration system guide
-│   ├── 🧩 components/ (27개)       # UI component library
+│   ├── 🧩 components/              # UI component library
 │   │   ├── 📋 claude.md            # 🧩 Component library guide
-│   │   └── 🎨 ui/                  # shadcn/ui components
+│   │   └── 🎨 ui/                  # shadcn/ui components + advanced table
 │   │       └── 📋 claude.md        # 🎨 Component implementation guide
-│   ├── 🪝 hooks/ (1개)            # Custom React hooks
+│   ├── 🪝 hooks/                   # Custom React hooks
 │   │   └── 📋 claude.md            # 🪝 Hooks library guide
-│   └── 📚 lib/ (1개)               # Utility functions
+│   └── 📚 lib/                     # Utility functions & types
 │       └── 📋 claude.md            # 📚 Utilities guide
 ├── 🔧 scripts/                     # Automation scripts
 └── 📦 package.json                 # Project configuration
@@ -116,7 +118,8 @@ This project includes Model Context Protocol configuration:
 ## 📊 Current Status
 
 ### Project Metrics
-- **Components**: 27 shadcn/ui components installed
+- **Components**: 27 shadcn/ui components + Advanced Table System
+- **Pages**: Home, Components Demo, Projects (List/Detail views)
 - **Architecture**: 100% centralized configuration
 - **Type Safety**: 100% TypeScript coverage
 - **Documentation**: Auto-synced claude.md system
@@ -128,6 +131,29 @@ This project includes Model Context Protocol configuration:
 4. **Auto-update documentation** → System handles synchronization
 
 ## 🔄 Recent Changes
+
+- **2025-09-23**: Projects page complete implementation - Full architecture with centralized system
+  - Phase 1: Text centralization completed
+    - Added comprehensive project page texts to brand.ts
+    - Replaced all hardcoded text with centralized system
+    - Fixed UTF-8 encoding issues with proper Korean support
+  - Phase 2: Component architecture completed
+    - Created reusable ProjectDetail component with tab structure
+    - Implemented 4 tabs: Overview, Contract, Billing, Documents
+    - Full responsive design for full/compact modes
+  - Phase 3: Routing and navigation completed
+    - Created dynamic /projects/[id] page with Next.js 15 Promise params
+    - Centralized mock data system in lib/mock/projects.ts
+    - Master-Detail view with clickable project selection
+    - ListView → /projects/[id] navigation
+    - DetailView → Right panel update with ProjectDetail component
+  - Architecture features:
+    - 60fps optimized column resizing
+    - Drag-and-drop column reordering with @hello-pangea/dnd
+    - Delete mode with bulk selection functionality
+    - URL parameter synchronization for view modes
+    - Full TypeScript type safety maintained
+    - Build successful with all tests passing
 
 - **2025-09-19**: Components page major refactoring - Centralization system improvement
   - Added 100+ new text entries to brand.ts

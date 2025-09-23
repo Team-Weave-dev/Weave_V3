@@ -2,6 +2,9 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { List, LayoutGrid } from "lucide-react"
+
+export type ViewMode = 'list' | 'detail';
 
 export interface ViewModeSwitchProps {
   value: string
@@ -10,6 +13,14 @@ export interface ViewModeSwitchProps {
   className?: string
   "aria-label"?: string
   variant?: "default" | "toggle"
+}
+
+// Simple ViewModeSwitch component for direct use
+export interface SimpleViewModeSwitchProps {
+  mode: ViewMode;
+  onModeChange: (mode: ViewMode) => void;
+  className?: string;
+  disabled?: boolean;
 }
 
 export interface ViewModeSwitchItemProps {
@@ -96,6 +107,63 @@ export function ViewModeSwitchItem({
       {children}
     </button>
   )
+}
+
+// Simple ViewModeSwitch for direct use with ViewMode type
+export function SimpleViewModeSwitch({
+  mode,
+  onModeChange,
+  className,
+  disabled = false
+}: SimpleViewModeSwitchProps) {
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center bg-secondary/20 rounded-lg p-1 border border-border",
+        className
+      )}
+      role="group"
+      aria-label="View mode selection"
+    >
+      <button
+        type="button"
+        onClick={() => onModeChange('list')}
+        disabled={disabled}
+        className={cn(
+          "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1",
+          mode === 'list'
+            ? "bg-background text-primary shadow-sm"
+            : "text-muted-foreground hover:text-foreground hover:bg-secondary/10",
+          disabled && "opacity-50 cursor-not-allowed"
+        )}
+        aria-pressed={mode === 'list'}
+        aria-label="List View"
+      >
+        <List className="w-4 h-4" />
+        <span>List View</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onModeChange('detail')}
+        disabled={disabled}
+        className={cn(
+          "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
+          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1",
+          mode === 'detail'
+            ? "bg-background text-primary shadow-sm"
+            : "text-muted-foreground hover:text-foreground hover:bg-secondary/10",
+          disabled && "opacity-50 cursor-not-allowed"
+        )}
+        aria-pressed={mode === 'detail'}
+        aria-label="Detail View"
+      >
+        <LayoutGrid className="w-4 h-4" />
+        <span>Detail View</span>
+      </button>
+    </div>
+  );
 }
 
 ViewModeSwitch.displayName = "ViewModeSwitch"

@@ -48,7 +48,10 @@ import {
   getButtonText,
   getComponentDemoText,
   getPaletteText,
-  getViewModeText
+  getViewModeText,
+  getProjectStatusText,
+  getProjectStatusTitle,
+  getProjectStatusDescription
 } from "@/config/brand"
 import { defaults, layout, chart, typography } from "@/config/constants"
 
@@ -402,17 +405,17 @@ export default function ComponentsPage() {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle>{getComponentDemoText.getProjectStatusTitle('ko')}</CardTitle>
-                      <CardDescription>{getComponentDemoText.getProjectStatusDescription('ko')}</CardDescription>
+                      <CardTitle>{getProjectStatusTitle('ko')}</CardTitle>
+                      <CardDescription>{getProjectStatusDescription('ko')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="project-review">{getComponentDemoText.getProjectStatus('review', 'ko')}</Badge>
-                        <Badge variant="project-complete">{getComponentDemoText.getProjectStatus('complete', 'ko')}</Badge>
-                        <Badge variant="project-cancelled">{getComponentDemoText.getProjectStatus('cancelled', 'ko')}</Badge>
-                        <Badge variant="project-planning">{getComponentDemoText.getProjectStatus('planning', 'ko')}</Badge>
-                        <Badge variant="project-onhold">{getComponentDemoText.getProjectStatus('onHold', 'ko')}</Badge>
-                        <Badge variant="project-inprogress">{getComponentDemoText.getProjectStatus('inProgress', 'ko')}</Badge>
+                        <Badge variant="project-planning">{getProjectStatusText('planning', 'ko')}</Badge>
+                        <Badge variant="project-inprogress">{getProjectStatusText('in_progress', 'ko')}</Badge>
+                        <Badge variant="project-review">{getProjectStatusText('review', 'ko')}</Badge>
+                        <Badge variant="project-complete">{getProjectStatusText('completed', 'ko')}</Badge>
+                        <Badge variant="project-onhold">{getProjectStatusText('on_hold', 'ko')}</Badge>
+                        <Badge variant="project-cancelled">{getProjectStatusText('cancelled', 'ko')}</Badge>
                       </div>
                     </CardContent>
                   </Card>

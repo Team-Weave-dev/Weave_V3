@@ -315,6 +315,86 @@ export const uiText = {
         en: "In Progress"
       }
     },
+    // 프로젝트 페이지 텍스트
+    projectPage: {
+      header: {
+        title: { ko: "프로젝트 관리", en: "Project Management" },
+        description: { ko: "모든 프로젝트를 관리하고 추적합니다", en: "Manage and track all your projects" },
+        newProject: { ko: "새 프로젝트", en: "New Project" }
+      },
+      stats: {
+        total: { ko: "전체 프로젝트", en: "Total Projects" },
+        inProgress: { ko: "진행중", en: "In Progress" },
+        review: { ko: "검토중", en: "In Review" },
+        completed: { ko: "완료", en: "Completed" }
+      },
+      list: {
+        searchPlaceholder: { ko: "프로젝트 검색...", en: "Search projects..." },
+        resetFilters: { ko: "필터 초기화", en: "Reset Filters" },
+        resetColumns: { ko: "열 초기화", en: "Reset Columns" },
+        deleteMode: { ko: "삭제 모드", en: "Delete Mode" },
+        exitDeleteMode: { ko: "삭제 모드 종료", en: "Exit Delete Mode" },
+        selectAll: { ko: "전체 선택", en: "Select All" },
+        deselectAll: { ko: "선택 해제", en: "Deselect All" },
+        deleteSelected: { ko: "선택 삭제", en: "Delete Selected" },
+        itemsSelected: { ko: "개 항목 선택됨", en: " items selected" },
+        pageSize: { ko: "페이지 크기", en: "Page size" },
+        totalItems: { ko: "전체", en: "Total" },
+        filtered: { ko: "필터됨", en: "filtered" }
+      },
+      detail: {
+        projectList: { ko: "프로젝트 목록", en: "Project List" },
+        noProjectSelected: { ko: "프로젝트가 선택되지 않았습니다", en: "No project selected" },
+        projectNo: { ko: "프로젝트 번호", en: "Project No" },
+        client: { ko: "고객사", en: "Client" },
+        progressStatus: { ko: "진행 상황", en: "Progress Status" },
+        projectProgress: { ko: "프로젝트 진도", en: "Project Progress" },
+        paymentProgress: { ko: "결제 진행", en: "Payment Progress" },
+        projectInfo: { ko: "프로젝트 정보", en: "Project Info" },
+        registered: { ko: "등록일", en: "Registered" },
+        dueDate: { ko: "마감일", en: "Due Date" },
+        modified: { ko: "수정일", en: "Modified" },
+        status: { ko: "상태", en: "Status" },
+        moreDetails: { ko: "더 많은 세부 정보가 곧 추가됩니다", en: "More details will be added soon" },
+        progress: { ko: "진행률", en: "Progress" }
+      },
+      tabs: {
+        overview: { ko: "개요", en: "Overview" },
+        contract: { ko: "계약서", en: "Contract" },
+        billing: { ko: "청구/정산", en: "Billing" },
+        documents: { ko: "문서", en: "Documents" }
+      },
+      descriptions: {
+        overviewDesc: { ko: "프로젝트의 전체적인 현황과 주요 정보를 확인할 수 있습니다", en: "View overall project status and key information" },
+        contractDesc: { ko: "프로젝트 계약서 정보를 확인할 수 있습니다", en: "View project contract information" },
+        billingDesc: { ko: "청구 및 정산 정보를 확인할 수 있습니다", en: "View billing and settlement information" },
+        documentsDesc: { ko: "프로젝트 관련 문서를 확인할 수 있습니다", en: "View project-related documents" }
+      },
+      labels: {
+        projectStatus: { ko: "프로젝트 상태", en: "Project Status" },
+        taskProgress: { ko: "작업 진행률", en: "Task Progress" },
+        paymentStatus: { ko: "결제 진행률", en: "Payment Status" },
+        currentStage: { ko: "현재 단계:", en: "Current Stage:" },
+        hasContract: { ko: "계약서 있음", en: "Has Contract" },
+        hasBilling: { ko: "청구서 있음", en: "Has Billing" },
+        hasDocuments: { ko: "문서 있음", en: "Has Documents" },
+        contractInfo: { ko: "계약서 정보", en: "Contract Information" },
+        billingInfo: { ko: "청구/정산 정보", en: "Billing Information" },
+        documentInfo: { ko: "프로젝트 문서", en: "Project Documents" }
+      },
+      messages: {
+        contractLoading: { ko: "계약서 정보를 불러오는 중입니다...", en: "Loading contract information..." },
+        contractEmpty: { ko: "등록된 계약서가 없습니다", en: "No contract registered" },
+        billingLoading: { ko: "청구서 정보를 불러오는 중입니다...", en: "Loading billing information..." },
+        billingEmpty: { ko: "등록된 청구서가 없습니다", en: "No billing registered" },
+        documentsLoading: { ko: "문서 목록을 불러오는 중입니다...", en: "Loading document list..." },
+        documentsEmpty: { ko: "등록된 문서가 없습니다", en: "No documents registered" }
+      },
+      actions: {
+        edit: { ko: "편집", en: "Edit" },
+        close: { ko: "닫기", en: "Close" }
+      }
+    },
     // 색상 팔레트 시스템
     colorPalette: {
       title: {
@@ -542,6 +622,42 @@ export const uiText = {
     calendarAndChartsDesc: {
       ko: "날짜 관리와 데이터 시각화를 위한 고급 컴포넌트들",
       en: "Advanced components for date management and data visualization"
+    }
+  },
+
+  // 프로젝트 상태 텍스트
+  projectStatus: {
+    planning: {
+      ko: "기획",
+      en: "Planning"
+    },
+    in_progress: {
+      ko: "진행중",
+      en: "In Progress"
+    },
+    review: {
+      ko: "검토",
+      en: "Review"
+    },
+    completed: {
+      ko: "완료",
+      en: "Completed"
+    },
+    on_hold: {
+      ko: "보류",
+      en: "On Hold"
+    },
+    cancelled: {
+      ko: "취소",
+      en: "Cancelled"
+    },
+    title: {
+      ko: "프로젝트 상태",
+      en: "Project Status"
+    },
+    description: {
+      ko: "프로젝트의 현재 진행 상태를 나타냅니다",
+      en: "Indicates the current progress status of the project"
     }
   }
 } as const
@@ -774,6 +890,102 @@ export const getPaletteText = {
   semanticColors: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.colorPalette.semanticColors[lang],
   projectColors: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.colorPalette.projectColors[lang]
 }
+
+// 프로젝트 페이지 텍스트 접근 함수
+export const getProjectPageText = {
+  // Header
+  headerTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.title[lang],
+  headerDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.description[lang],
+  newProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.newProject[lang],
+
+  // Stats
+  statsTotal: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.total[lang],
+  statsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.inProgress[lang],
+  statsReview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.review[lang],
+  statsCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.completed[lang],
+
+  // List
+  searchPlaceholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.searchPlaceholder[lang],
+  resetFilters: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.resetFilters[lang],
+  resetColumns: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.resetColumns[lang],
+  deleteMode: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.deleteMode[lang],
+  exitDeleteMode: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.exitDeleteMode[lang],
+  selectAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.selectAll[lang],
+  deselectAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.deselectAll[lang],
+  deleteSelected: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.deleteSelected[lang],
+  itemsSelected: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.itemsSelected[lang],
+  pageSize: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pageSize[lang],
+  totalItems: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.totalItems[lang],
+  filtered: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filtered[lang],
+
+  // Detail
+  projectList: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectList[lang],
+  noProjectSelected: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.noProjectSelected[lang],
+  projectNo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectNo[lang],
+  client: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.client[lang],
+  progressStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.progressStatus[lang],
+  projectProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectProgress[lang],
+  paymentProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.paymentProgress[lang],
+  projectInfo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectInfo[lang],
+  registered: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.registered[lang],
+  dueDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.dueDate[lang],
+  modified: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.modified[lang],
+  status: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.status[lang],
+  moreDetails: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.moreDetails[lang],
+  progress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.progress[lang],
+
+  // Tabs
+  tabOverview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.overview[lang],
+  tabContract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.contract[lang],
+  tabBilling: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.billing[lang],
+  tabDocuments: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documents[lang],
+
+  // Descriptions
+  overviewDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.overviewDesc[lang],
+  contractDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.contractDesc[lang],
+  billingDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.billingDesc[lang],
+  documentsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.documentsDesc[lang],
+
+  // Labels
+  projectStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.projectStatus[lang],
+  taskProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.taskProgress[lang],
+  paymentStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.paymentStatus[lang],
+  currentStage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.currentStage[lang],
+  hasContract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.hasContract[lang],
+  hasBilling: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.hasBilling[lang],
+  hasDocuments: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.hasDocuments[lang],
+  contractInfo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.contractInfo[lang],
+  billingInfo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.billingInfo[lang],
+  documentInfo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.documentInfo[lang],
+
+  // Messages
+  contractLoading: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.contractLoading[lang],
+  contractEmpty: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.contractEmpty[lang],
+  billingLoading: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.billingLoading[lang],
+  billingEmpty: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.billingEmpty[lang],
+  documentsLoading: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.documentsLoading[lang],
+  documentsEmpty: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.documentsEmpty[lang],
+
+  // Actions
+  edit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.edit[lang],
+  close: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.close[lang]
+}
+
+// 프로젝트 상태 텍스트 헬퍼 함수
+export const getProjectStatusText = (status: string, lang: 'ko' | 'en' = defaultLanguage) => {
+  const statusMap = {
+    planning: uiText.projectStatus.planning[lang],
+    in_progress: uiText.projectStatus.in_progress[lang],
+    review: uiText.projectStatus.review[lang],
+    completed: uiText.projectStatus.completed[lang],
+    on_hold: uiText.projectStatus.on_hold[lang],
+    cancelled: uiText.projectStatus.cancelled[lang]
+  };
+  return statusMap[status as keyof typeof statusMap] || status;
+};
+
+export const getProjectStatusTitle = (lang: 'ko' | 'en' = defaultLanguage) => uiText.projectStatus.title[lang];
+export const getProjectStatusDescription = (lang: 'ko' | 'en' = defaultLanguage) => uiText.projectStatus.description[lang];
 
 // 뷰 모드 텍스트 접근 함수
 export const getViewModeText = {
