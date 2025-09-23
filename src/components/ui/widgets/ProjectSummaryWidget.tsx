@@ -8,9 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   AlertCircle, 
-  Clock, 
   Users, 
-  DollarSign,
   TrendingUp,
   CheckCircle2,
   AlertTriangle,
@@ -19,7 +17,6 @@ import {
   Target,
   ArrowRight,
   Activity,
-  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProjectReview } from '@/types/dashboard';
@@ -50,62 +47,6 @@ export function ProjectSummaryWidget({
       return statusPriority[b.status] - statusPriority[a.status];
     })
     .slice(0, maxProjects);
-
-  const getStatusIcon = (status: ProjectReview['status']) => {
-    switch (status) {
-      case 'critical':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'normal':
-        return <TrendingUp className="h-4 w-4 text-blue-500" />;
-      case 'completed':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusVariant = (status: ProjectReview['status']): 'error' | 'warning' | 'secondary' | 'success' => {
-    switch (status) {
-      case 'critical': return 'error';
-      case 'warning': return 'warning';
-      case 'normal': return 'secondary';
-      case 'completed': return 'success';
-      default: return 'secondary';
-    }
-  };
-
-  const getProgressColor = (status: ProjectReview['status'], progress: number) => {
-    if (status === 'completed') return 'bg-green-500';
-    if (status === 'critical') return 'bg-red-500';
-    if (status === 'warning') return 'bg-yellow-500';
-    if (progress >= 75) return 'bg-primary';
-    if (progress >= 50) return 'bg-blue-500';
-    return 'bg-muted-foreground/40';
-  };
-
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat(lang === 'ko' ? 'ko-KR' : 'en-US', {
-      style: 'currency',
-      currency: currency,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const getDaysRemainingDisplay = (days: number) => {
-    if (days < 0) {
-      return `D+${Math.abs(days)}`;
-    }
-    return `D-${days}`;
-  };
-
-  const getDaysRemainingColor = (days: number) => {
-    if (days < 0) return 'text-red-600 bg-red-50';
-    if (days <= 3) return 'text-red-600 bg-red-50';
-    if (days <= 7) return 'text-yellow-600 bg-yellow-50';
-    return 'text-blue-600 bg-blue-50';
-  };
 
   if (sortedProjects.length === 0) {
     return (
@@ -180,8 +121,6 @@ function ProjectCard({
   lang: 'ko' | 'en';
   onProjectClick?: (project: ProjectReview) => void;
 }) {
-  const texts = uiText.projectWidget;
-  
   const getStatusIcon = (status: ProjectReview['status']) => {
     switch (status) {
       case 'critical':
@@ -286,7 +225,7 @@ function ProjectCard({
             </TooltipProvider>
           </div>
         </div>
-        {/* Arrow button moved to avoid overlap with issues */}
+        {/* Arrow button intentionally omitted */}
       </div>
 
       {/* Progress Section */}
@@ -357,7 +296,7 @@ function ProjectCard({
         </div>
       )}
 
-      {/* Top Right Actions */}
+      {/* Top Right Indicators */}
       <div className="absolute top-3 right-3 flex items-center gap-2">
         {project.issues && project.issues.length > 0 && (
           <TooltipProvider>
@@ -381,16 +320,8 @@ function ProjectCard({
             </Tooltip>
           </TooltipProvider>
         )}
-        {onProjectClick && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ArrowRight className="h-3 w-3" />
-          </Button>
-        )}
       </div>
     </div>
   );
 }
+

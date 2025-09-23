@@ -55,3 +55,4 @@ export function StatsWidget({ title = "통계 대시보드", stats }: StatsWidge
     </Card>
   );
 }
+

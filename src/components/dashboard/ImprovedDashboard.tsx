@@ -32,10 +32,10 @@ import {
   getTransformStyle
 } from '@/lib/dashboard/grid-utils';
 import { ImprovedWidget, WidgetCallbacks } from '@/types/improved-dashboard';
-import { StatsWidget } from './widgets/StatsWidget';
-import { ChartWidget } from './widgets/ChartWidget';
-import { QuickActionsWidget } from './widgets/QuickActionsWidget';
-import { ProjectSummaryWidget } from './widgets/ProjectSummaryWidget';
+import { StatsWidget } from '@/components/ui/widgets/StatsWidget';
+import { ChartWidget } from '@/components/ui/widgets/ChartWidget';
+import { QuickActionsWidget } from '@/components/ui/widgets/QuickActionsWidget';
+import { ProjectSummaryWidget } from '@/components/ui/widgets/ProjectSummaryWidget';
 
 interface ImprovedDashboardProps {
   initialWidgets?: ImprovedWidget[];

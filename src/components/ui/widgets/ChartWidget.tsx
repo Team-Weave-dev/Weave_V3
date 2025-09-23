@@ -71,3 +71,4 @@ export function ChartWidget({ title = "주간 트렌드 차트", subtitle = "최
     </Card>
   );
 }
+
