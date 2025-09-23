@@ -26,6 +26,14 @@ export const brand = {
     }
   },
 
+  // 테마 설정
+  theme: {
+    primaryTextClass: "text-primary",
+    primaryAccentGradient: "from-primary to-primary/60",
+    avatarBackgroundClass: "bg-primary/10",
+    avatarTextClass: "text-primary"
+  },
+
   // 로고 경로
   logo: {
     favicon: "/favicon.ico",
@@ -98,6 +106,10 @@ export const uiText = {
       ko: "홈",
       en: "Home"
     },
+    dashboard: {
+      ko: "대시보드",
+      en: "Dashboard"
+    },
     docs: {
       ko: "문서",
       en: "Docs"
@@ -110,6 +122,14 @@ export const uiText = {
       ko: "팀",
       en: "Team"
     },
+    taxManagement: {
+      ko: "세무 신고",
+      en: "Tax Management"
+    },
+    components: {
+      ko: "컴포넌트",
+      en: "Components"
+    },
     activeProjects: {
       ko: "활성 프로젝트",
       en: "Active Projects"
@@ -117,6 +137,10 @@ export const uiText = {
     activeProjectsDesc: {
       ko: "현재 진행 중인 프로젝트들",
       en: "Currently ongoing projects"
+    },
+    menuTitle: {
+      ko: "메뉴",
+      en: "Menu"
     }
   },
   notifications: {
@@ -139,9 +163,72 @@ export const uiText = {
       en: "shadcn based"
     }
   },
+  auth: {
+    login: {
+      ko: "로그인",
+      en: "Log In"
+    },
+    signup: {
+      ko: "회원가입",
+      en: "Sign Up"
+    },
+    logout: {
+      ko: "로그아웃",
+      en: "Log Out"
+    },
+    settings: {
+      ko: "설정",
+      en: "Settings"
+    },
+    account: {
+      ko: "계정",
+      en: "Account"
+    },
+    profileMenu: {
+      ko: "계정 메뉴",
+      en: "Account Menu"
+    }
+  },
 
   // 컴포넌트 데모 텍스트
   componentDemo: {
+    sections: {
+      buttons: {
+        title: { ko: "버튼 & 배지", en: "Buttons & Badges" },
+        description: { ko: "상호작용 기본 컴포넌트를 한 눈에 살펴봅니다.", en: "Review the interactive primitives at a glance." }
+      },
+      forms: {
+        title: { ko: "폼 입력 요소", en: "Form Inputs" },
+        description: { ko: "입력 필드와 선택 컴포넌트를 조합한 기본 폼 레이아웃입니다.", en: "Core input and selection components arranged in a basic form layout." }
+      },
+      feedback: {
+        title: { ko: "알림 & 피드백", en: "Feedback & Status" },
+        description: { ko: "상태와 진행 상황을 전달하는 컴포넌트 모음입니다.", en: "Components that communicate status and progress." }
+      },
+      data: {
+        title: { ko: "데이터 표시", en: "Data Display" },
+        description: { ko: "테이블과 차트로 정보를 시각화합니다.", en: "Present information with tables and charts." }
+      },
+      layout: {
+        title: { ko: "레이아웃 & 네비게이션", en: "Layout & Navigation" },
+        description: { ko: "페이지 구조를 구성하는 핵심 컴포넌트입니다.", en: "Core components that build page structure." }
+      },
+      utilities: {
+        title: { ko: "유틸리티 & 설정", en: "Utilities & Settings" },
+        description: { ko: "팔레트 전환, 뷰 모드 토글 등 보조 기능 컴포넌트입니다.", en: "Supporting utilities like palette switching and view mode toggles." }
+      },
+      navigation: {
+        title: { ko: "네비게이션 시스템", en: "Navigation System" },
+        description: { ko: "헤더 네비게이션과 관련된 컴포넌트를 확인하세요.", en: "Explore header navigation and related components." }
+      }
+    },
+    layoutHero: {
+      centeredTitle: { ko: "히어로 · 중앙 CTA", en: "Hero · Centered CTA" },
+      centeredDescription: {
+        ko: "브랜드 메시지와 주/보조 버튼이 중앙에 배치된 히어로 스타일",
+        en: "Hero layout with headline and primary/secondary CTAs centered"
+      }
+    },
     cards: {
       interactive: { ko: "인터랙티브 카드", en: "Interactive Card" },
       hoverEffect: { ko: "호버 효과 카드", en: "Hover Effect Card" },
@@ -340,7 +427,17 @@ export const uiText = {
         itemsSelected: { ko: "개 항목 선택됨", en: " items selected" },
         pageSize: { ko: "페이지 크기", en: "Page size" },
         totalItems: { ko: "전체", en: "Total" },
-        filtered: { ko: "필터됨", en: "filtered" }
+        filtered: { ko: "필터됨", en: "filtered" },
+        // 페이지네이션 네비게이션
+        pagination: {
+          firstPage: { ko: "첫 페이지로", en: "Go to first page" },
+          previousPage: { ko: "이전 페이지", en: "Previous page" },
+          nextPage: { ko: "다음 페이지", en: "Next page" },
+          lastPage: { ko: "마지막 페이지로", en: "Go to last page" },
+          pageOf: { ko: "페이지", en: "Page" },
+          of: { ko: "의", en: "of" },
+          goToPage: { ko: "페이지로 이동", en: "Go to page" }
+        }
       },
       detail: {
         projectList: { ko: "프로젝트 목록", en: "Project List" },
@@ -668,7 +765,36 @@ export const routes = {
   components: "/components",
   docs: "/docs",
   projects: "/projects",
-  team: "/team"
+  team: "/team",
+  dashboard: "/dashboard",
+  taxManagement: "/tax-management",
+  login: "/login",
+  signup: "/sign-up",
+  settings: "/settings"
+} as const
+
+export const headerNavigation = {
+  brand: {
+    href: routes.home,
+  },
+  menus: [
+    { id: 'home', labelKey: 'navigation.home', href: routes.home, icon: 'home' },
+    { id: 'dashboard', labelKey: 'navigation.dashboard', href: routes.dashboard, icon: 'layoutDashboard' },
+    { id: 'projects', labelKey: 'navigation.projects', href: routes.projects, icon: 'briefcase' },
+    { id: 'tax', labelKey: 'navigation.taxManagement', href: routes.taxManagement, icon: 'calculator' },
+  ],
+  auth: {
+    loggedOut: {
+      primaryAction: { id: 'signup', labelKey: 'auth.signup', href: routes.signup, icon: 'userPlus' },
+      secondaryAction: { id: 'login', labelKey: 'auth.login', href: routes.login, icon: 'logIn' },
+    },
+    profileMenu: [
+      { id: 'account', labelKey: 'auth.account', href: routes.dashboard, icon: 'user' },
+      { id: 'settings', labelKey: 'auth.settings', href: routes.settings, icon: 'settings' },
+      { id: 'logout', labelKey: 'auth.logout', action: 'logout', icon: 'logOut' },
+    ],
+    menuTitleKey: 'auth.profileMenu',
+  },
 } as const
 
 // 기본 언어 설정
@@ -719,11 +845,24 @@ export const getButtonText = {
 // 네비게이션 텍스트 헬퍼들
 export const getNavText = {
   home: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.home[lang],
+  dashboard: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.dashboard[lang],
   docs: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.docs[lang],
   projects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.projects[lang],
   team: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.team[lang],
+  taxManagement: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.taxManagement[lang],
+  components: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.components[lang],
   activeProjects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.activeProjects[lang],
-  activeProjectsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.activeProjectsDesc[lang]
+  activeProjectsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.activeProjectsDesc[lang],
+  menuTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.menuTitle[lang]
+}
+
+export const getAuthText = {
+  login: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.login[lang],
+  signup: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.signup[lang],
+  logout: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.logout[lang],
+  settings: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.settings[lang],
+  account: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.account[lang],
+  profileMenu: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.profileMenu[lang]
 }
 
 // 알림 텍스트 헬퍼들
@@ -802,6 +941,40 @@ export const getDataText = {
 
 // 컴포넌트 데모 텍스트 헬퍼들
 export const getComponentDemoText = {
+  sections: {
+    buttons: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.buttons.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.buttons.description[lang]
+    },
+    forms: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.forms.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.forms.description[lang]
+    },
+    feedback: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.feedback.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.feedback.description[lang]
+    },
+    data: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.data.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.data.description[lang]
+    },
+    layout: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.layout.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.layout.description[lang]
+    },
+    utilities: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.utilities.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.utilities.description[lang]
+    },
+    navigation: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.navigation.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.navigation.description[lang]
+    }
+  },
+  layoutHero: {
+    centeredTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.layoutHero.centeredTitle[lang],
+    centeredDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.layoutHero.centeredDescription[lang],
+  },
   // Cards
   interactive: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.cards.interactive[lang],
   hoverEffect: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.cards.hoverEffect[lang],
@@ -917,6 +1090,15 @@ export const getProjectPageText = {
   pageSize: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pageSize[lang],
   totalItems: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.totalItems[lang],
   filtered: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filtered[lang],
+
+  // Pagination
+  paginationFirstPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.firstPage[lang],
+  paginationPreviousPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.previousPage[lang],
+  paginationNextPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.nextPage[lang],
+  paginationLastPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.lastPage[lang],
+  paginationPageOf: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.pageOf[lang],
+  paginationOf: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.of[lang],
+  paginationGoToPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.goToPage[lang],
 
   // Detail
   projectList: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectList[lang],

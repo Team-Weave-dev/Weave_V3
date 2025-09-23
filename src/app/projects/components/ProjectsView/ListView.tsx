@@ -44,6 +44,15 @@ export default function ListView({
     resetFilters,
     updatePageSize,
     availableClients,
+    // Pagination
+    totalPages,
+    updatePage,
+    canGoToPreviousPage,
+    canGoToNextPage,
+    goToFirstPage,
+    goToPreviousPage,
+    goToNextPage,
+    goToLastPage,
     // Delete mode
     isDeleteMode,
     selectedItems,
@@ -161,12 +170,10 @@ export default function ListView({
         onDeselectAll={handleDeselectAll}
       />
 
-      {/* Pagination Info */}
+
+      {/* Page Size Selector */}
       {!loading && paginatedData.length > 0 && (
-        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-          <div>
-            {getProjectPageText.totalItems('ko')} {totalCount}, {filteredCount} {getProjectPageText.filtered('ko')}
-          </div>
+        <div className="mt-4 flex items-center justify-end text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <label>{getProjectPageText.pageSize('ko')}:</label>
             <select

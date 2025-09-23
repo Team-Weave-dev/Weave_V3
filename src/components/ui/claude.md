@@ -4,9 +4,10 @@
 
 이 디렉토리는 **shadcn/ui** 기반의 모든 UI 컴포넌트를 포함합니다. 각 컴포넌트는 **Radix UI** 기반으로 접근성이 보장되며, **Tailwind CSS**로 스타일링됩니다.
 
-## 📦 설치된 컴포넌트 (32개)
+## 📦 설치된 컴포넌트 (39개)
 
 - **Accordion**: 접기/펼치기 패널 컴포넌트
+- **Advanced-table**: 컬럼 드롭다운/리사이징을 포함한 고급 테이블
 - **Alert**: 알림 메시지 컴포넌트
 - **Avatar**: 사용자 프로필 이미지 컴포넌트
 - **Badge**: 상태 표시 배지 컴포넌트
@@ -21,14 +22,18 @@
 - **Dropdown-menu**: 드롭다운 컨텍스트 메뉴
 - **Footer**: 푸터 레이아웃 컴포넌트
 - **Form**: 폼 컨텍스트 및 검증 컴포넌트
+- **Header**: 상단 고정 헤더 네비게이션
 - **Hero-section**: 히어로 섹션 레이아웃 컴포넌트
+- **Interactive-card**: 호버 인터랙션이 포함된 카드 래퍼
 - **Input**: 텍스트 입력 필드 컴포넌트
 - **Label**: 폼 라벨 컴포넌트
 - **Line-chart**: 선형 차트 데이터 시각화 컴포넌트
 - **Loading-button**: 로딩 상태가 있는 인터랙티브 버튼 컴포넌트
-- **Navigation-menu**: 메인 네비게이션 메뉴
+- **Pagination**: 페이지네이션 네비게이터
+- **Palette-switcher**: 상태 색상 팔레트 스위처
 - **Pie-chart**: 원형 차트 데이터 시각화 컴포넌트
-- **Progress**: 진행률 표시 컴포넌트
+- **Progress**: 기본 진행률 표시 컴포넌트
+- **Project-progress**: 프로젝트/메트릭 진행률 컴포넌트
 - **Select**: 드롭다운 선택 컴포넌트
 - **Sheet**: 사이드 패널 컴포넌트
 - **Switch**: 토글 스위치 컴포넌트
@@ -38,8 +43,10 @@
 - **Toast**: 일시적 알림 메시지 컴포넌트
 - **Toaster**: 토스트 알림 관리 컴포넌트
 - **Tooltip**: 도움말 툴팁 컴포넌트
+- **Typography**: 타이포그래피 프리셋
+- **View-mode-switch**: 리스트/상세 뷰 모드 전환 컴포넌트
 
-*마지막 업데이트: 2025-09-19*
+*마지막 업데이트: 2025-09-24*
 
 
 **특별 기능**:
@@ -138,13 +145,42 @@ function SubmitForm() {
 ```
 
 #### Badge (`badge.tsx`)
-```typescript
-// 상태 표시 배지
+```tsx
+// 기본 배지 (shadcn 기본 변형)
 <Badge>Default</Badge>
 <Badge variant="secondary">Secondary</Badge>
 <Badge variant="destructive">Error</Badge>
 <Badge variant="outline">Outline</Badge>
+
+// 소프트 시맨틱 상태 (성공/경고/오류/정보)
+<Badge variant="status-soft-success">Success</Badge>
+<Badge variant="status-soft-warning">Warning</Badge>
+<Badge variant="status-soft-error">Error</Badge>
+<Badge variant="status-soft-info">Info</Badge>
+
+// 프로젝트 상태 6종 (텍스트는 brand.ts에서 관리)
+const status = 'in_progress' as const
+<Badge variant="status-soft-inprogress">
+  {getProjectStatusText(status, 'ko')}
+</Badge>
 ```
+
+**노트**: `status-soft-*` 변형은 `@/config/brand.ts`와 `PaletteSwitcher`가 공유하는 10개의 컬러 토큰을 기준으로 렌더링됩니다.
+
+#### PaletteSwitcher (`palette-switcher.tsx`)
+```tsx
+// 팔레트 미리보기 + 상태 배지 확장
+<PaletteSwitcher
+  palettes={['soft']}
+  selectedPalette="soft"
+  onPaletteChange={(next) => console.log('palette', next)}
+/>
+```
+
+**사용 목적**:
+- 프로젝트 상태 6종 + 시맨틱 상태 4종을 하나의 `status-soft-*` 네이밍으로 관리
+- `brand.ts`의 텍스트/레이블과 연동되어 다른 프로젝트에서도 즉시 재사용 가능
+- 버튼 & 배지 영역에서 현재 팔레트 변경 사항을 실시간으로 확인
 
 #### Avatar (`avatar.tsx`)
 ```typescript
@@ -307,6 +343,84 @@ useEffect(() => {
 <Progress value={progress} className="w-[60%]" />
 ```
 
+#### Advanced Table (`advanced-table.tsx`)
+```tsx
+import { AdvancedTable } from '@/components/ui/advanced-table'
+
+<AdvancedTable
+  data={projects}
+  config={tableConfig}
+  onConfigChange={setTableConfig}
+/>
+```
+
+- 주요 기능: 컬럼 드래그 앤 드롭, 리사이징, 페이징, 삭제 모드, 키보드 네비게이션.
+- 진행률 칼럼은 `ProjectProgress`(흰색 배경 + 회색 경계선 + 프라이머리 트랙)를 사용합니다.
+- 헤더 정렬 버튼 UI는 제공되며, 실제 정렬 로직은 후속 마이그레이션 예정입니다.
+- 프로젝트 상태는 `Badge`의 `status-soft-*` variants(`planning`, `inprogress`, `review`, `completed`, `onhold`, `cancelled`)를 사용합니다.
+
+#### Pagination (`pagination.tsx`)
+```typescript
+// 기본 페이지네이션
+import Pagination from '@/components/ui/pagination'
+
+<Pagination
+  currentPage={currentPage}
+  totalPages={totalPages}
+  onPageChange={setCurrentPage}
+  language="ko"
+/>
+
+// 커스텀 핸들러와 함께
+<Pagination
+  currentPage={config.pagination.page}
+  totalPages={totalPages}
+  onPageChange={updatePage}
+  onFirstPage={goToFirstPage}
+  onPreviousPage={goToPreviousPage}
+  onNextPage={goToNextPage}
+  onLastPage={goToLastPage}
+  canGoToPreviousPage={canGoToPreviousPage}
+  canGoToNextPage={canGoToNextPage}
+  size="default"
+  showInfo={false}
+  language="ko"
+/>
+
+// DetailView에서 카드 목록용 (소형)
+<Pagination
+  currentPage={currentPage}
+  totalPages={totalPages}
+  onPageChange={handlePageChange}
+  size="sm"
+  showInfo={false}
+  language="ko"
+/>
+
+// 간단한 모드 (이전/다음만)
+<Pagination
+  currentPage={currentPage}
+  totalPages={totalPages}
+  onPageChange={setCurrentPage}
+  simple={true}
+  showInfo={true}
+  language="ko"
+/>
+```
+
+**주요 기능**:
+- **완전한 접근성**: ARIA 레이블, 키보드 네비게이션, 스크린 리더 지원
+- **중앙화된 텍스트**: brand.ts의 pagination 텍스트 시스템 활용
+- **다양한 크기**: sm, default, lg 크기 지원
+- **유연한 핸들러**: 개별 페이지 이동 핸들러 또는 통합 핸들러 지원
+- **간단한 모드**: 이전/다음 버튼만 표시하는 심플 모드
+- **반응형 디자인**: 모든 화면 크기에서 최적화
+
+**사용 사례**:
+- **ListView**: AdvancedTable 내장 페이지네이션 사용
+- **DetailView**: 프로젝트 카드 목록용 소형 페이지네이션
+- **일반 목록**: 데이터 목록이나 검색 결과용
+
 #### Card (`card.tsx`)
 ```typescript
 // 콘텐츠 컨테이너
@@ -323,6 +437,29 @@ useEffect(() => {
   </CardFooter>
 </Card>
 ```
+
+#### InteractiveCard (`interactive-card.tsx`)
+```tsx
+// 호버 인터랙션이 포함된 카드 래퍼
+<InteractiveCard className="max-w-sm">
+  <CardHeader>
+    <Typography variant="h4" color="accent">{getComponentDemoText.easySetup('ko')}</Typography>
+    <Typography variant="body2" color="secondary">
+      {getComponentDemoText.easySetupDesc('ko')}
+    </Typography>
+  </CardHeader>
+  <CardContent className="flex items-center justify-between">
+    <Typography variant="body2" color="secondary">
+      {getComponentDemoText.hoverDescription('ko')}
+    </Typography>
+    <Button size="sm">{getButtonText.save('ko')}</Button>
+  </CardContent>
+</InteractiveCard>
+```
+
+- `Card`의 스타일을 유지하면서 `hover:-translate-y-1`, `hover:border-primary/50`로 인터랙션을 제공합니다.
+- `glow` / `lift` props로 광원 효과와 상승 애니메이션을 제어할 수 있습니다.
+- 카드 내부에는 기존 `CardHeader`, `CardContent`, `CardFooter` 컴포넌트를 그대로 조합합니다.
 
 #### Carousel (`carousel.tsx`)
 ```typescript
@@ -358,34 +495,24 @@ useEffect(() => {
 
 ### 🧭 네비게이션 컴포넌트
 
-#### NavigationMenu (`navigation-menu.tsx`)
-```typescript
-// 메인 네비게이션 (조건부 드롭다운 지원)
-<NavigationMenu>
-  <NavigationMenuList>
-    <NavigationMenuItem>
-      <NavigationMenuTrigger showDropdownIcon={false}>
-        Home
-      </NavigationMenuTrigger>
-    </NavigationMenuItem>
-    <NavigationMenuItem>
-      <NavigationMenuTrigger>Products</NavigationMenuTrigger>
-      <NavigationMenuContent>
-        <NavigationMenuLink className="block p-4 w-64">
-          <div className="space-y-2">
-            <h4 className="font-medium">Our Products</h4>
-            <p className="text-sm text-muted-foreground">
-              Explore our product lineup
-            </p>
-          </div>
-        </NavigationMenuLink>
-      </NavigationMenuContent>
-    </NavigationMenuItem>
-  </NavigationMenuList>
-</NavigationMenu>
+#### Header (`header.tsx`)
+```tsx
+// 표준 헤더 (고정)
+<Header />
+
+// 컴포넌트 프리뷰용 (고정 해제)
+<Header variant="preview" />
 ```
 
-**특별 기능**: `showDropdownIcon` prop으로 드롭다운 아이콘 조건부 표시
+**주요 특징**:
+- `headerNavigation` 설정(`@/config/brand.ts`)만 수정해도 메뉴, 액션 버튼, 프로필 드롭다운이 즉시 반영됩니다.
+- `variant="preview"`로 고정 해제 상태를 제공하여 컴포넌트 페이지 카드 레이아웃에도 쉽게 배치할 수 있습니다.
+- 로고는 `/public/favicon.ico`와 브랜드 프라이머리 색상을 자동으로 사용합니다.
+
+- 메뉴 구성과 아이콘은 `config/brand.ts`의 `headerNavigation.menus` 배열과 `uiText.navigation.*`를 수정해 중앙화합니다.
+- 로그인/회원가입 버튼과 프로필 드롭다운 항목은 `headerNavigation.auth`와 `uiText.auth.*`에서 관리합니다.
+- 브랜드명 색상, 아바타 색상은 `brand.theme`에 정의된 클래스(예: `primaryTextClass`)를 사용하여 커스터마이징합니다.
+- 기본 구현은 로컬 스토리지의 `testUser` 값을 참고하므로 실제 프로젝트에서는 인증 로직을 연결하세요.
 
 #### DropdownMenu (`dropdown-menu.tsx`)
 ```typescript
@@ -601,6 +728,94 @@ className="bg-destructive text-destructive-foreground"  // 경고 색상
   /* ... */
 }
 ```
+
+#### ProjectProgress (`project-progress.tsx`)
+```typescript
+// 프로젝트/메트릭 진행률 컴포넌트
+<ProjectProgress value={72} size="md" />
+
+// 라벨과 애니메이션 제어
+<ProjectProgress
+  value={45}
+  size="sm"
+  showLabel
+  animated={false}
+  labelPlacement="bottom"
+  labelClassName="text-[11px] text-muted-foreground"
+  className="max-w-[160px]"
+/>
+
+// Advanced Table 스타일 예시
+<ProjectProgress
+  value={tableProgress}
+  size="sm"
+  showLabel
+  labelPlacement="bottom"
+  labelClassName="text-[11px] text-muted-foreground"
+  className="max-w-[120px]"
+/>
+```
+
+- 배경/테두리: 모든 진행률 바는 흰색 배경(`bg-white`)과 회색 경계선(`border-border`)을 사용합니다.
+- 색상 단계: 기본 `variant="primary"`는 진행률 구간에 따라 프라이머리 톤을 점진적으로 변경합니다.
+- 사이즈 변형: `sm`(h-1) · `md`(h-2) · `lg`(h-3)로 구성되며, `className`으로 최대 너비 등을 제어합니다.
+- 라벨: `showLabel` + `labelPlacement`(top/bottom) + `labelClassName`으로 위치와 스타일을 제어합니다.
+- `trackClassName`으로 트랙(배경) 스타일, `animated`로 쉬머 애니메이션을 제어합니다.
+
+#### Status Badges (Soft 10 Variants)
+```tsx
+// 프로젝트 상태 (6종)
+<Badge variant="status-soft-planning">기획</Badge>
+<Badge variant="status-soft-inprogress">진행중</Badge>
+<Badge variant="status-soft-review">검토</Badge>
+<Badge variant="status-soft-completed">완료</Badge>
+<Badge variant="status-soft-onhold">보류</Badge>
+<Badge variant="status-soft-cancelled">취소</Badge>
+
+// 시맨틱 상태 (4종)
+<Badge variant="status-soft-success">성공</Badge>
+<Badge variant="status-soft-warning">경고</Badge>
+<Badge variant="status-soft-error">오류</Badge>
+<Badge variant="status-soft-info">정보</Badge>
+```
+
+- 모든 `status-soft-*` 변형은 `PaletteSwitcher`와 `AdvancedTable`이 공유하는 동일한 컬러 토큰을 사용합니다.
+- 상태 텍스트는 `getProjectStatusText`, `getComponentDemoText.getStatusText` 등 `brand.ts` 헬퍼를 활용합니다.
+- `PaletteSwitcher`에서 팔레트를 변경하면 버튼 & 배지 섹션이 즉시 반영됩니다.
+
+### 🔀 View Mode Switch (`view-mode-switch.tsx`)
+```tsx
+const [mode, setMode] = useState<ViewMode>("list")
+
+<ViewModeSwitch
+  value={mode}
+  onValueChange={(next) => setMode(next as ViewMode)}
+  aria-label={getViewModeText.title('ko')}
+>
+  <ViewModeSwitchItem value="list" icon={<List className="h-4 w-4" />}>
+    {getViewModeText.listView('ko')}
+  </ViewModeSwitchItem>
+  <ViewModeSwitchItem value="detail" icon={<LayoutGrid className="h-4 w-4" />}>
+    {getViewModeText.detailView('ko')}
+  </ViewModeSwitchItem>
+</ViewModeSwitch>
+
+// 간단한 프리셋 버전
+<SimpleViewModeSwitch
+  mode={mode}
+  onModeChange={setMode}
+  labels={{
+    list: getViewModeText.listView('ko'),
+    detail: getViewModeText.detailView('ko'),
+  }}
+  variant="toggle"
+  ariaLabel={getViewModeText.title('ko')}
+/>
+```
+
+- `variant="default"`는 회색 배경 위 흰색 활성 버튼, `variant="toggle"`은 Primary 배경 활성 스타일.
+- `SimpleViewModeSwitch`는 동일한 내부 컴포넌트를 사용하며, `labels`/`icons`로 텍스트와 아이콘을 중앙화된 시스템과 연동.
+- `disabled` 전달 시 전체 토글 그룹이 비활성화되며 접근성 속성(`aria-disabled`)이 자동 설정된다.
 
 ### 커스텀 스타일링
 ```typescript

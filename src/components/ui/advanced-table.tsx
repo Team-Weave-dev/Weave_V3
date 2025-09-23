@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button';
 import Typography from '@/components/ui/typography';
 import Pagination from '@/components/ui/pagination';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
+import ProjectProgress from '@/components/ui/project-progress';
+import { getProjectStatusText } from '@/config/brand';
 import type {
   ProjectTableColumn,
   ProjectTableRow,
@@ -248,6 +251,15 @@ export function AdvancedTable({
   };
 
   // 셀 값 포맷팅
+  const statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
+    planning: 'status-soft-planning',
+    in_progress: 'status-soft-inprogress',
+    review: 'status-soft-review',
+    completed: 'status-soft-completed',
+    on_hold: 'status-soft-onhold',
+    cancelled: 'status-soft-cancelled'
+  }
+
   const formatCellValue = (value: any, column: ProjectTableColumn) => {
     switch (column.type) {
       case 'date':
@@ -256,58 +268,36 @@ export function AdvancedTable({
         return `${Number(value).toLocaleString()}원`;
       case 'progress':
         return (
-          <div className="w-full max-w-[100px] min-w-[80px]">
-            <div className="h-2 md:h-2.5 bg-secondary rounded-full overflow-hidden mb-1">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${value || 0}%` }}
-              />
-            </div>
-            <div className="text-center">
-              <span className="text-[10px] md:text-xs text-muted-foreground font-medium">
-                {value || 0}%
-              </span>
-            </div>
-          </div>
+          <ProjectProgress
+            value={Number(value) || 0}
+            size="sm"
+            showLabel
+            labelPlacement="bottom"
+            labelClassName="text-[11px] text-muted-foreground font-medium"
+            className="max-w-[120px]"
+          />
         );
       case 'payment_progress':
         return (
-          <div className="w-full max-w-[100px] min-w-[80px]">
-            <div className="h-2 md:h-2.5 bg-secondary rounded-full overflow-hidden mb-1">
-              <div
-                className="h-full bg-green-500 transition-all duration-300"
-                style={{ width: `${value || 0}%` }}
-              />
-            </div>
-            <div className="text-center">
-              <span className="text-[10px] md:text-xs text-green-600 font-medium">
-                {value || 0}%
-              </span>
-            </div>
-          </div>
+          <ProjectProgress
+            value={Number(value) || 0}
+            size="sm"
+            showLabel
+            labelPlacement="bottom"
+            labelClassName="text-[11px] text-muted-foreground font-medium"
+            className="max-w-[120px]"
+          />
         );
       case 'status':
-        const statusColors = {
-          planning: 'bg-gray-100 text-gray-700',
-          in_progress: 'bg-blue-100 text-blue-700',
-          review: 'bg-yellow-100 text-yellow-700',
-          completed: 'bg-green-100 text-green-700',
-          on_hold: 'bg-orange-100 text-orange-700',
-          cancelled: 'bg-red-100 text-red-700'
-        };
-        const statusLabels = {
-          planning: '기획',
-          in_progress: '진행중',
-          review: '검토',
-          completed: '완료',
-          on_hold: '보류',
-          cancelled: '취소'
-        };
-        return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[value as keyof typeof statusColors] || 'bg-gray-100 text-gray-700'}`}>
-            {statusLabels[value as keyof typeof statusLabels] || value}
-          </span>
-        );
+        {
+          const statusValue = value as ProjectTableRow['status'];
+          const variant = statusVariantMap[statusValue] ?? 'status-soft-planning';
+          return (
+            <Badge variant={variant} className="capitalize">
+              {getProjectStatusText(statusValue, 'ko')}
+            </Badge>
+          );
+        }
       default:
         return value || '-';
     }

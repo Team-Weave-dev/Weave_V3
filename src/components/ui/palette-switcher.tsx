@@ -136,27 +136,27 @@ export function PaletteViewer() {
           <h4 className="text-sm font-medium mb-2">프로젝트 상태 색상</h4>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Badge variant="project-review">검토</Badge>
+              <Badge variant="status-soft-review">검토</Badge>
               <span className="text-xs text-muted-foreground">review</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="project-complete">완료</Badge>
+              <Badge variant="status-soft-completed">완료</Badge>
               <span className="text-xs text-muted-foreground">complete</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="project-cancelled">취소</Badge>
+              <Badge variant="status-soft-cancelled">취소</Badge>
               <span className="text-xs text-muted-foreground">cancelled</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="project-planning">기획</Badge>
+              <Badge variant="status-soft-planning">기획</Badge>
               <span className="text-xs text-muted-foreground">planning</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="project-onhold">보류</Badge>
+              <Badge variant="status-soft-onhold">보류</Badge>
               <span className="text-xs text-muted-foreground">onhold</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="project-inprogress">진행중</Badge>
+              <Badge variant="status-soft-inprogress">진행중</Badge>
               <span className="text-xs text-muted-foreground">inprogress</span>
             </div>
           </div>

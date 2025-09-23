@@ -10,6 +10,23 @@ export const layout = {
     textMaxWidth: "750px",    // max-w-[750px]
     navigationWidth: "256px"   // w-64
   },
+  page: {
+    container: "container mx-auto",             // 모든 페이지의 기본 컨테이너
+    padding: {
+      default: "px-4 py-6 sm:px-6 lg:px-12 lg:py-8",   // 프로젝트 페이지 기준 기본 여백
+      compact: "px-4 py-4 sm:px-5 lg:px-10 lg:py-6",   // 공간이 협소한 모드
+      relaxed: "px-4 py-8 sm:px-8 lg:px-16 lg:py-12"   // 히어로/프리미엄 섹션
+    },
+    section: {
+      stack: "space-y-6 lg:space-y-8",                 // 수직 스택 간격
+      gridGap: "gap-6 lg:gap-8"                         // Grid 간격
+    },
+    header: {
+      block: "mb-6",                                    // 헤더와 본문 사이 여백
+      actions: "gap-3",                                 // 액션 버튼 간격
+      titleWithControls: "gap-4"                        // 제목과 컨트롤 사이 간격
+    }
+  },
   spacing: {
     section: {
       sm: "py-8",

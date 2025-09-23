@@ -272,6 +272,39 @@ export function useProjectTable(initialData: ProjectTableRow[] = []) {
     updateConfig(resetConfig);
   }, [config, updateConfig]);
 
+  // 페이지 변경
+  const updatePage = useCallback((newPage: number) => {
+    const resetConfig: ProjectTableConfig = {
+      ...config,
+      pagination: {
+        ...config.pagination,
+        page: newPage
+      }
+    };
+    updateConfig(resetConfig);
+  }, [config, updateConfig]);
+
+  // 총 페이지 수 계산
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredData.length / config.pagination.pageSize);
+  }, [filteredData.length, config.pagination.pageSize]);
+
+  // 페이지네이션 헬퍼 함수들
+  const canGoToPreviousPage = config.pagination.page > 1;
+  const canGoToNextPage = config.pagination.page < totalPages;
+  const goToFirstPage = useCallback(() => updatePage(1), [updatePage]);
+  const goToPreviousPage = useCallback(() => {
+    if (canGoToPreviousPage) {
+      updatePage(config.pagination.page - 1);
+    }
+  }, [canGoToPreviousPage, config.pagination.page, updatePage]);
+  const goToNextPage = useCallback(() => {
+    if (canGoToNextPage) {
+      updatePage(config.pagination.page + 1);
+    }
+  }, [canGoToNextPage, config.pagination.page, updatePage]);
+  const goToLastPage = useCallback(() => updatePage(totalPages), [updatePage, totalPages]);
+
   // 삭제 모드 관련 함수들
   const toggleDeleteMode = useCallback(() => {
     setIsDeleteMode(prev => !prev);
@@ -336,6 +369,16 @@ export function useProjectTable(initialData: ProjectTableRow[] = []) {
     resetFilters,
     resetAll,
     updatePageSize,
+
+    // 페이지네이션
+    totalPages,
+    updatePage,
+    canGoToPreviousPage,
+    canGoToNextPage,
+    goToFirstPage,
+    goToPreviousPage,
+    goToNextPage,
+    goToLastPage,
 
     // 삭제 모드
     isDeleteMode,

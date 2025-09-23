@@ -148,9 +148,10 @@ interface ComponentLibraryContext {
   installedComponents: [
     "button", "card", "input", "label", "textarea",
     "toast", "toaster", "badge", "tabs", "dialog",
-    "dropdown-menu", "navigation-menu", "progress",
+    "dropdown-menu", "header", "interactive-card", "progress",
     "select", "switch", "tooltip", "avatar", "checkbox",
-    "alert", "form", "sheet", "accordion", "table", "carousel"
+    "alert", "form", "sheet", "accordion", "table", "carousel",
+    "advanced-table", "palette-switcher", "project-progress", "view-mode-switch"
   ]
 
   establishedPatterns: {

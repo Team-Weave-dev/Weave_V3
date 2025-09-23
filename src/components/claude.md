@@ -8,12 +8,13 @@
 
 ```
 components/
-└── ui/                 # 🎨 shadcn/ui 기반 컴포넌트 (25개)
+└── ui/                 # 🎨 shadcn/ui 기반 컴포넌트 (39개)
     ├── claude.md       # UI 컴포넌트 상세 가이드
+    ├── header.tsx      # 🧭 상단 헤더 네비게이션
+    ├── interactive-card.tsx # ✨ 인터랙티브 카드 래퍼
     ├── button.tsx      # 🔘 버튼 컴포넌트
     ├── card.tsx        # 📇 카드 컴포넌트
-    ├── input.tsx       # ⌨️ 입력 컴포넌트
-    ├── navigation-menu.tsx  # 🧭 네비게이션 메뉴
+    ├── project-progress.tsx # 📊 프로젝트 전용 진행률 바
     └── ... (추가 컴포넌트들)
 ```
 
@@ -68,13 +69,14 @@ components/
 - Tabs          # 탭 네비게이션
 - Accordion     # 접기/펼치기 패널
 - Card          # 콘텐츠 컨테이너
+- InteractiveCard # 호버 효과와 글로우를 제공하는 카드 래퍼
 - Carousel      # 이미지/콘텐츠 슬라이더
 ```
 
 ### 🧭 네비게이션 컴포넌트
 ```typescript
 // 내비게이션 및 메뉴
-- NavigationMenu    # 메인 네비게이션 (조건부 드롭다운 지원)
+- Header            # 상단 고정 헤더 네비게이션
 - DropdownMenu      # 컨텍스트 메뉴
 - Tooltip           # 도움말 툴팁
 - Sheet            # 사이드 패널
@@ -114,7 +116,7 @@ import { getButtonText, getNavText } from '@/config/brand'
 
 // ✅ 올바른 사용법
 <Button>{getButtonText.viewComponents('ko')}</Button>
-<NavigationMenuTrigger>{getNavText.home('ko')}</NavigationMenuTrigger>
+<Link href={routes.home}>{getNavText.home('ko')}</Link>
 
 // ❌ 하드코딩 금지
 <Button>컴포넌트 보기</Button>

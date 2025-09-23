@@ -10,6 +10,7 @@ import {
   ChevronsRight,
   MoreHorizontal
 } from 'lucide-react';
+import { getProjectPageText } from '@/config/brand';
 
 // 페이지네이션 Props
 export interface PaginationProps {
@@ -19,6 +20,18 @@ export interface PaginationProps {
   totalPages: number;
   /** 페이지 변경 핸들러 */
   onPageChange: (page: number) => void;
+  /** 첫 페이지로 이동 핸들러 */
+  onFirstPage?: () => void;
+  /** 이전 페이지 핸들러 */
+  onPreviousPage?: () => void;
+  /** 다음 페이지 핸들러 */
+  onNextPage?: () => void;
+  /** 마지막 페이지로 이동 핸들러 */
+  onLastPage?: () => void;
+  /** 이전 페이지 가능 여부 */
+  canGoToPreviousPage?: boolean;
+  /** 다음 페이지 가능 여부 */
+  canGoToNextPage?: boolean;
   /** 페이지당 항목 수 */
   itemsPerPage?: number;
   /** 총 항목 수 */
@@ -35,12 +48,20 @@ export interface PaginationProps {
   showInfo?: boolean;
   /** 접근성 라벨 */
   ariaLabel?: string;
+  /** 언어 설정 */
+  language?: 'ko' | 'en';
 }
 
 const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
   onPageChange,
+  onFirstPage,
+  onPreviousPage,
+  onNextPage,
+  onLastPage,
+  canGoToPreviousPage,
+  canGoToNextPage,
   itemsPerPage = 10,
   totalItems,
   visiblePages = 5,
@@ -48,7 +69,8 @@ const Pagination: React.FC<PaginationProps> = ({
   className,
   simple = false,
   showInfo = true,
-  ariaLabel = '페이지네이션',
+  ariaLabel,
+  language = 'ko',
 }) => {
   // 엣지 케이스 처리
   if (totalPages <= 0) return null;
@@ -114,11 +136,15 @@ const Pagination: React.FC<PaginationProps> = ({
     lg: 'h-12 min-w-12 px-4 text-base',
   };
 
+  // 기본값 설정
+  const effectiveCanGoToPreviousPage = canGoToPreviousPage ?? (currentPage > 1);
+  const effectiveCanGoToNextPage = canGoToNextPage ?? (currentPage < totalPages);
+
   // 페이지 변경 핸들러들
-  const goToFirstPage = () => onPageChange(1);
-  const goToPreviousPage = () => onPageChange(Math.max(1, currentPage - 1));
-  const goToNextPage = () => onPageChange(Math.min(totalPages, currentPage + 1));
-  const goToLastPage = () => onPageChange(totalPages);
+  const goToFirstPage = () => onFirstPage ? onFirstPage() : onPageChange(1);
+  const goToPreviousPage = () => onPreviousPage ? onPreviousPage() : onPageChange(Math.max(1, currentPage - 1));
+  const goToNextPage = () => onNextPage ? onNextPage() : onPageChange(Math.min(totalPages, currentPage + 1));
+  const goToLastPage = () => onLastPage ? onLastPage() : onPageChange(totalPages);
 
   // 키보드 지원
   const handleKeyDown = (event: React.KeyboardEvent, page: number) => {
@@ -143,13 +169,13 @@ const Pagination: React.FC<PaginationProps> = ({
     return (
       <nav
         className={cn("flex items-center justify-between", className)}
-        aria-label={ariaLabel}
+        aria-label={ariaLabel || `${getProjectPageText.paginationPageOf(language)} ${getProjectPageText.paginationOf(language)}`}
         role="navigation"
       >
         {showInfo && (
           <div className="text-sm text-muted-foreground">
-            페이지 {currentPage} / {totalPages}
-            {totalItems && ` (총 ${totalItems.toLocaleString()}개)`}
+            {getProjectPageText.paginationPageOf(language)} {currentPage} {getProjectPageText.paginationOf(language)} {totalPages}
+            {totalItems && ` (${getProjectPageText.totalItems(language)} ${totalItems.toLocaleString()}개)`}
           </div>
         )}
 
@@ -158,21 +184,21 @@ const Pagination: React.FC<PaginationProps> = ({
             variant="outline"
             size={size}
             onClick={goToPreviousPage}
-            disabled={currentPage <= 1}
-            aria-label="이전 페이지"
+            disabled={!effectiveCanGoToPreviousPage}
+            aria-label={getProjectPageText.paginationPreviousPage(language)}
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
-            이전
+            {getProjectPageText.paginationPreviousPage(language)}
           </Button>
 
           <Button
             variant="outline"
             size={size}
             onClick={goToNextPage}
-            disabled={currentPage >= totalPages}
-            aria-label="다음 페이지"
+            disabled={!effectiveCanGoToNextPage}
+            aria-label={getProjectPageText.paginationNextPage(language)}
           >
-            다음
+            {getProjectPageText.paginationNextPage(language)}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
@@ -183,7 +209,7 @@ const Pagination: React.FC<PaginationProps> = ({
   return (
     <nav
       className={cn("flex items-center justify-between gap-4", className)}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel || `${getProjectPageText.paginationPageOf(language)} ${getProjectPageText.paginationOf(language)}`}
       role="navigation"
     >
       {/* 정보 텍스트 */}
@@ -200,9 +226,9 @@ const Pagination: React.FC<PaginationProps> = ({
           variant="ghost"
           size={size}
           onClick={goToFirstPage}
-          disabled={currentPage <= 1}
+          disabled={!effectiveCanGoToPreviousPage}
           className={sizeClasses[size]}
-          aria-label="첫 페이지"
+          aria-label={getProjectPageText.paginationFirstPage(language)}
         >
           <ChevronsLeft className="w-4 h-4" />
         </Button>
@@ -212,9 +238,9 @@ const Pagination: React.FC<PaginationProps> = ({
           variant="ghost"
           size={size}
           onClick={goToPreviousPage}
-          disabled={currentPage <= 1}
+          disabled={!effectiveCanGoToPreviousPage}
           className={sizeClasses[size]}
-          aria-label="이전 페이지"
+          aria-label={getProjectPageText.paginationPreviousPage(language)}
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
@@ -237,7 +263,7 @@ const Pagination: React.FC<PaginationProps> = ({
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
-                aria-label={`페이지 ${page}${currentPage === page ? ' (현재 페이지)' : ''}`}
+                aria-label={`${getProjectPageText.paginationGoToPage(language)} ${page}${currentPage === page ? ` (${getProjectPageText.paginationPageOf(language)})` : ''}`}
                 aria-current={currentPage === page ? 'page' : undefined}
               >
                 {page}
@@ -251,9 +277,9 @@ const Pagination: React.FC<PaginationProps> = ({
           variant="ghost"
           size={size}
           onClick={goToNextPage}
-          disabled={currentPage >= totalPages}
+          disabled={!effectiveCanGoToNextPage}
           className={sizeClasses[size]}
-          aria-label="다음 페이지"
+          aria-label={getProjectPageText.paginationNextPage(language)}
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
@@ -263,9 +289,9 @@ const Pagination: React.FC<PaginationProps> = ({
           variant="ghost"
           size={size}
           onClick={goToLastPage}
-          disabled={currentPage >= totalPages}
+          disabled={!effectiveCanGoToNextPage}
           className={sizeClasses[size]}
-          aria-label="마지막 페이지"
+          aria-label={getProjectPageText.paginationLastPage(language)}
         >
           <ChevronsRight className="w-4 h-4" />
         </Button>

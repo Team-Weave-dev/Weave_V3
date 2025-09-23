@@ -382,7 +382,8 @@ ${utilList}
       'tabs': '탭 네비게이션 컴포넌트',
       'dialog': '모달 대화상자 컴포넌트',
       'dropdown-menu': '드롭다운 컨텍스트 메뉴',
-      'navigation-menu': '메인 네비게이션 메뉴',
+      'header': '상단 고정 헤더 네비게이션',
+      'interactive-card': '호버 인터랙션이 포함된 카드 래퍼',
       'progress': '진행률 표시 컴포넌트',
       'select': '드롭다운 선택 컴포넌트',
       'switch': '토글 스위치 컴포넌트',
@@ -402,7 +403,13 @@ ${utilList}
       'calendar': '날짜 선택 및 관리 캘린더 컴포넌트',
       'loading-button': '로딩 상태가 있는 인터랙티브 버튼 컴포넌트',
       'hero-section': '히어로 섹션 레이아웃 컴포넌트',
-      'footer': '푸터 레이아웃 컴포넌트'
+      'footer': '푸터 레이아웃 컴포넌트',
+      'advanced-table': '고급 테이블 구성 요소',
+      'palette-switcher': '상태 배지 팔레트 스위처',
+      'project-progress': '프로젝트 전용 진행률 컴포넌트',
+      'pagination': '페이지네이션 네비게이터',
+      'typography': '타이포그래피 프리셋',
+      'view-mode-switch': '뷰 모드 전환 스위치'
     };
 
     return descriptions[name] || '재사용 가능한 UI 컴포넌트';

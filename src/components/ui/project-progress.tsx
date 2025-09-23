@@ -1,15 +1,18 @@
 'use client';
 
 import React from 'react';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 interface ProjectProgressProps {
   value: number;
   className?: string;
+  trackClassName?: string;
   showLabel?: boolean;
   size?: 'sm' | 'md' | 'lg';
   animated?: boolean;
+  variant?: 'primary' | 'success';
+  labelPlacement?: 'top' | 'bottom';
+  labelClassName?: string;
 }
 
 /**
@@ -24,12 +27,20 @@ interface ProjectProgressProps {
 export default function ProjectProgress({
   value,
   className,
+  trackClassName,
   showLabel = false,
   size = 'md',
-  animated = true
+  animated = true,
+  variant = 'primary',
+  labelPlacement = 'top',
+  labelClassName,
 }: ProjectProgressProps) {
-  // Get color based on progress value using system colors
+  const clampedValue = Math.max(0, Math.min(100, value || 0));
+
   const getProgressColor = (progress: number) => {
+    if (variant === 'success') {
+      return 'bg-primary';
+    }
     if (progress >= 80) return 'bg-primary';
     if (progress >= 60) return 'bg-primary/80';
     if (progress >= 40) return 'bg-primary/60';
@@ -50,22 +61,25 @@ export default function ProjectProgress({
     }
   };
 
-  const progressColor = getProgressColor(value);
+  const progressColor = getProgressColor(clampedValue);
   const sizeClass = getSizeClasses();
 
+  const labelClasses = cn(
+    'block text-xs font-medium text-muted-foreground text-center',
+    labelClassName
+  );
+
   return (
-    <div className="w-full space-y-1">
-      {showLabel && (
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium">
-            {value}%
-          </span>
-        </div>
+    <div className={cn('w-full', className)}>
+      {showLabel && labelPlacement === 'top' && (
+        <span className={cn(labelClasses, 'mb-1')}>
+          {clampedValue}%
+        </span>
       )}
       <div className={cn(
-        "relative w-full overflow-hidden rounded-full bg-secondary",
+        "relative w-full overflow-hidden rounded-full bg-white border border-border",
         sizeClass,
-        className
+        trackClassName
       )}>
         <div
           className={cn(
@@ -74,15 +88,20 @@ export default function ProjectProgress({
             animated && "duration-500 ease-out"
           )}
           style={{
-            transform: `translateX(-${100 - (value || 0)}%)`
+            transform: `translateX(-${100 - clampedValue}%)`
           }}
         >
           {/* Optional animated shimmer effect */}
-          {animated && value > 0 && value < 100 && (
+          {animated && clampedValue > 0 && clampedValue < 100 && (
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
           )}
         </div>
       </div>
+      {showLabel && labelPlacement === 'bottom' && (
+        <span className={cn(labelClasses, 'mt-1')}>
+          {clampedValue}%
+        </span>
+      )}
     </div>
   );
 }

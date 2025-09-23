@@ -5,7 +5,7 @@ import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch
 import Typography from '@/components/ui/typography';
 import { Button } from '@/components/ui/button';
 import { Briefcase, Plus, Play, Eye, CheckCircle } from 'lucide-react';
-import { getProjectPageText } from '@/config/brand';
+import { getProjectPageText, getViewModeText } from '@/config/brand';
 
 interface ProjectHeaderProps {
   viewMode: ViewMode;
@@ -54,6 +54,11 @@ export default function ProjectHeader({
               <SimpleViewModeSwitch
                 mode={viewMode}
                 onModeChange={onViewModeChange}
+                labels={{
+                  list: getViewModeText.listView('ko'),
+                  detail: getViewModeText.detailView('ko')
+                }}
+                ariaLabel={getViewModeText.title('ko')}
               />
             </div>
             <Typography variant="body1" className="text-muted-foreground">

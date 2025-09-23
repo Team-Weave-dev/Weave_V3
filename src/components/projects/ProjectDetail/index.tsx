@@ -3,9 +3,9 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import ProjectProgress from '@/components/projects/ProjectProgress';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
+import ProjectProgress from '@/components/ui/project-progress';
 import { getProjectPageText, getProjectStatusText } from '@/config/brand';
 import type { ProjectTableRow } from '@/lib/types/project-table.types';
 import { CalendarIcon, FileTextIcon, CreditCardIcon, BriefcaseIcon, CheckCircleIcon, ClockIcon, AlertCircleIcon } from 'lucide-react';
@@ -36,18 +36,14 @@ export default function ProjectDetail({
 }: ProjectDetailProps) {
   const lang = 'ko'; // TODO: 나중에 언어 설정과 연동
 
-  // 프로젝트 상태별 Badge variant
-  const getStatusVariant = (status: ProjectTableRow['status']): string => {
-    const variantMap: Record<ProjectTableRow['status'], string> = {
-      'completed': 'project-complete',
-      'in_progress': 'project-inprogress',
-      'review': 'project-review',
-      'planning': 'project-planning',
-      'on_hold': 'project-onhold',
-      'cancelled': 'project-cancelled'
-    };
-    return variantMap[status] || 'secondary';
-  };
+  const statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
+    completed: 'status-soft-completed',
+    in_progress: 'status-soft-inprogress',
+    review: 'status-soft-review',
+    planning: 'status-soft-planning',
+    on_hold: 'status-soft-onhold',
+    cancelled: 'status-soft-cancelled'
+  } as const
 
   return (
     <div className={`${mode === 'compact' ? '' : 'container mx-auto p-6'}`}>
@@ -63,8 +59,8 @@ export default function ProjectDetail({
               <span>•</span>
               <span>{getProjectPageText.client(lang)}: {project.client}</span>
               <span>•</span>
-              <Badge variant={getStatusVariant(project.status) as any}>
-                {getStatusText(project.status)}
+              <Badge variant={statusVariantMap[project.status]}>
+                {getProjectStatusText(project.status, lang)}
               </Badge>
             </div>
           </div>
@@ -208,8 +204,8 @@ export default function ProjectDetail({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">{getProjectPageText.currentStage(lang)}</span>
-                      <Badge variant={getStatusVariant(project.status) as any}>
-                        {getStatusText(project.status)}
+                      <Badge variant={statusVariantMap[project.status]}>
+                        {getProjectStatusText(project.status, lang)}
                       </Badge>
                     </div>
                   </div>

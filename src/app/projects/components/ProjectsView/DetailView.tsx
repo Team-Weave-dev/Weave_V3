@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Typography from '@/components/ui/typography';
 import ProjectDetail from '@/components/projects/ProjectDetail';
 import type { ProjectTableRow } from '@/lib/types/project-table.types';
 import { getProjectPageText, getProjectStatusText } from '@/config/brand';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import ProjectProgress from '@/components/projects/ProjectProgress';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
+import ProjectProgress from '@/components/ui/project-progress';
+import Pagination from '@/components/ui/pagination';
 
 interface DetailViewProps {
   projects: ProjectTableRow[];
@@ -36,9 +37,41 @@ export default function DetailView({
     initialSelectedId || (projects.length > 0 ? projects[0].id : null)
   );
 
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5); // 페이지당 5개 프로젝트
+
+  // 페이지네이션된 프로젝트 목록
+  const paginatedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return projects.slice(startIndex, endIndex);
+  }, [projects, currentPage, pageSize]);
+
+  // 총 페이지 수
+  const totalPages = useMemo(() => {
+    return Math.ceil(projects.length / pageSize);
+  }, [projects.length, pageSize]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const selectedProject = selectedProjectId
     ? projects.find(p => p.id === selectedProjectId)
     : null;
+
+  const statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
+    completed: 'status-soft-completed',
+    in_progress: 'status-soft-inprogress',
+    review: 'status-soft-review',
+    planning: 'status-soft-planning',
+    on_hold: 'status-soft-onhold',
+    cancelled: 'status-soft-cancelled'
+  } as const;
+
+  const getStatusVariant = (status: ProjectTableRow['status']) => statusVariantMap[status] || 'secondary';
 
   useEffect(() => {
     // Auto-select first project if none selected
@@ -47,23 +80,14 @@ export default function DetailView({
     }
   }, [projects, selectedProjectId]);
 
+  // 프로젝트 목록이 변경되면 첫 페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [projects.length]);
+
   const handleProjectClick = (projectId: string) => {
     setSelectedProjectId(projectId);
   };
-
-  const getStatusVariant = (status: ProjectTableRow['status']): string => {
-    // 프로젝트 상태별 Badge variant
-    const variantMap: Record<ProjectTableRow['status'], string> = {
-      'completed': 'project-complete',
-      'in_progress': 'project-inprogress',
-      'review': 'project-review',
-      'planning': 'project-planning',
-      'on_hold': 'project-onhold',
-      'cancelled': 'project-cancelled'
-    };
-    return variantMap[status] || 'secondary';
-  };
-
 
   if (loading) {
     return (
@@ -109,7 +133,7 @@ export default function DetailView({
             </p>
           </CardHeader>
           <CardContent className="space-y-2">
-                {projects.map(project => (
+                {paginatedProjects.map(project => (
                   <div
                     key={project.id}
                     onClick={() => handleProjectClick(project.id)}
@@ -129,7 +153,7 @@ export default function DetailView({
                             {project.no} • {project.client}
                           </p>
                         </div>
-                        <Badge variant={getStatusVariant(project.status) as any} className="ml-2">
+                        <Badge variant={getStatusVariant(project.status)} className="ml-2">
                           {getProjectStatusText(project.status, 'ko')}
                         </Badge>
                       </div>
@@ -158,6 +182,20 @@ export default function DetailView({
                   </div>
                 ))}
           </CardContent>
+
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <div className="px-6 pb-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                size="sm"
+                showInfo={false}
+                language="ko"
+              />
+            </div>
+          )}
         </Card>
       </div>
 
