@@ -23,7 +23,7 @@ export const layout = {
       large: "gap-8"
     },
     page: {
-      paddingTop: "pt-16 lg:pt-20",     // 헤더 높이를 고려한 상단 패딩
+      paddingTop: "pt-6 lg:pt-10",     // 헤더 높이를 고려한 상단 패딩
       paddingX: "px-4 sm:px-6 lg:px-8", // 반응형 좌우 패딩
       paddingY: "py-6",                 // 상하 패딩
       contentGap: "space-y-6"           // 콘텐츠 간격

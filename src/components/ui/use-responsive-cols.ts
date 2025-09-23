@@ -8,7 +8,7 @@ export type ColsBreakpoints = {
 }
 
 export const defaultColsBreakpoints: ColsBreakpoints = {
-  desktop: { minWidth: 1200, cols: 9 },
+  desktop: { minWidth: 1100, cols: 9 },  // 컨테이너 최대폭 1300px - 패딩 감안
   tablet: { minWidth: 768, cols: 6 },
   phone: { minWidth: 480, cols: 4 },
   tiny: { minWidth: 0, cols: 2 },

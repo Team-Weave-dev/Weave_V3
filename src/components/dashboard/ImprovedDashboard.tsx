@@ -304,8 +304,7 @@ export function ImprovedDashboard({
       if (!containerRef.current) return;
       
       const containerWidth = containerRef.current.clientWidth;
-      const padding = config.gap * 2;
-      const availableWidth = containerWidth - padding;
+      const availableWidth = containerWidth;
       
       const cellWidth = Math.floor(
         (availableWidth - (config.cols - 1) * config.gap) / config.cols
@@ -626,9 +625,9 @@ export function ImprovedDashboard({
   useResponsiveCols(containerRef as React.RefObject<HTMLElement>, { onChange: setColumns, initialCols: config.cols });
 
   return (
-    <div className={cn("w-full max-w-[1300px] mx-auto px-4", className)}>
+    <div className={cn("w-full", className)}>
       {/* 툴바 */}
-      <div className="flex items-center justify-between px-6 py-4 border-b">
+      <div className="flex items-center justify-between py-4 border-b">
         <div className="flex items-center gap-4">
           <h2 className="text-2xl font-bold">대시보드</h2>
           <div className="flex items-center gap-2">
@@ -685,7 +684,7 @@ export function ImprovedDashboard({
       {/* 그리드 컨테이너 */}
       <div 
         ref={containerRef}
-        className="relative p-6"
+        className="relative"
         style={{ 
           minHeight: '600px',
           background: isEditMode 
