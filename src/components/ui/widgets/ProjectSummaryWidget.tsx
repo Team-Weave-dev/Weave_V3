@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProjectReview } from '@/types/dashboard';
-import { uiText } from '@/config/brand';
+import { uiText, getWidgetText } from '@/config/brand';
+import { typography } from '@/config/constants';
 
 interface ProjectSummaryWidgetProps {
   projects: ProjectReview[];
@@ -52,13 +53,13 @@ export function ProjectSummaryWidget({
     return (
       <Card className="h-full">
         <CardHeader>
-          <CardTitle>{displayTitle}</CardTitle>
-          <CardDescription>진행 중인 프로젝트가 없습니다</CardDescription>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+          <CardDescription>{getWidgetText.projectSummary.noProjects(lang)}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Activity className="h-12 w-12 mb-4 opacity-30" />
-            <p className="text-sm">새 프로젝트를 추가해주세요</p>
+            <p className={typography.text.small}>{getWidgetText.projectSummary.addProject(lang)}</p>
           </div>
         </CardContent>
       </Card>
@@ -69,23 +70,23 @@ export function ProjectSummaryWidget({
     <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader className="space-y-1">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">
+          <CardTitle className={typography.widget.title}>
             {displayTitle}
           </CardTitle>
-          <Badge variant="secondary" className="text-xs">
-            {sortedProjects.length}개 진행중
+          <Badge variant="secondary" className={typography.widget.badge}>
+            {sortedProjects.length}{getWidgetText.projectSummary.projectsInProgress(lang)}
           </Badge>
         </div>
-        <CardDescription className="text-sm">
-          진행 상황과 우선순위를 한눈에 확인하세요
+        <CardDescription className={typography.text.description}>
+          {getWidgetText.projectSummary.viewProgress(lang)}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto min-h-0">
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all" className="text-xs">전체</TabsTrigger>
-            <TabsTrigger value="active" className="text-xs">진행중</TabsTrigger>
-            <TabsTrigger value="urgent" className="text-xs">긴급</TabsTrigger>
+            <TabsTrigger value="all" className={typography.text.xs}>전체</TabsTrigger>
+            <TabsTrigger value="active" className={typography.text.xs}>진행중</TabsTrigger>
+            <TabsTrigger value="urgent" className={typography.text.xs}>긴급</TabsTrigger>
           </TabsList>
           
           <TabsContent value="all" className="space-y-2 mt-4">
@@ -192,7 +193,7 @@ function ProjectCard({
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">
+                  <p className={typography.text.xs}>
                     {project.status === 'critical' && '즉시 조치가 필요한 긴급 상태입니다'}
                     {project.status === 'warning' && '주의가 필요한 상태입니다'}
                     {project.status === 'normal' && '정상적으로 진행 중입니다'}
@@ -201,25 +202,25 @@ function ProjectCard({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <span className="text-xs text-muted-foreground">
+            <span className={typography.widget.caption}>
               {getDaysRemainingDisplay(project.daysRemaining)}
             </span>
           </div>
-          <h4 className="font-semibold text-sm text-foreground">{project.projectName}</h4>
+          <h4 className={typography.widget.heading}>{project.projectName}</h4>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <span className={`${typography.widget.caption} flex items-center gap-1`}>
               <Users className="h-3 w-3" />
               {project.client}
             </span>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-xs text-muted-foreground cursor-help">
+                  <span className={`${typography.widget.caption} cursor-help`}>
                     {project.pm}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">프로젝트 매니저</p>
+                  <p className={typography.text.xs}>프로젝트 매니저</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -241,13 +242,13 @@ function ProjectCard({
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">프로젝트 진행률: {project.progress}% 완료</p>
+                  <p className={typography.text.xs}>프로젝트 진행률: {project.progress}% 완료</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              <span className="text-muted-foreground">
+              <span className={typography.text.description}>
                 {new Date(project.deadline).toLocaleDateString('ko-KR', { 
                   month: 'short', 
                   day: 'numeric' 
@@ -265,8 +266,8 @@ function ProjectCard({
               </TooltipTrigger>
               <TooltipContent>
                 <div className="space-y-1">
-                  <p className="text-xs">예산 사용 현황</p>
-                  <p className="text-xs font-medium">
+                  <p className={typography.text.xs}>예산 사용 현황</p>
+                  <p className={`${typography.text.xs} font-medium`}>
                     {Math.round((project.budget.spent / project.budget.total) * 100)}% 소진
                   </p>
                 </div>
@@ -290,7 +291,7 @@ function ProjectCard({
       {/* Status Section */}
       {project.currentStatus && (
         <div className="mt-2 pt-2 border-t border-border/50">
-          <p className="text-xs text-muted-foreground line-clamp-1">
+          <p className={`${typography.widget.caption} line-clamp-1`}>
             {project.currentStatus}
           </p>
         </div>
@@ -304,16 +305,16 @@ function ProjectCard({
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-1 cursor-help">
                   <AlertCircle className="h-3 w-3 text-destructive" />
-                  <span className="text-xs font-medium text-destructive">
+                  <span className={`${typography.text.xs} font-medium text-destructive`}>
                     {project.issues.length}
                   </span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold">이슈 목록:</p>
+                  <p className={`${typography.text.xs} font-semibold`}>이슈 목록:</p>
                   {project.issues.map((issue, index) => (
-                    <p key={index} className="text-xs">• {issue}</p>
+                    <p key={index} className={typography.text.xs}>• {issue}</p>
                   ))}
                 </div>
               </TooltipContent>

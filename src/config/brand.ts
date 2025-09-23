@@ -580,6 +580,64 @@ export const uiText = {
     }
   },
 
+  // 위젯 공통 텍스트
+  widgets: {
+    stats: {
+      title: {
+        ko: "통계 대시보드",
+        en: "Statistics Dashboard"
+      }
+    },
+    chart: {
+      title: {
+        ko: "주간 트렌드 차트",
+        en: "Weekly Trend Chart"
+      },
+      subtitle: {
+        ko: "최근 7일간 데이터",
+        en: "Last 7 days data"
+      }
+    },
+    quickActions: {
+      title: {
+        ko: "빠른 작업",
+        en: "Quick Actions"
+      },
+      actions: {
+        newProject: {
+          ko: "새 프로젝트",
+          en: "New Project"
+        },
+        newInvoice: {
+          ko: "견적서 작성",
+          en: "Create Invoice"
+        },
+        addClient: {
+          ko: "고객 추가",
+          en: "Add Client"
+        }
+      }
+    },
+    projectSummary: {
+      noProjects: {
+        ko: "진행 중인 프로젝트가 없습니다",
+        en: "No projects in progress"
+      },
+      addProject: {
+        ko: "새 프로젝트를 추가해주세요",
+        en: "Please add a new project"
+      },
+      projectsInProgress: {
+        ko: "개 진행중",
+        en: " in progress"
+      },
+      viewProgress: {
+        ko: "진행 상황과 우선순위를 한눈에 확인하세요",
+        en: "View progress and priorities at a glance"
+      }
+    }
+  },
+
   // 세무 관리 페이지 텍스트
   taxManagement: {
     title: {
@@ -780,6 +838,31 @@ export const getUsageText = {
 export const getDataText = {
   calendarAndCharts: (lang: 'ko' | 'en' = defaultLanguage) => uiText.data.calendarAndCharts[lang],
   calendarAndChartsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.data.calendarAndChartsDesc[lang]
+}
+
+// 위젯 텍스트 헬퍼들
+export const getWidgetText = {
+  stats: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.stats.title[lang]
+  },
+  chart: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.chart.title[lang],
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.chart.subtitle[lang]
+  },
+  quickActions: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.quickActions.title[lang],
+    actions: {
+      newProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.quickActions.actions.newProject[lang],
+      newInvoice: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.quickActions.actions.newInvoice[lang],
+      addClient: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.quickActions.actions.addClient[lang]
+    }
+  },
+  projectSummary: {
+    noProjects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.noProjects[lang],
+    addProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.addProject[lang],
+    projectsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.projectsInProgress[lang],
+    viewProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.viewProgress[lang]
+  }
 }
 
 // 세무 관리 텍스트 헬퍼들

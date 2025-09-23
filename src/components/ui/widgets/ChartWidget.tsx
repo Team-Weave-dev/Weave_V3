@@ -3,6 +3,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { getWidgetText } from '@/config/brand';
+import { typography } from '@/config/constants';
 import type { ChartData } from '@/types/dashboard';
 
 interface ChartWidgetProps {
@@ -11,7 +13,10 @@ interface ChartWidgetProps {
   data: ChartData;
 }
 
-export function ChartWidget({ title = "주간 트렌드 차트", subtitle = "최근 7일간 데이터", data }: ChartWidgetProps) {
+export function ChartWidget({ title, subtitle, data }: ChartWidgetProps) {
+  const displayTitle = title || getWidgetText.chart.title('ko');
+  const displaySubtitle = subtitle || getWidgetText.chart.subtitle('ko');
+  
   // 간단한 막대 차트 구현
   const maxValue = Math.max(...data.datasets[0].data);
   
@@ -19,8 +24,8 @@ export function ChartWidget({ title = "주간 트렌드 차트", subtitle = "최
     <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader>
         <div>
-          <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+          {displaySubtitle && <p className={typography.text.description}>{displaySubtitle}</p>}
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto min-h-0">
@@ -49,7 +54,7 @@ export function ChartWidget({ title = "주간 트렌드 차트", subtitle = "최
                     </div>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground">{label}</span>
+                <span className={typography.widget.caption}>{label}</span>
               </div>
             );
           })}
@@ -63,7 +68,7 @@ export function ChartWidget({ title = "주간 트렌드 차트", subtitle = "최
                 "w-3 h-3 rounded",
                 index === 0 ? "bg-primary/80" : "bg-primary/40"
               )} />
-              <span className="text-sm text-muted-foreground">{dataset.label}</span>
+              <span className={typography.widget.label}>{dataset.label}</span>
             </div>
           ))}
         </div>

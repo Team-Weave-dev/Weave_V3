@@ -4,6 +4,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Users, DollarSign, ShoppingCart, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getWidgetText } from '@/config/brand';
+import { typography } from '@/config/constants';
 import type { StatsData } from '@/types/dashboard';
 
 interface StatsWidgetProps {
@@ -18,11 +20,12 @@ const iconMap: Record<string, React.ReactNode> = {
   conversion: <Activity className="h-4 w-4" />,
 };
 
-export function StatsWidget({ title = "통계 대시보드", stats }: StatsWidgetProps) {
+export function StatsWidget({ title, stats }: StatsWidgetProps) {
+  const displayTitle = title || getWidgetText.stats.title('ko');
   return (
     <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto min-h-0">
         <div className="grid grid-cols-2 gap-4">
@@ -33,11 +36,11 @@ export function StatsWidget({ title = "통계 대시보드", stats }: StatsWidge
                   {stat.icon || iconMap[stat.label.toLowerCase()] || <Activity className="h-4 w-4" />}
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
-              <p className="text-xl font-bold">{stat.value}</p>
+              <p className={typography.widget.label}>{stat.label}</p>
+              <p className={typography.widget.value}>{stat.value}</p>
               {stat.change !== undefined && (
                 <div className={cn(
-                  "flex items-center gap-1 text-sm",
+                  `flex items-center gap-1 ${typography.text.small}`,
                   stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
                 )}>
                   {stat.changeType === 'increase' ? (

@@ -75,7 +75,8 @@ export const typography = {
     card: "text-lg font-semibold",
     page: "text-3xl font-bold",
     pageSection: "text-2xl",
-    subsection: "text-lg"
+    subsection: "text-lg",
+    widget: "text-lg font-semibold"
   },
   text: {
     body: "text-lg text-muted-foreground sm:text-xl",
@@ -83,7 +84,18 @@ export const typography = {
     button: "text-sm font-medium",
     subtitle: "text-muted-foreground mt-1",
     base: "text-base",
-    small: "text-sm"
+    small: "text-sm",
+    xs: "text-xs",
+    value: "text-xl font-bold",
+    label: "text-sm font-medium"
+  },
+  widget: {
+    title: "text-lg font-semibold",
+    value: "text-xl font-bold",
+    label: "text-sm text-muted-foreground",
+    badge: "text-xs",
+    caption: "text-xs text-muted-foreground",
+    heading: "font-semibold text-sm text-foreground"
   }
 } as const
 
