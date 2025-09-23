@@ -28,6 +28,9 @@ interface ImprovedDashboardStore {
   removeWidget: (id: string) => void;
   moveWidget: (id: string, position: GridPosition) => void;
   resizeWidget: (id: string, position: GridPosition) => void;
+  resizeWidgetWithPush: (id: string, position: GridPosition) => void;
+  resizeWidgetWithShrink: (id: string, position: GridPosition) => void;
+  resizeWidgetSmart: (id: string, position: GridPosition) => void;
   swapWidgets: (id1: string, id2: string) => void;
   moveWidgetWithPush: (id: string, position: GridPosition) => void;
   
@@ -222,6 +225,305 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
           if (index !== -1) {
             state.widgets[index].position = constrained;
           }
+        }),
+        
+        resizeWidgetWithPush: (id, position) => set((state) => {
+          const widgetIndex = state.widgets.findIndex(w => w.id === id);
+          if (widgetIndex === -1) return;
+          
+          const widget = state.widgets[widgetIndex];
+          
+          // 최소/최대 크기 적용
+          let { x, y, w, h } = position;
+          if (widget.minW) w = Math.max(w, widget.minW);
+          if (widget.maxW) w = Math.min(w, widget.maxW);
+          if (widget.minH) h = Math.max(h, widget.minH);
+          if (widget.maxH) h = Math.min(h, widget.maxH);
+          
+          const newPosition = constrainToBounds({ x, y, w, h }, state.config);
+          const positions = state.widgets.map(w => ({ ...w.position }));
+          positions[widgetIndex] = newPosition;
+          
+          // 크기 증가로 인한 충돌 위젯들을 밀어냄
+          const queue: number[] = [widgetIndex];
+          const processed = new Set<number>();
+          const maxGuard = 1000;
+          let guard = 0;
+          
+          while (queue.length > 0 && guard++ < maxGuard) {
+            const currentIndex = queue.shift()!;
+            if (processed.has(currentIndex)) continue;
+            processed.add(currentIndex);
+            
+            const currentPos = positions[currentIndex];
+            
+            for (let i = 0; i < positions.length; i++) {
+              if (i === currentIndex || processed.has(i)) continue;
+              
+              if (checkCollision(currentPos, positions[i])) {
+                // static 위젯은 움직이지 않음
+                if (state.widgets[i].static) continue;
+                
+                // 충돌한 위젯을 밀어냄
+                const deltaY = currentPos.y + currentPos.h - positions[i].y;
+                const deltaX = currentPos.x + currentPos.w - positions[i].x;
+                
+                // 세로 방향 우선 밀어내기
+                if (deltaY <= positions[i].h) {
+                  positions[i] = constrainToBounds({
+                    ...positions[i],
+                    y: currentPos.y + currentPos.h
+                  }, state.config);
+                } else if (deltaX <= positions[i].w) {
+                  // 가로 방향으로 밀어내기
+                  positions[i] = constrainToBounds({
+                    ...positions[i],
+                    x: currentPos.x + currentPos.w
+                  }, state.config);
+                }
+                
+                queue.push(i);
+              }
+            }
+          }
+          
+          // 모든 위젯 위치 업데이트
+          state.widgets = state.widgets.map((w, i) => ({ 
+            ...w, 
+            position: positions[i] 
+          }));
+        }),
+        
+        resizeWidgetWithShrink: (id, position) => set((state) => {
+          const widgetIndex = state.widgets.findIndex(w => w.id === id);
+          if (widgetIndex === -1) return;
+          
+          const widget = state.widgets[widgetIndex];
+          
+          // 최소/최대 크기 적용
+          let { x, y, w, h } = position;
+          if (widget.minW) w = Math.max(w, widget.minW);
+          if (widget.maxW) w = Math.min(w, widget.maxW);
+          if (widget.minH) h = Math.max(h, widget.minH);
+          if (widget.maxH) h = Math.min(h, widget.maxH);
+          
+          const newPosition = constrainToBounds({ x, y, w, h }, state.config);
+          const positions = state.widgets.map(w => ({ ...w.position }));
+          positions[widgetIndex] = newPosition;
+          
+          // 충돌하는 위젯들의 크기를 줄임
+          for (let i = 0; i < positions.length; i++) {
+            if (i === widgetIndex) continue;
+            
+            if (checkCollision(newPosition, positions[i])) {
+              const targetWidget = state.widgets[i];
+              
+              // static 위젯은 크기 조정 안함
+              if (targetWidget.static) {
+                // static 위젯과 충돌 시 리사이즈 취소
+                return;
+              }
+              
+              // 충돌 영역 계산
+              const overlapRight = newPosition.x + newPosition.w - positions[i].x;
+              const overlapBottom = newPosition.y + newPosition.h - positions[i].y;
+              
+              // 크기를 줄일 수 있는지 확인
+              const canShrinkHorizontally = 
+                targetWidget.minW ? positions[i].w - overlapRight >= targetWidget.minW : positions[i].w > overlapRight;
+              const canShrinkVertically = 
+                targetWidget.minH ? positions[i].h - overlapBottom >= targetWidget.minH : positions[i].h > overlapBottom;
+              
+              if (canShrinkHorizontally && overlapRight < positions[i].w) {
+                // 가로 크기 줄이기
+                positions[i] = {
+                  ...positions[i],
+                  x: newPosition.x + newPosition.w,
+                  w: positions[i].w - overlapRight
+                };
+              } else if (canShrinkVertically && overlapBottom < positions[i].h) {
+                // 세로 크기 줄이기
+                positions[i] = {
+                  ...positions[i],
+                  y: newPosition.y + newPosition.h,
+                  h: positions[i].h - overlapBottom
+                };
+              } else {
+                // 크기를 줄일 수 없으면 위치 이동
+                if (overlapBottom < overlapRight) {
+                  positions[i] = constrainToBounds({
+                    ...positions[i],
+                    y: newPosition.y + newPosition.h
+                  }, state.config);
+                } else {
+                  positions[i] = constrainToBounds({
+                    ...positions[i],
+                    x: newPosition.x + newPosition.w
+                  }, state.config);
+                }
+              }
+            }
+          }
+          
+          // 모든 위젯 위치 업데이트
+          state.widgets = state.widgets.map((w, i) => ({ 
+            ...w, 
+            position: positions[i] 
+          }));
+        }),
+        
+        resizeWidgetSmart: (id, position) => set((state) => {
+          const widgetIndex = state.widgets.findIndex(w => w.id === id);
+          if (widgetIndex === -1) return;
+          
+          const widget = state.widgets[widgetIndex];
+          
+          // 최소/최대 크기 적용
+          let { x, y, w, h } = position;
+          if (widget.minW) w = Math.max(w, widget.minW);
+          if (widget.maxW) w = Math.min(w, widget.maxW);
+          if (widget.minH) h = Math.max(h, widget.minH);
+          if (widget.maxH) h = Math.min(h, widget.maxH);
+          
+          const newPosition = constrainToBounds({ x, y, w, h }, state.config);
+          const positions = state.widgets.map(w => ({ ...w.position }));
+          const minSizes = state.widgets.map(w => ({ 
+            minW: w.minW || 1, 
+            minH: w.minH || 1 
+          }));
+          
+          positions[widgetIndex] = newPosition;
+          
+          // 충돌 처리 큐 - 연쇄 충돌 처리를 위해
+          const queue: { index: number, attempts: number }[] = [{ index: widgetIndex, attempts: 0 }];
+          const processed = new Set<string>();
+          const maxGuard = 1000;
+          let guard = 0;
+          
+          while (queue.length > 0 && guard++ < maxGuard) {
+            const { index: currentIndex, attempts } = queue.shift()!;
+            const key = `${currentIndex}-${attempts}`;
+            
+            if (processed.has(key)) continue;
+            processed.add(key);
+            
+            const currentPos = positions[currentIndex];
+            
+            // 이 위젯과 충돌하는 모든 위젯 찾기
+            const collisions: number[] = [];
+            for (let i = 0; i < positions.length; i++) {
+              if (i === currentIndex) continue;
+              if (checkCollision(currentPos, positions[i])) {
+                collisions.push(i);
+              }
+            }
+            
+            // 충돌하는 위젯들 처리
+            for (const targetIndex of collisions) {
+              const targetWidget = state.widgets[targetIndex];
+              const targetPos = positions[targetIndex];
+              
+              // static 위젯은 움직이지 않음
+              if (targetWidget.static) continue;
+              
+              // 충돌 영역 계산
+              const overlapX = Math.min(currentPos.x + currentPos.w, targetPos.x + targetPos.w) - 
+                              Math.max(currentPos.x, targetPos.x);
+              const overlapY = Math.min(currentPos.y + currentPos.h, targetPos.y + targetPos.h) - 
+                              Math.max(currentPos.y, targetPos.y);
+              
+              // 스마트 전략 결정: 겹침 정도와 최소 크기를 고려
+              let resolved = false;
+              
+              // 1. 먼저 크기 축소 시도 (겹침이 작을 때)
+              if (overlapX < targetPos.w / 2 || overlapY < targetPos.h / 2) {
+                // 가로 축소 가능한지 확인
+                if (overlapX < targetPos.w && targetPos.w - overlapX >= minSizes[targetIndex].minW) {
+                  // 오른쪽에서 겹치면 왼쪽으로 축소
+                  if (currentPos.x > targetPos.x) {
+                    positions[targetIndex] = {
+                      ...targetPos,
+                      w: currentPos.x - targetPos.x
+                    };
+                    resolved = true;
+                  }
+                }
+                
+                // 세로 축소 가능한지 확인
+                if (!resolved && overlapY < targetPos.h && targetPos.h - overlapY >= minSizes[targetIndex].minH) {
+                  // 아래에서 겹치면 위로 축소
+                  if (currentPos.y > targetPos.y) {
+                    positions[targetIndex] = {
+                      ...targetPos,
+                      h: currentPos.y - targetPos.y
+                    };
+                    resolved = true;
+                  }
+                }
+              }
+              
+              // 2. 축소가 불가능하면 밀어내기
+              if (!resolved) {
+                // 세로/가로 중 더 적게 밀어낼 수 있는 방향 선택
+                const pushDown = currentPos.y + currentPos.h;
+                const pushRight = currentPos.x + currentPos.w;
+                
+                // 그리드 경계 체크
+                const canPushDown = pushDown + targetPos.h <= (state.config.maxRows || 20);
+                const canPushRight = pushRight + targetPos.w <= state.config.cols;
+                
+                if (canPushDown && (!canPushRight || overlapY < overlapX)) {
+                  // 아래로 밀기
+                  positions[targetIndex] = constrainToBounds({
+                    ...targetPos,
+                    y: pushDown
+                  }, state.config);
+                  
+                  // 밀린 위젯도 연쇄 충돌 체크 대상에 추가
+                  queue.push({ index: targetIndex, attempts: attempts + 1 });
+                } else if (canPushRight) {
+                  // 오른쪽으로 밀기
+                  positions[targetIndex] = constrainToBounds({
+                    ...targetPos,
+                    x: pushRight
+                  }, state.config);
+                  
+                  // 밀린 위젯도 연쇄 충돌 체크 대상에 추가
+                  queue.push({ index: targetIndex, attempts: attempts + 1 });
+                } else {
+                  // 둘 다 불가능하면 최소 크기로 축소 후 밀기
+                  if (targetPos.h > minSizes[targetIndex].minH) {
+                    positions[targetIndex] = {
+                      ...targetPos,
+                      h: minSizes[targetIndex].minH,
+                      y: pushDown
+                    };
+                  } else if (targetPos.w > minSizes[targetIndex].minW) {
+                    positions[targetIndex] = {
+                      ...targetPos,
+                      w: minSizes[targetIndex].minW,
+                      x: pushRight
+                    };
+                  }
+                  // 그래도 충돌하면 강제로 아래로 밀기 (그리드 확장)
+                  else {
+                    positions[targetIndex] = {
+                      ...targetPos,
+                      y: pushDown
+                    };
+                  }
+                  
+                  queue.push({ index: targetIndex, attempts: attempts + 1 });
+                }
+              }
+            }
+          }
+          
+          // 모든 위젯 위치 업데이트
+          state.widgets = state.widgets.map((w, i) => ({ 
+            ...w, 
+            position: positions[i] 
+          }));
         }),
         
         moveWidgetWithPush: (id, position) => set((state) => {

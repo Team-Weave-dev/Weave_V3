@@ -13,8 +13,7 @@ import {
   Grip,
   Maximize2,
   Grid3x3,
-  Layers,
-  Move
+  Layers
 } from 'lucide-react';
 import { 
   useImprovedDashboardStore,
@@ -136,6 +135,9 @@ export function ImprovedDashboard({
     moveWidget,
     moveWidgetWithPush,
     resizeWidget,
+    resizeWidgetWithPush,
+    resizeWidgetWithShrink,
+    resizeWidgetSmart,
     swapWidgets,
     compactWidgets,
     findSpaceForWidget,
@@ -492,12 +494,8 @@ export function ImprovedDashboard({
       const finalPosition = useImprovedDashboardStore.getState().editState.resizingWidget?.currentPosition;
       
       if (finalPosition) {
-        if (!checkCollision(widget.id, finalPosition)) {
-          resizeWidget(widget.id, finalPosition);
-        } else {
-          // 충돌하면 원래 크기로
-          resizeWidget(widget.id, startPosition);
-        }
+        // 스마트 리사이즈 사용 - 자동으로 최적의 전략 선택
+        resizeWidgetSmart(widget.id, finalPosition);
         
         callbacks?.onResizeStop?.(widget, finalPosition, e);
       }
@@ -518,7 +516,7 @@ export function ImprovedDashboard({
     document.addEventListener('mouseup', handleMouseUp);
     
     callbacks?.onResizeStart?.(widget, e.nativeEvent);
-  }, [isEditMode, widgets, cellSize, config, editState, startResizing, updateResizing, stopResizing, resizeWidget, checkCollision, callbacks, isCompact, compactWidgets]);
+  }, [isEditMode, widgets, cellSize, config, editState, startResizing, updateResizing, stopResizing, resizeWidgetSmart, callbacks, isCompact, compactWidgets]);
   
   // Long Press 감지
   const handleLongPressStart = useCallback((e: React.MouseEvent | React.TouchEvent, widgetId: string) => {
