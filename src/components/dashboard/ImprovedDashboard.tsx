@@ -627,9 +627,8 @@ export function ImprovedDashboard({
   return (
     <div className={cn("w-full", className)}>
       {/* 툴바 */}
-      <div className="flex items-center justify-between py-4 border-b">
+      <div className="flex items-center justify-between py-4">
         <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold">대시보드</h2>
           <div className="flex items-center gap-2">
             <Button
               size="sm"
