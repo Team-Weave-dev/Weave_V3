@@ -268,7 +268,14 @@ export function IOSStyleDashboard({
           type: 'stats',
           title: '통계 대시보드',
           position: {
-            ...createConsistentPosition(1, 1, 2, 2),
+            gridColumn: '1 / 3',
+            gridRow: '1 / 3',
+            gridColumnStart: 1,
+            gridColumnEnd: 3,
+            gridRowStart: 1,
+            gridRowEnd: 3,
+            width: 2,
+            height: 2,
           },
           size: { width: 2, height: 2 },
           data: mockStatsData,
@@ -278,7 +285,14 @@ export function IOSStyleDashboard({
           type: 'chart',
           title: '주간 트렌드 차트',
           position: {
-            ...createConsistentPosition(3, 1, 3, 2),
+            gridColumn: '3 / 6',
+            gridRow: '1 / 3',
+            gridColumnStart: 3,
+            gridColumnEnd: 6,
+            gridRowStart: 1,
+            gridRowEnd: 3,
+            width: 3,
+            height: 2,
           },
           size: { width: 3, height: 2 },
           data: mockChartData,
@@ -288,7 +302,14 @@ export function IOSStyleDashboard({
           type: 'projectSummary',
           title: '프로젝트 요약',
           position: {
-            ...createConsistentPosition(1, 3, 3, 2),
+            gridColumn: '1 / 4',
+            gridRow: '3 / 5',
+            gridColumnStart: 1,
+            gridColumnEnd: 4,
+            gridRowStart: 3,
+            gridRowEnd: 5,
+            width: 3,
+            height: 2,
           },
           size: { width: 3, height: 2 },
           data: mockProjectData,
@@ -298,7 +319,14 @@ export function IOSStyleDashboard({
           type: 'quickActions',
           title: '빠른 작업',
           position: {
-            ...createConsistentPosition(4, 3, 2, 1),
+            gridColumn: '4 / 6',
+            gridRow: '3 / 4',
+            gridColumnStart: 4,
+            gridColumnEnd: 6,
+            gridRowStart: 3,
+            gridRowEnd: 4,
+            width: 2,
+            height: 1,
           },
           size: { width: 2, height: 1 },
         },
@@ -309,7 +337,7 @@ export function IOSStyleDashboard({
     
     isInitializedRef.current = true;
     setIsMounted(true);
-  }, [createConsistentPosition, setWidgets, widgets.length, initialWidgets]);
+  }, []);
 
   // ESC 키로 편집 모드 종료
   useEffect(() => {
@@ -347,49 +375,59 @@ export function IOSStyleDashboard({
   }, []);
   
   // 위젯 충돌 검사 - 개선된 버전
-  const checkCollision = useCallback((
-    widget: IOSStyleWidget, 
-    newCol: number, 
-    newRow: number, 
-    newWidth?: number, 
-    newHeight?: number
-  ): boolean => {
-    const width = newWidth !== undefined ? newWidth : (widget.size?.width || widget.position.width || 2);
-    const height = newHeight !== undefined ? newHeight : (widget.size?.height || widget.position.height || 2);
+  const checkCollision = useCallback((widget: IOSStyleWidget, newCol: number, newRow: number, newWidth?: number, newHeight?: number): boolean => {
+    const width = newWidth !== undefined ? newWidth : (widget.size?.width || 2);
+    const height = newHeight !== undefined ? newHeight : (widget.size?.height || 2);
     
-    // 그리드 경계 체크 - 더 정확한 계산
-    if (newCol < 1 || newCol + width > columns + 1) return true;
+    // 그리드 경계 체크 (정확한 계산)
+    if (newCol < 1 || newCol > columns || newCol + width - 1 > columns) return true;
     if (newRow < 1 || newRow > 20) return true; // 최대 20줄
     
     const newLeft = newCol;
-    const newRight = newCol + width;
+    const newRight = newCol + width - 1;
     const newTop = newRow;
-    const newBottom = newRow + height;
+    const newBottom = newRow + height - 1;
     
     return widgets.some(w => {
       // 자기 자신은 제외
       if (w.id === widget.id) return false;
       
-      const bounds = getWidgetBounds(w);
+      const wLeft = w.position.gridColumnStart;
+      const wRight = wLeft + (w.size?.width || 2) - 1;
+      const wTop = w.position.gridRowStart;
+      const wBottom = wTop + (w.size?.height || 2) - 1;
       
-      // 겹침 체크 - 두 사각형이 겹치지 않는 조건 확인
-      const noOverlap = newRight <= bounds.left || newLeft >= bounds.right || 
-                        newBottom <= bounds.top || newTop >= bounds.bottom;
+      // 겹침 체크 (두 사각형이 겹치지 않는 조건의 반대)
+      const overlaps = !(newRight < wLeft || newLeft > wRight || newBottom < wTop || newTop > wBottom);
       
-      return !noOverlap; // 겹치면 true 반환
+      return overlaps;
     });
-  }, [widgets, columns, getWidgetBounds]);
+  }, [widgets, columns]);
 
   // 위젯과 위젯 스왑 - 개선된 버전
   const swapWidgets = useCallback((widgetA: IOSStyleWidget, widgetB: IOSStyleWidget) => {
     // 스왑 전에 애니메이션을 위한 약간의 지연
     requestAnimationFrame(() => {
-      const boundsA = getWidgetBounds(widgetA);
-      const boundsB = getWidgetBounds(widgetB);
+      // A 위젯의 원래 위치 저장
+      const aPos = {
+        gridColumnStart: widgetA.position.gridColumnStart,
+        gridRowStart: widgetA.position.gridRowStart,
+      };
+      
+      // B 위젯의 원래 위치 저장
+      const bPos = {
+        gridColumnStart: widgetB.position.gridColumnStart,
+        gridRowStart: widgetB.position.gridRowStart,
+      };
+
+      const aWidth = widgetA.size?.width || 2;
+      const aHeight = widgetA.size?.height || 2;
+      const bWidth = widgetB.size?.width || 2;
+      const bHeight = widgetB.size?.height || 2;
       
       // 각 위젯이 서로의 자리에 들어갈 수 있는지 확인
-      const aCanFitInB = (boundsB.left + boundsA.width <= columns + 1);
-      const bCanFitInA = (boundsA.left + boundsB.width <= columns + 1);
+      const aCanFitInB = (bPos.gridColumnStart + aWidth - 1 <= columns);
+      const bCanFitInA = (aPos.gridColumnStart + bWidth - 1 <= columns);
       
       // 두 위젯 모두 교환 가능한 경우에만 스왑
       if (!aCanFitInB || !bCanFitInA) {
@@ -400,31 +438,33 @@ export function IOSStyleDashboard({
       updateWidget(widgetA.id, {
         position: {
           ...widgetA.position,
-          ...createConsistentPosition(
-            boundsB.left,
-            boundsB.top,
-            boundsA.width,
-            boundsA.height
-          ),
+          gridColumnStart: bPos.gridColumnStart,
+          gridRowStart: bPos.gridRowStart,
+          gridColumnEnd: bPos.gridColumnStart + aWidth,
+          gridRowEnd: bPos.gridRowStart + aHeight,
+          gridColumn: `${bPos.gridColumnStart} / ${bPos.gridColumnStart + aWidth}`,
+          gridRow: `${bPos.gridRowStart} / ${bPos.gridRowStart + aHeight}`,
+          width: aWidth,
+          height: aHeight,
         },
-        size: { width: boundsA.width, height: boundsA.height },
       });
 
       // B를 A 자리로
       updateWidget(widgetB.id, {
         position: {
           ...widgetB.position,
-          ...createConsistentPosition(
-            boundsA.left,
-            boundsA.top,
-            boundsB.width,
-            boundsB.height
-          ),
+          gridColumnStart: aPos.gridColumnStart,
+          gridRowStart: aPos.gridRowStart,
+          gridColumnEnd: aPos.gridColumnStart + bWidth,
+          gridRowEnd: aPos.gridRowStart + bHeight,
+          gridColumn: `${aPos.gridColumnStart} / ${aPos.gridColumnStart + bWidth}`,
+          gridRow: `${aPos.gridRowStart} / ${aPos.gridRowStart + bHeight}`,
+          width: bWidth,
+          height: bHeight,
         },
-        size: { width: boundsB.width, height: boundsB.height },
       });
     });
-  }, [updateWidget, columns, getWidgetBounds, createConsistentPosition]);
+  }, [updateWidget, columns]);
 
   // 위젯 드래그 핸들러 (위젯 전체 또는 드래그 버튼에서 사용)
   const handleDragStart = useCallback((e: React.MouseEvent, widget: IOSStyleWidget, isFromHandle: boolean = false) => {
@@ -436,11 +476,9 @@ export function IOSStyleDashboard({
     
     const startX = e.clientX;
     const startY = e.clientY;
-    const bounds = getWidgetBounds(widget);
-    const startCol = bounds.left;
-    const startRow = bounds.top;
+    const startCol = widget.position.gridColumnStart;
+    const startRow = widget.position.gridRowStart;
     const originalPosition = { ...widget.position };
-    const originalSize = { width: bounds.width, height: bounds.height };
     
     setDraggingWidget(widget.id);
     setDragStart({ x: startX, y: startY, col: startCol, row: startRow });
@@ -454,6 +492,7 @@ export function IOSStyleDashboard({
       const deltaY = e.clientY - startY;
       
       // 그리드 셀 크기 기준으로 이동 거리 계산
+      // gap은 CSS Grid에서 자동 처리되므로 cellSize만 사용
       const colDelta = deltaX / cellSize;
       const rowDelta = deltaY / cellSize;
       
@@ -461,33 +500,41 @@ export function IOSStyleDashboard({
       const snappedCol = Math.round(startCol + colDelta);
       const snappedRow = Math.round(startRow + rowDelta);
       
-      // 경계 체크 - 위젯이 그리드를 벗어나지 않도록 제한
-      const maxCol = columns - bounds.width + 1;
+      const widgetWidth = widget.size?.width || 2;
+      const widgetHeight = widget.size?.height || 2;
+      
+      // 경계 체크 - 정확하게 계산
+      // 위젯이 그리드를 벗어나지 않도록 제한
+      const maxCol = columns - widgetWidth + 1; // 위젯이 시작할 수 있는 최대 열
       const desiredCol = Math.max(1, Math.min(maxCol, snappedCol));
       const desiredRow = Math.max(1, snappedRow);
       
       setHoveredPosition({ col: desiredCol, row: desiredRow });
       
-      // 다른 위젯과의 겹침 확인
+      // 다른 위젯과의 겹침 확인 - 개선된 버전
+      // 다른 위젯과의 겹침 확인 - 개선된 버전
       const targetWidget = widgets.find(w => {
         if (w.id === widget.id) return false;
         
-        const wBounds = getWidgetBounds(w);
+        const wLeft = w.position.gridColumnStart;
+        const wRight = w.position.gridColumnStart + (w.size?.width || 2);
+        const wTop = w.position.gridRowStart;
+        const wBottom = w.position.gridRowStart + (w.size?.height || 2);
         
         const dragLeft = desiredCol;
-        const dragRight = desiredCol + bounds.width;
+        const dragRight = desiredCol + widgetWidth;
         const dragTop = desiredRow;
-        const dragBottom = desiredRow + bounds.height;
+        const dragBottom = desiredRow + widgetHeight;
         
-        // 두 영역이 겹치는지 확인
-        const horizontalOverlap = Math.max(0, Math.min(dragRight, wBounds.right) - Math.max(dragLeft, wBounds.left));
-        const verticalOverlap = Math.max(0, Math.min(dragBottom, wBounds.bottom) - Math.max(dragTop, wBounds.top));
+        // 두 영역이 겹치는지 확인 - 더 정확한 계산
+        const horizontalOverlap = Math.max(0, Math.min(dragRight, wRight) - Math.max(dragLeft, wLeft));
+        const verticalOverlap = Math.max(0, Math.min(dragBottom, wBottom) - Math.max(dragTop, wTop));
         
         if (horizontalOverlap === 0 || verticalOverlap === 0) return false;
         
         const overlapArea = horizontalOverlap * verticalOverlap;
-        const draggedArea = bounds.width * bounds.height;
-        const targetArea = wBounds.width * wBounds.height;
+        const draggedArea = widgetWidth * widgetHeight;
+        const targetArea = (w.size?.width || 2) * (w.size?.height || 2);
         
         // 드래그 중인 위젯의 30% 이상이 타겟과 겹치거나
         // 타겟 위젯의 30% 이상이 드래그 중인 위젯과 겹칠 때
@@ -509,9 +556,15 @@ export function IOSStyleDashboard({
           updateWidget(widget.id, {
             position: {
               ...widget.position,
-              ...createConsistentPosition(desiredCol, desiredRow, bounds.width, bounds.height),
+              gridColumnStart: desiredCol,
+              gridRowStart: desiredRow,
+              gridColumnEnd: desiredCol + widgetWidth,
+              gridRowEnd: desiredRow + widgetHeight,
+              gridColumn: `${desiredCol} / ${desiredCol + widgetWidth}`,
+              gridRow: `${desiredRow} / ${desiredRow + widgetHeight}`,
+              width: widgetWidth,
+              height: widgetHeight,
             },
-            size: { width: bounds.width, height: bounds.height },
           });
           lastValidPosition = { col: desiredCol, row: desiredRow };
         }
@@ -530,33 +583,31 @@ export function IOSStyleDashboard({
         const finalCol = lastValidPosition.col;
         const finalRow = lastValidPosition.row;
         
-        if (checkCollision(widget, finalCol, finalRow, bounds.width, bounds.height)) {
+        if (checkCollision(widget, finalCol, finalRow)) {
           // 충돌 시 원위치로 복귀
           updateWidget(widget.id, {
             position: originalPosition,
-            size: originalSize,
           });
         } else {
           // 최종 위치 확정 시 그리드 범위 재확인
-          const maxColForWidget = columns - bounds.width + 1;
+          const finalWidth = widget.size?.width || 2;
+          const finalHeight = widget.size?.height || 2;
+          const maxColForWidget = columns - finalWidth + 1;
           
           if (finalCol > maxColForWidget) {
             // 그리드를 벗어난 경우 조정
             updateWidget(widget.id, {
               position: {
                 ...widget.position,
-                ...createConsistentPosition(maxColForWidget, finalRow, bounds.width, bounds.height),
+                gridColumnStart: maxColForWidget,
+                gridRowStart: finalRow,
+                gridColumnEnd: maxColForWidget + finalWidth,
+                gridRowEnd: finalRow + finalHeight,
+                gridColumn: `${maxColForWidget} / ${maxColForWidget + finalWidth}`,
+                gridRow: `${finalRow} / ${finalRow + finalHeight}`,
+                width: finalWidth,
+                height: finalHeight,
               },
-              size: { width: bounds.width, height: bounds.height },
-            });
-          } else {
-            // 정상 위치 업데이트
-            updateWidget(widget.id, {
-              position: {
-                ...widget.position,
-                ...createConsistentPosition(finalCol, finalRow, bounds.width, bounds.height),
-              },
-              size: { width: bounds.width, height: bounds.height },
             });
           }
         }
@@ -575,7 +626,7 @@ export function IOSStyleDashboard({
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [cellSize, columns, updateWidget, widgets, onLayoutChange, checkCollision, isEditMode, swapWidgets, getWidgetBounds, createConsistentPosition]);
+  }, [cellSize, gridGap, columns, updateWidget, widgets, onLayoutChange, checkCollision, isEditMode, swapWidgets]);
   
   // 위젯 크기 조정 핸들러
   const handleResizeStart = useCallback((e: React.MouseEvent, widget: IOSStyleWidget) => {
@@ -584,9 +635,8 @@ export function IOSStyleDashboard({
     
     const startX = e.clientX;
     const startY = e.clientY;
-    const bounds = getWidgetBounds(widget);
-    const startWidth = bounds.width;
-    const startHeight = bounds.height;
+    const startWidth = widget.size?.width || 2;
+    const startHeight = widget.size?.height || 2;
     
     setResizingWidget(widget.id);
     setResizeStart({
@@ -600,7 +650,7 @@ export function IOSStyleDashboard({
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
       
-      // 드래그 거리를 그리드 셀 단위로 변환
+      // 드래그 거리를 그리드 셀 단위로 변환 (CSS Grid가 gap을 자동 처리)
       const colDelta = Math.round(deltaX / cellSize);
       const rowDelta = Math.round(deltaY / cellSize);
       
@@ -609,50 +659,48 @@ export function IOSStyleDashboard({
       const desiredHeight = startHeight + rowDelta;
       
       // 그리드 경계 내로 자동 제한
-      const maxWidth = columns - bounds.left + 1;
-      const maxHeight = 10; // 최대 10줄로 제한
+      const maxWidth = columns - widget.position.gridColumnStart + 1;
+      const maxHeight = 10; // 최대 10줄로 제한 (적당한 스크롤 범위)
       
       // 최소 1, 최대는 그리드 경계까지로 제한
       const newWidth = Math.max(1, Math.min(maxWidth, desiredWidth));
       const newHeight = Math.max(1, Math.min(maxHeight, desiredHeight));
       
-      // 그리드 경계 재확인
-      if (bounds.left + newWidth > columns + 1) return;
+      // 크기 변경 시 충돌 검사
+      const newCol = widget.position.gridColumnStart;
+      const newRow = widget.position.gridRowStart;
+      
+      // 그리드 경계 재확인 (이중 체크)
+      if (newCol + newWidth - 1 > columns) return;
       
       // 크기가 변경되면서 다른 위젯과 겹치는지 확인
-      const hasCollision = checkCollision(widget, bounds.left, bounds.top, newWidth, newHeight);
+      const hasCollision = checkCollision(widget, newCol, newRow, newWidth, newHeight);
       
       // 현재 크기 정보 업데이트 (시각적 피드백용)
       setCurrentResizeSize({ width: newWidth, height: newHeight });
       
       if (!hasCollision && 
-          (bounds.width !== newWidth || bounds.height !== newHeight)) {
+          (widget.size?.width !== newWidth || widget.size?.height !== newHeight)) {
         updateWidget(widget.id, {
           size: { width: newWidth, height: newHeight },
           position: {
             ...widget.position,
-            ...createConsistentPosition(bounds.left, bounds.top, newWidth, newHeight),
+            width: newWidth,
+            height: newHeight,
+            gridColumnStart: widget.position.gridColumnStart,
+            gridRowStart: widget.position.gridRowStart,
+            gridColumnEnd: widget.position.gridColumnStart + newWidth,
+            gridRowEnd: widget.position.gridRowStart + newHeight,
+            gridColumn: `${widget.position.gridColumnStart} / ${widget.position.gridColumnStart + newWidth}`,
+            gridRow: `${widget.position.gridRowStart} / ${widget.position.gridRowStart + newHeight}`,
           },
         });
       }
     };
     
     const handleMouseUp = () => {
-      // 최종 크기 확정
-      const updatedWidget = widgets.find(w => w.id === widget.id);
-      if (updatedWidget) {
-        const finalBounds = getWidgetBounds(updatedWidget);
-        updateWidget(widget.id, {
-          size: { width: finalBounds.width, height: finalBounds.height },
-          position: {
-            ...updatedWidget.position,
-            ...createConsistentPosition(finalBounds.left, finalBounds.top, finalBounds.width, finalBounds.height),
-          },
-        });
-      }
-      
       setResizingWidget(null);
-      setCurrentResizeSize(null);
+      setCurrentResizeSize(null); // 크기 정보 초기화
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       
@@ -663,7 +711,7 @@ export function IOSStyleDashboard({
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [cellSize, columns, updateWidget, widgets, onLayoutChange, checkCollision, getWidgetBounds, createConsistentPosition]);
+  }, [cellSize, gridGap, columns, updateWidget, widgets, onLayoutChange, checkCollision]);
   
   // 위젯 추가 핸들러
   const handleAddWidget = useCallback(() => {
@@ -678,14 +726,21 @@ export function IOSStyleDashboard({
       type: 'stats',
       title: '새 위젯',
       position: {
-        ...createConsistentPosition(emptySpace.col, emptySpace.row, 2, 2),
+        gridColumn: `${emptySpace.col} / ${emptySpace.col + 2}`,
+        gridRow: `${emptySpace.row} / ${emptySpace.row + 2}`,
+        gridColumnStart: emptySpace.col,
+        gridColumnEnd: emptySpace.col + 2,
+        gridRowStart: emptySpace.row,
+        gridRowEnd: emptySpace.row + 2,
+        width: 2,
+        height: 2,
       },
       size: { width: 2, height: 2 },
       data: mockStatsData,
     };
     
     addWidget(newWidget);
-  }, [addWidget, findEmptySpace, createConsistentPosition]);
+  }, [addWidget, findEmptySpace]);
   
   // 위젯 렌더링
   const renderWidget = (widget: IOSStyleWidget) => {
@@ -782,9 +837,9 @@ export function IOSStyleDashboard({
               )}
               style={{
                 gridColumnStart: widget.position.gridColumnStart,
-                gridColumnEnd: widget.position.gridColumnEnd || (widget.position.gridColumnStart + (widget.position.width || widget.size?.width || 2)),
+                gridColumnEnd: widget.position.gridColumnEnd || (widget.position.gridColumnStart + (widget.size?.width || 2)),
                 gridRowStart: widget.position.gridRowStart,
-                gridRowEnd: widget.position.gridRowEnd || (widget.position.gridRowStart + (widget.position.height || widget.size?.height || 2)),
+                gridRowEnd: widget.position.gridRowEnd || (widget.position.gridRowStart + (widget.size?.height || 2)),
               }}
             >
                       <div className="relative">

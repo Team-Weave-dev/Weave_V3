@@ -66,12 +66,12 @@ export function ProjectSummaryWidget({
     }
   };
 
-  const getStatusVariant = (status: ProjectReview['status']): 'destructive' | 'default' | 'secondary' | 'outline' => {
+  const getStatusVariant = (status: ProjectReview['status']): 'error' | 'warning' | 'secondary' | 'success' => {
     switch (status) {
-      case 'critical': return 'destructive';
-      case 'warning': return 'default';
+      case 'critical': return 'error';
+      case 'warning': return 'warning';
       case 'normal': return 'secondary';
-      case 'completed': return 'outline';
+      case 'completed': return 'success';
       default: return 'secondary';
     }
   };
@@ -197,12 +197,12 @@ function ProjectCard({
     }
   };
 
-  const getStatusVariant = (status: ProjectReview['status']): 'destructive' | 'default' | 'secondary' | 'outline' => {
+  const getStatusVariant = (status: ProjectReview['status']): 'error' | 'warning' | 'secondary' | 'success' => {
     switch (status) {
-      case 'critical': return 'destructive';
-      case 'warning': return 'default';
+      case 'critical': return 'error';
+      case 'warning': return 'warning';
       case 'normal': return 'secondary';
-      case 'completed': return 'outline';
+      case 'completed': return 'success';
       default: return 'secondary';
     }
   };
