@@ -14,7 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <HeaderNavigation />
       
       {/* Main Content with Top Padding for Fixed Header */}
-      <main className="pt-14 sm:pt-16 min-h-screen">
+      <main className="pt-16 lg:pt-20 min-h-screen">
         <div className="w-full h-full">
           {children}
         </div>

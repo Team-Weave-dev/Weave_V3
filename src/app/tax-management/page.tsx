@@ -1,19 +1,13 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { HeaderNavigation } from '@/components/ui/header-navigation'
 import { getTaxManagementText } from '@/config/brand'
-import { typography } from '@/config/constants'
+import { layout, typography } from '@/config/constants'
 import { FileText, Calculator, Building2, Clock } from 'lucide-react'
 
 export default function TaxManagementPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <HeaderNavigation />
-      
-      {/* Main Content with padding for fixed header */}
-      <main className="pt-16 lg:pt-20">
-        <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <div className={`max-w-[1300px] mx-auto ${layout.spacing.page.paddingX} ${layout.spacing.page.paddingY} ${layout.spacing.page.contentGap}`}>
       {/* 헤더 */}
       <div className="flex justify-between items-center">
         <div>
@@ -156,8 +150,6 @@ export default function TaxManagementPage() {
           </CardContent>
         </Card>
       </div>
-        </div>
-      </main>
     </div>
   )
 }

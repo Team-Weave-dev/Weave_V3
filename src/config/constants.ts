@@ -8,7 +8,8 @@ export const layout = {
   container: {
     maxWidth: "980px",        // max-w-[980px]
     textMaxWidth: "750px",    // max-w-[750px]
-    navigationWidth: "256px"   // w-64
+    navigationWidth: "256px",  // w-64
+    pageMaxWidth: "1300px"    // max-w-[1300px] - 페이지 컨테이너 최대 폭
   },
   spacing: {
     section: {
@@ -20,6 +21,12 @@ export const layout = {
       small: "gap-2",
       medium: "gap-4",
       large: "gap-8"
+    },
+    page: {
+      paddingTop: "pt-16 lg:pt-20",     // 헤더 높이를 고려한 상단 패딩
+      paddingX: "px-4 sm:px-6 lg:px-8", // 반응형 좌우 패딩
+      paddingY: "py-6",                 // 상하 패딩
+      contentGap: "space-y-6"           // 콘텐츠 간격
     }
   },
   heights: {

@@ -56,6 +56,33 @@ export const brand = {
 
 // UI 텍스트 및 라벨
 export const uiText = {
+  dashboard: {
+    title: { ko: "대시보드", en: "Dashboard" },
+    subtitle: { ko: "실시간으로 비즈니스 현황을 확인하세요", en: "Check your business status in real-time" }
+  },
+  projects: {
+    title: { ko: "프로젝트 관리", en: "Project Management" },
+    subtitle: { ko: "모든 프로젝트를 한눈에 관리하세요", en: "Manage all projects at a glance" },
+    newProject: { ko: "새 프로젝트", en: "New Project" },
+    searchPlaceholder: { ko: "프로젝트 검색...", en: "Search projects..." },
+    status: {
+      active: { ko: "진행중", en: "Active" },
+      completed: { ko: "완료", en: "Completed" },
+      onHold: { ko: "보류", en: "On Hold" },
+      cancelled: { ko: "취소", en: "Cancelled" }
+    },
+    actions: {
+      edit: { ko: "수정", en: "Edit" },
+      delete: { ko: "삭제", en: "Delete" },
+      viewDetails: { ko: "상세 보기", en: "View Details" }
+    },
+    empty: {
+      title: { ko: "프로젝트가 없습니다", en: "No projects" },
+      searchEmpty: { ko: "검색 결과가 없습니다.", en: "No search results." },
+      createFirst: { ko: "첫 번째 프로젝트를 만들어보세요.", en: "Create your first project." },
+      createProject: { ko: "프로젝트 생성", en: "Create Project" }
+    }
+  },
   buttons: {
     viewComponents: {
       ko: "컴포넌트 보기",
@@ -715,6 +742,35 @@ export const routes = {
 export const defaultLanguage = 'ko' as const
 
 // 헬퍼 함수들
+export const getDashboardText = {
+  title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.dashboard.title[lang],
+  subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.dashboard.subtitle[lang]
+}
+
+export const getProjectsText = {
+  title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.title[lang],
+  subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.subtitle[lang],
+  newProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.newProject[lang],
+  searchPlaceholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.searchPlaceholder[lang],
+  status: {
+    active: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.status.active[lang],
+    completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.status.completed[lang],
+    onHold: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.status.onHold[lang],
+    cancelled: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.status.cancelled[lang]
+  },
+  actions: {
+    edit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.actions.edit[lang],
+    delete: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.actions.delete[lang],
+    viewDetails: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.actions.viewDetails[lang]
+  },
+  empty: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.empty.title[lang],
+    searchEmpty: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.empty.searchEmpty[lang],
+    createFirst: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.empty.createFirst[lang],
+    createProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.empty.createProject[lang]
+  }
+}
+
 export const getBrandName = (lang: 'ko' | 'en' = defaultLanguage) => brand.name[lang]
 export const getCompanyName = (lang: 'ko' | 'en' = defaultLanguage) => brand.company[lang]
 export const getDescription = (lang: 'ko' | 'en' = defaultLanguage) => brand.description[lang]

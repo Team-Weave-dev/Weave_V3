@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ImprovedDashboard } from '@/components/dashboard/ImprovedDashboard'
+import { layout, typography } from '@/config/constants'
+import { getDashboardText } from '@/config/brand'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -50,7 +52,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className={`max-w-[1300px] mx-auto ${layout.spacing.page.paddingX} ${layout.spacing.page.paddingY} ${layout.spacing.page.contentGap}`}>
+      {/* 헤더 */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className={typography.title.page}>{getDashboardText.title('ko')}</h1>
+          <p className={typography.text.subtitle}>
+            {getDashboardText.subtitle('ko')}
+          </p>
+        </div>
+      </div>
+      
+      {/* 대시보드 위젯 */}
       <ImprovedDashboard />
     </div>
   )

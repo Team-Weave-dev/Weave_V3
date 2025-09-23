@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { layout, typography } from '@/config/constants'
+import { getProjectsText } from '@/config/brand'
 import { 
   Plus, 
   Search, 
@@ -138,10 +140,10 @@ export default function ProjectsPage() {
     }
     
     const labels: Record<string, string> = {
-      'active': '진행중',
-      'completed': '완료',
-      'on-hold': '보류',
-      'cancelled': '취소'
+      'active': getProjectsText.status.active('ko'),
+      'completed': getProjectsText.status.completed('ko'),
+      'on-hold': getProjectsText.status.onHold('ko'),
+      'cancelled': getProjectsText.status.cancelled('ko')
     }
     
     return (
@@ -165,32 +167,32 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`max-w-[1300px] mx-auto ${layout.spacing.page.paddingX} ${layout.spacing.page.paddingY} ${layout.spacing.page.contentGap}`}>
       {/* 헤더 */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">프로젝트 관리</h1>
-          <p className="text-muted-foreground mt-1">
-            모든 프로젝트를 한눈에 관리하세요
+          <h1 className={typography.title.page}>{getProjectsText.title('ko')}</h1>
+          <p className={typography.text.subtitle}>
+            {getProjectsText.subtitle('ko')}
           </p>
         </div>
         <Button asChild>
           <Link href="/projects/new">
             <Plus className="mr-2 h-4 w-4" />
-            새 프로젝트
+            {getProjectsText.newProject('ko')}
           </Link>
         </Button>
       </div>
 
       {/* 검색 */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="프로젝트 검색..."
-          className="pl-10"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder={getProjectsText.searchPlaceholder('ko')}
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
       </div>
 
       {/* 프로젝트 그리드 */}
@@ -212,11 +214,11 @@ export default function ProjectsPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem>
                       <Edit className="mr-2 h-4 w-4" />
-                      수정
+                      {getProjectsText.actions.edit('ko')}
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive">
                       <Trash2 className="mr-2 h-4 w-4" />
-                      삭제
+                      {getProjectsText.actions.delete('ko')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -242,7 +244,7 @@ export default function ProjectsPage() {
                 <Button asChild variant="outline" className="w-full">
                   <Link href={`/projects/${project.id}`}>
                     <FolderOpen className="mr-2 h-4 w-4" />
-                    상세 보기
+                    {getProjectsText.actions.viewDetails('ko')}
                   </Link>
                 </Button>
               </div>
@@ -255,15 +257,15 @@ export default function ProjectsPage() {
         <Card className="p-8">
           <div className="text-center space-y-3">
             <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="text-lg font-medium">프로젝트가 없습니다</h3>
+            <h3 className="text-lg font-medium">{getProjectsText.empty.title('ko')}</h3>
             <p className="text-sm text-muted-foreground">
-              {searchQuery ? '검색 결과가 없습니다.' : '첫 번째 프로젝트를 만들어보세요.'}
+              {searchQuery ? getProjectsText.empty.searchEmpty('ko') : getProjectsText.empty.createFirst('ko')}
             </p>
             {!searchQuery && (
               <Button asChild className="mt-4">
                 <Link href="/projects/new">
                   <Plus className="mr-2 h-4 w-4" />
-                  프로젝트 생성
+                  {getProjectsText.empty.createProject('ko')}
                 </Link>
               </Button>
             )}
