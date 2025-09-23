@@ -72,12 +72,18 @@ export const typography = {
   title: {
     hero: "text-3xl font-bold leading-tight tracking-tighter md:text-6xl lg:leading-[1.1]",
     section: "text-2xl font-bold text-primary",
-    card: "text-lg font-semibold"
+    card: "text-lg font-semibold",
+    page: "text-3xl font-bold",
+    pageSection: "text-2xl",
+    subsection: "text-lg"
   },
   text: {
     body: "text-lg text-muted-foreground sm:text-xl",
     description: "text-sm text-muted-foreground",
-    button: "text-sm font-medium"
+    button: "text-sm font-medium",
+    subtitle: "text-muted-foreground mt-1",
+    base: "text-base",
+    small: "text-sm"
   }
 } as const
 

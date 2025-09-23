@@ -578,6 +578,69 @@ export const uiText = {
       ko: "날짜 관리와 데이터 시각화를 위한 고급 컴포넌트들",
       en: "Advanced components for date management and data visualization"
     }
+  },
+
+  // 세무 관리 페이지 텍스트
+  taxManagement: {
+    title: {
+      ko: "세무 신고",
+      en: "Tax Management"
+    },
+    subtitle: {
+      ko: "프리랜서와 사업자를 위한 통합 세무 서비스",
+      en: "Integrated tax services for freelancers and business owners"
+    },
+    serviceTitle: {
+      ko: "세무 서비스 준비중",
+      en: "Tax Service Coming Soon"
+    },
+    serviceDescription: {
+      ko: "전문 세무법인과 연계한 종합소득세/법인세 신고 서비스를 준비중입니다",
+      en: "We are preparing comprehensive income tax and corporate tax filing services in partnership with professional tax firms"
+    },
+    plannedServices: {
+      title: {
+        ko: "제공 예정 서비스",
+        en: "Planned Services"
+      },
+      comprehensiveTax: {
+        title: { ko: "종합소득세 신고", en: "Comprehensive Income Tax" },
+        description: { ko: "프리랜서 및 개인사업자 종합소득세 신고 대행", en: "Income tax filing service for freelancers and sole proprietors" }
+      },
+      corporateTax: {
+        title: { ko: "법인세 신고", en: "Corporate Tax" },
+        description: { ko: "법인사업자 세무신고 및 절세 컨설팅", en: "Corporate tax filing and tax optimization consulting" }
+      },
+      vat: {
+        title: { ko: "부가가치세 신고", en: "VAT Filing" },
+        description: { ko: "분기별 부가가치세 신고 자동화 서비스", en: "Automated quarterly VAT filing service" }
+      },
+      consultation: {
+        title: { ko: "실시간 세무 상담", en: "Real-time Tax Consultation" },
+        description: { ko: "전문 세무사와의 1:1 온라인 상담 서비스", en: "1:1 online consultation with professional tax advisors" }
+      }
+    },
+    comingSoon: {
+      title: { ko: "곧 만나요!", en: "Coming Soon!" },
+      description: { 
+        ko: "2026년 1분기 중 세무 서비스를 오픈할 예정입니다. 오픈 시 등록된 이메일로 안내해 드리겠습니다.",
+        en: "We plan to launch our tax service in Q1 2026. We will notify you via your registered email when the service is available."
+      }
+    },
+    features: {
+      partnership: {
+        title: { ko: "전문 세무법인 연계", en: "Professional Tax Firm Partnership" },
+        description: { ko: "검증된 세무법인과의 파트너십을 통해 신뢰할 수 있는 세무 서비스를 제공합니다", en: "Reliable tax services through partnerships with verified tax firms" }
+      },
+      automation: {
+        title: { ko: "자동 계산 시스템", en: "Automated Calculation System" },
+        description: { ko: "매출/매입 데이터를 기반으로 예상 세액을 자동으로 계산하여 보여드립니다", en: "Automatically calculates expected tax based on your revenue and expense data" }
+      },
+      optimization: {
+        title: { ko: "절세 컨설팅", en: "Tax Optimization Consulting" },
+        description: { ko: "사업 형태와 규모에 맞는 최적의 절세 방안을 제안해 드립니다", en: "We provide optimal tax-saving strategies tailored to your business type and scale" }
+      }
+    }
   }
 } as const
 
@@ -717,6 +780,51 @@ export const getUsageText = {
 export const getDataText = {
   calendarAndCharts: (lang: 'ko' | 'en' = defaultLanguage) => uiText.data.calendarAndCharts[lang],
   calendarAndChartsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.data.calendarAndChartsDesc[lang]
+}
+
+// 세무 관리 텍스트 헬퍼들
+export const getTaxManagementText = {
+  title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.title[lang],
+  subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.subtitle[lang],
+  serviceTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.serviceTitle[lang],
+  serviceDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.serviceDescription[lang],
+  plannedServices: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.title[lang],
+    comprehensiveTax: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.comprehensiveTax.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.comprehensiveTax.description[lang]
+    },
+    corporateTax: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.corporateTax.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.corporateTax.description[lang]
+    },
+    vat: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.vat.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.vat.description[lang]
+    },
+    consultation: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.consultation.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.consultation.description[lang]
+    }
+  },
+  comingSoon: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.comingSoon.title[lang],
+    description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.comingSoon.description[lang]
+  },
+  features: {
+    partnership: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.partnership.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.partnership.description[lang]
+    },
+    automation: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.automation.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.automation.description[lang]
+    },
+    optimization: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.optimization.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.optimization.description[lang]
+    }
+  }
 }
 
 // 컴포넌트 데모 텍스트 헬퍼들
