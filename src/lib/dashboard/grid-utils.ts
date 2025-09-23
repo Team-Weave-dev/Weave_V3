@@ -72,6 +72,24 @@ export function checkCollision(
 }
 
 /**
+ * 현재 아이템과 충돌하는 아이템들의 인덱스를 반환
+ */
+export function getCollisions(
+  item: GridPosition,
+  items: GridPosition[],
+  excludeIndex?: number
+): number[] {
+  const result: number[] = [];
+  for (let i = 0; i < items.length; i++) {
+    if (i === excludeIndex) continue;
+    if (checkCollision(item, items[i])) {
+      result.push(i);
+    }
+  }
+  return result;
+}
+
+/**
  * 여러 아이템과의 충돌 체크
  */
 export function checkCollisionWithItems(
@@ -343,17 +361,21 @@ export function getTransformStyle(
   cellWidth: number,
   cellHeight: number,
   gap: number,
-  useCSSTransforms: boolean = true
-): React.CSSProperties {
+  useCSSTransforms: boolean = true,
+  skipTransition: boolean = false
+): any {
   const pixels = gridToPixels(position, cellWidth, cellHeight, gap);
   
   if (useCSSTransforms) {
     return {
+      // Framer Motion 호환(x/y) + 일반 div 호환(transform) 병행
+      x: pixels.left,
+      y: pixels.top,
       transform: `translate(${pixels.left}px, ${pixels.top}px)`,
       width: `${pixels.width}px`,
       height: `${pixels.height}px`,
       position: 'absolute',
-      transition: 'transform 200ms ease',
+      transition: skipTransition ? 'none' : 'transform 200ms ease, width 200ms ease, height 200ms ease',
     };
   } else {
     return {
@@ -362,7 +384,7 @@ export function getTransformStyle(
       width: `${pixels.width}px`,
       height: `${pixels.height}px`,
       position: 'absolute',
-      transition: 'left 200ms ease, top 200ms ease',
+      transition: skipTransition ? 'none' : 'all 200ms ease',
     };
   }
 }

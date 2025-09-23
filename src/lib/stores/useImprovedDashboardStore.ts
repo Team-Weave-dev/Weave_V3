@@ -8,7 +8,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { ImprovedWidget, DashboardConfig, DashboardEditState } from '@/types/improved-dashboard';
-import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout } from '@/lib/dashboard/grid-utils';
+import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout, checkCollision } from '@/lib/dashboard/grid-utils';
 
 interface ImprovedDashboardStore {
   // 위젯 상태
@@ -29,6 +29,7 @@ interface ImprovedDashboardStore {
   moveWidget: (id: string, position: GridPosition) => void;
   resizeWidget: (id: string, position: GridPosition) => void;
   swapWidgets: (id1: string, id2: string) => void;
+  moveWidgetWithPush: (id: string, position: GridPosition) => void;
   
   // 레이아웃 액션
   compactWidgets: (compactType?: 'vertical' | 'horizontal') => void;
@@ -107,6 +108,18 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
         addWidget: (widget) => set((state) => {
           // 충돌 체크
           const positions = state.widgets.map(w => w.position);
+          // ID 중복 방지: 동일 ID가 있으면 접미사를 붙여 고유화
+          if (state.widgets.some(w => w.id === widget.id)) {
+            const base = widget.id || 'widget';
+            let i = 2;
+            let newId = `${base}_${i}`;
+            const existingIds = new Set(state.widgets.map(w => w.id));
+            while (existingIds.has(newId)) {
+              i += 1;
+              newId = `${base}_${i}`;
+            }
+            widget = { ...widget, id: newId };
+          }
           if (!checkCollisionWithItems(widget.position, positions)) {
             state.widgets.push(widget);
           } else {
@@ -211,28 +224,75 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
           }
         }),
         
+        moveWidgetWithPush: (id, position) => set((state) => {
+          const index = state.widgets.findIndex(w => w.id === id);
+          if (index === -1) return;
+          const config = state.config;
+          const positions = state.widgets.map(w => ({ ...w.position }));
+
+          positions[index] = constrainToBounds(position, config);
+
+          const queue: number[] = [index];
+          const maxGuard = 2000;
+          let guard = 0;
+          while (queue.length && guard++ < maxGuard) {
+            const cur = queue.shift()!;
+            const curPos = positions[cur];
+            for (let i = 0; i < positions.length; i++) {
+              if (i === cur) continue;
+              if (checkCollision(curPos, positions[i])) {
+                if (state.widgets[i].static) {
+                  const newY = positions[i].y + positions[i].h;
+                  positions[cur] = constrainToBounds({ ...positions[cur], y: newY }, config);
+                  queue.push(cur);
+                } else {
+                  const newY = curPos.y + curPos.h;
+                  positions[i] = constrainToBounds({ ...positions[i], y: newY }, config);
+                  queue.push(i);
+                }
+              }
+            }
+          }
+
+          state.widgets = state.widgets.map((w, i) => ({ ...w, position: positions[i] }));
+        }),
+        
         swapWidgets: (id1, id2) => set((state) => {
           const index1 = state.widgets.findIndex(w => w.id === id1);
           const index2 = state.widgets.findIndex(w => w.id === id2);
-          
-          if (index1 !== -1 && index2 !== -1) {
-            const pos1 = state.widgets[index1].position;
-            const pos2 = state.widgets[index2].position;
-            
-            // 위치만 교환
-            state.widgets[index1].position = {
-              x: pos2.x,
-              y: pos2.y,
-              w: pos1.w,
-              h: pos1.h,
-            };
-            state.widgets[index2].position = {
-              x: pos1.x,
-              y: pos1.y,
-              w: pos2.w,
-              h: pos2.h,
-            };
+          if (index1 === -1 || index2 === -1) return;
+          const config = state.config;
+          const positions = state.widgets.map(w => ({ ...w.position }));
+
+          const pos1 = { ...positions[index1] };
+          const pos2 = { ...positions[index2] };
+          positions[index1] = { x: pos2.x, y: pos2.y, w: pos1.w, h: pos1.h };
+          positions[index2] = { x: pos1.x, y: pos1.y, w: pos2.w, h: pos2.h };
+
+          // 충돌 시 아래 방향으로 밀어내며 해소
+          const queue: number[] = [index1, index2];
+          const maxGuard = 1000;
+          let guard = 0;
+          while (queue.length && guard++ < maxGuard) {
+            const cur = queue.shift()!;
+            const curPos = positions[cur];
+            for (let i = 0; i < positions.length; i++) {
+              if (i === cur) continue;
+              if (checkCollision(curPos, positions[i])) {
+                if (state.widgets[i].static) {
+                  const newY = positions[i].y + positions[i].h;
+                  positions[cur] = constrainToBounds({ ...positions[cur], y: newY }, config);
+                  queue.push(cur);
+                } else {
+                  const newY = curPos.y + curPos.h;
+                  positions[i] = constrainToBounds({ ...positions[i], y: newY }, config);
+                  queue.push(i);
+                }
+              }
+            }
           }
+
+          state.widgets = state.widgets.map((w, i) => ({ ...w, position: positions[i] }));
         }),
         
         // 레이아웃 액션
@@ -305,16 +365,9 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
         
         updateDragging: (position) => set((state) => {
           if (state.editState.draggedWidget) {
-            state.editState.draggedWidget.currentPosition = position;
-            
-            // 실시간으로 위젯 위치 업데이트
-            const index = state.widgets.findIndex(
-              w => w.id === state.editState.draggedWidget!.id
-            );
-            if (index !== -1) {
-              const constrained = constrainToBounds(position, state.config);
-              state.widgets[index].position = constrained;
-            }
+            // 드래그 중에는 시각적 위치만 업데이트 (실제 위젯 position은 변경하지 않음)
+            const constrained = constrainToBounds(position, state.config);
+            state.editState.draggedWidget.currentPosition = constrained;
           }
         }),
         
@@ -339,24 +392,20 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
         
         updateResizing: (position) => set((state) => {
           if (state.editState.resizingWidget) {
-            state.editState.resizingWidget.currentPosition = position;
-            
-            // 실시간으로 위젯 크기 업데이트
+            // 리사이즈 중에는 실제 위젯 상태를 변경하지 않고 미리보기만 업데이트
             const index = state.widgets.findIndex(
               w => w.id === state.editState.resizingWidget!.id
             );
             if (index !== -1) {
               const widget = state.widgets[index];
-              
-              // 최소/최대 크기 적용
               let { x, y, w, h } = position;
               if (widget.minW) w = Math.max(w, widget.minW);
               if (widget.maxW) w = Math.min(w, widget.maxW);
               if (widget.minH) h = Math.max(h, widget.minH);
               if (widget.maxH) h = Math.min(h, widget.maxH);
-              
-              const constrained = constrainToBounds({ x, y, w, h }, state.config);
-              state.widgets[index].position = constrained;
+              state.editState.resizingWidget.currentPosition = constrainToBounds({ x, y, w, h }, state.config);
+            } else {
+              state.editState.resizingWidget.currentPosition = constrainToBounds(position, state.config);
             }
           }
         }),

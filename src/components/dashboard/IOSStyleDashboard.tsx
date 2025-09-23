@@ -6,9 +6,9 @@ import {
   useIOSDashboardStore,
   selectWidgets,
   selectEditMode,
-  selectWiggling,
-  shallow
+  selectWiggling
 } from '@/lib/stores/useIOSDashboardStore';
+import { shallow } from 'zustand/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

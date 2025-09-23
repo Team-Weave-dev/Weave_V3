@@ -85,6 +85,7 @@ export function ImprovedDashboard({
     updateWidget,
     removeWidget,
     moveWidget,
+    moveWidgetWithPush,
     resizeWidget,
     swapWidgets,
     compactWidgets,
@@ -112,7 +113,8 @@ export function ImprovedDashboard({
   // 초기화
   useEffect(() => {
     if (initialWidgets.length > 0 && widgets.length === 0) {
-      setWidgets(initialWidgets);
+      // 초기 위젯이 겹치는 경우를 방지하기 위해 하나씩 추가하면서 위치를 자동 조정
+      initialWidgets.forEach((w) => addWidget(w));
     } else if (widgets.length === 0) {
       // 테스트 위젯 생성
       const testWidgets: ImprovedWidget[] = [
@@ -152,9 +154,28 @@ export function ImprovedDashboard({
           minH: 1,
         },
       ];
-      setWidgets(testWidgets);
+      testWidgets.forEach((w) => addWidget(w));
     }
-  }, [initialWidgets, widgets.length, setWidgets]);
+  }, [initialWidgets, widgets.length, addWidget]);
+
+  // 중복 ID 위젯 정리 (개발/StrictMode에서 이중 마운트 대비)
+  useEffect(() => {
+    if (widgets.length <= 1) return;
+    const seen = new Set<string>();
+    const dedup: typeof widgets = [];
+    let hasDup = false;
+    for (const w of widgets) {
+      if (seen.has(w.id)) {
+        hasDup = true;
+        continue;
+      }
+      seen.add(w.id);
+      dedup.push(w);
+    }
+    if (hasDup) {
+      setWidgets(dedup);
+    }
+  }, [widgets, setWidgets]);
   
   // 반응형 그리드 계산
   useEffect(() => {
@@ -213,8 +234,10 @@ export function ImprovedDashboard({
     
     const startX = e.clientX;
     const startY = e.clientY;
+    // 현재 위젯의 실제 위치를 시작점으로 사용
     const startPosition = { ...widget.position };
     
+    // 드래그 시작 상태 설정
     startDragging(widget.id, startPosition);
     
     const handleMouseMove = (e: MouseEvent) => {
@@ -237,54 +260,60 @@ export function ImprovedDashboard({
       
       // 실시간으로 위치 업데이트 (시각적 피드백)
       updateDragging(newPosition);
-      
-      // 충돌 체크 및 스왑 감지
+
+      // 충돌 체크 및 스왑/플레이스홀더 갱신
       if (config.preventCollision) {
         const targetWidget = widgets.find(w => {
           if (w.id === widget.id) return false;
           const overlapRatio = getOverlapRatio(newPosition, w.position);
-          return overlapRatio > 0.3; // 30% 이상 겹치면 스왑 대상
+          return overlapRatio > 0.3; // 30% 이상 겹치면 스왑 후보
         });
-        
+
         if (targetWidget) {
           setDragOverWidget(targetWidget.id);
-          // 스왑 가능 여부 체크
           if (canSwapWidgets(newPosition, targetWidget.position, config)) {
-            // 시각적 피드백
             setHoveredPosition(targetWidget.position);
           }
         } else {
           setDragOverWidget(null);
-          setHoveredPosition(null);
+          // 겹치지 않을 때만 플레이스홀더 표시
+          if (!checkCollision(widget.id, newPosition)) {
+            setHoveredPosition(newPosition);
+          } else {
+            setHoveredPosition(null);
+          }
         }
       }
       callbacks?.onDrag?.(widget, newPosition, e);
     };
     
     const handleMouseUp = (e: MouseEvent) => {
-      const finalPosition = editState.draggedWidget?.currentPosition;
+      // 최신 드래그 위치를 스토어에서 직접 조회 (클로저 스냅샷 문제 회피)
+      const finalPosition = useImprovedDashboardStore.getState().editState.draggedWidget?.currentPosition;
       
       if (finalPosition) {
-        // 스왑 처리
+        // 스왑 처리 시 충돌 해소 포함
         if (editState.dragOverWidgetId) {
           const targetWidget = widgets.find(w => w.id === editState.dragOverWidgetId);
           if (targetWidget && canSwapWidgets(finalPosition, targetWidget.position, config)) {
             swapWidgets(widget.id, targetWidget.id);
           } else {
-            // 스왑 불가능하면 최종 위치로 이동 (충돌 체크)
-            if (!checkCollision(widget.id, finalPosition)) {
-              moveWidget(widget.id, finalPosition);
-            }
+            // 스왑 불가 시 push 전략으로 이동
+            moveWidgetWithPush(widget.id, finalPosition);
           }
-        } else if (!checkCollision(widget.id, finalPosition)) {
-          // 충돌 없으면 이동
-          moveWidget(widget.id, finalPosition);
+        } else {
+          // 일반 이동은 push 전략 사용 (충돌 시 자동 해소)
+          moveWidgetWithPush(widget.id, finalPosition);
         }
-        // 충돌하면 이미 updateDragging으로 위치가 업데이트되어 있으므로 추가 작업 불필요
-        
+
         callbacks?.onDragStop?.(widget, finalPosition, e);
       }
       
+      // 자동 정렬 옵션이 켜져 있으면 압축 실행
+      if (isCompact && config.compactType) {
+        compactWidgets(config.compactType);
+      }
+
       stopDragging();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -295,8 +324,8 @@ export function ImprovedDashboard({
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     
-    callbacks?.onDragStart?.(widget, e);
-  }, [isEditMode, widgets, cellSize, config, editState, startDragging, updateDragging, stopDragging, moveWidget, swapWidgets, checkCollision, setDragOverWidget, setHoveredPosition, callbacks]);
+    callbacks?.onDragStart?.(widget, e.nativeEvent);
+  }, [isEditMode, widgets, cellSize, config, editState, startDragging, updateDragging, stopDragging, moveWidgetWithPush, swapWidgets, checkCollision, setDragOverWidget, setHoveredPosition, callbacks, isCompact, compactWidgets]);
   
   // 리사이즈 핸들러
   const handleResizeStart = useCallback((e: React.MouseEvent, widget: ImprovedWidget) => {
@@ -339,7 +368,8 @@ export function ImprovedDashboard({
     };
     
     const handleMouseUp = (e: MouseEvent) => {
-      const finalPosition = editState.resizingWidget?.currentPosition;
+      // 최신 리사이즈 위치를 스토어에서 직접 조회
+      const finalPosition = useImprovedDashboardStore.getState().editState.resizingWidget?.currentPosition;
       
       if (finalPosition) {
         if (!checkCollision(widget.id, finalPosition)) {
@@ -352,6 +382,11 @@ export function ImprovedDashboard({
         callbacks?.onResizeStop?.(widget, finalPosition, e);
       }
       
+      // 자동 정렬 옵션이 켜져 있으면 압축 실행
+      if (isCompact && config.compactType) {
+        compactWidgets(config.compactType);
+      }
+
       stopResizing();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -362,8 +397,8 @@ export function ImprovedDashboard({
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     
-    callbacks?.onResizeStart?.(widget, e);
-  }, [isEditMode, widgets, cellSize, config, editState, startResizing, updateResizing, stopResizing, resizeWidget, checkCollision, callbacks]);
+    callbacks?.onResizeStart?.(widget, e.nativeEvent);
+  }, [isEditMode, widgets, cellSize, config, editState, startResizing, updateResizing, stopResizing, resizeWidget, checkCollision, callbacks, isCompact, compactWidgets]);
   
   // Long Press 감지
   const handleLongPressStart = useCallback((e: React.MouseEvent | React.TouchEvent, widgetId: string) => {
@@ -438,24 +473,33 @@ export function ImprovedDashboard({
   const getWidgetStyle = useCallback((widget: ImprovedWidget): React.CSSProperties => {
     const isDragging = editState.draggedWidget?.id === widget.id;
     const isResizing = editState.resizingWidget?.id === widget.id;
+    
+    // 드래그 중이면 draggedWidget의 currentPosition 사용, 아니면 위젯의 실제 position 사용
+    const position = isDragging && editState.draggedWidget?.currentPosition 
+      ? editState.draggedWidget.currentPosition 
+      : isResizing && editState.resizingWidget?.currentPosition
+      ? editState.resizingWidget.currentPosition
+      : widget.position;
+    
     const baseStyle = getTransformStyle(
-      widget.position,
+      position,
       cellSize.width,
       cellSize.height,
       config.gap,
-      config.useCSSTransforms
+      config.useCSSTransforms,
+      isDragging || isResizing // 드래그나 리사이즈 중이면 transition 스킵
     );
     
-    // 드래그나 리사이즈 중에는 transition 제거
+    // 드래그나 리사이즈 중에는 z-index 높이기
     if (isDragging || isResizing) {
       return {
         ...baseStyle,
-        transition: 'none'
+        zIndex: 50
       };
     }
     
     return baseStyle;
-  }, [cellSize, config.gap, config.useCSSTransforms, editState.draggedWidget?.id, editState.resizingWidget?.id]);
+  }, [cellSize, config.gap, config.useCSSTransforms, editState]);
   
   return (
     <div className={cn("w-full", className)}>
@@ -548,16 +592,20 @@ export function ImprovedDashboard({
                 editState.draggedWidget?.id !== widget.id && 
                 editState.resizingWidget?.id !== widget.id && 
                 "transition-all duration-200",
-                editState.draggedWidget?.id === widget.id && "z-50 cursor-grabbing",
-                editState.resizingWidget?.id === widget.id && "z-50",
+                // 드래그 중일 때 스타일 (z-index는 getWidgetStyle에서 처리)
+                editState.draggedWidget?.id === widget.id && "cursor-grabbing opacity-90 scale-105",
+                // 리사이즈 중일 때 스타일
+                editState.resizingWidget?.id === widget.id && "opacity-90",
+                // 드래그 오버 표시
                 editState.dragOverWidgetId === widget.id && "ring-2 ring-primary/50",
+                // static 위젯
                 widget.static && "opacity-80"
               )}
               style={getWidgetStyle(widget)}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ 
                 opacity: 1, 
-                scale: editState.draggedWidget?.id === widget.id ? 1.05 : 1,
+                scale: 1,
               }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.2 }}
@@ -611,7 +659,7 @@ export function ImprovedDashboard({
                   onMouseLeave={!isEditMode ? handleLongPressEnd : undefined}
                   onTouchStart={(e) => !isEditMode && handleLongPressStart(e, widget.id)}
                   onTouchEnd={handleLongPressEnd}
-                  onClick={(e) => !isEditMode && callbacks?.onWidgetClick?.(widget, e)}
+                  onClick={(e) => !isEditMode && callbacks?.onWidgetClick?.(widget, e.nativeEvent)}
                 >
                   {renderWidget(widget)}
                 </div>
@@ -636,7 +684,8 @@ export function ImprovedDashboard({
               cellSize.width,
               cellSize.height,
               config.gap,
-              config.useCSSTransforms
+              config.useCSSTransforms,
+              true // 플레이스홀더는 transition 불필요
             )}
           />
         )}
