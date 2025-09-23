@@ -31,7 +31,7 @@ import { PaletteSwitcher, PaletteViewer } from "@/components/ui/palette-switcher
 import { ViewModeSwitch, ViewModeSwitchItem } from "@/components/ui/view-mode-switch"
 import { toast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { AlertCircle, Bell, Calendar as CalendarIcon, ChevronDown, FileText, Home, Settings, Users, Zap, List, Grid } from "lucide-react"
 import {
@@ -51,12 +51,15 @@ import {
   getViewModeText
 } from "@/config/brand"
 import { defaults, layout, chart, typography } from "@/config/constants"
+import { useResponsiveCols, defaultColsBreakpoints } from "@/components/ui/use-responsive-cols"
 
 export default function ComponentsPage() {
   const [progressValue, setProgressValue] = useState(defaults.progress.initialValue)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
   const form = useForm()
+  const colsContainerRef = useRef<HTMLDivElement>(null)
+  const currentCols = useResponsiveCols(colsContainerRef as React.RefObject<HTMLElement>, { initialCols: 9 })
 
   // 차트 데이터 (중앙화된 텍스트 시스템 사용)
   const barData = [
@@ -882,6 +885,69 @@ export default function ComponentsPage() {
                 </TabsContent>
 
                 <TabsContent value="layout" className="space-y-6">
+                  {/* 반응형 컬럼 규칙 */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>반응형 컬럼 규칙</CardTitle>
+                      <CardDescription>그리드 컬럼 수를 컨테이너 폭에 맞춰 자동 조정</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4" ref={colsContainerRef}>
+                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                        <div className="p-3 bg-muted/30 rounded-lg">
+                          <strong className="text-primary">현재 컬럼</strong>
+                          <p className="text-xs text-muted-foreground mt-1">{currentCols} cols</p>
+                        </div>
+                        <div className="p-3 bg-muted/30 rounded-lg">
+                          <strong className="text-primary">기본 브레이크포인트</strong>
+                          <p className="text-xs text-muted-foreground mt-1">≥1200px: 9 • ≥768px: 6 • ≥480px: 4 • 그 외: 2</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">사용 예시</h4>
+                        <pre className="text-xs bg-muted/50 p-3 rounded-lg overflow-x-auto">
+{`import { useRef } from 'react'
+import { useResponsiveCols } from '@/components/ui/use-responsive-cols'
+
+export function GridContainer() {
+  const ref = useRef<HTMLDivElement>(null)
+  const cols = useResponsiveCols(ref, { initialCols: 9 })
+  return (
+    <div ref={ref} className="w-full">
+      {/* cols 값을 스토어나 레이아웃 계산에 반영 */}
+      <div>cols: {cols}</div>
+    </div>
+  )
+}`}
+                        </pre>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* 위젯 컴포넌트 규격 */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>위젯 컴포넌트 규격</CardTitle>
+                      <CardDescription>UI 라이브러리 내 위젯 공통 구조와 사용 규칙</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <ul className="text-sm list-disc pl-5 space-y-1">
+                        <li>위치: <code className="text-xs">src/components/ui/widgets/*</code></li>
+                        <li>공통 구조: <code className="text-xs">Card(h-full flex-col overflow-hidden)</code> + <code className="text-xs">CardHeader</code> + <code className="text-xs">CardContent(flex-1 overflow-auto min-h-0)</code></li>
+                        <li>스크롤 처리: 콘텐츠가 높이를 초과하면 내부 스크롤</li>
+                        <li>임포트 경로: <code className="text-xs">@/components/ui/widgets</code> 또는 개별 파일</li>
+                        <li>권장 그리드: minW=2, minH=1 (대부분 위젯), 최대폭은 9 컬럼 기준</li>
+                      </ul>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">임베드 예시</h4>
+                        <pre className="text-xs bg-muted/50 p-3 rounded-lg overflow-x-auto">
+{`import { StatsWidget, ProjectSummaryWidget } from '@/components/ui/widgets'
+
+<StatsWidget title="통계 대시보드" stats={[{ label: '매출', value: '₩47,250,000' }]} />
+<ProjectSummaryWidget title="프로젝트 현황" projects={projects} />`}
+                        </pre>
+                      </div>
+                    </CardContent>
+                  </Card>
                   {/* 헤더 네비게이션 */}
                   <Card>
                     <CardHeader>
