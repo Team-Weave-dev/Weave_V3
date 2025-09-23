@@ -728,7 +728,7 @@ export function ImprovedDashboard({
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="relative h-full">
+              <div className="relative h-full overflow-hidden">
                 {/* 편집 컨트롤 */}
                 {isEditMode && !widget.static && (
                   <div className="absolute -inset-2 z-30 pointer-events-none">

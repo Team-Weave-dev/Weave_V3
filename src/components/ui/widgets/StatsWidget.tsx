@@ -20,11 +20,11 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export function StatsWidget({ title = "통계 대시보드", stats }: StatsWidgetProps) {
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader>
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-auto min-h-0">
         <div className="grid grid-cols-2 gap-4">
           {stats.map((stat, index) => (
             <div key={index} className="space-y-1">
@@ -55,4 +55,3 @@ export function StatsWidget({ title = "통계 대시보드", stats }: StatsWidge
     </Card>
   );
 }
-

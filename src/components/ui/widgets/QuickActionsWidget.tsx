@@ -40,11 +40,11 @@ export function QuickActionsWidget({
   actions = defaultActions 
 }: QuickActionsWidgetProps) {
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-auto min-h-0">
         <div className="flex flex-col gap-2">
           {actions.map((action) => (
             <Button
@@ -65,4 +65,3 @@ export function QuickActionsWidget({
     </Card>
   );
 }
-

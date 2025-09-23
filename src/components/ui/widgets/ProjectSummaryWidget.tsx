@@ -66,7 +66,7 @@ export function ProjectSummaryWidget({
   }
 
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader className="space-y-1">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">
@@ -80,7 +80,7 @@ export function ProjectSummaryWidget({
           진행 상황과 우선순위를 한눈에 확인하세요
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-auto min-h-0">
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="all" className="text-xs">전체</TabsTrigger>
@@ -324,4 +324,3 @@ function ProjectCard({
     </div>
   );
 }
-

@@ -16,14 +16,14 @@ export function ChartWidget({ title = "주간 트렌드 차트", subtitle = "최
   const maxValue = Math.max(...data.datasets[0].data);
   
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader>
         <div>
           <CardTitle className="text-lg font-semibold">{title}</CardTitle>
           {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-auto min-h-0">
         <div className="h-48 flex items-end gap-2">
           {data.labels.map((label, index) => {
             const value1 = data.datasets[0]?.data[index] || 0;
@@ -71,4 +71,3 @@ export function ChartWidget({ title = "주간 트렌드 차트", subtitle = "최
     </Card>
   );
 }
-
