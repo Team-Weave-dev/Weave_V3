@@ -36,6 +36,7 @@ import { StatsWidget } from '@/components/ui/widgets/StatsWidget';
 import { ChartWidget } from '@/components/ui/widgets/ChartWidget';
 import { QuickActionsWidget } from '@/components/ui/widgets/QuickActionsWidget';
 import { ProjectSummaryWidget } from '@/components/ui/widgets/ProjectSummaryWidget';
+import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 
 interface ImprovedDashboardProps {
   initialWidgets?: ImprovedWidget[];
@@ -621,21 +622,8 @@ export function ImprovedDashboard({
     return baseStyle;
   }, [cellSize, config.gap, config.useCSSTransforms, editState]);
   
-  // 반응형 컬럼 조정 (컨테이너 너비 기반)
-  useEffect(() => {
-    const updateCols = () => {
-      const width = containerRef.current?.clientWidth || window.innerWidth;
-      let cols = 9;
-      if (width >= 1200) cols = 9;        // 데스크톱
-      else if (width >= 768) cols = 6;    // 태블릿
-      else if (width >= 480) cols = 4;    // 작은 태블릿/큰 폰
-      else cols = 2;                      // 모바일
-      if (config.cols !== cols) setColumns(cols);
-    };
-    updateCols();
-    window.addEventListener('resize', updateCols);
-    return () => window.removeEventListener('resize', updateCols);
-  }, [config.cols, setColumns]);
+  // 반응형 컬럼 규칙(components 라이브러리의 훅 사용)
+  useResponsiveCols(containerRef as React.RefObject<HTMLElement>, { onChange: setColumns, initialCols: config.cols });
 
   return (
     <div className={cn("w-full max-w-[1300px] mx-auto px-4", className)}>
