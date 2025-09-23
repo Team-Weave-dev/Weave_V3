@@ -52,6 +52,7 @@ import {
 } from "@/config/brand"
 import { defaults, layout, chart, typography } from "@/config/constants"
 import { useResponsiveCols, defaultColsBreakpoints } from "@/components/ui/use-responsive-cols"
+import { StatsWidget, ProjectSummaryWidget } from "@/components/ui/widgets"
 
 export default function ComponentsPage() {
   const [progressValue, setProgressValue] = useState(defaults.progress.initialValue)
@@ -60,6 +61,36 @@ export default function ComponentsPage() {
   const form = useForm()
   const colsContainerRef = useRef<HTMLDivElement>(null)
   const currentCols = useResponsiveCols(colsContainerRef as React.RefObject<HTMLElement>, { initialCols: 9 })
+  const widgetDemoStats = [
+    { label: '매출', value: '₩47,250,000', change: 12.5, changeType: 'increase' as const },
+    { label: '고객', value: '3,842', change: -5.4, changeType: 'decrease' as const },
+    { label: '주문', value: '1,827', change: 8.2, changeType: 'increase' as const },
+    { label: '전환율', value: '3.24%', change: 2.1, changeType: 'increase' as const },
+    { label: '평균 객단가', value: '₩62,300' },
+    { label: '재방문율', value: '38%' },
+  ]
+  const widgetDemoProjects = [
+    {
+      id: 'p1', projectId: 'D-100', projectName: '대시보드 고도화', client: 'Globex', pm: '김PM',
+      status: 'warning' as const, statusLabel: '주의', progress: 62,
+      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10), daysRemaining: 10,
+      budget: { total: 80000000, spent: 42000000, currency: 'KRW' }, currentStatus: '핵심 모듈 통합 테스트 진행 중',
+      issues: ['푸시 알림 실패', '성능 튜닝 필요']
+    },
+    {
+      id: 'p2', projectId: 'S-210', projectName: 'SEO 최적화', client: 'Acme', pm: '이PM',
+      status: 'normal' as const, statusLabel: '정상', progress: 78,
+      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18), daysRemaining: 18,
+      budget: { total: 60000000, spent: 35000000, currency: 'KRW' }, currentStatus: '페이지 속도 개선 확인'
+    },
+    {
+      id: 'p3', projectId: 'P-333', projectName: '파트너 포털', client: 'Initech', pm: '박PM',
+      status: 'critical' as const, statusLabel: '긴급', progress: 35,
+      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3), daysRemaining: 3,
+      budget: { total: 90000000, spent: 70000000, currency: 'KRW' }, currentStatus: '권한 정책 재검토 필요',
+      issues: ['인증 전략 충돌', '권한 동기화 지연']
+    },
+  ]
 
   // 차트 데이터 (중앙화된 텍스트 시스템 사용)
   const barData = [
@@ -948,6 +979,24 @@ export function GridContainer() {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* 위젯 데모 */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>위젯 데모</CardTitle>
+                      <CardDescription>일반적인 높이 제한에서의 스크롤과 레이아웃 예시</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="border rounded-lg overflow-hidden p-2 h-72 bg-background">
+                          <StatsWidget title="통계 대시보드" stats={widgetDemoStats} />
+                        </div>
+                        <div className="border rounded-lg overflow-hidden p-2 h-72 bg-background">
+                          <ProjectSummaryWidget title="프로젝트 현황" projects={widgetDemoProjects} />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                   {/* 헤더 네비게이션 */}
                   <Card>
                     <CardHeader>
@@ -963,6 +1012,20 @@ export function GridContainer() {
                         <p className="text-xs text-muted-foreground">
                           브랜드 로고 및 이름 표시 • 메인 네비게이션 메뉴 (데스크톱/모바일 반응형) • 사용자 프로필 드롭다운 • 모바일 햄버거 메뉴
                         </p>
+                        {/* 데모 카드: 헤더 포함 레이아웃 간단 프리뷰 */}
+                        <div className="rounded-lg border overflow-hidden">
+                          <div className="bg-background border-b px-4 h-12 flex items-center justify-between">
+                            <div className="font-semibold">{brand.company.ko}</div>
+                            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
+                              <span>홈</span>
+                              <span>대시보드</span>
+                              <span>프로젝트</span>
+                            </div>
+                          </div>
+                          <div className="p-4 text-xs text-muted-foreground">
+                            헤더 포함 레이아웃 데모 카드 — 상단 고정 헤더 + 본문 컨텐츠 영역
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-2">
