@@ -3,17 +3,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Typography from '@/components/ui/typography';
 import ProjectDetail from '@/components/projects/ProjectDetail';
-import type { ProjectTableRow } from '@/lib/types/project-table.types';
+import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.types';
 import { getProjectPageText, getProjectStatusText } from '@/config/brand';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import ProjectProgress from '@/components/ui/project-progress';
 import Pagination from '@/components/ui/pagination';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Filter, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { layout } from '@/config/constants';
 
 interface DetailViewProps {
   projects: ProjectTableRow[];
   selectedProjectId: string | null;
   loading?: boolean;
+  showColumnSettings?: boolean; // 컬럼 설정 버튼 표시 여부
 }
 
 /**
@@ -31,27 +37,59 @@ interface DetailViewProps {
 export default function DetailView({
   projects,
   selectedProjectId: initialSelectedId,
-  loading = false
+  loading = false,
+  showColumnSettings = false // 기본값은 false (DetailView에서는 숨김)
 }: DetailViewProps) {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     initialSelectedId || (projects.length > 0 ? projects[0].id : null)
   );
 
+  // 필터 상태
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [clientFilter, setClientFilter] = useState('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [pageSize, setPageSize] = useState(5);
+
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(5); // 페이지당 5개 프로젝트
+
+  // 필터링된 프로젝트 목록
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      // 검색어 필터
+      const searchMatch = searchQuery === '' ||
+        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.no.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.client.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // 상태 필터
+      const statusMatch = statusFilter === 'all' || project.status === statusFilter;
+
+      // 클라이언트 필터
+      const clientMatch = clientFilter === 'all' || project.client === clientFilter;
+
+      return searchMatch && statusMatch && clientMatch;
+    });
+  }, [projects, searchQuery, statusFilter, clientFilter]);
 
   // 페이지네이션된 프로젝트 목록
   const paginatedProjects = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    return projects.slice(startIndex, endIndex);
-  }, [projects, currentPage, pageSize]);
+    return filteredProjects.slice(startIndex, endIndex);
+  }, [filteredProjects, currentPage, pageSize]);
 
   // 총 페이지 수
   const totalPages = useMemo(() => {
-    return Math.ceil(projects.length / pageSize);
-  }, [projects.length, pageSize]);
+    return Math.ceil(filteredProjects.length / pageSize);
+  }, [filteredProjects.length, pageSize]);
+
+  // 사용 가능한 클라이언트 목록
+  const availableClients = useMemo(() => {
+    const clients = Array.from(new Set(projects.map(p => p.client)));
+    return clients.sort();
+  }, [projects]);
 
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
@@ -80,6 +118,11 @@ export default function DetailView({
     }
   }, [projects, selectedProjectId]);
 
+  // 필터가 변경되면 첫 페이지로 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, clientFilter]);
+
   // 프로젝트 목록이 변경되면 첫 페이지로 리셋
   useEffect(() => {
     setCurrentPage(1);
@@ -87,6 +130,13 @@ export default function DetailView({
 
   const handleProjectClick = (projectId: string) => {
     setSelectedProjectId(projectId);
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setClientFilter('all');
+    setCurrentPage(1);
   };
 
   if (loading) {
@@ -120,16 +170,145 @@ export default function DetailView({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Project List (Left Panel) */}
-      <div className="lg:col-span-1">
+    <>
+      {/* Filter Bar */}
+      <div className="mb-6 p-4 bg-background rounded-lg border">
+        <div className="flex items-center gap-4">
+          <Input
+            type="text"
+            placeholder={getProjectPageText.searchPlaceholder('ko')}
+            className="flex-1"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+
+          <div className={`flex items-center ${layout.page.header.actions}`}>
+            {/* 필터 버튼 */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="gap-2"
+            >
+              <Filter className={layout.heights.icon} />
+              {getProjectPageText.filterButton('ko')}
+              {isFilterOpen ? (
+                <ChevronUp className={layout.heights.icon} />
+              ) : (
+                <ChevronDown className={layout.heights.icon} />
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter Panel */}
+        {isFilterOpen && (
+          <div className="mt-4 p-4 bg-background border border-border rounded-md space-y-4">
+            <h3 className="text-sm font-medium">{getProjectPageText.filterButton('ko')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 상태 필터 */}
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">
+                  {getProjectPageText.filterStatusLabel('ko')}
+                </label>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value) => {
+                    setStatusFilter(value as ProjectStatus | 'all');
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={getProjectPageText.filterStatusAll('ko')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{getProjectPageText.filterStatusAll('ko')}</SelectItem>
+                    <SelectItem value="in_progress">{getProjectPageText.filterStatusInProgress('ko')}</SelectItem>
+                    <SelectItem value="review">{getProjectPageText.filterStatusReview('ko')}</SelectItem>
+                    <SelectItem value="completed">{getProjectPageText.filterStatusCompleted('ko')}</SelectItem>
+                    <SelectItem value="on_hold">{getProjectPageText.filterStatusOnHold('ko')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 클라이언트 필터 */}
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">
+                  {getProjectPageText.filterClientLabel('ko')}
+                </label>
+                <Select
+                  value={clientFilter}
+                  onValueChange={(value) => {
+                    setClientFilter(value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={getProjectPageText.filterClientAll('ko')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{getProjectPageText.filterClientAll('ko')}</SelectItem>
+                    {availableClients.map((client) => (
+                      <SelectItem key={client} value={client}>{client}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 페이지 개수 필터 */}
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">
+                  {getProjectPageText.filterPageCountLabel('ko')}
+                </label>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={getProjectPageText.filterPageCount10('ko')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">{getProjectPageText.filterPageCount5('ko')}</SelectItem>
+                    <SelectItem value="10">{getProjectPageText.filterPageCount10('ko')}</SelectItem>
+                    <SelectItem value="20">{getProjectPageText.filterPageCount20('ko')}</SelectItem>
+                    <SelectItem value="50">{getProjectPageText.filterPageCount50('ko')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Filter Reset Button */}
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetFilters}
+                className="gap-2"
+              >
+                <RotateCcw className={layout.heights.icon} />
+                {getProjectPageText.resetFilters('ko')}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Project List (Left Panel) */}
+        <div className="lg:col-span-1">
         <Card>
           <CardHeader>
             <h3 className="text-lg font-semibold">
               {getProjectPageText.projectList('ko')}
             </h3>
             <p className="text-sm text-muted-foreground">
-              총 {projects.length}개 프로젝트
+              총 {filteredProjects.length}개 프로젝트 {searchQuery || statusFilter !== 'all' || clientFilter !== 'all' ? `(전체 ${projects.length}개 중)` : ''}
             </p>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -216,6 +395,7 @@ export default function DetailView({
           </Card>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -136,12 +136,14 @@ export default function ProjectsView() {
           projects={sortedProjectData}
           onProjectClick={handleProjectSelect}
           loading={loading}
+          showColumnSettings={true}
         />
       ) : (
         <DetailView
           projects={sortedProjectData}
           selectedProjectId={selectedProjectId}
           loading={loading}
+          showColumnSettings={false}
         />
       )}
     </div>

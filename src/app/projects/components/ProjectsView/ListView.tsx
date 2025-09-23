@@ -2,14 +2,21 @@
 
 import React, { useState, useMemo } from 'react';
 import { AdvancedTable } from '@/components/ui/advanced-table';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useProjectTable } from '@/lib/hooks/useProjectTable';
-import type { ProjectTableRow } from '@/lib/types/project-table.types';
+import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.types';
 import { getProjectPageText } from '@/config/brand';
+import { layout, defaults } from '@/config/constants';
+import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw } from 'lucide-react';
 
 interface ListViewProps {
   projects: ProjectTableRow[];
   onProjectClick: (projectNo: string) => void;
   loading?: boolean;
+  showColumnSettings?: boolean; // 컬럼 설정 버튼 표시 여부
 }
 
 /**
@@ -28,9 +35,12 @@ interface ListViewProps {
 export default function ListView({
   projects,
   onProjectClick,
-  loading = false
+  loading = false,
+  showColumnSettings = true // 기본값은 true (ListView에서는 표시)
 }: ListViewProps) {
   const [selectedProjectIndex, setSelectedProjectIndex] = useState(-1);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isColumnSettingsOpen, setIsColumnSettingsOpen] = useState(false);
 
   // Use the project table hook for state management
   const {
@@ -83,10 +93,10 @@ export default function ListView({
       {/* Filter Bar */}
       <div className="mb-6 p-4 bg-background rounded-lg border">
         <div className="flex items-center gap-4">
-          <input
+          <Input
             type="text"
             placeholder={getProjectPageText.searchPlaceholder('ko')}
-            className="flex-1 px-3 py-2 border rounded-md"
+            className="flex-1"
             value={config.filters.searchQuery}
             onChange={(e) => updateConfig({
               ...config,
@@ -95,34 +105,54 @@ export default function ListView({
             })}
           />
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={resetFilters}
-              className="px-3 py-2 text-sm border rounded-md hover:bg-muted"
-            >
-              {getProjectPageText.resetFilters('ko')}
-            </button>
-            <button
-              onClick={resetColumnConfig}
-              className="px-3 py-2 text-sm border rounded-md hover:bg-muted"
-            >
-              {getProjectPageText.resetColumns('ko')}
-            </button>
-          </div>
+          <div className={`flex items-center ${layout.page.header.actions}`}>
+            {/* 삭제 버튼 */}
+            {!loading && tableData.length > 0 && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={toggleDeleteMode}
+                className="gap-2"
+              >
+                <Trash2 className={layout.heights.icon} />
+                {isDeleteMode ? getProjectPageText.exitDeleteMode('ko') : getProjectPageText.deleteButton('ko')}
+              </Button>
+            )}
 
-          {/* Delete Mode Toggle */}
-          {!loading && tableData.length > 0 && (
-            <button
-              onClick={toggleDeleteMode}
-              className={`px-4 py-2 text-sm rounded-md transition-colors ${
-                isDeleteMode
-                  ? 'bg-destructive text-destructive-foreground'
-                  : 'border hover:bg-muted'
-              }`}
+            {/* 필터 버튼 */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="gap-2"
             >
-              {isDeleteMode ? getProjectPageText.exitDeleteMode('ko') : getProjectPageText.deleteMode('ko')}
-            </button>
-          )}
+              <Filter className={layout.heights.icon} />
+              {getProjectPageText.filterButton('ko')}
+              {isFilterOpen ? (
+                <ChevronUp className={layout.heights.icon} />
+              ) : (
+                <ChevronDown className={layout.heights.icon} />
+              )}
+            </Button>
+
+            {/* 컬럼 설정 버튼 - 조건부 표시 */}
+            {showColumnSettings && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsColumnSettingsOpen(!isColumnSettingsOpen)}
+                className="gap-2"
+              >
+                <Settings className={layout.heights.icon} />
+                {getProjectPageText.columnSettingsButton('ko')}
+                {isColumnSettingsOpen ? (
+                  <ChevronUp className={layout.heights.icon} />
+                ) : (
+                  <ChevronDown className={layout.heights.icon} />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Delete Mode Actions */}
@@ -131,26 +161,198 @@ export default function ListView({
             <span className="text-sm">
               {selectedItems.length} {getProjectPageText.itemsSelected('ko')}
             </span>
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={handleSelectAll}
-              className="text-sm text-primary hover:underline"
+              className="h-auto p-0 text-sm"
             >
               {getProjectPageText.selectAll('ko')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="link"
+              size="sm"
               onClick={handleDeselectAll}
-              className="text-sm text-primary hover:underline"
+              className="h-auto p-0 text-sm"
             >
               {getProjectPageText.deselectAll('ko')}
-            </button>
+            </Button>
             {selectedItems.length > 0 && (
-              <button
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={handleDeleteSelected}
-                className="ml-auto px-3 py-1 text-sm bg-destructive text-destructive-foreground rounded-md hover:opacity-90"
+                className="ml-auto"
               >
                 {getProjectPageText.deleteSelected('ko')} ({selectedItems.length})
-              </button>
+              </Button>
             )}
+          </div>
+        )}
+
+        {/* Filter Panel */}
+        {isFilterOpen && (
+          <div className="mt-4 p-4 bg-background border border-border rounded-md space-y-4">
+            <h3 className="text-sm font-medium">{getProjectPageText.filterButton('ko')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 상태 필터 */}
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">
+                  {getProjectPageText.filterStatusLabel('ko')}
+                </label>
+                <Select
+                  value={config.filters.statusFilter}
+                  onValueChange={(value) => updateConfig({
+                    ...config,
+                    filters: { ...config.filters, statusFilter: value as ProjectStatus | 'all' },
+                    pagination: { ...config.pagination, page: 1 }
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={getProjectPageText.filterStatusAll('ko')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{getProjectPageText.filterStatusAll('ko')}</SelectItem>
+                    <SelectItem value="in_progress">{getProjectPageText.filterStatusInProgress('ko')}</SelectItem>
+                    <SelectItem value="review">{getProjectPageText.filterStatusReview('ko')}</SelectItem>
+                    <SelectItem value="completed">{getProjectPageText.filterStatusCompleted('ko')}</SelectItem>
+                    <SelectItem value="on_hold">{getProjectPageText.filterStatusOnHold('ko')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 클라이언트 필터 */}
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">
+                  {getProjectPageText.filterClientLabel('ko')}
+                </label>
+                <Select
+                  value={config.filters.clientFilter}
+                  onValueChange={(value) => updateConfig({
+                    ...config,
+                    filters: { ...config.filters, clientFilter: value },
+                    pagination: { ...config.pagination, page: 1 }
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={getProjectPageText.filterClientAll('ko')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{getProjectPageText.filterClientAll('ko')}</SelectItem>
+                    {availableClients.map((client) => (
+                      <SelectItem key={client} value={client}>{client}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 페이지 개수 필터 */}
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">
+                  {getProjectPageText.filterPageCountLabel('ko')}
+                </label>
+                <Select
+                  value={config.pagination.pageSize.toString()}
+                  onValueChange={(value) => updatePageSize(Number(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={getProjectPageText.filterPageCount10('ko')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">{getProjectPageText.filterPageCount5('ko')}</SelectItem>
+                    <SelectItem value="10">{getProjectPageText.filterPageCount10('ko')}</SelectItem>
+                    <SelectItem value="20">{getProjectPageText.filterPageCount20('ko')}</SelectItem>
+                    <SelectItem value="50">{getProjectPageText.filterPageCount50('ko')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Filter Reset Button */}
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetFilters}
+                className="gap-2"
+              >
+                <RotateCcw className={layout.heights.icon} />
+                {getProjectPageText.resetFilters('ko')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Column Settings Panel - 조건부 표시 */}
+        {showColumnSettings && isColumnSettingsOpen && (
+          <div className="mt-4 p-4 bg-background border border-border rounded-md space-y-4">
+            <h3 className="text-sm font-medium">{getProjectPageText.columnSettingsButton('ko')}</h3>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">{getProjectPageText.columnLabel('ko')}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="projectName" defaultChecked />
+                  <label htmlFor="projectName" className="text-sm">
+                    {getProjectPageText.columnProjectName('ko')}
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="client" defaultChecked />
+                  <label htmlFor="client" className="text-sm">
+                    {getProjectPageText.columnClient('ko')}
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="status" defaultChecked />
+                  <label htmlFor="status" className="text-sm">
+                    {getProjectPageText.columnStatus('ko')}
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="progress" defaultChecked />
+                  <label htmlFor="progress" className="text-sm">
+                    {getProjectPageText.columnProgress('ko')}
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="registeredDate" defaultChecked />
+                  <label htmlFor="registeredDate" className="text-sm">
+                    {getProjectPageText.columnRegisteredDate('ko')}
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="dueDate" defaultChecked />
+                  <label htmlFor="dueDate" className="text-sm">
+                    {getProjectPageText.columnDueDate('ko')}
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="modifiedDate" defaultChecked />
+                  <label htmlFor="modifiedDate" className="text-sm">
+                    {getProjectPageText.columnModifiedDate('ko')}
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="actions" defaultChecked />
+                  <label htmlFor="actions" className="text-sm">
+                    {getProjectPageText.columnActions('ko')}
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Column Reset Button */}
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetColumnConfig}
+                className="gap-2"
+              >
+                <RotateCcw className={layout.heights.icon} />
+                {getProjectPageText.resetColumns('ko')}
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -170,25 +372,6 @@ export default function ListView({
         onDeselectAll={handleDeselectAll}
       />
 
-
-      {/* Page Size Selector */}
-      {!loading && paginatedData.length > 0 && (
-        <div className="mt-4 flex items-center justify-end text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <label>{getProjectPageText.pageSize('ko')}:</label>
-            <select
-              value={config.pagination.pageSize}
-              onChange={(e) => updatePageSize(Number(e.target.value))}
-              className="px-2 py-1 border rounded-md"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-        </div>
-      )}
     </>
   );
 }

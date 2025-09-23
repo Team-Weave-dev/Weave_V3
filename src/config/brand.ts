@@ -428,6 +428,54 @@ export const uiText = {
         pageSize: { ko: "페이지 크기", en: "Page size" },
         totalItems: { ko: "전체", en: "Total" },
         filtered: { ko: "필터됨", en: "filtered" },
+        // 액션 버튼
+        deleteButton: { ko: "삭제", en: "Delete" },
+        filterButton: { ko: "필터", en: "Filter" },
+        columnSettingsButton: { ko: "컬럼 설정", en: "Column Settings" },
+        // 필터 옵션
+        filters: {
+          status: {
+            label: { ko: "상태", en: "Status" },
+            allStatuses: { ko: "모든 상태", en: "All Statuses" },
+            options: {
+              all: { ko: "모든 상태", en: "All Statuses" },
+              inProgress: { ko: "진행중", en: "In Progress" },
+              review: { ko: "검토중", en: "In Review" },
+              completed: { ko: "완료", en: "Completed" },
+              onHold: { ko: "보류", en: "On Hold" }
+            }
+          },
+          client: {
+            label: { ko: "클라이언트", en: "Client" },
+            allClients: { ko: "모든 클라이언트", en: "All Clients" },
+            options: {
+              all: { ko: "모든 클라이언트", en: "All Clients" }
+            }
+          },
+          pageCount: {
+            label: { ko: "페이지 개수", en: "Page Count" },
+            options: {
+              "5": { ko: "5개", en: "5 items" },
+              "10": { ko: "10개", en: "10 items" },
+              "20": { ko: "20개", en: "20 items" },
+              "50": { ko: "50개", en: "50 items" }
+            }
+          }
+        },
+        // 컬럼 설정
+        columns: {
+          label: { ko: "표시할 컬럼", en: "Visible Columns" },
+          options: {
+            projectName: { ko: "프로젝트명", en: "Project Name" },
+            client: { ko: "고객사", en: "Client" },
+            status: { ko: "상태", en: "Status" },
+            progress: { ko: "진행률", en: "Progress" },
+            registeredDate: { ko: "등록일", en: "Registered Date" },
+            dueDate: { ko: "마감일", en: "Due Date" },
+            modifiedDate: { ko: "수정일", en: "Modified Date" },
+            actions: { ko: "액션", en: "Actions" }
+          }
+        },
         // 페이지네이션 네비게이션
         pagination: {
           firstPage: { ko: "첫 페이지로", en: "Go to first page" },
@@ -1090,6 +1138,39 @@ export const getProjectPageText = {
   pageSize: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pageSize[lang],
   totalItems: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.totalItems[lang],
   filtered: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filtered[lang],
+
+  // Action Buttons
+  deleteButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.deleteButton[lang],
+  filterButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filterButton[lang],
+  columnSettingsButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columnSettingsButton[lang],
+
+  // Filter Options
+  filterStatusLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.label[lang],
+  filterStatusAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.all[lang],
+  filterStatusInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.inProgress[lang],
+  filterStatusReview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.review[lang],
+  filterStatusCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.completed[lang],
+  filterStatusOnHold: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.onHold[lang],
+
+  filterClientLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.client.label[lang],
+  filterClientAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.client.options.all[lang],
+
+  filterPageCountLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.label[lang],
+  filterPageCount5: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.options["5"][lang],
+  filterPageCount10: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.options["10"][lang],
+  filterPageCount20: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.options["20"][lang],
+  filterPageCount50: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.options["50"][lang],
+
+  // Column Settings
+  columnLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.label[lang],
+  columnProjectName: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.projectName[lang],
+  columnClient: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.client[lang],
+  columnStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.status[lang],
+  columnProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.progress[lang],
+  columnRegisteredDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.registeredDate[lang],
+  columnDueDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.dueDate[lang],
+  columnModifiedDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.modifiedDate[lang],
+  columnActions: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.actions[lang],
 
   // Pagination
   paginationFirstPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.firstPage[lang],

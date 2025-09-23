@@ -275,3 +275,46 @@ export const cssVariables = {
     }
   }
 } as const
+
+// 플레이스홀더 아이콘 가이드라인
+export const placeholderIcons = {
+  button: {
+    // Button 컴포넌트 내부에서 아이콘 사용 시 가이드라인
+    usage: {
+      // 호버 효과가 필요한 경우: 아이콘이 버튼의 호버 상태를 따라가도록 함
+      withHover: {
+        recommended: `className={layout.heights.icon}`,
+        example: "Filter className={layout.heights.icon}",
+        note: "버튼의 호버 시 text-primary 색상으로 자동 변경됨"
+      },
+      // 고정 색상이 필요한 경우: 호버 상태와 무관하게 일정한 색상 유지
+      fixedColor: {
+        recommended: `className={\`\${layout.heights.icon} text-muted-foreground\`}`,
+        example: "ChevronDown className={`${layout.heights.icon} text-muted-foreground`}",
+        note: "호버와 무관하게 muted 색상으로 고정"
+      }
+    }
+  },
+  standalone: {
+    // Button 외부에서 사용할 때는 일반 크기 클래스 사용
+    sizes: {
+      sm: "h-4 w-4",
+      default: "h-5 w-5",
+      lg: "h-6 w-6"
+    }
+  },
+  colors: {
+    // 아이콘 색상 가이드라인
+    primary: "text-primary",
+    muted: "text-muted-foreground",
+    accent: "text-accent-foreground",
+    destructive: "text-destructive"
+  },
+  common: {
+    // 자주 사용되는 플레이스홀더 아이콘들
+    dropdown: ["ChevronDown", "ChevronUp"],
+    navigation: ["Menu", "X"],
+    actions: ["Plus", "Minus", "Edit", "Trash2"],
+    status: ["Check", "AlertCircle", "Info"]
+  }
+} as const
