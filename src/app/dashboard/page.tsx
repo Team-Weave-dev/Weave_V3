@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { IOSStyleDashboard } from '@/components/dashboard/IOSStyleDashboard'
+import { ImprovedDashboard } from '@/components/dashboard/ImprovedDashboard'
+// import { IOSStyleDashboard } from '@/components/dashboard/IOSStyleDashboard'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -51,7 +52,7 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full">
-      <IOSStyleDashboard />
+      <ImprovedDashboard />
     </div>
   )
 }

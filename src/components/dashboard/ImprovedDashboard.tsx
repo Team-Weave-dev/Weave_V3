@@ -216,7 +216,6 @@ export function ImprovedDashboard({
     const startPosition = { ...widget.position };
     
     startDragging(widget.id, startPosition);
-    console.log('🎯 드래그 시작:', widget.id, startPosition);
     
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
@@ -235,18 +234,6 @@ export function ImprovedDashboard({
         w: startPosition.w,
         h: startPosition.h,
       };
-      
-      console.log('📍 드래그 중:', { 
-        deltaX, 
-        deltaY, 
-        dx, 
-        dy, 
-        newPosition,
-        cellSize,
-        gap: config.gap,
-        gridCellWidth,
-        gridCellHeight
-      });
       
       // 실시간으로 위치 업데이트 (시각적 피드백)
       updateDragging(newPosition);
@@ -276,7 +263,6 @@ export function ImprovedDashboard({
     
     const handleMouseUp = (e: MouseEvent) => {
       const finalPosition = editState.draggedWidget?.currentPosition;
-      console.log('🏁 드래그 종료:', finalPosition);
       
       if (finalPosition) {
         // 스왑 처리
