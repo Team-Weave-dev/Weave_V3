@@ -161,8 +161,77 @@ export function ImprovedDashboard({
   // 초기화
   useEffect(() => {
     if (initialWidgets.length > 0 && widgets.length === 0) {
-      // 초기 위젯이 겹치는 경우를 방지하기 위해 하나씩 추가하면서 위치를 자동 조정
-      initialWidgets.forEach((w) => addWidget(w));
+      // 시작 레이아웃: 타입별 1개만 유지하고 기본 포지션에 배치
+      const defaultPos: Record<ImprovedWidget['type'], GridPosition> = {
+        projectSummary: { x: 0, y: 0, w: 6, h: 3 },
+        stats: { x: 6, y: 0, w: 6, h: 2 },
+        chart: { x: 0, y: 3, w: 8, h: 2 },
+        quickActions: { x: 8, y: 3, w: 4, h: 1 },
+        custom: { x: 0, y: 5, w: 4, h: 2 },
+      };
+      const seen = new Set<ImprovedWidget['type']>();
+      const selected: ImprovedWidget[] = [];
+
+      for (const w of initialWidgets) {
+        if (seen.has(w.type)) continue;
+        seen.add(w.type);
+        const normalized: ImprovedWidget = {
+          ...w,
+          position: defaultPos[w.type] ?? w.position ?? { x: 0, y: 0, w: 4, h: 2 },
+          data:
+            w.type === 'projectSummary' ? (w.data ?? mockProjects) :
+            w.type === 'stats' ? (w.data ?? mockStatsData) :
+            w.type === 'chart' ? (w.data ?? mockChartData) :
+            w.data,
+        };
+        selected.push(normalized);
+      }
+
+      // 누락된 타입은 기본 위젯으로 보충하여 한 타입당 1개 보장
+      const ensure = (type: ImprovedWidget['type'], widget: ImprovedWidget) => {
+        if (!seen.has(type)) {
+          selected.push(widget);
+          seen.add(type);
+        }
+      };
+      ensure('projectSummary', {
+        id: 'widget_project_1',
+        type: 'projectSummary',
+        title: '프로젝트 현황',
+        position: defaultPos.projectSummary,
+        data: mockProjects,
+        minW: 3,
+        minH: 2,
+      });
+      ensure('stats', {
+        id: 'widget_stats_1',
+        type: 'stats',
+        title: '통계 대시보드',
+        position: defaultPos.stats,
+        data: mockStatsData,
+        minW: 2,
+        minH: 1,
+        maxW: 12,
+      });
+      ensure('chart', {
+        id: 'widget_chart_1',
+        type: 'chart',
+        title: '주간 트렌드',
+        position: defaultPos.chart,
+        data: mockChartData,
+        minW: 3,
+        minH: 2,
+      });
+      ensure('quickActions', {
+        id: 'widget_actions_1',
+        type: 'quickActions',
+        title: '빠른 작업',
+        position: defaultPos.quickActions,
+        minW: 2,
+        minH: 1,
+      });
+
+      selected.forEach((w) => addWidget(w));
     } else if (widgets.length === 0) {
       // 테스트 위젯 생성
       const testWidgets: ImprovedWidget[] = [
