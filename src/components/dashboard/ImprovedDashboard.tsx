@@ -163,11 +163,12 @@ export function ImprovedDashboard({
     if (initialWidgets.length > 0 && widgets.length === 0) {
       // 시작 레이아웃: 타입별 1개만 유지하고 기본 포지션에 배치
       const defaultPos: Record<ImprovedWidget['type'], GridPosition> = {
-        projectSummary: { x: 0, y: 0, w: 6, h: 3 },
-        stats: { x: 6, y: 0, w: 6, h: 2 },
-        chart: { x: 0, y: 3, w: 8, h: 2 },
-        quickActions: { x: 8, y: 3, w: 4, h: 1 },
-        custom: { x: 0, y: 5, w: 4, h: 2 },
+        // 9x9 그리드 기준 배치
+        projectSummary: { x: 0, y: 0, w: 5, h: 3 },
+        stats: { x: 5, y: 0, w: 4, h: 2 },
+        chart: { x: 0, y: 3, w: 9, h: 2 },
+        quickActions: { x: 0, y: 5, w: 9, h: 1 },
+        custom: { x: 0, y: 6, w: 4, h: 2 },
       };
       const seen = new Set<ImprovedWidget['type']>();
       const selected: ImprovedWidget[] = [];
@@ -211,7 +212,7 @@ export function ImprovedDashboard({
         data: mockStatsData,
         minW: 2,
         minH: 1,
-        maxW: 12,
+        maxW: 9,
       });
       ensure('chart', {
         id: 'widget_chart_1',
@@ -239,7 +240,7 @@ export function ImprovedDashboard({
           id: 'widget_project_1',
           type: 'projectSummary',
           title: '프로젝트 현황',
-          position: { x: 0, y: 0, w: 6, h: 3 },
+          position: { x: 0, y: 0, w: 5, h: 3 },
           data: mockProjects,
           minW: 3,
           minH: 2,
@@ -248,17 +249,17 @@ export function ImprovedDashboard({
           id: 'widget_stats_1',
           type: 'stats',
           title: '통계 대시보드',
-          position: { x: 6, y: 0, w: 6, h: 2 },
+          position: { x: 5, y: 0, w: 4, h: 2 },
           data: mockStatsData,
           minW: 2,
           minH: 1,
-          maxW: 12,
+          maxW: 9,
         },
         {
           id: 'widget_chart_1',
           type: 'chart',
           title: '주간 트렌드',
-          position: { x: 0, y: 3, w: 8, h: 2 },
+          position: { x: 0, y: 3, w: 9, h: 2 },
           data: mockChartData,
           minW: 3,
           minH: 2,
@@ -267,7 +268,7 @@ export function ImprovedDashboard({
           id: 'widget_actions_1',
           type: 'quickActions',
           title: '빠른 작업',
-          position: { x: 8, y: 3, w: 4, h: 1 },
+          position: { x: 0, y: 5, w: 9, h: 1 },
           minW: 2,
           minH: 1,
         },

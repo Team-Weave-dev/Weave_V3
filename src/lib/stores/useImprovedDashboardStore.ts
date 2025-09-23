@@ -63,10 +63,10 @@ interface ImprovedDashboardStore {
 
 // 초기 설정
 const initialConfig: DashboardConfig = {
-  cols: 12,
+  cols: 9,
   rowHeight: 120,
   gap: 16,
-  maxRows: 50,
+  maxRows: 9,
   isDraggable: true,
   isResizable: true,
   preventCollision: true,
