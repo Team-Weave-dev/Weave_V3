@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ImprovedDashboard } from '@/components/dashboard/ImprovedDashboard'
-// import { IOSStyleDashboard } from '@/components/dashboard/IOSStyleDashboard'
 
 export default function DashboardPage() {
   const router = useRouter()
