@@ -139,6 +139,7 @@ export function ImprovedDashboard({
     compactWidgets,
     findSpaceForWidget,
     checkCollision,
+    setColumns,
     enterEditMode,
     exitEditMode,
     startDragging,
@@ -620,8 +621,24 @@ export function ImprovedDashboard({
     return baseStyle;
   }, [cellSize, config.gap, config.useCSSTransforms, editState]);
   
+  // 반응형 컬럼 조정 (컨테이너 너비 기반)
+  useEffect(() => {
+    const updateCols = () => {
+      const width = containerRef.current?.clientWidth || window.innerWidth;
+      let cols = 9;
+      if (width >= 1200) cols = 9;        // 데스크톱
+      else if (width >= 768) cols = 6;    // 태블릿
+      else if (width >= 480) cols = 4;    // 작은 태블릿/큰 폰
+      else cols = 2;                      // 모바일
+      if (config.cols !== cols) setColumns(cols);
+    };
+    updateCols();
+    window.addEventListener('resize', updateCols);
+    return () => window.removeEventListener('resize', updateCols);
+  }, [config.cols, setColumns]);
+
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full max-w-[1300px] mx-auto px-4", className)}>
       {/* 툴바 */}
       <div className="flex items-center justify-between px-6 py-4 border-b">
         <div className="flex items-center gap-4">
