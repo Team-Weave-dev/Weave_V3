@@ -126,7 +126,7 @@ export default function Home() {
               {[0, 1, 2, 3].map((index) => {
                 const user = getHomeText.targetUsers.getUser(index, 'ko')
                 return (
-                  <Card key={index} className="text-center">
+                  <Card key={index} className="text-center hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex justify-center mb-4">
                         {targetUserIcons[index]}
@@ -151,19 +151,19 @@ export default function Home() {
               <p className="text-lg text-muted-foreground">{getHomeText.features.subtitle('ko')}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-              {['project', 'tax', 'analytics', 'integration'].map((feature) => (
+              {(['project', 'tax', 'analytics', 'integration'] as const).map((feature) => (
                 <Card key={feature} className="text-center hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex justify-center mb-4">
-                      {featureIcons[feature as keyof typeof featureIcons]}
+                      {featureIcons[feature]}
                     </div>
                     <CardTitle className="text-xl">
-                      {getHomeText.features[feature as keyof typeof getHomeText.features].title('ko')}
+                      {getHomeText.features[feature].title('ko')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <CardDescription>
-                      {getHomeText.features[feature as keyof typeof getHomeText.features].description('ko')}
+                      {getHomeText.features[feature].description('ko')}
                     </CardDescription>
                   </CardContent>
                 </Card>
