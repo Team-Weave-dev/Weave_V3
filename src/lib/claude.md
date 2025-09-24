@@ -8,14 +8,17 @@
 
 ```
 lib/
-└── utils.ts         # 🛠️ 공통 유틸리티 함수
+├── document-generator/
+│   └── templates.ts   # 📄 프로젝트 문서 템플릿 매핑 & 생성 헬퍼
+└── utils.ts           # 🛠️ 공통 유틸리티 함수
 ```
 
-## 📦 설치된 유틸리티 (1개)
+## 📦 구성 모듈 업데이트
 
+- **document-generator/templates.ts (NEW)**: `create-docs/lib` 템플릿을 프로젝트 도메인(계약/견적/청구/보고/기타)에 맞춰 매핑하고, 프로젝트 데이터를 주입한 Markdown 콘텐츠를 생성합니다.
 - **utils**: 클래스명 병합 및 공통 유틸리티
 
-*마지막 업데이트: 2025-09-19*
+*마지막 업데이트: 2025-09-25*
 
 
 ## 🛠️ utils.ts - 핵심 유틸리티 함수
@@ -100,6 +103,28 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     )
   }
 )
+```
+
+## 🧾 document-generator/templates.ts - 템플릿 기반 문서 생성기
+
+### 개요
+프로젝트 상세 페이지에서 사용하는 문서 생성 기능을 위한 템플릿 매핑 및 콘텐츠 생성 헬퍼입니다. `create-docs/lib`의 계약/견적/청구 템플릿을 재사용하고, 프로젝트 정보(`ProjectTableRow`)를 주입하여 즉시 활용 가능한 Markdown을 반환합니다.
+
+### 핵심 기능
+- **카테고리 매핑**: `'contract' | 'invoice' | 'estimate' | 'report' | 'others'` 카테고리별 템플릿 목록을 제공합니다.
+- **데이터 주입**: `ClientData`, `ProjectData`, 추가 파생 정보를 자동으로 주입하여 placeholder를 채웁니다.
+- **커스텀 템플릿**: 보고서/회의록 등 자체 정의 템플릿을 함께 제공하여 없는 카테고리를 보완합니다.
+- **생성 결과**: 템플릿 이름과 콘텐츠, 템플릿 ID를 포함한 `GeneratedDocumentPayload` 반환.
+
+### 사용 예시
+```typescript
+import { getTemplatesForCategory } from '@/lib/document-generator/templates'
+
+const templates = getTemplatesForCategory('contract')
+const payload = templates[0].build({ project })
+
+// payload.content -> Markdown 문자열
+// payload.templateId -> 템플릿 식별자
 ```
 
 ## 🚀 새로운 유틸리티 추가 가이드

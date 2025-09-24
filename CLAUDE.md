@@ -197,6 +197,17 @@ This project includes Model Context Protocol configuration:
   - 100% Button component compatibility
   - Complete accessibility support (ARIA, screen readers)
 
+- **2025-09-24**: Project documents status cards data integration - Overview/document tabs alignment
+  - Overview 탭 자료 현황 카드는 `project.documentStatus`(미존재 시 `project.documents`) 기반으로 상태와 개수를 계산합니다.
+  - 문서가 없을 때 상태 레이블을 `미보유`, 보유 시 `완료`로 통일했습니다.
+  - 카드 날짜 영역은 최신 문서의 저장일(월/일)을 표시하고, 문서가 없으면 `--`로 표기합니다.
+  - Mock 데이터 생성기가 문서 유형별 샘플 문서를 생성하고 요약 메타데이터(`documentStatus`)를 함께 제공합니다.
+
+- **2025-09-25**: Project document generation workflow - Template modal + preview integration
+  - `src/lib/document-generator/templates.ts`에서 `create-docs/lib` 템플릿을 계약/견적/청구/기타 카테고리로 매핑하고 프로젝트 데이터를 주입하는 생성 헬퍼를 추가했습니다.
+  - Document Management 탭에 템플릿 기반 문서 생성/삭제 버튼과 목록 내 보기·편집 액션을 추가하고, 생성 문서를 로컬 상태(`ProjectDetail`)에서 즉시 관리할 수 있게 했습니다.
+  - `ProjectDocumentGeneratorModal` + 미리보기/편집 다이얼로그를 통해 템플릿 선택, 내용 확인, 인라인 편집·저장을 지원하며 개요 카드 상태와 동기화됩니다.
+
 ---
 
 **🎯 Next Steps**: Choose the relevant `claude.md` file above based on your current task. Each contains domain-specific guidance and implementation details.

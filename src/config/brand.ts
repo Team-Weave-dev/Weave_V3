@@ -575,6 +575,7 @@ export const uiText = {
         },
         status: {
           pending: { ko: "미보유", en: "Pending" },
+          inProgress: { ko: "진행중", en: "In Progress" },
           completed: { ko: "완료", en: "Completed" }
         },
         dateFormat: {
@@ -1353,6 +1354,7 @@ export const getProjectPageText = {
   documentEstimate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.documents.estimate[lang],
   documentOthers: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.documents.others[lang],
   statusPending: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.status.pending[lang],
+  statusInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.status.inProgress[lang],
   statusCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.status.completed[lang],
 
   // 프로젝트 상세 정보

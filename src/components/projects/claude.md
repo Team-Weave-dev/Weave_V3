@@ -97,6 +97,20 @@ interface ProjectDetailProps {
 - 프로젝트 태그 및 카테고리
 ```
 
+#### 자료 현황 카드 데이터 흐름
+- Overview 탭 하단 문서 카드들은 `project.documentStatus`를 우선 사용하고, 값이 없으면 `project.documents`를 요약해 상태를 계산합니다.
+- 문서가 없으면 상태 레이블을 `미보유`, 문서가 하나 이상이면 `완료`로 표시합니다.
+- 최신 문서의 `createdAt`을 월/일 형식으로 출력하고, 문서가 없을 때는 `--`로 표시합니다.
+- 문서가 2개 이상 존재하면 카드 제목 옆에 `({count})`를 추가합니다.
+- 카드 클릭/엔터 시 Document Management 탭의 해당 서브 탭으로 이동합니다.
+
+#### 문서 생성 모달 & 미리보기
+- 카드/탭의 `문서 생성` 버튼은 `ProjectDocumentGeneratorModal`을 열어 템플릿을 선택하도록 합니다.
+- 템플릿 선택 시 `src/lib/document-generator/templates.ts`의 `build` 함수가 프로젝트/클라이언트 데이터를 주입한 콘텐츠를 생성합니다.
+- 생성된 문서는 로컬 state(`documents`)에 즉시 추가되고 상태는 `draft`로 표시됩니다. 자동으로 Document Management 탭으로 전환되며 미리보기 다이얼로그가 함께 열립니다.
+- 미리보기(`Dialog + ScrollArea`)를 통해 생성된 Markdown을 확인할 수 있으며, 이후 사용자 편집 로직을 연결할 수 있습니다.
+- Document Management 각 탭 헤더에는 `문서 생성`(템플릿이 없으면 비활성화)과 `삭제` 버튼이 함께 노출되며, 생성된 문서 목록 행에는 `보기`/`편집` 액션이 제공됩니다. 편집은 모달 내 `Textarea`를 통해 바로 수정/저장할 수 있습니다.
+
 ### 2. Contract 탭
 ```typescript
 // 계약 및 협약 관련 정보
@@ -126,6 +140,11 @@ interface ProjectDetailProps {
 - 공유 및 권한 설정
 - 문서 미리보기
 ```
+
+#### 문서 하위 탭 동작
+- `project.documents` 데이터를 문서 유형별로 그룹화하여 목록을 렌더링합니다.
+- 문서가 없으면 기존 안내 문구를 유지하고, 존재할 경우 문서명/저장일/상태(초안·전송·승인·완료)를 표시합니다.
+- 카드 클릭 시 이동한 서브 탭과 동일한 데이터를 사용하므로 개요 탭 자료 현황 카드와 상태가 일치합니다.
 
 ## 🎨 스타일링 시스템
 

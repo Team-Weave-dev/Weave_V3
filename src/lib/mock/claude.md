@@ -101,6 +101,18 @@ const seededRandom = (seed: number): number => {
 }
 ```
 
+#### 문서 데이터 요약
+```typescript
+{
+  documents: DocumentInfo[];             // 문서 원본 목록 (유형별 최대 2개 생성)
+  documentStatus: ProjectDocumentStatus; // 카드 표기를 위한 요약 메타데이터
+}
+```
+
+- `DOCUMENT_TYPES` 배열을 기반으로 계약서/청구서/보고서/견적서/기타 문서를 시드 기반으로 생성합니다.
+- `documentStatus`는 각 유형별 존재 여부, 최신 저장일, 문서 개수를 계산하여 Overview 탭 카드가 즉시 사용할 수 있도록 제공합니다.
+- 문서가 없을 때는 `exists: false`, `status: 'none'`, `count: 0`으로 초기화되어 UI에서 `미보유` 상태가 노출됩니다.
+
 ### 상태별 데이터 분포
 
 #### 프로젝트 상태 (6종)

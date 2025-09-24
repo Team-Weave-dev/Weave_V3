@@ -97,6 +97,9 @@ export interface DocumentInfo {
   name: string;
   createdAt: string;
   status: 'draft' | 'sent' | 'approved' | 'completed';
+  content?: string;
+  templateId?: string;
+  source?: 'generated' | 'uploaded' | 'imported';
 }
 
 // 프로젝트 문서 현황 통합 관리

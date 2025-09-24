@@ -1,4 +1,9 @@
-import type { ProjectTableRow } from '@/lib/types/project-table.types';
+import type {
+  DocumentInfo,
+  DocumentStatus,
+  ProjectDocumentStatus,
+  ProjectTableRow
+} from '@/lib/types/project-table.types';
 
 /**
  * Generate mock project data
@@ -64,6 +69,14 @@ export function generateMockProjects(): ProjectTableRow[] {
       paymentProgress = 100;
     }
 
+    const documents = generateProjectDocuments({
+      projectIndex: i,
+      registrationDate,
+      seededRandom,
+      seed: seed1 + seed2 + seed3
+    });
+    const documentStatus = summarizeDocuments(documents);
+
     return {
       id: `project-${i + 1}`,
       no: `WEAVE_${String(i + 1).padStart(3, '0')}`,
@@ -77,7 +90,9 @@ export function generateMockProjects(): ProjectTableRow[] {
       modifiedDate: modifiedDate.toISOString(),
       hasContract: seededRandom(seed1 + 1000) > 0.5,
       hasBilling: seededRandom(seed2 + 1000) > 0.3,
-      hasDocuments: seededRandom(seed3 + 1000) > 0.4
+      hasDocuments: documents.length > 0,
+      documents,
+      documentStatus
     };
   });
 }
@@ -106,4 +121,96 @@ export async function fetchMockProject(id: string): Promise<ProjectTableRow | nu
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 200));
   return getMockProjectById(id);
+}
+
+interface DocumentGenerationParams {
+  projectIndex: number;
+  registrationDate: Date;
+  seededRandom: (seed: number) => number;
+  seed: number;
+}
+
+const DOCUMENT_TYPE_LABELS: Record<DocumentInfo['type'], string> = {
+  contract: '계약서',
+  invoice: '청구서',
+  report: '보고서',
+  estimate: '견적서',
+  etc: '기타 문서'
+};
+
+const DOCUMENT_TYPES: DocumentInfo['type'][] = ['contract', 'invoice', 'report', 'estimate', 'etc'];
+
+function generateProjectDocuments({
+  projectIndex,
+  registrationDate,
+  seededRandom,
+  seed
+}: DocumentGenerationParams): DocumentInfo[] {
+  const documents: DocumentInfo[] = [];
+
+  DOCUMENT_TYPES.forEach((type, typeIndex) => {
+    const typeSeed = seed + typeIndex * 1111;
+    const chance = seededRandom(typeSeed);
+    const documentCount = chance > 0.8 ? 2 : chance > 0.5 ? 1 : 0;
+
+    for (let docIndex = 0; docIndex < documentCount; docIndex += 1) {
+      const createdAtOffsetDays = Math.floor(seededRandom(typeSeed + docIndex + 1) * 120);
+      const createdAt = new Date(
+        registrationDate.getTime() + createdAtOffsetDays * 24 * 60 * 60 * 1000
+      );
+
+      documents.push({
+        id: `project-${projectIndex + 1}-${type}-${docIndex + 1}`,
+        type,
+        name: `${DOCUMENT_TYPE_LABELS[type]} ${docIndex + 1}`,
+        createdAt: createdAt.toISOString(),
+        status: 'completed'
+      });
+    }
+  });
+
+  return documents;
+}
+
+function summarizeDocuments(documents: DocumentInfo[]): ProjectDocumentStatus {
+  const grouped = documents.reduce<Record<DocumentInfo['type'], DocumentInfo[]>>((acc, doc) => {
+    acc[doc.type].push(doc);
+    return acc;
+  }, {
+    contract: [],
+    invoice: [],
+    report: [],
+    estimate: [],
+    etc: []
+  });
+
+  const buildStatus = (type: DocumentInfo['type']): DocumentStatus => {
+    const docs = grouped[type];
+    if (docs.length === 0) {
+      return {
+        exists: false,
+        status: 'none',
+        count: 0
+      };
+    }
+
+    const latest = docs.reduce((latestDoc, currentDoc) => (
+      currentDoc.createdAt > latestDoc.createdAt ? currentDoc : latestDoc
+    ), docs[0]);
+
+    return {
+      exists: true,
+      status: 'completed',
+      lastUpdated: latest.createdAt,
+      count: docs.length
+    };
+  };
+
+  return {
+    contract: buildStatus('contract'),
+    invoice: buildStatus('invoice'),
+    report: buildStatus('report'),
+    estimate: buildStatus('estimate'),
+    etc: buildStatus('etc')
+  };
 }
