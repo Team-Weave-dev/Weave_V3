@@ -1,6 +1,6 @@
 "use client"
 
-import { HeaderNavigation } from "@/components/ui/header-navigation"
+import { Header } from "@/components/ui/header"
 import { CenteredHero } from "@/components/ui/hero-section"
 import { BasicFooter } from "@/components/ui/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -71,7 +71,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 네비게이션 */}
-      <HeaderNavigation />
+      <Header />
       
       {/* 메인 콘텐츠 - 헤더 높이만큼 패딩 추가 */}
       <main className="pt-16">

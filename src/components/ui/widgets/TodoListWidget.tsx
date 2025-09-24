@@ -324,7 +324,7 @@ export function TodoListWidget({
         };
       };
       
-      const finalTask = updateChildrenDepth(updatedTask, updatedTask.depth, targetTask.sectionId);
+      const finalTask = updateChildrenDepth(updatedTask, updatedTask.depth, targetTask.sectionId || '');
       
       const addAsChild = (tasks: TodoTask[]): TodoTask[] => {
         return tasks.map(task => {
@@ -368,7 +368,7 @@ export function TodoListWidget({
         };
       };
       
-      const finalTask = updateChildrenDepth(updatedTask, updatedTask.depth, targetTask.sectionId);
+      const finalTask = updateChildrenDepth(updatedTask, updatedTask.depth, targetTask.sectionId || '');
       
       // 타겟 작업을 찾아서 위치를 결정 (재귀적으로)
       const insertAtPosition = (tasks: TodoTask[], parentId?: string): TodoTask[] => {

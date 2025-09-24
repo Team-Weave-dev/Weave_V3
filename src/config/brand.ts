@@ -1337,3 +1337,240 @@ export const getViewModeText = {
   switchToList: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.viewMode.switchToList[lang],
   switchToDetail: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.viewMode.switchToDetail[lang]
 }
+
+// 홈 페이지 텍스트
+export const getHomeText = {
+  hero: {
+    badge: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '🚀 1인 기업을 위한 완벽한 솔루션' : '🚀 Perfect Solution for Solo Entrepreneurs',
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'Weave와 함께\n사업을 더 쉽게' : 'Make Business\nEasier with Weave',
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프리랜서와 1인 기업을 위한 통합 비즈니스 플랫폼' : 'Integrated Business Platform for Freelancers and Solo Entrepreneurs',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 관리부터 세무 신고까지, 당신의 비즈니스 성장을 위한 모든 도구를 한 곳에서 제공합니다.' : 'From project management to tax filing, all the tools you need for your business growth in one place.',
+    primaryAction: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지금 시작하기' : 'Get Started',
+    secondaryAction: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '자세히 알아보기' : 'Learn More'
+  },
+  stats: {
+    users: {
+      value: '10,000+',
+      label: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '활성 사용자' : 'Active Users'
+    },
+    projects: {
+      value: '50,000+',
+      label: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행된 프로젝트' : 'Projects Completed'
+    },
+    satisfaction: {
+      value: '98%',
+      label: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '고객 만족도' : 'Customer Satisfaction'
+    },
+    uptime: {
+      value: '99.9%',
+      label: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '서비스 가동률' : 'Service Uptime'
+    }
+  },
+  targetUsers: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '누구를 위한 서비스인가요?' : 'Who is this for?',
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'Weave는 다양한 1인 사업자를 위해 설계되었습니다' : 'Weave is designed for various solo entrepreneurs',
+    getUser: (index: number, lang: 'ko' | 'en' = defaultLanguage) => {
+      const users = [
+        { title: lang === 'ko' ? '프리랜서 개발자' : 'Freelance Developers', description: lang === 'ko' ? '프로젝트 관리와 인보이스 발행을 한 번에 해결하세요' : 'Manage projects and invoicing in one place' },
+        { title: lang === 'ko' ? '디자이너' : 'Designers', description: lang === 'ko' ? '클라이언트 작업을 체계적으로 관리하고 추적하세요' : 'Systematically manage and track client work' },
+        { title: lang === 'ko' ? '1인 기업' : 'Solo Entrepreneurs', description: lang === 'ko' ? '사업 운영에 필요한 모든 도구를 한 곳에서 사용하세요' : 'Use all the tools you need for business operations in one place' },
+        { title: lang === 'ko' ? '컨설턴트' : 'Consultants', description: lang === 'ko' ? '고객 관리부터 세무 처리까지 통합 관리하세요' : 'Integrated management from client relations to tax processing' }
+      ]
+      return users[index] || users[0]
+    }
+  },
+  features: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '핵심 기능' : 'Core Features',
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '비즈니스 성장을 위한 강력한 도구들' : 'Powerful tools for business growth',
+    project: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 관리' : 'Project Management',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 상황을 한눈에 파악하고 효율적으로 관리하세요' : 'Track progress at a glance and manage efficiently'
+    },
+    tax: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세무 관리' : 'Tax Management',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세금 신고와 납부를 간편하게 처리하세요' : 'Handle tax filing and payments easily'
+    },
+    analytics: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '데이터 분석' : 'Data Analytics',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '비즈니스 인사이트를 얻고 성장 전략을 수립하세요' : 'Gain business insights and develop growth strategies'
+    },
+    integration: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '통합 연동' : 'Integration',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '필요한 모든 도구와 서비스를 연결하세요' : 'Connect all the tools and services you need'
+    }
+  },
+  carousel: {
+    getItem: (index: number, lang: 'ko' | 'en' = defaultLanguage) => {
+      const items = [
+        { title: lang === 'ko' ? '간편한 프로젝트 관리' : 'Easy Project Management', description: lang === 'ko' ? '복잡한 프로젝트도 직관적인 인터페이스로 쉽게 관리할 수 있습니다. 진행 상황을 실시간으로 파악하고 팀원들과 효율적으로 협업하세요.' : 'Manage complex projects easily with an intuitive interface. Track progress in real-time and collaborate efficiently with team members.' },
+        { title: lang === 'ko' ? '스마트한 세무 처리' : 'Smart Tax Processing', description: lang === 'ko' ? '세금 계산부터 신고까지 자동화된 시스템으로 처리하세요. 세무 전문가 없이도 정확한 세무 처리가 가능합니다.' : 'Process everything from tax calculations to filing with an automated system. Accurate tax processing without a tax expert.' },
+        { title: lang === 'ko' ? '실시간 비즈니스 인사이트' : 'Real-time Business Insights', description: lang === 'ko' ? '대시보드에서 비즈니스 현황을 한눈에 파악하세요. 데이터 기반의 의사결정으로 더 빠른 성장을 이루세요.' : 'View your business status at a glance on the dashboard. Achieve faster growth with data-driven decision making.' },
+        { title: lang === 'ko' ? '완벽한 통합 환경' : 'Complete Integration Environment', description: lang === 'ko' ? '필요한 모든 비즈니스 도구를 하나의 플랫폼에서 사용하세요. 더 이상 여러 서비스를 오가며 시간을 낭비할 필요가 없습니다.' : 'Use all the business tools you need on one platform. No more wasting time switching between multiple services.' }
+      ]
+      return items[index] || items[0]
+    }
+  },
+  cta: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지금 바로 시작하세요' : 'Start Right Now',
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '더 이상 복잡한 비즈니스 관리로 시간을 낭비하지 마세요' : "Don't waste time on complex business management anymore",
+    button: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '무료로 시작하기' : 'Start for Free',
+    getFeature: (index: number, lang: 'ko' | 'en' = defaultLanguage) => {
+      const features = [
+        lang === 'ko' ? '신용카드 없이 시작' : 'No credit card required',
+        lang === 'ko' ? '14일 무료 체험' : '14-day free trial',
+        lang === 'ko' ? '언제든 취소 가능' : 'Cancel anytime'
+      ]
+      return features[index] || features[0]
+    }
+  }
+}
+
+// 대시보드 텍스트
+export const getDashboardText = {
+  title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '대시보드' : 'Dashboard',
+  subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '비즈니스 현황을 한눈에' : 'Your Business at a Glance',
+  welcome: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '환영합니다' : 'Welcome',
+  overview: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전체 현황' : 'Overview'
+}
+
+// 세금 관리 텍스트
+export const getTaxManagementText = {
+  title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세무 관리' : 'Tax Management',
+  subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '간편한 세무 신고와 절세 전략' : 'Simple Tax Filing and Tax Saving Strategies',
+  serviceTitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세무 서비스 준비중' : 'Tax Service Coming Soon',
+  serviceDescription: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 
+    'Weave는 1인 기업을 위한 종합 세무 관리 서비스를 준비하고 있습니다.' : 
+    'Weave is preparing comprehensive tax management services for solo entrepreneurs.',
+  deadline: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '납부 기한' : 'Payment Deadline',
+  status: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '처리 상태' : 'Processing Status',
+  comingSoon: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '서비스 출시 예정' : 'Service Launch Coming Soon',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 
+      '세무 관리 기능은 현재 개발 중이며, 곧 만나보실 수 있습니다. 출시 알림을 신청하시면 가장 먼저 소식을 전해드리겠습니다.' : 
+      'Tax management features are currently under development and will be available soon. Sign up for launch notifications to be the first to know.'
+  },
+  plannedServices: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '제공 예정 서비스' : 'Planned Services',
+    comprehensiveTax: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '종합소득세 신고' : 'Comprehensive Income Tax Filing',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프리랜서와 1인 기업을 위한 종합소득세 신고 대행 서비스' : 'Comprehensive income tax filing service for freelancers and solo entrepreneurs'
+    },
+    corporateTax: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '법인세 신고' : 'Corporate Tax Filing',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '법인 사업자를 위한 법인세 신고 및 관리 서비스' : 'Corporate tax filing and management service for business entities'
+    },
+    vat: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '부가가치세 신고' : 'VAT Filing',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '정기적인 부가가치세 신고 및 매입매출 관리' : 'Regular VAT filing and purchase/sales management'
+    },
+    consultation: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세무 상담' : 'Tax Consultation',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전문 세무사와의 1:1 맞춤형 세무 상담 서비스' : '1:1 personalized tax consultation with professional tax advisors'
+    },
+    income: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '종합소득세 신고' : 'Income Tax Filing',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '연말정산 및 종합소득세 간편 신고' : 'Year-end settlement and easy income tax filing'
+    },
+    withholding: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '원천징수 관리' : 'Withholding Tax Management',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '원천징수 대상 자동 계산 및 신고' : 'Automatic calculation and filing of withholding tax'
+    },
+    expense: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '경비 처리' : 'Expense Processing',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '영수증 자동 인식 및 경비 관리' : 'Automatic receipt recognition and expense management'
+    }
+  },
+  features: {
+    partnership: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전문 세무사 파트너십' : 'Professional Tax Advisor Partnership',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '검증된 세무 전문가들과 함께 정확하고 안전한 세무 처리를 지원합니다.' : 'Work with verified tax professionals for accurate and secure tax processing.'
+    },
+    automation: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '자동화된 세무 처리' : 'Automated Tax Processing',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '매출과 지출 데이터를 자동으로 분석하여 세무 신고를 간편하게 처리합니다.' : 'Automatically analyze revenue and expense data for simplified tax filing.'
+    },
+    optimization: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '절세 전략 제안' : 'Tax Saving Strategy Proposals',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'AI가 비즈니스 데이터를 분석하여 맞춤형 절세 전략을 제안합니다.' : 'AI analyzes business data to propose personalized tax saving strategies.'
+    }
+  }
+}
+
+// 위젯 텍스트
+export const getWidgetText = {
+  title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯' : 'Widget',
+  calendar: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '캘린더' : 'Calendar',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일정을 확인하세요' : 'Check your schedule',
+    today: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘' : 'Today',
+    month: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월' : 'Month',
+    week: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '주' : 'Week'
+  },
+  stats: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '통계' : 'Statistics',
+    totalRevenue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '총 수익' : 'Total Revenue',
+    activeProjects: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 중인 프로젝트' : 'Active Projects',
+    completedTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료된 작업' : 'Completed Tasks',
+    upcomingDeadlines: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '다가오는 마감일' : 'Upcoming Deadlines'
+  },
+  projectWidget: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 현황' : 'Project Status',
+    progress: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행률' : 'Progress',
+    deadline: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '마감일' : 'Deadline',
+    budget: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '예산' : 'Budget',
+    team: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '팀' : 'Team'
+  },
+  quickActions: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '빠른 작업' : 'Quick Actions',
+    newProject: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 프로젝트' : 'New Project',
+    createInvoice: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '인보이스 생성' : 'Create Invoice',
+    addExpense: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지출 추가' : 'Add Expense',
+    viewReports: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '리포트 보기' : 'View Reports',
+    actions: {
+      newProject: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 프로젝트' : 'New Project',
+      createInvoice: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '인보이스 생성' : 'Create Invoice',
+      newInvoice: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 인보이스' : 'New Invoice',
+      addExpense: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지출 추가' : 'Add Expense',
+      addClient: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '클라이언트 추가' : 'Add Client'
+    }
+  },
+  taxDeadline: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세금 납부 일정' : 'Tax Payment Schedule',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세금 납부 일정을 확인하세요' : 'Check your tax payment schedule',
+    upcoming: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '다가오는 납부일' : 'Upcoming Payments',
+    overdue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '미납' : 'Overdue',
+    completed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료' : 'Completed'
+  },
+  projectSummary: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 요약' : 'Project Summary',
+    active: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 중' : 'Active',
+    completed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료됨' : 'Completed',
+    delayed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지연' : 'Delayed',
+    total: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전체' : 'Total',
+    projectsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '개 진행 중' : ' in progress',
+    noProjects: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 중인 프로젝트가 없습니다' : 'No projects in progress',
+    addProject: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 추가' : 'Add Project',
+    viewProgress: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 상황 보기' : 'View Progress'
+  },
+  todoList: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '할 일 목록' : 'Todo List',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘의 작업을 관리하세요' : 'Manage your tasks today',
+    addTask: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업 추가' : 'Add Task',
+    placeholder: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새로운 작업을 입력하세요' : 'Enter new task',
+    completed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료됨' : 'Completed',
+    pending: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '대기 중' : 'Pending',
+    noTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '할 일이 없습니다' : 'No tasks',
+    priority: {
+      high: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '높음' : 'High',
+      medium: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '보통' : 'Medium',
+      low: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '낮음' : 'Low'
+    }
+  },
+  chart: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '차트' : 'Chart',
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월별 데이터' : 'Monthly Data',
+    revenue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '수익' : 'Revenue',
+    expenses: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지출' : 'Expenses',
+    profit: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '이익' : 'Profit'
+  }
+}
