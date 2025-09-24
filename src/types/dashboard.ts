@@ -127,3 +127,31 @@ export interface TodoListWidgetProps {
   onTaskDelete?: (taskId: string) => void;
   onTaskUpdate?: (taskId: string, updates: Partial<TodoTask>) => void;
 }
+
+// Calendar 위젯 인터페이스
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  date: Date;
+  startTime?: string;
+  endTime?: string;
+  allDay?: boolean;
+  color?: string;
+  recurring?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  type?: 'meeting' | 'task' | 'reminder' | 'deadline' | 'holiday' | 'other';
+}
+
+export interface CalendarWidgetProps {
+  title?: string;
+  selectedDate?: Date;
+  events?: CalendarEvent[];
+  onDateSelect?: (date: Date | undefined) => void;
+  onEventClick?: (event: CalendarEvent) => void;
+  onEventAdd?: (date: Date, event: Omit<CalendarEvent, 'id' | 'date'>) => void;
+  onViewChange?: (view: 'month' | 'week' | 'day' | 'agenda') => void;
+  showWeekNumbers?: boolean;
+  showToday?: boolean;
+  view?: 'month' | 'week' | 'day' | 'agenda';
+  lang?: 'ko' | 'en';
+}

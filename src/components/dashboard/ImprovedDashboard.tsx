@@ -36,6 +36,7 @@ import { ChartWidget } from '@/components/ui/widgets/ChartWidget';
 import { QuickActionsWidget } from '@/components/ui/widgets/QuickActionsWidget';
 import { ProjectSummaryWidget } from '@/components/ui/widgets/ProjectSummaryWidget';
 import { TodoListWidget } from '@/components/ui/widgets/TodoListWidget';
+import { CalendarWidget } from '@/components/ui/widgets/CalendarWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 
 interface ImprovedDashboardProps {
@@ -114,6 +115,51 @@ const mockProjects = [
     currentStatus: '권한 매트릭스 설계 재검토 필요',
     issues: ['인증 전략 충돌', '권한 동기화 지연'],
   },
+];
+
+// 테스트용 캘린더 이벤트 데이터
+const mockCalendarEvents = [
+  {
+    id: 'event-1',
+    title: '프로젝트 킥오프 미팅',
+    description: '새 프로젝트 시작 회의',
+    date: new Date(),
+    startTime: '10:00',
+    endTime: '11:30',
+    type: 'meeting' as const
+  },
+  {
+    id: 'event-2',
+    title: '디자인 리뷰',
+    description: 'UI/UX 디자인 검토',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    startTime: '14:00',
+    endTime: '15:00',
+    type: 'meeting' as const
+  },
+  {
+    id: 'event-3',
+    title: '코드 리뷰 마감',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
+    allDay: true,
+    type: 'deadline' as const
+  },
+  {
+    id: 'event-4',
+    title: '주간 보고서 작성',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
+    startTime: '16:00',
+    type: 'task' as const
+  },
+  {
+    id: 'event-5',
+    title: '팀 빌딩 행사',
+    description: '분기별 팀 빌딩',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+    startTime: '18:00',
+    endTime: '21:00',
+    type: 'other' as const
+  }
 ];
 
 // 테스트용 Todo 데이터
@@ -227,8 +273,9 @@ export function ImprovedDashboard({
         stats: { x: 5, y: 0, w: 4, h: 2 },
         todoList: { x: 5, y: 2, w: 4, h: 3 },
         chart: { x: 0, y: 3, w: 5, h: 2 },
-        quickActions: { x: 0, y: 5, w: 9, h: 1 },
-        custom: { x: 0, y: 6, w: 4, h: 2 },
+        calendar: { x: 0, y: 5, w: 5, h: 3 },
+        quickActions: { x: 5, y: 5, w: 4, h: 1 },
+        custom: { x: 5, y: 6, w: 4, h: 2 },
       };
       const seen = new Set<ImprovedWidget['type']>();
       const selected: ImprovedWidget[] = [];
@@ -293,6 +340,17 @@ export function ImprovedDashboard({
         minW: 3,
         minH: 2,
       });
+      ensure('calendar', {
+        id: 'widget_calendar_1',
+        type: 'calendar',
+        title: '캘린더',
+        position: defaultPos.calendar,
+        data: mockCalendarEvents,
+        minW: 3,
+        minH: 2,
+        maxW: 6,
+        maxH: 4,
+      });
       ensure('quickActions', {
         id: 'widget_actions_1',
         type: 'quickActions',
@@ -345,10 +403,21 @@ export function ImprovedDashboard({
           minH: 2,
         },
         {
+          id: 'widget_calendar_1',
+          type: 'calendar',
+          title: '캘린더',
+          position: { x: 0, y: 5, w: 5, h: 3 },
+          data: mockCalendarEvents,
+          minW: 3,
+          minH: 2,
+          maxW: 6,
+          maxH: 4,
+        },
+        {
           id: 'widget_actions_1',
           type: 'quickActions',
           title: '빠른 작업',
-          position: { x: 0, y: 5, w: 9, h: 1 },
+          position: { x: 5, y: 5, w: 4, h: 1 },
           minW: 2,
           minH: 1,
         },
@@ -635,6 +704,12 @@ export function ImprovedDashboard({
         return <TodoListWidget 
           title={widget.title} 
           tasks={widget.data || mockTodoData}
+        />;
+      case 'calendar':
+        return <CalendarWidget
+          title={widget.title}
+          events={widget.data || mockCalendarEvents}
+          showToday={true}
         />;
       default:
         return (

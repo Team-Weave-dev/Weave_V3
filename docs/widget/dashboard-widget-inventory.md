@@ -337,7 +337,7 @@ interface SmartEngine {
 
 ## 💰 세무 관련 위젯 (2개)
 
-### 3. 📅 세무 캘린더 위젯 (TaxDeadlineWidget)
+### 3. 📅 세무 일정 위젯 (TaxDeadlineWidget)
 - **타입**: `tax-deadline`  
 - **카테고리**: `tax`
 - **iOS 참고**: Calendar 앱의 이벤트 리스트 뷰
