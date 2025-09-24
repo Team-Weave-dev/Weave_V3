@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProjectDetail from '@/components/projects/ProjectDetail';
 import { DeleteDialog } from '@/components/ui/dialogDelete';
+import { AlertCircleIcon } from 'lucide-react';
 import { getProjectPageText } from '@/config/brand';
 import type { ProjectTableRow } from '@/lib/types/project-table.types';
 
@@ -62,6 +63,8 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
         description={getProjectPageText.deleteModalMessage(lang)}
         confirmLabel={getProjectPageText.deleteModalConfirm(lang)}
         cancelLabel={getProjectPageText.deleteModalCancel(lang)}
+        icon={<AlertCircleIcon className="h-8 w-8 text-destructive" />}
+        borderClassName="border-2 border-primary"
         onOpenChange={setIsDeleteModalOpen}
         onConfirm={handleConfirmDelete}
       />

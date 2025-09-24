@@ -13,7 +13,7 @@ import Pagination from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Filter, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { Filter, ChevronDown, ChevronUp, RotateCcw, AlertCircleIcon } from 'lucide-react';
 import { layout } from '@/config/constants';
 
 interface DetailViewProps {
@@ -431,6 +431,8 @@ export default function DetailView({
         description={getProjectPageText.deleteModalMessage(lang)}
         confirmLabel={getProjectPageText.deleteModalConfirm(lang)}
         cancelLabel={getProjectPageText.deleteModalCancel(lang)}
+        icon={<AlertCircleIcon className="h-8 w-8 text-destructive" />}
+        borderClassName="border-2 border-primary"
         onOpenChange={setIsDeleteModalOpen}
         onConfirm={handleConfirmDelete}
       />
