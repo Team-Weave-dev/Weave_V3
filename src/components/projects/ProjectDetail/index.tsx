@@ -965,7 +965,7 @@ export default function ProjectDetail({
           }
         }}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl border-2 border-primary">
           <DialogHeader>
             <DialogTitle>{previewDocument?.name ?? (isEditing ? '문서 편집' : '문서 미리보기')}</DialogTitle>
             <DialogDescription>

@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProjectDetail from '@/components/projects/ProjectDetail';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { DeleteDialog } from '@/components/ui/dialogDelete';
 import { getProjectPageText } from '@/config/brand';
 import type { ProjectTableRow } from '@/lib/types/project-table.types';
 
@@ -57,24 +56,15 @@ export default function ProjectDetailClient({ project }: ProjectDetailClientProp
         onDelete={handleDelete}
       />
 
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{getProjectPageText.deleteModalTitle(lang)}</DialogTitle>
-            <DialogDescription>
-              {getProjectPageText.deleteModalMessage(lang)}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCancelDelete}>
-              {getProjectPageText.deleteModalCancel(lang)}
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
-              {getProjectPageText.deleteModalConfirm(lang)}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteDialog
+        open={isDeleteModalOpen}
+        title={getProjectPageText.deleteModalTitle(lang)}
+        description={getProjectPageText.deleteModalMessage(lang)}
+        confirmLabel={getProjectPageText.deleteModalConfirm(lang)}
+        cancelLabel={getProjectPageText.deleteModalCancel(lang)}
+        onOpenChange={setIsDeleteModalOpen}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 }

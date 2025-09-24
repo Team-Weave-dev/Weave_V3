@@ -7,7 +7,7 @@ import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.t
 import { getProjectPageText, getProjectStatusText } from '@/config/brand';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DeleteDialog } from '@/components/ui/dialogDelete';
 import ProjectProgress from '@/components/ui/project-progress';
 import Pagination from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
@@ -425,24 +425,15 @@ export default function DetailView({
       </div>
       </div>
 
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{getProjectPageText.deleteModalTitle(lang)}</DialogTitle>
-            <DialogDescription>
-              {getProjectPageText.deleteModalMessage(lang)}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCancelDelete}>
-              {getProjectPageText.deleteModalCancel(lang)}
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
-              {getProjectPageText.deleteModalConfirm(lang)}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteDialog
+        open={isDeleteModalOpen}
+        title={getProjectPageText.deleteModalTitle(lang)}
+        description={getProjectPageText.deleteModalMessage(lang)}
+        confirmLabel={getProjectPageText.deleteModalConfirm(lang)}
+        cancelLabel={getProjectPageText.deleteModalCancel(lang)}
+        onOpenChange={setIsDeleteModalOpen}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 }

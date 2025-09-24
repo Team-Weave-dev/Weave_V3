@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { DeleteDialog } from '@/components/ui/dialogDelete';
 import { getProjectPageText } from '@/config/brand';
 
 interface DocumentDeleteDialogProps {
@@ -41,21 +33,14 @@ export default function DocumentDeleteDialog({
       : descriptionBase;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md border border-primary">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            {getProjectPageText.deleteCancelLabel(lang)}
-          </Button>
-          <Button variant="destructive" onClick={onConfirm}>
-            {getProjectPageText.deleteConfirmLabel(lang)}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DeleteDialog
+      open={open}
+      title={title}
+      description={description}
+      cancelLabel={getProjectPageText.deleteCancelLabel(lang)}
+      confirmLabel={getProjectPageText.deleteConfirmLabel(lang)}
+      onOpenChange={onOpenChange}
+      onConfirm={onConfirm}
+    />
   );
 }
