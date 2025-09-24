@@ -1,1264 +1,1097 @@
 "use client"
 
-import { HeaderNavigation } from "@/components/ui/header-navigation"
+import { useMemo, useState } from "react"
+import Link from "next/link"
+import { Header } from "@/components/ui/header"
 import { Button } from "@/components/ui/button"
+import { LoadingButton } from "@/components/ui/loading-button"
+import { Badge, type BadgeProps } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { BasicHero, CenteredHero, SplitHero } from "@/components/ui/hero-section"
-import { BasicFooter, MinimalFooter } from "@/components/ui/footer"
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import { Progress } from "@/components/ui/progress"
+import ProjectProgress from "@/components/ui/project-progress"
+import { useToast } from "@/hooks/use-toast"
+import { Toaster } from "@/components/ui/toaster"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Calendar } from "@/components/ui/calendar"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { useForm } from "react-hook-form"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
+import { BasicHero, CenteredHero } from "@/components/ui/hero-section"
+import { BasicFooter, MinimalFooter } from "@/components/ui/footer"
+import { InteractiveCard } from "@/components/ui/interactive-card"
+import Typography from "@/components/ui/typography"
+import { PaletteSwitcher } from "@/components/ui/palette-switcher"
+import { ViewModeSwitch, ViewModeSwitchItem, SimpleViewModeSwitch, type ViewMode } from "@/components/ui/view-mode-switch"
 import { BarChart } from "@/components/ui/bar-chart"
 import { LineChart } from "@/components/ui/line-chart"
 import { PieChart } from "@/components/ui/pie-chart"
-import { PaletteSwitcher, PaletteViewer } from "@/components/ui/palette-switcher"
-import { ViewModeSwitch, ViewModeSwitchItem } from "@/components/ui/view-mode-switch"
-import { toast } from "@/hooks/use-toast"
-import { Toaster } from "@/components/ui/toaster"
-import { useRef, useState } from "react"
-import { useForm } from "react-hook-form"
-import { AlertCircle, Bell, Calendar as CalendarIcon, ChevronDown, FileText, Home, Settings, Users, Zap, List, Grid } from "lucide-react"
+import { Chart, ChartContent, ChartHeader, ChartTitle, ChartDescription } from "@/components/ui/chart"
+import Pagination from "@/components/ui/pagination"
+import { AdvancedTable } from "@/components/ui/advanced-table"
 import {
   brand,
   getBrandName,
+  getDescription,
+  getExtendedDescription,
   getLogoAlt,
-  getNavText,
-  getNotificationText,
-  getBadgeText,
-  getCalendarText,
-  getChartText,
-  getUsageText,
-  getDataText,
   getButtonText,
   getComponentDemoText,
+  getNotificationText,
+  getCalendarText,
+  getChartText,
   getPaletteText,
-  getViewModeText
+  getViewModeText,
+  getProjectStatusText,
+  getProjectStatusTitle,
+  getProjectStatusDescription,
+  getProjectPageText,
+  getDataText,
+  getAuthText,
+  routes,
 } from "@/config/brand"
-import { defaults, layout, chart, typography } from "@/config/constants"
-import { useResponsiveCols, defaultColsBreakpoints } from "@/components/ui/use-responsive-cols"
-import { StatsWidget, ProjectSummaryWidget } from "@/components/ui/widgets"
+import { defaults, layout, typography } from "@/config/constants"
+import type { ProjectTableConfig, ProjectTableRow, ProjectStatus } from "@/lib/types/project-table.types"
+import { cn } from "@/lib/utils"
+import {
+  LayoutGrid,
+  List,
+  Loader2,
+  Menu,
+  Send,
+  Sparkles,
+} from "lucide-react"
+
+const demoProjects: ProjectTableRow[] = [
+  {
+    id: "project-1",
+    no: "PJT-001",
+    name: getComponentDemoText.fastSpeed("ko"),
+    registrationDate: "2025-01-05",
+    client: brand.company.ko,
+    progress: 82,
+    status: "in_progress",
+    dueDate: "2025-03-18",
+    modifiedDate: "2025-02-12",
+    paymentProgress: 64,
+    hasContract: true,
+    hasBilling: true,
+    hasDocuments: true,
+  },
+  {
+    id: "project-2",
+    no: "PJT-002",
+    name: getComponentDemoText.easySetup("ko"),
+    registrationDate: "2025-01-18",
+    client: getComponentDemoText.teamCollaboration("ko"),
+    progress: 45,
+    status: "review",
+    dueDate: "2025-04-10",
+    modifiedDate: "2025-02-15",
+    paymentProgress: 30,
+    hasContract: true,
+    hasBilling: false,
+    hasDocuments: true,
+  },
+  {
+    id: "project-3",
+    no: "PJT-003",
+    name: getComponentDemoText.hoverEffect("ko"),
+    registrationDate: "2024-12-28",
+    client: getComponentDemoText.iconCards("ko"),
+    progress: 96,
+    status: "completed",
+    dueDate: "2025-02-01",
+    modifiedDate: "2025-02-20",
+    paymentProgress: 100,
+    hasContract: true,
+    hasBilling: true,
+    hasDocuments: true,
+  },
+]
+
+const badgeStatuses: ProjectStatus[] = [
+  "planning",
+  "in_progress",
+  "review",
+  "completed",
+  "on_hold",
+  "cancelled",
+]
+
+const semanticBadgeKeys = [
+  'success',
+  'warning',
+  'error',
+  'info',
+] as const
+
+const softStatusVariantMap: Record<ProjectStatus, BadgeProps['variant']> = {
+  planning: 'status-soft-planning',
+  in_progress: 'status-soft-inprogress',
+  review: 'status-soft-review',
+  completed: 'status-soft-completed',
+  on_hold: 'status-soft-onhold',
+  cancelled: 'status-soft-cancelled',
+}
+
+const softSemanticVariantMap: Record<typeof semanticBadgeKeys[number], BadgeProps['variant']> = {
+  success: 'status-soft-success',
+  warning: 'status-soft-warning',
+  error: 'status-soft-error',
+  info: 'status-soft-info',
+}
 
 export default function ComponentsPage() {
-  const [progressValue, setProgressValue] = useState(defaults.progress.initialValue)
+  const { toast } = useToast()
+  const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>("list")
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list')
-  const form = useForm()
-  const colsContainerRef = useRef<HTMLDivElement>(null)
-  const currentCols = useResponsiveCols(colsContainerRef as React.RefObject<HTMLElement>, { initialCols: 9 })
-  const widgetDemoStats = [
-    { label: '매출', value: '₩47,250,000', change: 12.5, changeType: 'increase' as const },
-    { label: '고객', value: '3,842', change: -5.4, changeType: 'decrease' as const },
-    { label: '주문', value: '1,827', change: 8.2, changeType: 'increase' as const },
-    { label: '전환율', value: '3.24%', change: 2.1, changeType: 'increase' as const },
-    { label: '평균 객단가', value: '₩62,300' },
-    { label: '재방문율', value: '38%' },
-  ]
-  const widgetDemoProjects = [
-    {
-      id: 'p1', projectId: 'D-100', projectName: '대시보드 고도화', client: 'Globex', pm: '김PM',
-      status: 'warning' as const, statusLabel: '주의', progress: 62,
-      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10), daysRemaining: 10,
-      budget: { total: 80000000, spent: 42000000, currency: 'KRW' }, currentStatus: '핵심 모듈 통합 테스트 진행 중',
-      issues: ['푸시 알림 실패', '성능 튜닝 필요']
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [paginationPage, setPaginationPage] = useState(1)
+  const [advancedTableConfig, setAdvancedTableConfig] = useState<ProjectTableConfig>(() => ({
+    columns: [
+      {
+        id: "no",
+        key: "no",
+        label: getProjectPageText.projectNo("ko"),
+        sortable: true,
+        filterable: true,
+        visible: true,
+        order: 0,
+        type: "text",
+      },
+      {
+        id: "name",
+        key: "name",
+        label: getComponentDemoText.projectName("ko"),
+        sortable: true,
+        filterable: true,
+        visible: true,
+        order: 1,
+        type: "text",
+      },
+      {
+        id: "client",
+        key: "client",
+        label: getProjectPageText.client("ko"),
+        sortable: true,
+        filterable: true,
+        visible: true,
+        order: 2,
+        type: "text",
+      },
+      {
+        id: "status",
+        key: "status",
+        label: getProjectPageText.projectStatus("ko"),
+        sortable: true,
+        filterable: true,
+        visible: true,
+        order: 3,
+        type: "status",
+      },
+      {
+        id: "progress",
+        key: "progress",
+        label: getProjectPageText.progress("ko"),
+        sortable: true,
+        filterable: false,
+        visible: true,
+        order: 4,
+        type: "progress",
+      },
+    ],
+    filters: {
+      searchQuery: "",
+      statusFilter: "all",
+      clientFilter: "all",
+      dateRange: undefined,
+      customFilters: {},
     },
-    {
-      id: 'p2', projectId: 'S-210', projectName: 'SEO 최적화', client: 'Acme', pm: '이PM',
-      status: 'normal' as const, statusLabel: '정상', progress: 78,
-      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18), daysRemaining: 18,
-      budget: { total: 60000000, spent: 35000000, currency: 'KRW' }, currentStatus: '페이지 속도 개선 확인'
+    sort: {
+      column: "no",
+      direction: "asc",
     },
-    {
-      id: 'p3', projectId: 'P-333', projectName: '파트너 포털', client: 'Initech', pm: '박PM',
-      status: 'critical' as const, statusLabel: '긴급', progress: 35,
-      deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3), daysRemaining: 3,
-      budget: { total: 90000000, spent: 70000000, currency: 'KRW' }, currentStatus: '권한 정책 재검토 필요',
-      issues: ['인증 전략 충돌', '권한 동기화 지연']
+    pagination: {
+      page: 1,
+      pageSize: 5,
+      total: demoProjects.length,
     },
-  ]
+  }))
 
-  // 차트 데이터 (중앙화된 텍스트 시스템 사용)
-  const barData = [
-    { name: getComponentDemoText.getMonthName(1, 'ko'), value: 12 },
-    { name: getComponentDemoText.getMonthName(2, 'ko'), value: 19 },
-    { name: getComponentDemoText.getMonthName(3, 'ko'), value: 15 },
-    { name: getComponentDemoText.getMonthName(4, 'ko'), value: 25 },
-    { name: getComponentDemoText.getMonthName(5, 'ko'), value: 22 },
-    { name: getComponentDemoText.getMonthName(6, 'ko'), value: 18 }
-  ]
+  const mdLogoSize = useMemo(
+    () =>
+      layout.heights.logoLarge
+        .split(" ")
+        .map((cls) => `md:${cls}`)
+        .join(" "),
+    []
+  )
 
-  const lineData = [
-    { name: getComponentDemoText.getWeekday(0, 'ko'), value: 8 },
-    { name: getComponentDemoText.getWeekday(1, 'ko'), value: 12 },
-    { name: getComponentDemoText.getWeekday(2, 'ko'), value: 15 },
-    { name: getComponentDemoText.getWeekday(3, 'ko'), value: 9 },
-    { name: getComponentDemoText.getWeekday(4, 'ko'), value: 18 },
-    { name: getComponentDemoText.getWeekday(5, 'ko'), value: 6 },
-    { name: getComponentDemoText.getWeekday(6, 'ko'), value: 4 }
-  ]
+  const barData = useMemo(
+    () => [
+      { name: getComponentDemoText.getMonthName(1, "ko"), value: 12 },
+      { name: getComponentDemoText.getMonthName(2, "ko"), value: 19 },
+      { name: getComponentDemoText.getMonthName(3, "ko"), value: 15 },
+      { name: getComponentDemoText.getMonthName(4, "ko"), value: 25 },
+      { name: getComponentDemoText.getMonthName(5, "ko"), value: 22 },
+      { name: getComponentDemoText.getMonthName(6, "ko"), value: 18 },
+    ],
+    []
+  )
 
-  const pieData = [
-    { name: getComponentDemoText.getCategory('work', 'ko'), value: 40 },
-    { name: getComponentDemoText.getCategory('personal', 'ko'), value: 25 },
-    { name: getComponentDemoText.getCategory('meeting', 'ko'), value: 20 },
-    { name: getComponentDemoText.getCategory('other', 'ko'), value: 15 }
-  ]
+  const lineData = useMemo(
+    () => [
+      { name: getComponentDemoText.getWeekday(0, "ko"), value: 8 },
+      { name: getComponentDemoText.getWeekday(1, "ko"), value: 12 },
+      { name: getComponentDemoText.getWeekday(2, "ko"), value: 15 },
+      { name: getComponentDemoText.getWeekday(3, "ko"), value: 9 },
+      { name: getComponentDemoText.getWeekday(4, "ko"), value: 18 },
+      { name: getComponentDemoText.getWeekday(5, "ko"), value: 6 },
+      { name: getComponentDemoText.getWeekday(6, "ko"), value: 4 },
+    ],
+    []
+  )
 
-  const handleToastClick = () => {
+  const pieData = useMemo(
+    () => [
+      { name: getComponentDemoText.getCategory("work", "ko"), value: 40 },
+      { name: getComponentDemoText.getCategory("personal", "ko"), value: 25 },
+      { name: getComponentDemoText.getCategory("meeting", "ko"), value: 20 },
+      { name: getComponentDemoText.getCategory("other", "ko"), value: 15 },
+    ],
+    []
+  )
+
+  const simpleTableRows = useMemo(
+    () => [
+      { project: brand.company.ko, status: "completed" as const, progress: 92 },
+      {
+        project: getComponentDemoText.fastSpeed("ko"),
+        status: "in_progress" as const,
+        progress: defaults.progress.initialValue,
+      },
+      {
+        project: getComponentDemoText.easySetup("ko"),
+        status: "review" as const,
+        progress: 48,
+      },
+      {
+        project: getComponentDemoText.hoverEffect("ko"),
+        status: "completed" as const,
+        progress: 100,
+      },
+      {
+        project: getComponentDemoText.teamCollaboration("ko"),
+        status: "in_progress" as const,
+        progress: 68,
+      },
+    ],
+    []
+  )
+
+  const itemsPerPage = 3
+  const paginatedRows = useMemo(() => {
+    const start = (paginationPage - 1) * itemsPerPage
+    return simpleTableRows.slice(start, start + itemsPerPage)
+  }, [paginationPage, simpleTableRows])
+
+  const handleToast = () => {
     toast({
-      title: getNotificationText.title('ko'),
-      description: getNotificationText.systemSuccess('ko'),
+      title: getNotificationText.title("ko"),
+      description: getNotificationText.systemSuccess("ko"),
     })
   }
+
+  const handleLoadingClick = () => {
+    setIsLoading(true)
+    setTimeout(() => setIsLoading(false), 1200)
+  }
+
+  const handleAdvancedConfigChange = (nextConfig: ProjectTableConfig) => {
+    setAdvancedTableConfig({
+      ...nextConfig,
+      pagination: {
+        ...nextConfig.pagination,
+        total: demoProjects.length,
+      },
+    })
+  }
+
+  const chartLegendItems = [
+    getComponentDemoText.getCategory("work", "ko"),
+    getComponentDemoText.getCategory("personal", "ko"),
+    getComponentDemoText.getCategory("meeting", "ko"),
+    getComponentDemoText.getCategory("other", "ko"),
+  ]
+
+  const form = useForm<{ email: string; message: string }>({
+    defaultValues: {
+      email: "",
+      message: "",
+    },
+  })
 
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        {/* 헤더 네비게이션 추가 */}
-        <HeaderNavigation />
-        
-        {/* 메인 콘텐츠 - 헤더 높이만큼 패딩 추가 */}
-        <div className="container mx-auto px-4 py-8 pt-20">
-          <div className="grid lg:grid-cols-4 gap-6">
-            {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">프로젝트 네비게이션</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Home className="mr-2 h-4 w-4" />
-                    대시보드
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <FileText className="mr-2 h-4 w-4" />
-                    문서
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Users className="mr-2 h-4 w-4" />
-                    팀 협업
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    일정 관리
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Settings className="mr-2 h-4 w-4" />
-                    설정
-                  </Button>
-                </CardContent>
-              </Card>
+        <Header />
+        <main
+          className={cn(
+            layout.page.container,
+            layout.page.padding.default,
+            "pt-[calc(3.5rem+1.5rem)] pb-20",
+          )}
+        >
+          <div className={cn(layout.page.section.stack)}>
+            <Tabs defaultValue="buttons" className="space-y-8 pt-6">
+              <TabsList className="flex flex-wrap justify-center gap-2">
+                <TabsTrigger value="buttons">{getComponentDemoText.sections.buttons.title("ko")}</TabsTrigger>
+                <TabsTrigger value="forms">{getComponentDemoText.sections.forms.title("ko")}</TabsTrigger>
+                <TabsTrigger value="feedback">{getComponentDemoText.sections.feedback.title("ko")}</TabsTrigger>
+                <TabsTrigger value="data">{getComponentDemoText.sections.data.title("ko")}</TabsTrigger>
+                <TabsTrigger value="layout">{getComponentDemoText.sections.layout.title("ko")}</TabsTrigger>
+              </TabsList>
 
-              {/* Project Progress */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="text-lg">프로젝트 진행률</CardTitle>
-                  <CardDescription>UI 중앙화 작업 진행상황</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span>컴포넌트 통합</span>
-                      <span>{progressValue}%</span>
-                    </div>
-                    <Progress value={progressValue} className="h-2" />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch id="auto-save" />
-                    <Label htmlFor="auto-save">자동 저장</Label>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Main Content */}
-            <div className="lg:col-span-3">
-              <Alert className="mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>중앙화 성공!</AlertTitle>
-                <AlertDescription>
-                  모든 UI 컴포넌트가 shadcn 기반으로 중앙화되었습니다. 일관된 디자인 시스템을 확인해보세요.
-                </AlertDescription>
-              </Alert>
-
-              <Tabs defaultValue="components" className="space-y-6">
-                {/* 뷰 모드 스위치 */}
-                <div className="flex justify-between items-center mb-4">
-                  <TabsList className="grid grid-cols-4">
-                    <TabsTrigger value="components">컴포넌트</TabsTrigger>
-                    <TabsTrigger value="forms">폼</TabsTrigger>
-                    <TabsTrigger value="data">데이터</TabsTrigger>
-                    <TabsTrigger value="layout">레이아웃</TabsTrigger>
-                  </TabsList>
-                  <ViewModeSwitch
-                    value={viewMode}
-                    onValueChange={(value) => setViewMode(value as 'list' | 'detail')}
-                    aria-label={getViewModeText.title('ko')}
-                    variant="default"
-                  >
-                    <ViewModeSwitchItem
-                      value="list"
-                      icon={<List className="h-4 w-4" />}
-                    >
-                      {getViewModeText.listView('ko')}
-                    </ViewModeSwitchItem>
-                    <ViewModeSwitchItem
-                      value="detail"
-                      icon={<Grid className="h-4 w-4" />}
-                    >
-                      {getViewModeText.detailView('ko')}
-                    </ViewModeSwitchItem>
-                  </ViewModeSwitch>
-                </div>
-
-                <TabsContent value="components" className="space-y-6">
-                  <div className={viewMode === 'list' ? "space-y-4" : "grid md:grid-cols-2 gap-6"}>
-                    <Card className={viewMode === 'list' ? '' : ''}>
-                      <CardHeader className={viewMode === 'list' ? 'pb-3' : ''}>
-                        <CardTitle className={viewMode === 'list' ? 'text-base' : ''}>버튼 컴포넌트</CardTitle>
-                        <CardDescription className={viewMode === 'list' ? 'text-xs' : ''}>다양한 스타일의 버튼들</CardDescription>
-                      </CardHeader>
-                      <CardContent className={viewMode === 'list' ? 'space-y-2' : 'space-y-4'}>
-                        <div className="flex flex-wrap gap-2">
-                          <Button size={viewMode === 'list' ? 'sm' : 'default'}>Primary</Button>
-                          <Button size={viewMode === 'list' ? 'sm' : 'default'} variant="secondary">Secondary</Button>
-                          <Button size={viewMode === 'list' ? 'sm' : 'default'} variant="outline">Outline</Button>
-                          <Button size={viewMode === 'list' ? 'sm' : 'default'} variant="ghost">Ghost</Button>
-                          <Button size={viewMode === 'list' ? 'sm' : 'default'} variant="destructive">Destructive</Button>
-                        </div>
-                        {viewMode === 'detail' && (
-                          <>
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-medium">새로운 Secondary 버튼 스타일</h4>
-                              <div className="flex flex-wrap gap-2">
-                                <Button variant="secondary">{getButtonText.getSize('default', 'ko')} {getButtonText.getVariant('secondary', 'ko')}</Button>
-                                <Button variant="secondary" size="sm">{getButtonText.getSize('small', 'ko')} {getButtonText.getVariant('secondary', 'ko')}</Button>
-                                <Button variant="secondary" size="lg">{getButtonText.getSize('large', 'ko')} {getButtonText.getVariant('secondary', 'ko')}</Button>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {getComponentDemoText.getVariantDescription('default', 'ko')}
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm">Small</Button>
-                              <Button size="default">Default</Button>
-                              <Button size="lg">Large</Button>
-                            </div>
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-medium">업데이트된 Outline & Ghost 버튼</h4>
-                              <div className="flex flex-wrap gap-2">
-                                <Button variant="outline">{getButtonText.getSize('default', 'ko')} {getButtonText.getVariant('outline', 'ko')}</Button>
-                                <Button variant="outline" size="sm">{getButtonText.getSize('small', 'ko')} {getButtonText.getVariant('outline', 'ko')}</Button>
-                                <Button variant="ghost">{getButtonText.getSize('default', 'ko')} {getButtonText.getVariant('ghost', 'ko')}</Button>
-                                <Button variant="ghost" size="sm">{getButtonText.getSize('small', 'ko')} {getButtonText.getVariant('ghost', 'ko')}</Button>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {getComponentDemoText.getVariantDescription('outline', 'ko')}<br />
-                                {getComponentDemoText.getVariantDescription('ghost', 'ko')}
-                              </p>
-                            </div>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className={viewMode === 'list' ? 'pb-3' : ''}>
-                        <CardTitle className={viewMode === 'list' ? 'text-base' : ''}>탭 컴포넌트</CardTitle>
-                        <CardDescription className={viewMode === 'list' ? 'text-xs' : ''}>새로운 탭 스타일링</CardDescription>
-                      </CardHeader>
-                      <CardContent className={viewMode === 'list' ? 'space-y-2' : 'space-y-4'}>
-                        <div className="space-y-2">
-                          {viewMode === 'detail' && <h4 className="text-sm font-medium">새로운 탭 디자인</h4>}
-                          <Tabs defaultValue="tab1" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3">
-                              <TabsTrigger value="tab1">첫 번째</TabsTrigger>
-                              <TabsTrigger value="tab2">두 번째</TabsTrigger>
-                              <TabsTrigger value="tab3">세 번째</TabsTrigger>
-                            </TabsList>
-                            {viewMode === 'detail' && (
-                              <>
-                                <TabsContent value="tab1" className="mt-4">
-                                  <p className="text-sm text-muted-foreground">첫 번째 탭의 내용입니다.</p>
-                                </TabsContent>
-                                <TabsContent value="tab2" className="mt-4">
-                                  <p className="text-sm text-muted-foreground">두 번째 탭의 내용입니다.</p>
-                                </TabsContent>
-                                <TabsContent value="tab3" className="mt-4">
-                                  <p className="text-sm text-muted-foreground">세 번째 탭의 내용입니다.</p>
-                                </TabsContent>
-                              </>
-                            )}
-                          </Tabs>
-                          {viewMode === 'detail' && (
-                            <p className="text-xs text-muted-foreground">
-                              기본: 흰색 배경 + 검은색 텍스트 → 활성화시 Primary 색상 텍스트 + 굵은 폰트 + Primary 하단 언더라인
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader className={viewMode === 'list' ? 'pb-3' : ''}>
-                        <CardTitle className={viewMode === 'list' ? 'text-base' : ''}>뷰 모드 스위치</CardTitle>
-                        <CardDescription className={viewMode === 'list' ? 'text-xs' : ''}>두 가지 스타일의 스위치 컴포넌트</CardDescription>
-                      </CardHeader>
-                      <CardContent className={viewMode === 'list' ? 'space-y-2' : 'space-y-4'}>
-                        <div className="space-y-4">
-                          {viewMode === 'detail' && <h4 className="text-sm font-medium">Default Variant (뷰 모드 전환용)</h4>}
-                          <ViewModeSwitch
-                            value="list"
-                            onValueChange={() => {}}
-                            aria-label="뷰 모드 선택"
-                            variant="default"
-                          >
-                            <ViewModeSwitchItem value="list" icon={<List className="h-4 w-4" />}>
-                              리스트 뷰
-                            </ViewModeSwitchItem>
-                            <ViewModeSwitchItem value="detail" icon={<Grid className="h-4 w-4" />}>
-                              상세 뷰
-                            </ViewModeSwitchItem>
-                          </ViewModeSwitch>
-                          {viewMode === 'detail' && (
-                            <p className="text-xs text-muted-foreground">
-                              회색 배경에 활성 버튼은 흰색 배경 + Primary 색상 텍스트 + 그림자 효과
-                            </p>
-                          )}
-                        </div>
-                        {viewMode === 'detail' && (
-                          <div className="space-y-4">
-                            <h4 className="text-sm font-medium">Toggle Variant (일반 토글용)</h4>
-                            <ViewModeSwitch
-                              value="on"
-                              onValueChange={() => {}}
-                              aria-label="토글 선택"
-                              variant="toggle"
-                            >
-                              <ViewModeSwitchItem value="on">켜기</ViewModeSwitchItem>
-                              <ViewModeSwitchItem value="off">끄기</ViewModeSwitchItem>
-                            </ViewModeSwitch>
-                            <p className="text-xs text-muted-foreground">
-                              테두리가 있으며 활성 버튼은 Primary 배경 + 흰색 텍스트
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>네비게이션 메뉴</CardTitle>
-                        <CardDescription>조건부 드롭다운 아이콘이 적용된 메뉴</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium">{getComponentDemoText.menuExample('ko')}</h4>
-                          <p className="text-xs text-muted-foreground">
-                            {getComponentDemoText.menuDescription('ko')}
-                          </p>
-                        </div>
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium">드롭다운 아이콘 제어</h4>
-                          <div className="bg-muted/50 p-3 rounded-md">
-                            <code className="text-xs">
-                              {`<NavigationMenuTrigger showDropdownIcon={false}>홈</NavigationMenuTrigger>`}
-                            </code>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            showDropdownIcon 속성으로 드롭다운 아이콘 표시 여부를 제어할 수 있습니다.
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>입력 컴포넌트</CardTitle>
-                        <CardDescription>폼 입력 요소들</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <Input placeholder="텍스트 입력..." />
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="옵션을 선택하세요" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="option1">옵션 1</SelectItem>
-                            <SelectItem value="option2">옵션 2</SelectItem>
-                            <SelectItem value="option3">옵션 3</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox id="terms" />
-                          <Label htmlFor="terms">약관에 동의합니다</Label>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
+              <TabsContent value="buttons" className={cn(layout.page.section.stack)}>
+                <div className={cn("grid", layout.page.section.gridGap, "lg:grid-cols-2")}
+                >
                   <Card>
                     <CardHeader>
-                      <CardTitle>{getComponentDemoText.getStatusTitle('ko')}</CardTitle>
-                      <CardDescription>{getComponentDemoText.getStatusDescription('ko')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <Badge>{getComponentDemoText.getBadgeVariant('default', 'ko')}</Badge>
-                        <Badge variant="success">{getComponentDemoText.getStatusText('success', 'ko')}</Badge>
-                        <Badge variant="warning">{getComponentDemoText.getStatusText('warning', 'ko')}</Badge>
-                        <Badge variant="error">{getComponentDemoText.getStatusText('error', 'ko')}</Badge>
-                        <Badge variant="info">{getComponentDemoText.getStatusText('info', 'ko')}</Badge>
-                        <Badge variant="secondary">{getComponentDemoText.getBadgeVariant('secondary', 'ko')}</Badge>
-                        <Badge variant="outline">{getComponentDemoText.getBadgeVariant('outline', 'ko')}</Badge>
-                      </div>
-                      <Button onClick={handleToastClick} className="mb-4">
-                        Toast 알림 보기
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{getComponentDemoText.getProjectStatusTitle('ko')}</CardTitle>
-                      <CardDescription>{getComponentDemoText.getProjectStatusDescription('ko')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="project-review">{getComponentDemoText.getProjectStatus('review', 'ko')}</Badge>
-                        <Badge variant="project-complete">{getComponentDemoText.getProjectStatus('complete', 'ko')}</Badge>
-                        <Badge variant="project-cancelled">{getComponentDemoText.getProjectStatus('cancelled', 'ko')}</Badge>
-                        <Badge variant="project-planning">{getComponentDemoText.getProjectStatus('planning', 'ko')}</Badge>
-                        <Badge variant="project-onhold">{getComponentDemoText.getProjectStatus('onHold', 'ko')}</Badge>
-                        <Badge variant="project-inprogress">{getComponentDemoText.getProjectStatus('inProgress', 'ko')}</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle>{getPaletteText.title('ko')}</CardTitle>
-                        <PaletteSwitcher showCurrentName={true} />
-                      </div>
-                      <CardDescription>{getPaletteText.description('ko')}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <PaletteViewer />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>캐러셀 컴포넌트</CardTitle>
-                      <CardDescription>이미지나 콘텐츠를 슬라이드로 표시하는 캐러셀</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">기본 캐러셀</h4>
-                        <Carousel className="w-full max-w-xs mx-auto">
-                          <CarouselContent>
-                            <CarouselItem>
-                              <div className="p-1">
-                                <Card>
-                                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                                    <span className="text-4xl font-semibold">1</span>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            </CarouselItem>
-                            <CarouselItem>
-                              <div className="p-1">
-                                <Card>
-                                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                                    <span className="text-4xl font-semibold">2</span>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            </CarouselItem>
-                            <CarouselItem>
-                              <div className="p-1">
-                                <Card>
-                                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                                    <span className="text-4xl font-semibold">3</span>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            </CarouselItem>
-                            <CarouselItem>
-                              <div className="p-1">
-                                <Card>
-                                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                                    <span className="text-4xl font-semibold">4</span>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            </CarouselItem>
-                            <CarouselItem>
-                              <div className="p-1">
-                                <Card>
-                                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                                    <span className="text-4xl font-semibold">5</span>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            </CarouselItem>
-                          </CarouselContent>
-                          <CarouselPrevious />
-                          <CarouselNext />
-                        </Carousel>
-                        <p className="text-xs text-muted-foreground text-center">
-                          좌우 화살표를 클릭하거나 드래그하여 슬라이드를 넘겨보세요.
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">다중 아이템 캐러셀</h4>
-                        <Carousel
-                          opts={{
-                            align: "start",
-                          }}
-                          className="w-full max-w-sm mx-auto"
-                        >
-                          <CarouselContent>
-                            {Array.from({ length: 8 }).map((_, index) => (
-                              <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                                <div className="p-1">
-                                  <Card>
-                                    <CardContent className="flex aspect-square items-center justify-center p-4">
-                                      <span className="text-2xl font-semibold">{index + 1}</span>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              </CarouselItem>
-                            ))}
-                          </CarouselContent>
-                          <CarouselPrevious />
-                          <CarouselNext />
-                        </Carousel>
-                        <p className="text-xs text-muted-foreground text-center">
-                          한 번에 여러 아이템을 표시하는 캐러셀입니다.
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>향상된 카드 스타일</CardTitle>
-                      <CardDescription>다양한 카드 디자인 변형</CardDescription>
+                      <CardTitle>{getComponentDemoText.sections.buttons.title("ko")}</CardTitle>
+                      <CardDescription>
+                        {getComponentDemoText.sections.buttons.description("ko")}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">그라데이션 카드</h4>
-                        <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
-                          <CardHeader>
-                            <CardTitle className="text-primary">프리미엄 기능</CardTitle>
-                            <CardDescription>특별한 기능들을 경험해보세요</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-muted-foreground mb-4">
-                              향상된 기능과 더 나은 성능을 제공합니다.
-                            </p>
-                            <Button variant="outline" size="sm">
-                              업그레이드
-                            </Button>
-                          </CardContent>
-                        </Card>
+                      <div className="flex flex-wrap gap-3">
+                        <Button>{getButtonText.getVariant("primary", "ko")}</Button>
+                        <Button variant="secondary">
+                          {getButtonText.getVariant("secondary", "ko")}
+                        </Button>
+                        <Button variant="outline">
+                          {getButtonText.getVariant("outline", "ko")}
+                        </Button>
+                        <Button variant="ghost">
+                          {getButtonText.getVariant("ghost", "ko")}
+                        </Button>
+                        <Button variant="destructive">
+                          {getButtonText.getVariant("destructive", "ko")}
+                        </Button>
                       </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">{getComponentDemoText.hoverEffect('ko')}</h4>
-                        <Card className="transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
-                          <CardHeader>
-                            <CardTitle>{getComponentDemoText.interactive('ko')}</CardTitle>
-                            <CardDescription>{getComponentDemoText.hoverDescription('ko')}</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-muted-foreground">
-                              {getComponentDemoText.hoverInstruction('ko')}
-                            </p>
-                          </CardContent>
-                        </Card>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <LoadingButton
+                          loading={isLoading}
+                          onClick={handleLoadingClick}
+                          loadingPlacement="right"
+                          loadingText={getButtonText.loading("ko")}
+                        >
+                          {getButtonText.submit("ko")}
+                        </LoadingButton>
+                        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
                       </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">{getComponentDemoText.iconCards('ko')}</h4>
-                        <div className="grid grid-cols-3 gap-4">
-                          <Card className="text-center">
-                            <CardContent className="pt-6">
-                              <Zap className="mx-auto h-8 w-8 text-primary mb-2" />
-                              <h3 className="font-medium">{getComponentDemoText.fastSpeed('ko')}</h3>
-                              <p className="text-xs text-muted-foreground">{getComponentDemoText.fastSpeedDesc('ko')}</p>
-                            </CardContent>
-                          </Card>
-                          <Card className="text-center">
-                            <CardContent className="pt-6">
-                              <Settings className="mx-auto h-8 w-8 text-primary mb-2" />
-                              <h3 className="font-medium">{getComponentDemoText.easySetup('ko')}</h3>
-                              <p className="text-xs text-muted-foreground">{getComponentDemoText.easySetupDesc('ko')}</p>
-                            </CardContent>
-                          </Card>
-                          <Card className="text-center">
-                            <CardContent className="pt-6">
-                              <Users className="mx-auto h-8 w-8 text-primary mb-2" />
-                              <h3 className="font-medium">{getComponentDemoText.teamCollaboration('ko')}</h3>
-                              <p className="text-xs text-muted-foreground">{getComponentDemoText.teamCollaborationDesc('ko')}</p>
-                            </CardContent>
-                          </Card>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-foreground">Semantic States</h4>
+                          <p className="text-xs text-muted-foreground">성공/경고/오류/정보 상태에 대한 소프트 배지</p>
+                          <div className="flex flex-wrap gap-2">
+                            {semanticBadgeKeys.map((key) => (
+                              <Badge key={`semantic-${key}`} variant={softSemanticVariantMap[key]}>
+                                {getComponentDemoText.getStatusText(key, 'ko')}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium text-foreground">Project States</h4>
+                          <p className="text-xs text-muted-foreground">프로젝트 단계 6종에 대한 소프트 배지</p>
+                          <div className="flex flex-wrap gap-2">
+                            {badgeStatuses.map((status) => (
+                              <Badge key={`status-${status}`} variant={softStatusVariantMap[status]}>
+                                {getProjectStatusText(status, 'ko')}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
 
-                <TabsContent value="forms" className="space-y-6">
+                </div>
+              </TabsContent>
+
+              <TabsContent value="forms" className={cn(layout.page.section.stack)}>
+                <div className={cn("grid", layout.page.section.gridGap, "lg:grid-cols-2")}
+                >
                   <Card>
                     <CardHeader>
-                      <CardTitle>{getComponentDemoText.projectCreate('ko')}</CardTitle>
-                      <CardDescription>{getComponentDemoText.projectCreateDesc('ko')}</CardDescription>
+                      <CardTitle>{getComponentDemoText.sections.forms.title("ko")}</CardTitle>
+                      <CardDescription>
+                        {getComponentDemoText.sections.forms.description("ko")}
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <CardContent className="space-y-6">
+                      <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                          <Label htmlFor="project-name">{getComponentDemoText.projectName('ko')}</Label>
-                          <Input id="project-name" placeholder={getComponentDemoText.projectNamePlaceholder('ko')} />
+                          <Label htmlFor="demo-input">
+                            {getComponentDemoText.projectName("ko")}
+                          </Label>
+                          <Input
+                            id="demo-input"
+                            placeholder={getComponentDemoText.projectNamePlaceholder("ko")}
+                          />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="project-type">{getComponentDemoText.projectType('ko')}</Label>
+                          <Label htmlFor="demo-select">
+                            {getComponentDemoText.projectType("ko")}
+                          </Label>
                           <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder={getComponentDemoText.selectType('ko')} />
+                            <SelectTrigger id="demo-select">
+                              <SelectValue placeholder={getComponentDemoText.selectType("ko")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="web">{getComponentDemoText.webApp('ko')}</SelectItem>
-                              <SelectItem value="mobile">{getComponentDemoText.mobileApp('ko')}</SelectItem>
-                              <SelectItem value="desktop">{getComponentDemoText.desktopApp('ko')}</SelectItem>
+                              <SelectItem value="web">{getComponentDemoText.webApp("ko")}</SelectItem>
+                              <SelectItem value="mobile">{getComponentDemoText.mobileApp("ko")}</SelectItem>
+                              <SelectItem value="desktop">{getComponentDemoText.desktopApp("ko")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="description">{getComponentDemoText.projectDescription('ko')}</Label>
-                        <Textarea id="description" placeholder={getComponentDemoText.projectDescPlaceholder('ko')} />
+                        <Label htmlFor="demo-textarea">
+                          {getComponentDemoText.projectDescription("ko")}
+                        </Label>
+                        <Textarea
+                          id="demo-textarea"
+                          placeholder={getComponentDemoText.projectDescPlaceholder("ko")}
+                        />
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="public" />
-                        <Label htmlFor="public">{getComponentDemoText.publicProject('ko')}</Label>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button type="submit">
-                          <Zap className="mr-2 h-4 w-4" />
-                          {getComponentDemoText.createProject('ko')}
-                        </Button>
-                        <Button variant="outline">{getButtonText.cancel('ko')}</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="data" className="space-y-6">
-                  {/* 캘린더 & 차트 섹션 제목 */}
-                  <div className="text-center space-y-2 mb-8">
-                    <h2 className={typography.title.section}>
-                      {getDataText.calendarAndCharts('ko')}
-                    </h2>
-                    <p className={typography.text.description}>
-                      {getDataText.calendarAndChartsDesc('ko')}
-                    </p>
-                  </div>
-
-                  {/* 캘린더 섹션 */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>{getCalendarText.title('ko')}</CardTitle>
-                          <CardDescription>{getCalendarText.description('ko')}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            className="rounded-lg border"
+                      <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox id="demo-checkbox" defaultChecked />
+                          <Label htmlFor="demo-checkbox">
+                            {getComponentDemoText.publicProject("ko")}
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="auto-save"
+                            checked={isAutoSaveEnabled}
+                            onCheckedChange={setIsAutoSaveEnabled}
                           />
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    <div className="lg:col-span-2">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>{getCalendarText.selectedDate('ko')}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {selectedDate ? (
-                            <div className="space-y-4">
-                              <div className="text-2xl font-bold">
-                                {selectedDate.toLocaleDateString('ko-KR', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                  weekday: 'long'
-                                })}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {selectedDate.toLocaleDateString('ko-KR', {
-                                  year: 'numeric',
-                                  month: '2-digit',
-                                  day: '2-digit'
-                                })} • {selectedDate.toLocaleDateString('ko-KR', { weekday: 'long' })}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-muted-foreground">
-                              {getCalendarText.selectDate('ko')}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-
-                  {/* 차트 섹션 */}
-                  <div className="space-y-6">
-                    <h3 className={typography.title.card}>{getChartText.title('ko')}</h3>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* 막대 차트 */}
-                      <BarChart
-                        data={barData}
-                        title={getChartText.barChart.title('ko')}
-                        description={getChartText.barChart.description('ko')}
-                        color={chart.colors.primary}
-                        showGrid={true}
-                        showTooltip={true}
-                        showAxis={true}
-                        variant="default"
-                        size="default"
-                        animate={true}
-                      />
-
-                      {/* 라인 차트 */}
-                      <LineChart
-                        data={lineData}
-                        title={getChartText.lineChart.title('ko')}
-                        description={getChartText.lineChart.description('ko')}
-                        color={chart.colors.secondary}
-                        strokeWidth={3}
-                        showGrid={true}
-                        showTooltip={true}
-                        showDots={true}
-                        smooth={true}
-                        variant="default"
-                        size="default"
-                        animate={true}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* 파이 차트 */}
-                      <PieChart
-                        data={pieData}
-                        title={getChartText.pieChart.title('ko')}
-                        description={getChartText.pieChart.description('ko')}
-                        showLegend={true}
-                        showTooltip={true}
-                        showPercent={true}
-                        variant="default"
-                        size="default"
-                        animate={true}
-                        outerRadius={65}
-                      />
-
-                      {/* 통계 카드 */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>{getChartText.statistics.title('ko')}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="text-center p-4 bg-chart-1/10 rounded-lg">
-                              <div className="text-2xl font-bold text-foreground">121</div>
-                              <div className="text-sm text-foreground">{getChartText.statistics.totalEvents('ko')}</div>
-                            </div>
-                            <div className="text-center p-4 bg-chart-2/10 rounded-lg">
-                              <div className="text-2xl font-bold text-foreground">17.3</div>
-                              <div className="text-sm text-foreground">{getChartText.statistics.monthlyAverage('ko')}</div>
-                            </div>
-                            <div className="text-center p-4 bg-chart-3/10 rounded-lg">
-                              <div className="text-2xl font-bold text-foreground">{getChartText.statistics.friday('ko')}</div>
-                              <div className="text-sm text-foreground">{getChartText.statistics.busiestDay('ko')}</div>
-                            </div>
-                            <div className="text-center p-4 bg-chart-4/10 rounded-lg">
-                              <div className="text-2xl font-bold text-foreground">2.5시간</div>
-                              <div className="text-sm text-foreground">{getChartText.statistics.averageLength('ko')}</div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-
-                  {/* 사용법 안내 */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{getUsageText.title('ko')}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-semibold mb-2">{getUsageText.calendarUsage('ko')}</h4>
-                          <code className="block p-2 bg-muted rounded text-sm">
-                            {`import { Calendar } from '@/components/ui/calendar'`}
-                          </code>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold mb-2">{getUsageText.chartUsage('ko')}</h4>
-                          <code className="block p-2 bg-muted rounded text-sm">
-                            {`import { BarChart, LineChart, PieChart } from '@/components/ui/[chart-name]'`}
-                          </code>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold mb-2">{getUsageText.features.title('ko')}</h4>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li><strong>cva</strong>: {getUsageText.features.cva('ko')}</li>
-                            <li><strong>forwardRef</strong>: {getUsageText.features.forwardRef('ko')}</li>
-                            <li><strong>TypeScript</strong>: {getUsageText.features.typescript('ko')}</li>
-                            <li><strong>shadcn/ui</strong>: {getUsageText.features.shadcn('ko')}</li>
-                            <li><strong>접근성</strong>: {getUsageText.features.accessibility('ko')}</li>
-                            <li><strong>디자인 토큰</strong>: {getUsageText.features.designTokens('ko')}</li>
-                            <li><strong>Variants</strong>: {getUsageText.features.variants('ko')}</li>
-                            <li><strong>커스터마이징</strong>: {getUsageText.features.customization('ko')}</li>
-                          </ul>
+                          <Label htmlFor="auto-save">
+                            {getComponentDemoText.getStatusText("active", "ko")}
+                          </Label>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {/* 기존 팀 멤버 목록 유지 */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>팀 멤버 목록</CardTitle>
-                      <CardDescription>프로젝트 참여 멤버들</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>멤버</TableHead>
-                            <TableHead>역할</TableHead>
-                            <TableHead>상태</TableHead>
-                            <TableHead>마지막 활동</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell className="flex items-center space-x-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>김</AvatarFallback>
-                              </Avatar>
-                              <span>김개발</span>
-                            </TableCell>
-                            <TableCell>프론트엔드 개발자</TableCell>
-                            <TableCell>
-                              <Badge>{getComponentDemoText.getStatusText('active', 'ko')}</Badge>
-                            </TableCell>
-                            <TableCell>2분 전</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="flex items-center space-x-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>이</AvatarFallback>
-                              </Avatar>
-                              <span>이디자인</span>
-                            </TableCell>
-                            <TableCell>UI/UX 디자이너</TableCell>
-                            <TableCell>
-                              <Badge>{getComponentDemoText.getStatusText('online', 'ko')}</Badge>
-                            </TableCell>
-                            <TableCell>방금 전</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="flex items-center space-x-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback>박</AvatarFallback>
-                              </Avatar>
-                              <span>박백엔드</span>
-                            </TableCell>
-                            <TableCell>백엔드 개발자</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{getComponentDemoText.getStatusText('offline', 'ko')}</Badge>
-                            </TableCell>
-                            <TableCell>1시간 전</TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="layout" className="space-y-6">
-                  {/* 반응형 컬럼 규칙 */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>반응형 컬럼 규칙</CardTitle>
-                      <CardDescription>그리드 컬럼 수를 컨테이너 폭에 맞춰 자동 조정</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4" ref={colsContainerRef}>
-                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                        <div className="p-3 bg-muted/30 rounded-lg">
-                          <strong className="text-primary">현재 컬럼</strong>
-                          <p className="text-xs text-muted-foreground mt-1">{currentCols} cols</p>
-                        </div>
-                        <div className="p-3 bg-muted/30 rounded-lg">
-                          <strong className="text-primary">기본 브레이크포인트</strong>
-                          <p className="text-xs text-muted-foreground mt-1">≥1200px: 9 • ≥768px: 6 • ≥480px: 4 • 그 외: 2</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">사용 예시</h4>
-                        <pre className="text-xs bg-muted/50 p-3 rounded-lg overflow-x-auto">
-{`import { useRef } from 'react'
-import { useResponsiveCols } from '@/components/ui/use-responsive-cols'
-
-export function GridContainer() {
-  const ref = useRef<HTMLDivElement>(null)
-  const cols = useResponsiveCols(ref, { initialCols: 9 })
-  return (
-    <div ref={ref} className="w-full">
-      {/* cols 값을 스토어나 레이아웃 계산에 반영 */}
-      <div>cols: {cols}</div>
-    </div>
-  )
-}`}
-                        </pre>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* 위젯 컴포넌트 규격 */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>위젯 컴포넌트 규격</CardTitle>
-                      <CardDescription>UI 라이브러리 내 위젯 공통 구조와 사용 규칙</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <ul className="text-sm list-disc pl-5 space-y-1">
-                        <li>위치: <code className="text-xs">src/components/ui/widgets/*</code></li>
-                        <li>공통 구조: <code className="text-xs">Card(h-full flex-col overflow-hidden)</code> + <code className="text-xs">CardHeader</code> + <code className="text-xs">CardContent(flex-1 overflow-auto min-h-0)</code></li>
-                        <li>스크롤 처리: 콘텐츠가 높이를 초과하면 내부 스크롤</li>
-                        <li>임포트 경로: <code className="text-xs">@/components/ui/widgets</code> 또는 개별 파일</li>
-                        <li>권장 그리드: minW=2, minH=1 (대부분 위젯), 최대폭은 9 컬럼 기준</li>
-                      </ul>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">임베드 예시</h4>
-                        <pre className="text-xs bg-muted/50 p-3 rounded-lg overflow-x-auto">
-{`import { StatsWidget, ProjectSummaryWidget } from '@/components/ui/widgets'
-
-<StatsWidget title="통계 대시보드" stats={[{ label: '매출', value: '₩47,250,000' }]} />
-<ProjectSummaryWidget title="프로젝트 현황" projects={projects} />`}
-                        </pre>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* 위젯 데모 */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>위젯 데모</CardTitle>
-                      <CardDescription>일반적인 높이 제한에서의 스크롤과 레이아웃 예시</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="border rounded-lg overflow-hidden p-2 h-72 bg-background">
-                          <StatsWidget title="통계 대시보드" stats={widgetDemoStats} />
-                        </div>
-                        <div className="border rounded-lg overflow-hidden p-2 h-72 bg-background">
-                          <ProjectSummaryWidget title="프로젝트 현황" projects={widgetDemoProjects} />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  {/* 헤더 네비게이션 */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>헤더 네비게이션</CardTitle>
-                      <CardDescription>브랜드 로고와 메인 메뉴가 포함된 반응형 헤더 네비게이션</CardDescription>
+                      <CardTitle>{getComponentDemoText.projectCreate("ko")}</CardTitle>
+                      <CardDescription>{getComponentDemoText.projectCreateDesc("ko")}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">기본 헤더 네비게이션</h4>
-                        <div className="border rounded-lg overflow-hidden relative" style={{ minHeight: '64px' }}>
-                          <HeaderNavigation />
-                        </div>
+                      <Form {...form}>
+                        <form className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            rules={{ required: getComponentDemoText.hoverInstruction("ko") }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                  <Input type="email" placeholder="user@example.com" {...field} />
+                                </FormControl>
+                                <FormDescription>{getNotificationText.title("ko")}</FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="message"
+                            rules={{ required: getComponentDemoText.hoverInstruction("ko") }}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{getComponentDemoText.projectDescription("ko")}</FormLabel>
+                                <FormControl>
+                                  <Textarea placeholder={getComponentDemoText.projectDescPlaceholder("ko")} {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button type="submit" className="gap-2">
+                              <Send className="h-4 w-4" />
+                              {getComponentDemoText.createProject("ko")}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{getCalendarText.title("ko")}</CardTitle>
+                    <CardDescription>{getCalendarText.description("ko")}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      className="rounded-md border"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {getCalendarText.selectedDate("ko")}: {selectedDate?.toLocaleDateString("ko-KR")}
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="feedback" className={cn(layout.page.section.stack)}>
+                <div className={cn("grid", layout.page.section.gridGap, "lg:grid-cols-2")}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{getComponentDemoText.sections.feedback.title("ko")}</CardTitle>
+                      <CardDescription>
+                        {getComponentDemoText.sections.feedback.description("ko")}
+                      </CardDescription>
+                    </CardHeader>
+                  <CardContent className="space-y-6">
+                    <Alert>
+                      <AlertTitle>{getNotificationText.title("ko")}</AlertTitle>
+                      <AlertDescription>
+                        {getNotificationText.systemSuccess("ko")}
+                      </AlertDescription>
+                    </Alert>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-foreground">Progress · Base</h4>
                         <p className="text-xs text-muted-foreground">
-                          브랜드 로고 및 이름 표시 • 메인 네비게이션 메뉴 (데스크톱/모바일 반응형) • 사용자 프로필 드롭다운 • 모바일 햄버거 메뉴
+                          CSS 변수 기반의 기본 Progress 컴포넌트
                         </p>
-                        {/* 데모 카드: 헤더 포함 레이아웃 간단 프리뷰 */}
-                        <div className="rounded-lg border overflow-hidden">
-                          <div className="bg-background border-b px-4 h-12 flex items-center justify-between">
-                            <div className="font-semibold">{brand.company.ko}</div>
-                            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
-                              <span>홈</span>
-                              <span>대시보드</span>
-                              <span>프로젝트</span>
-                            </div>
-                          </div>
-                          <div className="p-4 text-xs text-muted-foreground">
-                            헤더 포함 레이아웃 데모 카드 — 상단 고정 헤더 + 본문 컨텐츠 영역
-                          </div>
+                        <div className="space-y-2">
+                          <Progress value={defaults.progress.initialValue} className="w-full" />
+                          <span className="block text-xs text-muted-foreground text-right">
+                            {defaults.progress.initialValue}%
+                          </span>
                         </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">주요 기능</h4>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div className="p-3 bg-muted/30 rounded-lg">
-                            <strong className="text-primary">📱 반응형 디자인</strong>
-                            <p className="text-xs text-muted-foreground mt-1">모바일과 데스크톱에 최적화된 레이아웃</p>
-                          </div>
-                          <div className="p-3 bg-muted/30 rounded-lg">
-                            <strong className="text-primary">🎨 브랜드 중앙화</strong>
-                            <p className="text-xs text-muted-foreground mt-1">config/brand.ts에서 모든 텍스트 관리</p>
-                          </div>
-                          <div className="p-3 bg-muted/30 rounded-lg">
-                            <strong className="text-primary">👤 사용자 메뉴</strong>
-                            <p className="text-xs text-muted-foreground mt-1">프로필, 설정, 로그아웃 드롭다운</p>
-                          </div>
-                          <div className="p-3 bg-muted/30 rounded-lg">
-                            <strong className="text-primary">📍 고정 포지션</strong>
-                            <p className="text-xs text-muted-foreground mt-1">스크롤 시에도 상단 고정</p>
-                          </div>
-                        </div>
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-foreground">Project Progress · Soft Palette</h4>
+                        <p className="text-xs text-muted-foreground">
+                          `ProjectProgress` 컴포넌트 (팔레트 연동)
+                        </p>
+                        <ProjectProgress
+                          value={defaults.progress.initialValue}
+                          showLabel
+                          labelPlacement="bottom"
+                          labelClassName="text-xs text-muted-foreground"
+                          className="max-w-full"
+                        />
                       </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">사용 예시</h4>
-                        <pre className="text-xs bg-muted/50 p-3 rounded-lg overflow-x-auto">
-{`import { HeaderNavigation } from '@/components/ui/header-navigation'
-
-export function AppLayout({ children }) {
-  return (
-    <div className="min-h-screen bg-background">
-      <HeaderNavigation />
-      <main className="pt-14 sm:pt-16">
-        {children}
-      </main>
-    </div>
-  )
-}`}
-                        </pre>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">컴포넌트 구조</h4>
-                        <div className="p-3 bg-muted/30 rounded-lg">
-                          <code className="text-xs block space-y-1">
-                            <div>{'<header className="fixed top-0 z-50 w-full">'}</div>
-                            <div className="ml-4">{'├── Logo & Brand Name'}</div>
-                            <div className="ml-4">{'├── Desktop Navigation (hidden on mobile)'}</div>
-                            <div className="ml-4">{'├── User Profile Dropdown'}</div>
-                            <div className="ml-4">{'└── Mobile Menu (Sheet)'}</div>
-                            <div>{'</header>'}</div>
-                          </code>
-                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <Button className="gap-2" onClick={handleToast}>
+                        <Sparkles className="h-4 w-4" />
+                        {getNotificationText.center("ko")}
+                      </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline">
+                              {getComponentDemoText.hoverEffect("ko")}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {getComponentDemoText.hoverInstruction("ko")}
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {/* 히어로 섹션들 */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>히어로 섹션</CardTitle>
-                      <CardDescription>다양한 스타일의 히어로 섹션 컴포넌트</CardDescription>
+                      <CardTitle>{getViewModeText.title("ko")}</CardTitle>
+                      <CardDescription>{getViewModeText.description("ko")}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-8">
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-medium">기본 히어로 섹션</h4>
-                        <div className="border rounded-lg overflow-hidden">
-                          <BasicHero
-                            title="혁신적인 UI 시스템"
-                            subtitle="생산성을 높이는 컴포넌트 라이브러리"
-                            description="shadcn/ui 기반의 완전히 커스터마이징 가능한 컴포넌트들로 더 빠르게 개발하세요."
-                            badge="v1.0"
-                            primaryAction={{
-                              label: "시작하기",
-                              onClick: () => toast({ description: "시작하기 버튼이 클릭되었습니다!" })
-                            }}
-                            secondaryAction={{
-                              label: "문서 보기",
-                              onClick: () => toast({ description: "문서 보기 버튼이 클릭되었습니다!" })
-                            }}
-                            className="py-8"
-                          />
-                        </div>
-                      </div>
+                    <CardContent className="space-y-6">
+                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="gap-2">
+                            <Menu className="h-4 w-4" />
+                            Dialog
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>{getComponentDemoText.teamCollaboration("ko")}</DialogTitle>
+                            <DialogDescription>
+                              {getComponentDemoText.teamCollaborationDesc("ko")}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button onClick={() => setIsDialogOpen(false)}>
+                              {getButtonText.save("ko")}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
 
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-medium">중앙정렬 히어로 섹션</h4>
-                        <div className="border rounded-lg overflow-hidden">
-                          <CenteredHero
-                            title="중앙화된 UI"
-                            subtitle="하나의 소스, 무한한 가능성"
-                            description="모든 컴포넌트가 하나의 시스템으로 통합되어 일관성 있는 사용자 경험을 제공합니다."
-                            badge="신규"
-                            primaryAction={{
-                              label: "체험하기",
-                              onClick: () => toast({ description: "체험하기 버튼이 클릭되었습니다!" })
-                            }}
-                            secondaryAction={{
-                              label: "가이드",
-                              onClick: () => toast({ description: "가이드 버튼이 클릭되었습니다!" })
-                            }}
-                            className="py-8"
-                          />
-                        </div>
-                      </div>
+                      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                        <SheetTrigger asChild>
+                          <Button variant="outline" className="gap-2">
+                            <Menu className="h-4 w-4" />
+                            Sheet
+                          </Button>
+                        </SheetTrigger>
+                        <SheetContent>
+                          <SheetHeader>
+                            <SheetTitle>{getComponentDemoText.getStatusTitle("ko")}</SheetTitle>
+                            <SheetDescription>
+                              {getComponentDemoText.getStatusDescription("ko")}
+                            </SheetDescription>
+                          </SheetHeader>
+                          <div className="space-y-3 pt-4">
+                            {demoProjects.map((project) => (
+                              <div key={project.id} className="flex items-center justify-between rounded-md border p-3">
+                                <div>
+                                  <p className="font-medium">{project.name}</p>
+                                  <p className="text-xs text-muted-foreground">{project.no}</p>
+                                </div>
+                                <Badge variant={softStatusVariantMap[project.status]}>
+                                  {getProjectStatusText(project.status, 'ko')}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </SheetContent>
+                      </Sheet>
 
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-medium">분할 레이아웃 히어로 섹션</h4>
-                        <div className="border rounded-lg overflow-hidden">
-                          <SplitHero
-                            title="개발자를 위한 도구"
-                            subtitle="코드부터 디자인까지"
-                            description="개발자와 디자이너가 함께 사용할 수 있는 완벽한 디자인 시스템을 경험해보세요."
-                            badge="프로"
-                            primaryAction={{
-                              label: "다운로드",
-                              onClick: () => toast({ description: "다운로드 버튼이 클릭되었습니다!" })
-                            }}
-                            secondaryAction={{
-                              label: "데모 보기",
-                              onClick: () => toast({ description: "데모 보기 버튼이 클릭되었습니다!" })
-                            }}
-                            className="py-8"
-                          />
-                        </div>
+                      <SimpleViewModeSwitch
+                        mode={viewMode}
+                        onModeChange={setViewMode}
+                        ariaLabel={getViewModeText.title("ko")}
+                        labels={{
+                          list: getViewModeText.listView("ko"),
+                          detail: getViewModeText.detailView("ko"),
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="data" className={cn(layout.page.section.stack)}>
+                <div className={cn("grid", layout.page.section.gridGap, "lg:grid-cols-2")}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{getComponentDemoText.sections.data.title("ko")}</CardTitle>
+                      <CardDescription>
+                        {getComponentDemoText.sections.data.description("ko")}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="overflow-x-auto rounded-lg border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>{getComponentDemoText.projectName("ko")}</TableHead>
+                              <TableHead>{getProjectStatusTitle("ko")}</TableHead>
+                              <TableHead>{getProjectPageText.projectProgress("ko")}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {paginatedRows.map((row) => (
+                              <TableRow key={`${row.project}-${row.status}`}>
+                                <TableCell>{row.project}</TableCell>
+                                <TableCell>
+                                  <Badge variant={softStatusVariantMap[row.status]}>
+                                    {getProjectStatusText(row.status, 'ko')}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <ProjectProgress value={row.progress} size="sm" />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
+                      <Pagination
+                        currentPage={paginationPage}
+                        totalPages={Math.ceil(simpleTableRows.length / itemsPerPage)}
+                        onPageChange={setPaginationPage}
+                        itemsPerPage={itemsPerPage}
+                        totalItems={simpleTableRows.length}
+                      />
                     </CardContent>
                   </Card>
 
-                  {/* 푸터 컴포넌트들 */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>푸터 컴포넌트</CardTitle>
-                      <CardDescription>다양한 스타일의 푸터 디자인</CardDescription>
+                      <CardTitle>{getProjectPageText.projectStatus("ko")}</CardTitle>
+                      <CardDescription>{getProjectPageText.projectInfo("ko")}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-8">
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-medium">기본 푸터</h4>
-                        <div className="border rounded-lg overflow-hidden">
-                          <BasicFooter
-                            companyName="UI Components"
-                            description="현대적이고 접근성이 뛰어난 UI 컴포넌트 라이브러리입니다."
-                            links={[
-                              {
-                                title: "제품",
-                                items: [
-                                  { label: "컴포넌트", href: "#" },
-                                  { label: "템플릿", href: "#" },
-                                  { label: "테마", href: "#" }
-                                ]
-                              },
-                              {
-                                title: "지원",
-                                items: [
-                                  { label: "문서", href: "#" },
-                                  { label: "가이드", href: "#" },
-                                  { label: "커뮤니티", href: "#" }
-                                ]
-                              }
-                            ]}
-                            newsletter={{
-                              title: "뉴스레터",
-                              description: "최신 업데이트를 받아보세요",
-                              placeholder: "이메일 주소",
-                              buttonText: "구독"
-                            }}
-                            socialLinks={[
-                              { label: "GitHub", href: "#" },
-                              { label: "Twitter", href: "#" },
-                              { label: "Discord", href: "#" }
-                            ]}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-medium">미니멀 푸터</h4>
-                        <div className="border rounded-lg overflow-hidden">
-                          <MinimalFooter
-                            companyName="UI Kit"
-                            links={[
-                              { label: "개인정보처리방침", href: "#" },
-                              { label: "이용약관", href: "#" },
-                              { label: "지원", href: "#" }
-                            ]}
-                            copyright="© 2024 UI Kit. 모든 권리 보유."
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* FAQ 섹션 */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>FAQ 섹션</CardTitle>
-                      <CardDescription>자주 묻는 질문들</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-6">
                       <Accordion type="single" collapsible>
-                        <AccordionItem value="item-1">
-                          <AccordionTrigger>중앙화 시스템의 장점은 무엇인가요?</AccordionTrigger>
-                          <AccordionContent>
-                            shadcn 기반의 중앙화된 컴포넌트 시스템은 일관된 디자인, 유지보수 편의성,
-                            그리고 개발 생산성 향상을 제공합니다. 모든 컴포넌트가 표준화되어 있어
-                            팀 간 협업이 원활해집니다.
-                          </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-2">
-                          <AccordionTrigger>기존 프로젝트와의 호환성은?</AccordionTrigger>
-                          <AccordionContent>
-                            기존 컴포넌트를 shadcn 표준으로 점진적 마이그레이션이 가능합니다.
-                            글로벌 CSS 변수를 통한 테마 시스템으로 기존 디자인을 그대로 유지할 수 있습니다.
-                          </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="item-3">
-                          <AccordionTrigger>커스터마이징은 어떻게 하나요?</AccordionTrigger>
-                          <AccordionContent>
-                            Tailwind CSS 변수와 shadcn의 variant 시스템을 통해
-                            브랜드에 맞는 커스터마이징이 용이합니다.
-                            컴포넌트별로 독립적인 스타일 조정이 가능합니다.
-                          </AccordionContent>
-                        </AccordionItem>
+                        {demoProjects.map((project) => (
+                          <AccordionItem key={project.id} value={project.id}>
+                            <AccordionTrigger>{project.name}</AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-2 text-sm text-muted-foreground">
+                                <p>{getProjectPageText.projectNo("ko")}: {project.no}</p>
+                                <p>{getProjectPageText.projectStatus("ko")}: {getProjectStatusText(project.status, "ko")}</p>
+                                <ProjectProgress value={project.progress} size="sm" />
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
                       </Accordion>
+
+                      <Tabs defaultValue="overview" className="space-y-2">
+                        <TabsList>
+                          <TabsTrigger value="overview">{getProjectPageText.tabOverview("ko")}</TabsTrigger>
+                          <TabsTrigger value="documentManagement">{getProjectPageText.tabDocumentManagement("ko")}</TabsTrigger>
+                          <TabsTrigger value="taxManagement">{getProjectPageText.tabTaxManagement("ko")}</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="overview" className="text-sm text-muted-foreground">
+                          {getProjectPageText.overviewDesc("ko")}
+                        </TabsContent>
+                        <TabsContent value="documentManagement" className="text-sm text-muted-foreground">
+                          {getProjectPageText.documentManagementDesc("ko")}
+                        </TabsContent>
+                        <TabsContent value="taxManagement" className="text-sm text-muted-foreground">
+                          {getProjectPageText.taxManagementDesc("ko")}
+                        </TabsContent>
+                      </Tabs>
                     </CardContent>
                   </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        </div>
+                </div>
 
+                <div className={cn("grid", layout.page.section.gridGap, "lg:grid-cols-2")}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{getChartText.title("ko")}</CardTitle>
+                      <CardDescription>{getChartText.description("ko")}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Tabs defaultValue="bar" className="space-y-4">
+                        <TabsList>
+                          <TabsTrigger value="bar">{getChartText.barChart.title("ko")}</TabsTrigger>
+                          <TabsTrigger value="line">{getChartText.lineChart.title("ko")}</TabsTrigger>
+                          <TabsTrigger value="pie">{getChartText.pieChart.title("ko")}</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="bar" className="h-64">
+                          <BarChart data={barData} showLegend showTooltip animate />
+                        </TabsContent>
+                        <TabsContent value="line" className="h-64">
+                          <LineChart data={lineData} showLegend showTooltip animate />
+                        </TabsContent>
+                        <TabsContent value="pie" className="h-64">
+                          <PieChart data={pieData} showLegend showTooltip animate />
+                        </TabsContent>
+                      </Tabs>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{getComponentDemoText.sections.data.description("ko")}</CardTitle>
+                      <CardDescription>{getComponentDemoText.hoverDescription("ko")}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Chart
+                        title={getProjectStatusTitle("ko")}
+                        description={getProjectStatusDescription("ko")}
+                        showLegend
+                      >
+                        <ChartHeader>
+                          <ChartTitle>{getComponentDemoText.fastSpeed("ko")}</ChartTitle>
+                          <ChartDescription>{getComponentDemoText.fastSpeedDesc("ko")}</ChartDescription>
+                        </ChartHeader>
+                        <ChartContent className="flex items-center justify-center">
+                          <span className="text-sm text-muted-foreground">
+                            {chartLegendItems.join(" • ")}
+                          </span>
+                        </ChartContent>
+                      </Chart>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Advanced Table</CardTitle>
+                    <CardDescription>{getProjectPageText.projectInfo("ko")}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AdvancedTable
+                      data={demoProjects}
+                      config={advancedTableConfig}
+                      onConfigChange={handleAdvancedConfigChange}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+            <TabsContent value="layout" className={cn(layout.page.section.stack)}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{getComponentDemoText.layoutHero.centeredTitle("ko")}</CardTitle>
+                  <CardDescription>{getComponentDemoText.layoutHero.centeredDescription("ko")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex justify-center">
+                    <img
+                      src={brand.logo.favicon}
+                      alt={getLogoAlt("ko")}
+                      className={cn(layout.heights.logoMedium, mdLogoSize)}
+                    />
+                  </div>
+                  <div className="space-y-4 text-center">
+                    <Typography variant="h2" color="accent">
+                      {getBrandName("ko")}
+                    </Typography>
+                    <Typography variant="body1" color="secondary" className="mx-auto max-w-2xl">
+                      {getDescription("ko")} {getExtendedDescription("ko")}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <Button asChild>
+                      <Link href={routes.home}>{getButtonText.viewComponents("ko")}</Link>
+                    </Button>
+                    <Button variant="outline" asChild>
+                      <Link href={routes.components}>{getPaletteText.preview("ko")}</Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{getComponentDemoText.menuExample("ko")}</CardTitle>
+                  <CardDescription>{getComponentDemoText.menuDescription("ko")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="border rounded-xl overflow-hidden bg-card">
+                    <Header variant="preview" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {getAuthText.login("ko")} / {getAuthText.signup("ko")}
+                    버튼과 프로필 드롭다운은 `headerNavigation` 설정을 수정하면 즉시 반영됩니다.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <div className={cn("grid", layout.page.section.gridGap, "lg:grid-cols-2")}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{getComponentDemoText.iconCards("ko")}</CardTitle>
+                    <CardDescription>{getComponentDemoText.hoverDescription("ko")}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <Typography variant="caption" color="tertiary" className="uppercase tracking-wide">
+                        {getComponentDemoText.iconCards("ko")}
+                      </Typography>
+                      <Card className="border-dashed">
+                        <CardHeader>
+                          <Typography variant="h3" color="accent" className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5" />
+                            {getComponentDemoText.fastSpeed("ko")}
+                          </Typography>
+                          <Typography variant="body2" color="secondary">
+                            {getComponentDemoText.fastSpeedDesc("ko")}
+                          </Typography>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <Typography variant="body1">
+                            {getComponentDemoText.teamCollaborationDesc("ko")}
+                          </Typography>
+                          <Typography variant="caption" color="tertiary">
+                            {getComponentDemoText.hoverInstruction("ko")}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Typography variant="caption" color="tertiary" className="uppercase tracking-wide">
+                        {getComponentDemoText.interactive("ko")}
+                      </Typography>
+                      <InteractiveCard className="h-full">
+                        <CardHeader className="space-y-2">
+                          <Typography variant="h3" color="accent" className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 animate-pulse" />
+                            {getComponentDemoText.easySetup("ko")}
+                          </Typography>
+                          <Typography variant="body2" color="secondary">
+                            {getComponentDemoText.easySetupDesc("ko")}
+                          </Typography>
+                        </CardHeader>
+                        <CardContent className="flex items-center justify-between gap-3">
+                          <Typography variant="body2" color="secondary">
+                            {getComponentDemoText.hoverDescription("ko")}
+                          </Typography>
+                          <Button size="sm" className="gap-1">
+                            <Sparkles className="h-4 w-4" />
+                            {getButtonText.save("ko")}
+                          </Button>
+                        </CardContent>
+                      </InteractiveCard>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>
+                      {`${getComponentDemoText.iconCards("ko")}`} Carousel
+                    </CardTitle>
+                    <CardDescription>{getComponentDemoText.hoverInstruction("ko")}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Carousel className="w-full" opts={{ align: "start" }}>
+                      <CarouselContent>
+                        {demoProjects.map((project) => (
+                          <CarouselItem
+                            key={project.id}
+                            className="sm:basis-4/5 lg:basis-1/2 xl:basis-[40%]"
+                          >
+                            <InteractiveCard className="h-full">
+                              <CardHeader className="space-y-1">
+                                <Typography variant="h4" color="primary" className="text-lg font-semibold">
+                                  {project.name}
+                                </Typography>
+                                <Typography variant="body2" color="secondary">
+                                  {project.client}
+                                </Typography>
+                              </CardHeader>
+                              <CardContent className="flex items-center justify-between pt-4">
+                                <Typography variant="caption" color="tertiary">
+                                  {project.no}
+                                </Typography>
+                                <Badge variant={softStatusVariantMap[project.status]}>
+                                  {getProjectStatusText(project.status, 'ko')}
+                                </Badge>
+                              </CardContent>
+                            </InteractiveCard>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious className="hidden sm:flex" />
+                      <CarouselNext className="hidden sm:flex" />
+                    </Carousel>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Hero Sections</CardTitle>
+                  <CardDescription>{getComponentDemoText.teamCollaborationDesc("ko")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <BasicHero
+                    className="rounded-lg border"
+                    title={getBrandName("ko")}
+                    badge={brand.company.ko}
+                    description={getDescription("ko")}
+                    primaryAction={{ label: getButtonText.submit("ko") }}
+                    secondaryAction={{ label: getButtonText.cancel("ko") }}
+                  />
+                  <CenteredHero
+                    className="rounded-lg border"
+                    title={getComponentDemoText.teamCollaboration("ko")}
+                    description={getComponentDemoText.teamCollaborationDesc("ko")}
+                    primaryAction={{ label: getButtonText.save("ko") }}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Footers</CardTitle>
+                  <CardDescription>{getProjectPageText.headerDescription("ko")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <BasicFooter className="rounded-lg border" />
+                  <MinimalFooter className="rounded-lg border" />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            </Tabs>
+          </div>
+        </main>
         <Toaster />
       </div>
     </TooltipProvider>

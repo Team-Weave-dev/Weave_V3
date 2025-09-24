@@ -11,6 +11,23 @@ export const layout = {
     navigationWidth: "256px",  // w-64
     pageMaxWidth: "1300px"    // max-w-[1300px] - 페이지 컨테이너 최대 폭
   },
+  page: {
+    container: "container mx-auto",             // 모든 페이지의 기본 컨테이너
+    padding: {
+      default: "px-4 py-6 sm:px-6 lg:px-12 lg:py-8",   // 프로젝트 페이지 기준 기본 여백
+      compact: "px-4 py-4 sm:px-5 lg:px-10 lg:py-6",   // 공간이 협소한 모드
+      relaxed: "px-4 py-8 sm:px-8 lg:px-16 lg:py-12"   // 히어로/프리미엄 섹션
+    },
+    section: {
+      stack: "space-y-6 lg:space-y-8",                 // 수직 스택 간격
+      gridGap: "gap-6 lg:gap-8"                         // Grid 간격
+    },
+    header: {
+      block: "mb-6",                                    // 헤더와 본문 사이 여백
+      actions: "gap-3",                                 // 액션 버튼 간격
+      titleWithControls: "gap-4"                        // 제목과 컨트롤 사이 간격
+    }
+  },
   spacing: {
     section: {
       sm: "py-8",
@@ -281,5 +298,48 @@ export const cssVariables = {
       textColor: "hsl(var(--foreground))",
       fontSize: "12px"
     }
+  }
+} as const
+
+// 플레이스홀더 아이콘 가이드라인
+export const placeholderIcons = {
+  button: {
+    // Button 컴포넌트 내부에서 아이콘 사용 시 가이드라인
+    usage: {
+      // 호버 효과가 필요한 경우: 아이콘이 버튼의 호버 상태를 따라가도록 함
+      withHover: {
+        recommended: `className={layout.heights.icon}`,
+        example: "Filter className={layout.heights.icon}",
+        note: "버튼의 호버 시 text-primary 색상으로 자동 변경됨"
+      },
+      // 고정 색상이 필요한 경우: 호버 상태와 무관하게 일정한 색상 유지
+      fixedColor: {
+        recommended: `className={\`\${layout.heights.icon} text-muted-foreground\`}`,
+        example: "ChevronDown className={`${layout.heights.icon} text-muted-foreground`}",
+        note: "호버와 무관하게 muted 색상으로 고정"
+      }
+    }
+  },
+  standalone: {
+    // Button 외부에서 사용할 때는 일반 크기 클래스 사용
+    sizes: {
+      sm: "h-4 w-4",
+      default: "h-5 w-5",
+      lg: "h-6 w-6"
+    }
+  },
+  colors: {
+    // 아이콘 색상 가이드라인
+    primary: "text-primary",
+    muted: "text-muted-foreground",
+    accent: "text-accent-foreground",
+    destructive: "text-destructive"
+  },
+  common: {
+    // 자주 사용되는 플레이스홀더 아이콘들
+    dropdown: ["ChevronDown", "ChevronUp"],
+    navigation: ["Menu", "X"],
+    actions: ["Plus", "Minus", "Edit", "Trash2"],
+    status: ["Check", "AlertCircle", "Info"]
   }
 } as const

@@ -26,6 +26,14 @@ export const brand = {
     }
   },
 
+  // 테마 설정
+  theme: {
+    primaryTextClass: "text-primary",
+    primaryAccentGradient: "from-primary to-primary/60",
+    avatarBackgroundClass: "bg-primary/10",
+    avatarTextClass: "text-primary"
+  },
+
   // 로고 경로
   logo: {
     favicon: "/favicon.ico",
@@ -56,33 +64,6 @@ export const brand = {
 
 // UI 텍스트 및 라벨
 export const uiText = {
-  dashboard: {
-    title: { ko: "대시보드", en: "Dashboard" },
-    subtitle: { ko: "실시간으로 비즈니스 현황을 확인하세요", en: "Check your business status in real-time" }
-  },
-  projects: {
-    title: { ko: "프로젝트 관리", en: "Project Management" },
-    subtitle: { ko: "모든 프로젝트를 한눈에 관리하세요", en: "Manage all projects at a glance" },
-    newProject: { ko: "새 프로젝트", en: "New Project" },
-    searchPlaceholder: { ko: "프로젝트 검색...", en: "Search projects..." },
-    status: {
-      active: { ko: "진행중", en: "Active" },
-      completed: { ko: "완료", en: "Completed" },
-      onHold: { ko: "보류", en: "On Hold" },
-      cancelled: { ko: "취소", en: "Cancelled" }
-    },
-    actions: {
-      edit: { ko: "수정", en: "Edit" },
-      delete: { ko: "삭제", en: "Delete" },
-      viewDetails: { ko: "상세 보기", en: "View Details" }
-    },
-    empty: {
-      title: { ko: "프로젝트가 없습니다", en: "No projects" },
-      searchEmpty: { ko: "검색 결과가 없습니다.", en: "No search results." },
-      createFirst: { ko: "첫 번째 프로젝트를 만들어보세요.", en: "Create your first project." },
-      createProject: { ko: "프로젝트 생성", en: "Create Project" }
-    }
-  },
   buttons: {
     viewComponents: {
       ko: "컴포넌트 보기",
@@ -125,6 +106,10 @@ export const uiText = {
       ko: "홈",
       en: "Home"
     },
+    dashboard: {
+      ko: "대시보드",
+      en: "Dashboard"
+    },
     docs: {
       ko: "문서",
       en: "Docs"
@@ -137,6 +122,14 @@ export const uiText = {
       ko: "팀",
       en: "Team"
     },
+    taxManagement: {
+      ko: "세무 신고",
+      en: "Tax Management"
+    },
+    components: {
+      ko: "컴포넌트",
+      en: "Components"
+    },
     activeProjects: {
       ko: "활성 프로젝트",
       en: "Active Projects"
@@ -144,6 +137,10 @@ export const uiText = {
     activeProjectsDesc: {
       ko: "현재 진행 중인 프로젝트들",
       en: "Currently ongoing projects"
+    },
+    menuTitle: {
+      ko: "메뉴",
+      en: "Menu"
     }
   },
   notifications: {
@@ -166,9 +163,72 @@ export const uiText = {
       en: "shadcn based"
     }
   },
+  auth: {
+    login: {
+      ko: "로그인",
+      en: "Log In"
+    },
+    signup: {
+      ko: "회원가입",
+      en: "Sign Up"
+    },
+    logout: {
+      ko: "로그아웃",
+      en: "Log Out"
+    },
+    settings: {
+      ko: "설정",
+      en: "Settings"
+    },
+    account: {
+      ko: "계정",
+      en: "Account"
+    },
+    profileMenu: {
+      ko: "계정 메뉴",
+      en: "Account Menu"
+    }
+  },
 
   // 컴포넌트 데모 텍스트
   componentDemo: {
+    sections: {
+      buttons: {
+        title: { ko: "버튼 & 배지", en: "Buttons & Badges" },
+        description: { ko: "상호작용 기본 컴포넌트를 한 눈에 살펴봅니다.", en: "Review the interactive primitives at a glance." }
+      },
+      forms: {
+        title: { ko: "폼 입력 요소", en: "Form Inputs" },
+        description: { ko: "입력 필드와 선택 컴포넌트를 조합한 기본 폼 레이아웃입니다.", en: "Core input and selection components arranged in a basic form layout." }
+      },
+      feedback: {
+        title: { ko: "알림 & 피드백", en: "Feedback & Status" },
+        description: { ko: "상태와 진행 상황을 전달하는 컴포넌트 모음입니다.", en: "Components that communicate status and progress." }
+      },
+      data: {
+        title: { ko: "데이터 표시", en: "Data Display" },
+        description: { ko: "테이블과 차트로 정보를 시각화합니다.", en: "Present information with tables and charts." }
+      },
+      layout: {
+        title: { ko: "레이아웃 & 네비게이션", en: "Layout & Navigation" },
+        description: { ko: "페이지 구조를 구성하는 핵심 컴포넌트입니다.", en: "Core components that build page structure." }
+      },
+      utilities: {
+        title: { ko: "유틸리티 & 설정", en: "Utilities & Settings" },
+        description: { ko: "팔레트 전환, 뷰 모드 토글 등 보조 기능 컴포넌트입니다.", en: "Supporting utilities like palette switching and view mode toggles." }
+      },
+      navigation: {
+        title: { ko: "네비게이션 시스템", en: "Navigation System" },
+        description: { ko: "헤더 네비게이션과 관련된 컴포넌트를 확인하세요.", en: "Explore header navigation and related components." }
+      }
+    },
+    layoutHero: {
+      centeredTitle: { ko: "히어로 · 중앙 CTA", en: "Hero · Centered CTA" },
+      centeredDescription: {
+        ko: "브랜드 메시지와 주/보조 버튼이 중앙에 배치된 히어로 스타일",
+        en: "Hero layout with headline and primary/secondary CTAs centered"
+      }
+    },
     cards: {
       interactive: { ko: "인터랙티브 카드", en: "Interactive Card" },
       hoverEffect: { ko: "호버 효과 카드", en: "Hover Effect Card" },
@@ -342,6 +402,186 @@ export const uiText = {
         en: "In Progress"
       }
     },
+    // 프로젝트 페이지 텍스트
+    projectPage: {
+      header: {
+        title: { ko: "프로젝트 관리", en: "Project Management" },
+        description: { ko: "모든 프로젝트를 관리하고 추적합니다", en: "Manage and track all your projects" },
+        newProject: { ko: "새 프로젝트", en: "New Project" }
+      },
+      stats: {
+        total: { ko: "전체 프로젝트", en: "Total Projects" },
+        inProgress: { ko: "진행중", en: "In Progress" },
+        review: { ko: "검토중", en: "In Review" },
+        completed: { ko: "완료", en: "Completed" }
+      },
+      list: {
+        searchPlaceholder: { ko: "프로젝트 검색...", en: "Search projects..." },
+        resetFilters: { ko: "필터 초기화", en: "Reset Filters" },
+        resetColumns: { ko: "열 초기화", en: "Reset Columns" },
+        deleteMode: { ko: "삭제 모드", en: "Delete Mode" },
+        exitDeleteMode: { ko: "삭제 모드 종료", en: "Exit Delete Mode" },
+        selectAll: { ko: "전체 선택", en: "Select All" },
+        deselectAll: { ko: "선택 해제", en: "Deselect All" },
+        deleteSelected: { ko: "선택 삭제", en: "Delete Selected" },
+        itemsSelected: { ko: "개 항목 선택됨", en: " items selected" },
+        pageSize: { ko: "페이지 크기", en: "Page size" },
+        totalItems: { ko: "전체", en: "Total" },
+        filtered: { ko: "필터됨", en: "filtered" },
+        // 액션 버튼
+        deleteButton: { ko: "삭제", en: "Delete" },
+        filterButton: { ko: "필터", en: "Filter" },
+        columnSettingsButton: { ko: "컬럼 설정", en: "Column Settings" },
+        // 필터 옵션
+        filters: {
+          status: {
+            label: { ko: "상태", en: "Status" },
+            allStatuses: { ko: "모든 상태", en: "All Statuses" },
+            options: {
+              all: { ko: "모든 상태", en: "All Statuses" },
+              inProgress: { ko: "진행중", en: "In Progress" },
+              review: { ko: "검토중", en: "In Review" },
+              completed: { ko: "완료", en: "Completed" },
+              onHold: { ko: "보류", en: "On Hold" }
+            }
+          },
+          client: {
+            label: { ko: "클라이언트", en: "Client" },
+            allClients: { ko: "모든 클라이언트", en: "All Clients" },
+            options: {
+              all: { ko: "모든 클라이언트", en: "All Clients" }
+            }
+          },
+          pageCount: {
+            label: { ko: "페이지 개수", en: "Page Count" },
+            options: {
+              "5": { ko: "5개", en: "5 items" },
+              "10": { ko: "10개", en: "10 items" },
+              "20": { ko: "20개", en: "20 items" },
+              "50": { ko: "50개", en: "50 items" }
+            }
+          }
+        },
+        // 컬럼 설정
+        columns: {
+          label: { ko: "표시할 컬럼", en: "Visible Columns" },
+          dragToReorder: { ko: "드래그하여 순서 변경", en: "Drag to reorder" },
+          eyeIconDescription: { ko: "아이콘을 클릭하여 컬럼 숨김/보이기", en: "Click icon to show/hide columns" },
+          showColumn: { ko: "컬럼 보이기", en: "Show column" },
+          hideColumn: { ko: "컬럼 숨기기", en: "Hide column" },
+          options: {
+            projectName: { ko: "프로젝트명", en: "Project Name" },
+            client: { ko: "고객사", en: "Client" },
+            status: { ko: "상태", en: "Status" },
+            progress: { ko: "진행률", en: "Progress" },
+            registeredDate: { ko: "등록일", en: "Registered Date" },
+            dueDate: { ko: "마감일", en: "Due Date" },
+            modifiedDate: { ko: "수정일", en: "Modified Date" },
+            actions: { ko: "액션", en: "Actions" }
+          }
+        },
+        // 페이지네이션 네비게이션
+        pagination: {
+          firstPage: { ko: "첫 페이지로", en: "Go to first page" },
+          previousPage: { ko: "이전 페이지", en: "Previous page" },
+          nextPage: { ko: "다음 페이지", en: "Next page" },
+          lastPage: { ko: "마지막 페이지로", en: "Go to last page" },
+          pageOf: { ko: "페이지", en: "Page" },
+          of: { ko: "의", en: "of" },
+          goToPage: { ko: "페이지로 이동", en: "Go to page" }
+        }
+      },
+      detail: {
+        projectList: { ko: "프로젝트 목록", en: "Project List" },
+        noProjectSelected: { ko: "프로젝트가 선택되지 않았습니다", en: "No project selected" },
+        projectNo: { ko: "프로젝트 번호", en: "Project No" },
+        client: { ko: "고객사", en: "Client" },
+        progressStatus: { ko: "진행 상황", en: "Progress Status" },
+        projectProgress: { ko: "프로젝트 진도", en: "Project Progress" },
+        paymentProgress: { ko: "결제 진행", en: "Payment Progress" },
+        projectInfo: { ko: "프로젝트 정보", en: "Project Info" },
+        registered: { ko: "등록일", en: "Registered" },
+        dueDate: { ko: "마감일", en: "Due Date" },
+        modified: { ko: "수정일", en: "Modified" },
+        status: { ko: "상태", en: "Status" },
+        moreDetails: { ko: "더 많은 세부 정보가 곧 추가됩니다", en: "More details will be added soon" },
+        progress: { ko: "진행률", en: "Progress" }
+      },
+      tabs: {
+        // 메인 탭
+        overview: { ko: "개요", en: "Overview" },
+        documentManagement: { ko: "문서관리", en: "Document Management" },
+        taxManagement: { ko: "세무관리", en: "Tax Management" },
+
+        // 문서관리 서브탭
+        documentSubs: {
+          contract: { ko: "계약서", en: "Contract" },
+          invoice: { ko: "청구서", en: "Invoice" },
+          report: { ko: "보고서", en: "Report" },
+          estimate: { ko: "견적서", en: "Estimate" },
+          others: { ko: "기타문서", en: "Other Documents" }
+        },
+
+        // 세무관리 서브탭
+        taxSubs: {
+          taxInvoice: { ko: "세금계산서", en: "Tax Invoice" },
+          withholding: { ko: "원천세", en: "Withholding Tax" },
+          vat: { ko: "부가세", en: "VAT" },
+          cashReceipt: { ko: "현금영수증", en: "Cash Receipt" },
+          cardReceipt: { ko: "카드영수증", en: "Card Receipt" }
+        }
+      },
+      descriptions: {
+        // 메인 탭 설명
+        overviewDesc: { ko: "프로젝트의 전체적인 현황과 주요 정보를 확인할 수 있습니다", en: "View overall project status and key information" },
+        documentManagementDesc: { ko: "프로젝트와 관련된 모든 문서를 관리할 수 있습니다", en: "Manage all project-related documents" },
+        taxManagementDesc: { ko: "프로젝트의 세무 관련 문서와 정보를 관리할 수 있습니다", en: "Manage tax-related documents and information" },
+
+        // 문서관리 서브탭 설명
+        contractDesc: { ko: "프로젝트 계약서 정보를 확인할 수 있습니다", en: "View project contract information" },
+        invoiceDesc: { ko: "청구서 및 정산 정보를 확인할 수 있습니다", en: "View invoice and settlement information" },
+        reportDesc: { ko: "프로젝트 진행 보고서를 확인할 수 있습니다", en: "View project progress reports" },
+        estimateDesc: { ko: "프로젝트 견적서 정보를 확인할 수 있습니다", en: "View project estimate information" },
+        othersDesc: { ko: "기타 프로젝트 관련 문서를 확인할 수 있습니다", en: "View other project-related documents" },
+
+        // 세무관리 서브탭 설명
+        taxInvoiceDesc: { ko: "세금계산서 정보를 확인할 수 있습니다", en: "View tax invoice information" },
+        withholdingDesc: { ko: "원천세 관련 정보를 확인할 수 있습니다", en: "View withholding tax information" },
+        vatDesc: { ko: "부가가치세 관련 정보를 확인할 수 있습니다", en: "View VAT-related information" },
+        cashReceiptDesc: { ko: "현금영수증 정보를 확인할 수 있습니다", en: "View cash receipt information" },
+        cardReceiptDesc: { ko: "카드영수증 정보를 확인할 수 있습니다", en: "View card receipt information" }
+      },
+      labels: {
+        projectStatus: { ko: "프로젝트 상태", en: "Project Status" },
+        taskProgress: { ko: "작업 진행률", en: "Task Progress" },
+        paymentStatus: { ko: "결제 진행률", en: "Payment Status" },
+        currentStage: { ko: "현재 단계:", en: "Current Stage:" },
+        hasContract: { ko: "계약서 있음", en: "Has Contract" },
+        hasBilling: { ko: "청구서 있음", en: "Has Billing" },
+        hasDocuments: { ko: "문서 있음", en: "Has Documents" },
+        contractInfo: { ko: "계약서 정보", en: "Contract Information" },
+        billingInfo: { ko: "청구/정산 정보", en: "Billing Information" },
+        documentInfo: { ko: "프로젝트 문서", en: "Project Documents" }
+      },
+      messages: {
+        contractLoading: { ko: "계약서 정보를 불러오는 중입니다...", en: "Loading contract information..." },
+        contractEmpty: { ko: "등록된 계약서가 없습니다", en: "No contract registered" },
+        billingLoading: { ko: "청구서 정보를 불러오는 중입니다...", en: "Loading billing information..." },
+        billingEmpty: { ko: "등록된 청구서가 없습니다", en: "No billing registered" },
+        documentsLoading: { ko: "문서 목록을 불러오는 중입니다...", en: "Loading document list..." },
+        documentsEmpty: { ko: "등록된 문서가 없습니다", en: "No documents registered" }
+      },
+      actions: {
+        edit: { ko: "편집", en: "Edit" },
+        close: { ko: "닫기", en: "Close" }
+      },
+      deleteModal: {
+        title: { ko: "프로젝트 삭제 확인", en: "Confirm Project Deletion" },
+        message: { ko: "이 프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.", en: "Are you sure you want to delete this project? This action cannot be undone." },
+        confirm: { ko: "삭제", en: "Delete" },
+        cancel: { ko: "취소", en: "Cancel" }
+      }
+    },
     // 색상 팔레트 시스템
     colorPalette: {
       title: {
@@ -506,41 +746,6 @@ export const uiText = {
     }
   },
 
-  // 프로젝트 요약 위젯 텍스트
-  projectWidget: {
-    title: {
-      ko: "프로젝트 요약",
-      en: "Project Summary"
-    },
-    status: {
-      critical: { ko: "긴급", en: "Critical" },
-      warning: { ko: "주의", en: "Warning" },
-      normal: { ko: "정상", en: "Normal" },
-      completed: { ko: "완료", en: "Completed" }
-    },
-    labels: {
-      client: { ko: "클라이언트", en: "Client" },
-      manager: { ko: "프로젝트 매니저", en: "Project Manager" },
-      progress: { ko: "진행률", en: "Progress" },
-      deadline: { ko: "마감일", en: "Deadline" },
-      daysRemaining: { ko: "남은 일수", en: "Days Remaining" },
-      budget: { ko: "예산", en: "Budget" },
-      spent: { ko: "사용", en: "Spent" },
-      remaining: { ko: "남음", en: "Remaining" },
-      currentStatus: { ko: "현재 상태", en: "Current Status" },
-      issues: { ko: "이슈", en: "Issues" },
-      nextActions: { ko: "다음 조치", en: "Next Actions" },
-      noIssues: { ko: "이슈 없음", en: "No Issues" },
-      noActions: { ko: "조치 필요 없음", en: "No Actions Required" }
-    },
-    messages: {
-      overBudget: { ko: "예산 초과", en: "Over Budget" },
-      onTrack: { ko: "정상 진행", en: "On Track" },
-      delayed: { ko: "지연", en: "Delayed" },
-      urgent: { ko: "긴급 처리 필요", en: "Urgent Action Required" }
-    }
-  },
-
   // 사용법 안내 텍스트
   usage: {
     title: {
@@ -607,249 +812,39 @@ export const uiText = {
     }
   },
 
-  // 위젯 공통 텍스트
-  widgets: {
-    stats: {
-      title: {
-        ko: "통계 대시보드",
-        en: "Statistics Dashboard"
-      }
+  // 프로젝트 상태 텍스트
+  projectStatus: {
+    planning: {
+      ko: "기획",
+      en: "Planning"
     },
-    chart: {
-      title: {
-        ko: "주간 트렌드 차트",
-        en: "Weekly Trend Chart"
-      },
-      subtitle: {
-        ko: "최근 7일간 데이터",
-        en: "Last 7 days data"
-      }
+    in_progress: {
+      ko: "진행중",
+      en: "In Progress"
     },
-    quickActions: {
-      title: {
-        ko: "빠른 작업",
-        en: "Quick Actions"
-      },
-      actions: {
-        newProject: {
-          ko: "새 프로젝트",
-          en: "New Project"
-        },
-        newInvoice: {
-          ko: "견적서 작성",
-          en: "Create Invoice"
-        },
-        addClient: {
-          ko: "고객 추가",
-          en: "Add Client"
-        }
-      }
+    review: {
+      ko: "검토",
+      en: "Review"
     },
-    projectSummary: {
-      noProjects: {
-        ko: "진행 중인 프로젝트가 없습니다",
-        en: "No projects in progress"
-      },
-      addProject: {
-        ko: "새 프로젝트를 추가해주세요",
-        en: "Please add a new project"
-      },
-      projectsInProgress: {
-        ko: "개 진행중",
-        en: " in progress"
-      },
-      viewProgress: {
-        ko: "진행 상황과 우선순위를 한눈에 확인하세요",
-        en: "View progress and priorities at a glance"
-      }
+    completed: {
+      ko: "완료",
+      en: "Completed"
     },
-    todoList: {
-      title: {
-        ko: "할 일 목록",
-        en: "Todo List"
-      },
-      addTask: {
-        ko: "새 작업 추가",
-        en: "Add new task"
-      },
-      placeholder: {
-        ko: "작업을 입력하세요...",
-        en: "Enter a task..."
-      },
-      priorities: {
-        p1: { ko: "긴급", en: "Urgent" },
-        p2: { ko: "높음", en: "High" },
-        p3: { ko: "보통", en: "Normal" },
-        p4: { ko: "낮음", en: "Low" }
-      },
-      noTasks: {
-        ko: "할 일이 없습니다",
-        en: "No tasks"
-      },
-      completedTasks: {
-        ko: "완료된 작업",
-        en: "Completed tasks"
-      },
-      deleteTask: {
-        ko: "작업 삭제",
-        en: "Delete task"
-      }
-    }
-  },
-
-  // 홈 페이지
-  home: {
-    hero: {
-      badge: { ko: "프리랜서 & 1인 기업 필수 툴", en: "Essential for Freelancers & Solopreneurs" },
-      title: { ko: "나를 위한 단 하나의 업무 플랫폼", en: "Your One and Only Work Platform" },
-      subtitle: { ko: "프로젝트 관리부터 세무 신고까지", en: "From Project Management to Tax Filing" },
-      description: { 
-        ko: "프리랜서와 1인 기업이 클라이언트, 프로젝트 관리, 세무 업무를 한 곳에서 해결할 수 있는 통합 솔루션입니다.", 
-        en: "An integrated solution for solopreneurs and freelancers to manage clients, track projects, and handle taxes all in one place." 
-      },
-      primaryAction: { ko: "무료로 시작하기", en: "Start for Free" },
-      secondaryAction: { ko: "더 알아보기", en: "Learn More" }
+    on_hold: {
+      ko: "보류",
+      en: "On Hold"
     },
-    features: {
-      title: { ko: "프리랜서를 위한 핵심 기능", en: "Essential Features for Freelancers" },
-      subtitle: { ko: "1인 기업 운영에 필요한 모든 것", en: "Everything you need to run your solo business" },
-      project: {
-        title: { ko: "클라이언트 & 프로젝트", en: "Clients & Projects" },
-        description: { ko: "다수의 클라이언트와 프로젝트를 체계적으로 관리", en: "Manage multiple clients and projects systematically" }
-      },
-      tax: {
-        title: { ko: "간편한 세무 신고", en: "Simple Tax Filing" },
-        description: { ko: "프리랜서 종합소득세, 부가세 신고 자동화", en: "Automated freelancer income tax and VAT filing" }
-      },
-      analytics: {
-        title: { ko: "수익 분석", en: "Income Analytics" },
-        description: { ko: "프로젝트별 수익성과 현금흐름 파악", en: "Track profitability and cash flow by project" }
-      },
-      integration: {
-        title: { ko: "올인원 대시보드", en: "All-in-One Dashboard" },
-        description: { ko: "견적서부터 세금계산서까지 한 곳에서", en: "From quotes to tax invoices in one place" }
-      }
+    cancelled: {
+      ko: "취소",
+      en: "Cancelled"
     },
-    carousel: {
-      items: [
-        {
-          title: { ko: "견적서 & 계약서 관리", en: "Quotes & Contracts" },
-          description: { ko: "클라이언트별 견적서와 계약서를 체계적으로 관리", en: "Manage quotes and contracts by client systematically" }
-        },
-        {
-          title: { ko: "자동 세금계산서", en: "Automated Tax Invoices" },
-          description: { ko: "매출 발생 시 세금계산서 자동 생성 및 발송", en: "Auto-generate and send tax invoices on sales" }
-        },
-        {
-          title: { ko: "프로젝트 타임트래킹", en: "Project Time Tracking" },
-          description: { ko: "프로젝트별 작업 시간 기록으로 정확한 수익성 분석", en: "Track work hours by project for accurate profitability" }
-        },
-        {
-          title: { ko: "세무 일정 알림", en: "Tax Calendar Alerts" },
-          description: { ko: "부가세, 종합소득세 신고 일정 자동 알림", en: "Auto reminders for VAT and income tax filing dates" }
-        }
-      ]
-    },
-    cta: {
-      title: { ko: "프리랜서 생활, 이제 쉽게 관리하세요", en: "Manage Your Freelance Life with Ease" },
-      subtitle: { ko: "1인 기업과 프리랜서를 위한 맞춤형 솔루션", en: "Tailored solution for solopreneurs and freelancers" },
-      button: { ko: "무료로 시작하기", en: "Start for Free" },
-      features: [
-        { ko: "✓ 월 10개 프로젝트까지 무료", en: "✓ Free for up to 10 projects/month" },
-        { ko: "✓ 세무 신고 자동화 지원", en: "✓ Automated tax filing support" },
-        { ko: "✓ 1:1 온보딩 지원", en: "✓ 1-on-1 onboarding support" }
-      ]
-    },
-    stats: {
-      users: { label: { ko: "프리랜서 사용자", en: "Freelancer Users" }, value: "5,000+" },
-      projects: { label: { ko: "완료된 프로젝트", en: "Completed Projects" }, value: "50,000+" },
-      satisfaction: { label: { ko: "세무 처리 정확도", en: "Tax Filing Accuracy" }, value: "99.8%" },
-      uptime: { label: { ko: "평균 시간 절약", en: "Average Time Saved" }, value: "15시간/월" }
-    },
-    targetUsers: {
-      title: { ko: "이런 분들에게 완벽합니다", en: "Perfect for These Professionals" },
-      subtitle: { ko: "1인 비즈니스를 운영하는 모든 분들을 위한 솔루션", en: "A solution for all solo business operators" },
-      users: [
-        {
-          title: { ko: "프리랜서 개발자", en: "Freelance Developers" },
-          description: { ko: "여러 프로젝트와 클라이언트를 동시에 관리", en: "Manage multiple projects and clients simultaneously" }
-        },
-        {
-          title: { ko: "디자이너", en: "Designers" },
-          description: { ko: "견적서 작성부터 세금계산서 발행까지 한번에", en: "From quotes to tax invoices in one flow" }
-        },
-        {
-          title: { ko: "1인 기업 대표", en: "Solo Business Owners" },
-          description: { ko: "비즈니스 운영에 필요한 모든 도구를 하나로", en: "All business operation tools in one place" }
-        },
-        {
-          title: { ko: "컨설턴트", en: "Consultants" },
-          description: { ko: "고객 관리와 수익 분석을 체계적으로", en: "Systematic client management and revenue analysis" }
-        }
-      ]
-    }
-  },
-
-  // 세무 관리 페이지 텍스트
-  taxManagement: {
     title: {
-      ko: "세무 신고",
-      en: "Tax Management"
+      ko: "프로젝트 상태",
+      en: "Project Status"
     },
-    subtitle: {
-      ko: "프리랜서와 사업자를 위한 통합 세무 서비스",
-      en: "Integrated tax services for freelancers and business owners"
-    },
-    serviceTitle: {
-      ko: "세무 서비스 준비중",
-      en: "Tax Service Coming Soon"
-    },
-    serviceDescription: {
-      ko: "전문 세무법인과 연계한 종합소득세/법인세 신고 서비스를 준비중입니다",
-      en: "We are preparing comprehensive income tax and corporate tax filing services in partnership with professional tax firms"
-    },
-    plannedServices: {
-      title: {
-        ko: "제공 예정 서비스",
-        en: "Planned Services"
-      },
-      comprehensiveTax: {
-        title: { ko: "종합소득세 신고", en: "Comprehensive Income Tax" },
-        description: { ko: "프리랜서 및 개인사업자 종합소득세 신고 대행", en: "Income tax filing service for freelancers and sole proprietors" }
-      },
-      corporateTax: {
-        title: { ko: "법인세 신고", en: "Corporate Tax" },
-        description: { ko: "법인사업자 세무신고 및 절세 컨설팅", en: "Corporate tax filing and tax optimization consulting" }
-      },
-      vat: {
-        title: { ko: "부가가치세 신고", en: "VAT Filing" },
-        description: { ko: "분기별 부가가치세 신고 자동화 서비스", en: "Automated quarterly VAT filing service" }
-      },
-      consultation: {
-        title: { ko: "실시간 세무 상담", en: "Real-time Tax Consultation" },
-        description: { ko: "전문 세무사와의 1:1 온라인 상담 서비스", en: "1:1 online consultation with professional tax advisors" }
-      }
-    },
-    comingSoon: {
-      title: { ko: "곧 만나요!", en: "Coming Soon!" },
-      description: { 
-        ko: "2026년 1분기 중 세무 서비스를 오픈할 예정입니다. 오픈 시 등록된 이메일로 안내해 드리겠습니다.",
-        en: "We plan to launch our tax service in Q1 2026. We will notify you via your registered email when the service is available."
-      }
-    },
-    features: {
-      partnership: {
-        title: { ko: "전문 세무법인 연계", en: "Professional Tax Firm Partnership" },
-        description: { ko: "검증된 세무법인과의 파트너십을 통해 신뢰할 수 있는 세무 서비스를 제공합니다", en: "Reliable tax services through partnerships with verified tax firms" }
-      },
-      automation: {
-        title: { ko: "자동 계산 시스템", en: "Automated Calculation System" },
-        description: { ko: "매출/매입 데이터를 기반으로 예상 세액을 자동으로 계산하여 보여드립니다", en: "Automatically calculates expected tax based on your revenue and expense data" }
-      },
-      optimization: {
-        title: { ko: "절세 컨설팅", en: "Tax Optimization Consulting" },
-        description: { ko: "사업 형태와 규모에 맞는 최적의 절세 방안을 제안해 드립니다", en: "We provide optimal tax-saving strategies tailored to your business type and scale" }
-      }
+    description: {
+      ko: "프로젝트의 현재 진행 상태를 나타냅니다",
+      en: "Indicates the current progress status of the project"
     }
   }
 } as const
@@ -860,42 +855,42 @@ export const routes = {
   components: "/components",
   docs: "/docs",
   projects: "/projects",
-  team: "/team"
+  team: "/team",
+  dashboard: "/dashboard",
+  taxManagement: "/tax-management",
+  login: "/login",
+  signup: "/sign-up",
+  settings: "/settings"
+} as const
+
+export const headerNavigation = {
+  brand: {
+    href: routes.home,
+  },
+  menus: [
+    { id: 'home', labelKey: 'navigation.home', href: routes.home, icon: 'home' },
+    { id: 'dashboard', labelKey: 'navigation.dashboard', href: routes.dashboard, icon: 'layoutDashboard' },
+    { id: 'projects', labelKey: 'navigation.projects', href: routes.projects, icon: 'briefcase' },
+    { id: 'tax', labelKey: 'navigation.taxManagement', href: routes.taxManagement, icon: 'calculator' },
+  ],
+  auth: {
+    loggedOut: {
+      primaryAction: { id: 'signup', labelKey: 'auth.signup', href: routes.signup, icon: 'userPlus' },
+      secondaryAction: { id: 'login', labelKey: 'auth.login', href: routes.login, icon: 'logIn' },
+    },
+    profileMenu: [
+      { id: 'account', labelKey: 'auth.account', href: routes.dashboard, icon: 'user' },
+      { id: 'settings', labelKey: 'auth.settings', href: routes.settings, icon: 'settings' },
+      { id: 'logout', labelKey: 'auth.logout', action: 'logout', icon: 'logOut' },
+    ],
+    menuTitleKey: 'auth.profileMenu',
+  },
 } as const
 
 // 기본 언어 설정
 export const defaultLanguage = 'ko' as const
 
 // 헬퍼 함수들
-export const getDashboardText = {
-  title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.dashboard.title[lang],
-  subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.dashboard.subtitle[lang]
-}
-
-export const getProjectsText = {
-  title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.title[lang],
-  subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.subtitle[lang],
-  newProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.newProject[lang],
-  searchPlaceholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.searchPlaceholder[lang],
-  status: {
-    active: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.status.active[lang],
-    completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.status.completed[lang],
-    onHold: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.status.onHold[lang],
-    cancelled: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.status.cancelled[lang]
-  },
-  actions: {
-    edit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.actions.edit[lang],
-    delete: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.actions.delete[lang],
-    viewDetails: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.actions.viewDetails[lang]
-  },
-  empty: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.empty.title[lang],
-    searchEmpty: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.empty.searchEmpty[lang],
-    createFirst: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.empty.createFirst[lang],
-    createProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.projects.empty.createProject[lang]
-  }
-}
-
 export const getBrandName = (lang: 'ko' | 'en' = defaultLanguage) => brand.name[lang]
 export const getCompanyName = (lang: 'ko' | 'en' = defaultLanguage) => brand.company[lang]
 export const getDescription = (lang: 'ko' | 'en' = defaultLanguage) => brand.description[lang]
@@ -940,11 +935,24 @@ export const getButtonText = {
 // 네비게이션 텍스트 헬퍼들
 export const getNavText = {
   home: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.home[lang],
+  dashboard: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.dashboard[lang],
   docs: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.docs[lang],
   projects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.projects[lang],
   team: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.team[lang],
+  taxManagement: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.taxManagement[lang],
+  components: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.components[lang],
   activeProjects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.activeProjects[lang],
-  activeProjectsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.activeProjectsDesc[lang]
+  activeProjectsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.activeProjectsDesc[lang],
+  menuTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.menuTitle[lang]
+}
+
+export const getAuthText = {
+  login: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.login[lang],
+  signup: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.signup[lang],
+  logout: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.logout[lang],
+  settings: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.settings[lang],
+  account: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.account[lang],
+  profileMenu: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.profileMenu[lang]
 }
 
 // 알림 텍스트 헬퍼들
@@ -1021,171 +1029,42 @@ export const getDataText = {
   calendarAndChartsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.data.calendarAndChartsDesc[lang]
 }
 
-// 위젯 텍스트 헬퍼들
-export const getWidgetText = {
-  stats: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.stats.title[lang]
-  },
-  chart: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.chart.title[lang],
-    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.chart.subtitle[lang]
-  },
-  quickActions: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.quickActions.title[lang],
-    actions: {
-      newProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.quickActions.actions.newProject[lang],
-      newInvoice: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.quickActions.actions.newInvoice[lang],
-      addClient: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.quickActions.actions.addClient[lang]
-    }
-  },
-  projectSummary: {
-    noProjects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.noProjects[lang],
-    addProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.addProject[lang],
-    projectsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.projectsInProgress[lang],
-    viewProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.viewProgress[lang]
-  },
-  todoList: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.title[lang],
-    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘의 작업을 관리하고 우선순위를 설정하세요' : 'Manage today\'s tasks and set priorities',
-    addTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.addTask[lang],
-    placeholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.placeholder[lang],
-    priorities: {
-      p1: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.priorities.p1[lang],
-      p2: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.priorities.p2[lang],
-      p3: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.priorities.p3[lang],
-      p4: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.priorities.p4[lang]
-    },
-    noTasks: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.noTasks[lang],
-    completedTasks: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.completedTasks[lang],
-    deleteTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.deleteTask[lang]
-  },
-  calendar: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '캘린더' : 'Calendar',
-    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일정을 확인하고 새로운 이벤트를 추가하세요' : 'View your schedule and add new events'
-  },
-  taxDeadline: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세무 일정' : 'Tax Schedule',
-    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '중요한 세무 신고 마감일을 한눈에 확인하세요' : 'Track important tax filing deadlines at a glance'
-  }
-}
-
-// 홈 페이지 텍스트 헬퍼들
-export const getHomeText = {
-  hero: {
-    badge: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.badge[lang],
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.title[lang],
-    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.subtitle[lang],
-    description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.description[lang],
-    primaryAction: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.primaryAction[lang],
-    secondaryAction: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.hero.secondaryAction[lang]
-  },
-  features: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.title[lang],
-    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.subtitle[lang],
-    project: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.project.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.project.description[lang]
-    },
-    tax: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.tax.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.tax.description[lang]
-    },
-    analytics: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.analytics.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.analytics.description[lang]
-    },
-    integration: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.integration.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.features.integration.description[lang]
-    }
-  },
-  carousel: {
-    getItem: (index: number, lang: 'ko' | 'en' = defaultLanguage) => ({
-      title: uiText.home.carousel.items[index].title[lang],
-      description: uiText.home.carousel.items[index].description[lang]
-    })
-  },
-  cta: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.cta.title[lang],
-    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.cta.subtitle[lang],
-    button: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.cta.button[lang],
-    getFeature: (index: number, lang: 'ko' | 'en' = defaultLanguage) => uiText.home.cta.features[index][lang]
-  },
-  stats: {
-    users: {
-      label: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.stats.users.label[lang],
-      value: uiText.home.stats.users.value
-    },
-    projects: {
-      label: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.stats.projects.label[lang],
-      value: uiText.home.stats.projects.value
-    },
-    satisfaction: {
-      label: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.stats.satisfaction.label[lang],
-      value: uiText.home.stats.satisfaction.value
-    },
-    uptime: {
-      label: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.stats.uptime.label[lang],
-      value: uiText.home.stats.uptime.value
-    }
-  },
-  targetUsers: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.targetUsers.title[lang],
-    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.home.targetUsers.subtitle[lang],
-    getUser: (index: number, lang: 'ko' | 'en' = defaultLanguage) => ({
-      title: uiText.home.targetUsers.users[index].title[lang],
-      description: uiText.home.targetUsers.users[index].description[lang]
-    })
-  }
-}
-
-// 세무 관리 텍스트 헬퍼들
-export const getTaxManagementText = {
-  title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.title[lang],
-  subtitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.subtitle[lang],
-  serviceTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.serviceTitle[lang],
-  serviceDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.serviceDescription[lang],
-  plannedServices: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.title[lang],
-    comprehensiveTax: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.comprehensiveTax.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.comprehensiveTax.description[lang]
-    },
-    corporateTax: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.corporateTax.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.corporateTax.description[lang]
-    },
-    vat: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.vat.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.vat.description[lang]
-    },
-    consultation: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.consultation.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.plannedServices.consultation.description[lang]
-    }
-  },
-  comingSoon: {
-    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.comingSoon.title[lang],
-    description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.comingSoon.description[lang]
-  },
-  features: {
-    partnership: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.partnership.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.partnership.description[lang]
-    },
-    automation: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.automation.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.automation.description[lang]
-    },
-    optimization: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.optimization.title[lang],
-      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.taxManagement.features.optimization.description[lang]
-    }
-  }
-}
-
 // 컴포넌트 데모 텍스트 헬퍼들
 export const getComponentDemoText = {
+  sections: {
+    buttons: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.buttons.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.buttons.description[lang]
+    },
+    forms: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.forms.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.forms.description[lang]
+    },
+    feedback: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.feedback.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.feedback.description[lang]
+    },
+    data: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.data.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.data.description[lang]
+    },
+    layout: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.layout.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.layout.description[lang]
+    },
+    utilities: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.utilities.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.utilities.description[lang]
+    },
+    navigation: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.navigation.title[lang],
+      description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.sections.navigation.description[lang]
+    }
+  },
+  layoutHero: {
+    centeredTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.layoutHero.centeredTitle[lang],
+    centeredDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.layoutHero.centeredDescription[lang],
+  },
   // Cards
   interactive: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.cards.interactive[lang],
   hoverEffect: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.cards.hoverEffect[lang],
@@ -1274,6 +1153,180 @@ export const getPaletteText = {
   semanticColors: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.colorPalette.semanticColors[lang],
   projectColors: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.colorPalette.projectColors[lang]
 }
+
+// 프로젝트 페이지 텍스트 접근 함수
+export const getProjectPageText = {
+  // Header
+  headerTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.title[lang],
+  headerDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.description[lang],
+  newProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.newProject[lang],
+
+  // Stats
+  statsTotal: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.total[lang],
+  statsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.inProgress[lang],
+  statsReview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.review[lang],
+  statsCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.completed[lang],
+
+  // List
+  searchPlaceholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.searchPlaceholder[lang],
+  resetFilters: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.resetFilters[lang],
+  resetColumns: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.resetColumns[lang],
+  deleteMode: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.deleteMode[lang],
+  exitDeleteMode: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.exitDeleteMode[lang],
+  selectAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.selectAll[lang],
+  deselectAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.deselectAll[lang],
+  deleteSelected: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.deleteSelected[lang],
+  itemsSelected: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.itemsSelected[lang],
+  pageSize: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pageSize[lang],
+  totalItems: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.totalItems[lang],
+  filtered: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filtered[lang],
+
+  // Action Buttons
+  deleteButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.deleteButton[lang],
+  filterButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filterButton[lang],
+  columnSettingsButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columnSettingsButton[lang],
+
+  // Filter Options
+  filterStatusLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.label[lang],
+  filterStatusAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.all[lang],
+  filterStatusInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.inProgress[lang],
+  filterStatusReview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.review[lang],
+  filterStatusCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.completed[lang],
+  filterStatusOnHold: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.status.options.onHold[lang],
+
+  filterClientLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.client.label[lang],
+  filterClientAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.client.options.all[lang],
+
+  filterPageCountLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.label[lang],
+  filterPageCount5: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.options["5"][lang],
+  filterPageCount10: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.options["10"][lang],
+  filterPageCount20: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.options["20"][lang],
+  filterPageCount50: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.filters.pageCount.options["50"][lang],
+
+  // Column Settings
+  columnLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.label[lang],
+  columnDragToReorder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.dragToReorder[lang],
+  columnEyeIconDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.eyeIconDescription[lang],
+  columnShowColumn: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.showColumn[lang],
+  columnHideColumn: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.hideColumn[lang],
+  columnProjectName: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.projectName[lang],
+  columnClient: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.client[lang],
+  columnStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.status[lang],
+  columnProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.progress[lang],
+  columnRegisteredDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.registeredDate[lang],
+  columnDueDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.dueDate[lang],
+  columnModifiedDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.modifiedDate[lang],
+  columnActions: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.actions[lang],
+
+  // Pagination
+  paginationFirstPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.firstPage[lang],
+  paginationPreviousPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.previousPage[lang],
+  paginationNextPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.nextPage[lang],
+  paginationLastPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.lastPage[lang],
+  paginationPageOf: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.pageOf[lang],
+  paginationOf: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.of[lang],
+  paginationGoToPage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.pagination.goToPage[lang],
+
+  // Detail
+  projectList: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectList[lang],
+  noProjectSelected: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.noProjectSelected[lang],
+  projectNo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectNo[lang],
+  client: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.client[lang],
+  progressStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.progressStatus[lang],
+  projectProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectProgress[lang],
+  paymentProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.paymentProgress[lang],
+  projectInfo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.projectInfo[lang],
+  registered: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.registered[lang],
+  dueDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.dueDate[lang],
+  modified: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.modified[lang],
+  status: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.status[lang],
+  moreDetails: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.moreDetails[lang],
+  progress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.progress[lang],
+
+  // Main Tabs
+  tabOverview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.overview[lang],
+  tabDocumentManagement: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentManagement[lang],
+  tabTaxManagement: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxManagement[lang],
+
+  // Document Management Sub Tabs
+  tabContract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.contract[lang],
+  tabInvoice: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.invoice[lang],
+  tabReport: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.report[lang],
+  tabEstimate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.estimate[lang],
+  tabOthers: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.others[lang],
+
+  // Tax Management Sub Tabs
+  tabTaxInvoice: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.taxInvoice[lang],
+  tabWithholding: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.withholding[lang],
+  tabVat: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.vat[lang],
+  tabCashReceipt: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.cashReceipt[lang],
+  tabCardReceipt: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.cardReceipt[lang],
+
+  // Main Tab Descriptions
+  overviewDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.overviewDesc[lang],
+  documentManagementDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.documentManagementDesc[lang],
+  taxManagementDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.taxManagementDesc[lang],
+
+  // Document Management Sub Tab Descriptions
+  contractDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.contractDesc[lang],
+  invoiceDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.invoiceDesc[lang],
+  reportDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.reportDesc[lang],
+  estimateDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.estimateDesc[lang],
+  othersDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.othersDesc[lang],
+
+  // Tax Management Sub Tab Descriptions
+  taxInvoiceDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.taxInvoiceDesc[lang],
+  withholdingDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.withholdingDesc[lang],
+  vatDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.vatDesc[lang],
+  cashReceiptDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.cashReceiptDesc[lang],
+  cardReceiptDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.cardReceiptDesc[lang],
+
+  // Labels
+  projectStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.projectStatus[lang],
+  taskProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.taskProgress[lang],
+  paymentStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.paymentStatus[lang],
+  currentStage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.currentStage[lang],
+  hasContract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.hasContract[lang],
+  hasBilling: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.hasBilling[lang],
+  hasDocuments: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.hasDocuments[lang],
+  contractInfo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.contractInfo[lang],
+  billingInfo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.billingInfo[lang],
+  documentInfo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.documentInfo[lang],
+
+  // Messages
+  contractLoading: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.contractLoading[lang],
+  contractEmpty: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.contractEmpty[lang],
+  billingLoading: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.billingLoading[lang],
+  billingEmpty: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.billingEmpty[lang],
+  documentsLoading: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.documentsLoading[lang],
+  documentsEmpty: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.documentsEmpty[lang],
+
+  // Actions
+  edit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.edit[lang],
+  close: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.close[lang],
+
+  // Delete Modal
+  deleteModalTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.title[lang],
+  deleteModalMessage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.message[lang],
+  deleteModalConfirm: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.confirm[lang],
+  deleteModalCancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.cancel[lang]
+}
+
+// 프로젝트 상태 텍스트 헬퍼 함수
+export const getProjectStatusText = (status: string, lang: 'ko' | 'en' = defaultLanguage) => {
+  const statusMap = {
+    planning: uiText.projectStatus.planning[lang],
+    in_progress: uiText.projectStatus.in_progress[lang],
+    review: uiText.projectStatus.review[lang],
+    completed: uiText.projectStatus.completed[lang],
+    on_hold: uiText.projectStatus.on_hold[lang],
+    cancelled: uiText.projectStatus.cancelled[lang]
+  };
+  return statusMap[status as keyof typeof statusMap] || status;
+};
+
+export const getProjectStatusTitle = (lang: 'ko' | 'en' = defaultLanguage) => uiText.projectStatus.title[lang];
+export const getProjectStatusDescription = (lang: 'ko' | 'en' = defaultLanguage) => uiText.projectStatus.description[lang];
 
 // 뷰 모드 텍스트 접근 함수
 export const getViewModeText = {

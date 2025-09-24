@@ -141,9 +141,9 @@ const handleToastClick = () => {
 }
 
 // 중앙화된 네비게이션 텍스트
-<NavigationMenuTrigger showDropdownIcon={false}>
+<Link href={routes.home}>
   {getNavText.home('ko')}
-</NavigationMenuTrigger>
+</Link>
 ```
 
 ## 🎨 globals.css - 전역 스타일
@@ -175,7 +175,7 @@ const handleToastClick = () => {
   }
 
   /* 네비게이션 메뉴 포커스 링 제거 */
-  [data-radix-navigation-menu-trigger]:focus {
+  nav a:focus {
     outline: none !important;
     box-shadow: none !important;
   }
@@ -187,6 +187,10 @@ const handleToastClick = () => {
 ### 페이지 라우팅
 - **홈 페이지**: `/` → `page.tsx`
 - **컴포넌트 데모**: `/components` → `components/page.tsx`
+- **프로젝트 관리**: `/projects` → `projects/page.tsx`
+  - **ListView**: 테이블 형태 프로젝트 목록 (AdvancedTable 내장 페이지네이션)
+  - **DetailView**: 카드 형태 프로젝트 목록 + 상세 패널 (좌측 목록에 커스텀 페이지네이션)
+  - **프로젝트 상세**: `/projects/[id]` → `projects/[id]/page.tsx`
 
 ### 내비게이션 패턴
 ```typescript
@@ -196,6 +200,13 @@ import { routes } from '@/config/brand'
 <a href={routes.components}>  // "/components"
 <a href={routes.home}>        // "/"
 ```
+
+## 📏 페이지 여백 규칙 (New)
+
+- 모든 페이지의 루트 래퍼는 `layout.page.container`와 `layout.page.padding.default` 조합을 사용해 프로젝트 페이지와 동일한 여백을 유지한다.
+- 섹션 간 수직 간격은 `layout.page.section.stack`, 그리드 기반 배치는 `layout.page.section.gridGap`을 활용한다.
+- 헤더/액션 영역 배치는 `layout.page.header.block`, `layout.page.header.actions`, `layout.page.header.titleWithControls`로 통일한다.
+- 상황에 따라 컴팩트/릴랙스 레이아웃이 필요하면 `layout.page.padding.compact` 또는 `layout.page.padding.relaxed`를 선택한다.
 
 ## 📱 반응형 디자인
 

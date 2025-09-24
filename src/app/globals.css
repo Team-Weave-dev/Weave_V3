@@ -200,9 +200,7 @@
     @apply bg-background text-foreground;
   }
 
-  /* 네비게이션 메뉴 포커스 링 제거 - 계층 우선순위로 관리 */
-  [data-radix-navigation-menu-trigger],
-  .navigation-menu-trigger,
+  /* 헤더 내비게이션 포커스 링 제거 - 계층 우선순위로 관리 */
   nav button,
   nav a {
     @apply focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0;
@@ -252,12 +250,6 @@
   }
 
   /* 네비게이션 포커스 스타일 - 계층 우선순위로 관리 */
-  [data-radix-navigation-menu-trigger]:focus,
-  [data-radix-navigation-menu-trigger]:focus-visible,
-  [data-radix-navigation-menu-trigger]:active,
-  .navigation-menu-trigger:focus,
-  .navigation-menu-trigger:focus-visible,
-  .navigation-menu-trigger:active,
   nav button:focus,
   nav button:focus-visible,
   nav button:active,
@@ -279,5 +271,21 @@
 
   .badge-default:hover {
     background-color: hsl(var(--primary) / 0.8);
+  }
+}
+
+@layer utilities {
+  /* Progress bar shimmer animation */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
   }
 }
