@@ -48,12 +48,15 @@ export function TodoListWidget({
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
   const [addingSectionId, setAddingSectionId] = useState<string | null>(null);
+  const [isAddingSection, setIsAddingSection] = useState(false);
+  const [newSectionName, setNewSectionName] = useState('');
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [hoveringBetween, setHoveringBetween] = useState<{ afterId: string | null, sectionId: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [draggedTask, setDraggedTask] = useState<TodoTask | null>(null);
   const [draggedOverTask, setDraggedOverTask] = useState<string | null>(null);
   const [dragPosition, setDragPosition] = useState<'before' | 'after' | 'child' | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // 외부 tasks prop 변경 시 동기화
   useEffect(() => {
@@ -205,8 +208,17 @@ export function TodoListWidget({
   // 드래그 시작
   const handleDragStart = (e: React.DragEvent, task: TodoTask) => {
     setDraggedTask(task);
+    setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', ''); // Firefox 호환성
+    
+    // 드래그 이미지 스타일 설정
+    const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
+    dragImage.style.opacity = '0.8';
+    dragImage.style.transform = 'rotate(2deg)';
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+    setTimeout(() => document.body.removeChild(dragImage), 0);
   };
 
   // 드래그 오버
@@ -222,14 +234,15 @@ export function TodoListWidget({
     setDraggedTask(null);
     setDraggedOverTask(null);
     setDragPosition(null);
+    setIsDragging(false);
   };
 
   // 드롭
-  const handleDrop = (e: React.DragEvent, targetTask: TodoTask, position: 'before' | 'after' | 'child') => {
+  const handleDrop = (e: React.DragEvent, targetTask: TodoTask | null, position: 'before' | 'after' | 'child', targetSectionId?: string) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!draggedTask || draggedTask.id === targetTask.id) {
+    if (!draggedTask || (targetTask && draggedTask.id === targetTask.id)) {
       handleDragEnd();
       return;
     }
@@ -266,8 +279,31 @@ export function TodoListWidget({
       return;
     }
 
+    // 섹션으로 직접 이동하는 경우 (섹션 영역에 드롭)
+    if (!targetTask && targetSectionId) {
+      const updatedTask: TodoTask = {
+        ...movedTask,
+        sectionId: targetSectionId,
+        parentId: undefined,
+        depth: 0,
+        order: tasksAfterRemoval.filter(t => t.sectionId === targetSectionId && !t.parentId).length,
+        children: movedTask.children || []
+      };
+      
+      // 하위 태스크들의 sectionId도 업데이트
+      const updateChildrenSection = (task: TodoTask, newSectionId: string): TodoTask => {
+        return {
+          ...task,
+          sectionId: newSectionId,
+          children: task.children?.map(child => updateChildrenSection(child, newSectionId)) || []
+        };
+      };
+      
+      const finalTask = updateChildrenSection(updatedTask, targetSectionId);
+      setLocalTasks([...tasksAfterRemoval, finalTask]);
+    }
     // 타겟 위치에 추가
-    if (position === 'child') {
+    else if (targetTask && position === 'child') {
       // 하위 작업으로 만들기
       const updatedTask: TodoTask = {
         ...movedTask,
@@ -277,12 +313,24 @@ export function TodoListWidget({
         children: movedTask.children || []
       };
       
+      // 하위 태스크들의 depth와 sectionId 업데이트
+      const updateChildrenDepth = (task: TodoTask, baseDepth: number, newSectionId: string): TodoTask => {
+        return {
+          ...task,
+          depth: baseDepth,
+          sectionId: newSectionId,
+          children: task.children?.map(child => updateChildrenDepth(child, baseDepth + 1, newSectionId)) || []
+        };
+      };
+      
+      const finalTask = updateChildrenDepth(updatedTask, updatedTask.depth, targetTask.sectionId);
+      
       const addAsChild = (tasks: TodoTask[]): TodoTask[] => {
         return tasks.map(task => {
           if (task.id === targetTask.id) {
             return {
               ...task,
-              children: [...(task.children || []), updatedTask],
+              children: [...(task.children || []), finalTask],
               isExpanded: true
             };
           }
@@ -299,8 +347,8 @@ export function TodoListWidget({
       const finalTasks = addAsChild(tasksAfterRemoval);
       setLocalTasks(finalTasks);
       setExpandedTasks(prev => new Set(prev).add(targetTask.id));
-    } else {
-      // 형제 작업으로 이동
+    } else if (targetTask) {
+      // 형제 작업으로 이동 (같은 레벨로 이동)
       const updatedTask: TodoTask = {
         ...movedTask,
         parentId: targetTask.parentId,
@@ -309,21 +357,44 @@ export function TodoListWidget({
         children: movedTask.children || []
       };
       
-      // 타겟 작업을 찾아서 위치를 결정
-      const insertAtPosition = (tasks: TodoTask[]): TodoTask[] => {
+      // 하위 태스크들의 depth와 sectionId 업데이트
+      const updateChildrenDepth = (task: TodoTask, baseDepth: number, newSectionId: string): TodoTask => {
+        return {
+          ...task,
+          depth: baseDepth,
+          sectionId: newSectionId,
+          children: task.children?.map(child => updateChildrenDepth(child, baseDepth + 1, newSectionId)) || []
+        };
+      };
+      
+      const finalTask = updateChildrenDepth(updatedTask, updatedTask.depth, targetTask.sectionId);
+      
+      // 타겟 작업을 찾아서 위치를 결정 (재귀적으로)
+      const insertAtPosition = (tasks: TodoTask[], parentId?: string): TodoTask[] => {
         const result: TodoTask[] = [];
         
         for (const task of tasks) {
           if (task.id === targetTask.id) {
             if (position === 'before') {
-              result.push(updatedTask);
-              result.push(task);
+              // 부모가 같은 경우에만 형제로 추가
+              if (task.parentId === parentId) {
+                result.push(finalTask);
+                result.push(task);
+              } else {
+                result.push(task);
+              }
             } else {
               result.push(task);
-              result.push(updatedTask);
+              if (task.parentId === parentId) {
+                result.push(finalTask);
+              }
             }
           } else {
-            result.push(task);
+            const updatedTask = { ...task };
+            if (task.children && task.children.length > 0) {
+              updatedTask.children = insertAtPosition(task.children, task.id);
+            }
+            result.push(updatedTask);
           }
         }
         
@@ -354,7 +425,21 @@ export function TodoListWidget({
             const rect = e.currentTarget.getBoundingClientRect();
             const y = e.clientY - rect.top;
             const height = rect.height;
-            const position = y < height * 0.3 ? 'before' : y > height * 0.7 ? 'after' : 'child';
+            const relativeX = e.clientX - rect.left;
+            const indent = task.depth * 24 + 40; // 현재 들여쓰기 + 여유공간
+            
+            // X 좌표를 고려한 더 정밀한 위치 계산
+            let position: 'before' | 'after' | 'child';
+            if (y < height * 0.25) {
+              position = 'before';
+            } else if (y > height * 0.75) {
+              position = 'after';
+            } else {
+              // 중간 영역에서는 X 좌표로 child 여부 결정
+              // 더 오른쪽에 있을수록 child가 될 가능성이 높음
+              position = relativeX > indent ? 'child' : 'after';
+            }
+            
             handleDragOver(e, task, position);
           }}
           onDrop={(e) => {
@@ -362,12 +447,20 @@ export function TodoListWidget({
               handleDrop(e, task, dragPosition);
             }
           }}
+          onDragLeave={(e) => {
+            // 다른 요소로 이동할 때 시각적 피드백 제거
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setDraggedOverTask(null);
+              setDragPosition(null);
+            }
+          }}
           className={cn(
-            "group flex items-center gap-1 py-1.5 px-1 rounded transition-colors relative",
+            "group flex items-center gap-1 py-1.5 px-1 rounded transition-all relative",
             "hover:bg-gray-50 dark:hover:bg-gray-900/50",
-            isHoveringOver && dragPosition === 'before' && "before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-primary",
-            isHoveringOver && dragPosition === 'after' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary",
-            isHoveringOver && dragPosition === 'child' && "bg-primary/10"
+            draggedTask?.id === task.id && "opacity-40 bg-gray-100 dark:bg-gray-800",
+            isHoveringOver && dragPosition === 'before' && "before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-primary before:rounded",
+            isHoveringOver && dragPosition === 'after' && "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-primary after:rounded",
+            isHoveringOver && dragPosition === 'child' && "bg-primary/10 border-l-2 border-primary ml-4"
           )}
           style={{ paddingLeft: `${task.depth * 24 + 4}px` }}
         >
@@ -506,9 +599,27 @@ export function TodoListWidget({
         
         {/* 섹션 작업들 */}
         {isExpanded && (
-          <div>
-            {/* 섹션 내 작업 추가 입력 */}
-            {isAdding && addingSectionId === section.id && (
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (draggedTask) {
+                e.dataTransfer.dropEffect = 'move';
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (draggedTask && sectionTasks.length === 0) {
+                handleDrop(e, null, 'before', section.id);
+              }
+            }}
+            className={cn(
+              "min-h-[40px] relative transition-all",
+              draggedTask && sectionTasks.length === 0 && "bg-primary/5 border-2 border-dashed border-primary/20 rounded p-2"
+            )}
+          >
+            {/* 섹션 내 작업 추가 입력 - default 섹션이 아닐 때만 표시 */}
+            {isAdding && addingSectionId === section.id && section.id !== 'default' && (
               <div className="flex gap-1 p-1 bg-gray-50 dark:bg-gray-900/50 rounded mb-1">
                 <Input
                   ref={inputRef}
@@ -551,39 +662,97 @@ export function TodoListWidget({
                 >
                   추가
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setAddingSectionId(null);
+                    setNewTaskTitle('');
+                    setSelectedPriority('p3');
+                  }}
+                  className="h-7 px-2 text-xs"
+                >
+                  취소
+                </Button>
               </div>
             )}
             
+            {sectionTasks.length === 0 && draggedTask && (
+              <div className="text-center py-2 text-xs text-primary animate-pulse">
+                여기에 드롭하여 이동
+              </div>
+            )}
             {sectionTasks.map((task, index) => renderTask(task, index))}
           </div>
         )}
         
         {/* 섹션 사이 호버 영역 (새 섹션 추가) */}
-        <div
-          className={cn(
-            "h-6 flex items-center justify-center transition-opacity",
-            hoveringBetween?.sectionId === section.id ? "opacity-100" : "opacity-0"
-          )}
-          onMouseEnter={() => setHoveringBetween({ afterId: section.id, sectionId: section.id })}
-          onMouseLeave={() => setHoveringBetween(null)}
-        >
-          <button
-            className="px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-            onClick={() => {
-              const name = prompt('섹션 이름을 입력하세요');
-              if (name) handleAddSection(name);
-            }}
-          >
-            <FolderPlus className="h-3 w-3 inline mr-1" />
-            섹션 추가
-          </button>
-        </div>
+        {!isAddingSection ? (
+          <div className="h-8 group">
+            <button
+              className="w-full px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1"
+              onClick={() => setIsAddingSection(true)}
+            >
+              <FolderPlus className="h-3 w-3" />
+              <span>새 섹션 추가</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-1 p-2 bg-gray-50 dark:bg-gray-900/50 rounded mb-2">
+            <Input
+              value={newSectionName}
+              onChange={(e) => setNewSectionName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newSectionName.trim()) {
+                  handleAddSection(newSectionName);
+                  setNewSectionName('');
+                  setIsAddingSection(false);
+                }
+                if (e.key === 'Escape') {
+                  setNewSectionName('');
+                  setIsAddingSection(false);
+                }
+              }}
+              placeholder="섹션 이름 입력..."
+              className="flex-1 h-7 text-sm"
+              autoFocus
+            />
+            <Button
+              size="sm"
+              onClick={() => {
+                if (newSectionName.trim()) {
+                  handleAddSection(newSectionName);
+                  setNewSectionName('');
+                  setIsAddingSection(false);
+                }
+              }}
+              className="h-7 px-2 text-xs"
+            >
+              추가
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setNewSectionName('');
+                setIsAddingSection(false);
+              }}
+              className="h-7 px-2 text-xs"
+            >
+              취소
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden">
+    <Card className={cn(
+      "h-full flex flex-col overflow-hidden transition-all",
+      isDragging && "shadow-lg"
+    )}>
       <CardHeader className="space-y-1">
         <CardTitle className={cn(typography.widget.title, "flex items-center justify-between")}>
           <span>{displayTitle}</span>
@@ -601,8 +770,8 @@ export function TodoListWidget({
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-2">
-        {/* 기본 섹션 작업 추가 */}
-        {isAdding && addingSectionId === 'default' && (
+        {/* 기본 섹션 작업 추가 - 상단에 한 번만 표시 */}
+        {isAdding && addingSectionId === 'default' && sections[0]?.id === 'default' && (
           <div className="flex gap-1 p-1 bg-gray-50 dark:bg-gray-900/50 rounded mb-2">
             <Input
               ref={inputRef}
@@ -644,6 +813,19 @@ export function TodoListWidget({
               className="h-7 px-2 text-xs"
             >
               추가
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setIsAdding(false);
+                setAddingSectionId(null);
+                setNewTaskTitle('');
+                setSelectedPriority('p3');
+              }}
+              className="h-7 px-2 text-xs"
+            >
+              취소
             </Button>
           </div>
         )}
