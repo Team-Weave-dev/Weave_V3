@@ -349,7 +349,7 @@ export default function ProjectDetail({
       return;
     }
 
-    const confirmed = window.confirm('선택한 카테고리의 생성 문서를 모두 삭제하시겠습니까?');
+    const confirmed = window.confirm('선택한 카테고리의 모든 문서를 삭제하시겠습니까?');
     if (!confirmed) {
       return;
     }
@@ -401,6 +401,19 @@ export default function ProjectDetail({
               </Button>
               <Button size="sm" variant="ghost" onClick={() => handleEditDocument(doc)}>
                 편집
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setDocuments((prev) => prev.filter((item) => item.id !== doc.id));
+                  toast({
+                    title: '문서를 삭제했습니다',
+                    description: `${doc.name} 문서를 제거했습니다.`
+                  });
+                }}
+              >
+                삭제
               </Button>
             </div>
           </div>
@@ -721,16 +734,16 @@ export default function ProjectDetail({
                             >
                               <FilePlus2Icon className="mr-2 h-4 w-4" /> 문서 생성
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => handleDeleteDocuments(config.type)}
-                              disabled={documentsForTab.length === 0}
-                            >
-                              <Trash2Icon className="mr-2 h-4 w-4" /> 삭제
-                            </Button>
-                          </div>
-                        </CardHeader>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleDeleteDocuments(config.type)}
+                            disabled={documentsForTab.length === 0}
+                          >
+                            <Trash2Icon className="mr-2 h-4 w-4" /> 전체 삭제
+                          </Button>
+                        </div>
+                      </CardHeader>
                         <CardContent>
                           {renderDocumentSection(
                             documentsForTab,
