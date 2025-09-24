@@ -1,13 +1,46 @@
-import {
-  applyDataToTemplate,
-  getTemplatesByType,
-  type ClientData,
-  type ProjectData,
-  type QuoteTemplate
-} from '../../../create-docs/lib/quote-templates';
 import type { ProjectTableRow } from '@/lib/types/project-table.types';
 
 export type ProjectDocumentCategory = 'contract' | 'invoice' | 'report' | 'estimate' | 'others';
+
+interface ClientData {
+  name: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  businessNumber?: string;
+}
+
+interface ProjectData {
+  title: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  duration?: string;
+  totalAmount?: number;
+  paymentTerms?: string;
+  deliverables?: string[];
+  requirements?: string[];
+}
+
+type DocumentType = 'contract' | 'invoice' | 'quote';
+
+interface QuoteTemplate {
+  id: string;
+  name: string;
+  documentType: DocumentType;
+  category:
+    | 'standard'
+    | 'service'
+    | 'software'
+    | 'web'
+    | 'consulting'
+    | 'marketing'
+    | 'creative'
+    | 'nda';
+  description: string;
+  template: string;
+}
 
 export interface GeneratedDocumentPayload {
   name: string;
@@ -54,9 +87,110 @@ const CONTRACT_SPECIAL_CATEGORIES = new Set([
   'video'
 ]);
 
-const quoteContractTemplates = getTemplatesByType('contract');
-const quoteInvoiceTemplates = getTemplatesByType('invoice');
-const quoteEstimateTemplates = getTemplatesByType('quote');
+const quoteTemplates: QuoteTemplate[] = [
+  {
+    id: 'standard-contract',
+    name: '표준 용역 계약서',
+    documentType: 'contract',
+    category: 'standard',
+    description: '일반 프로젝트에 사용할 수 있는 기본 계약서 템플릿',
+    template: `# 표준 용역 계약서\n\n## 제1조 (목적)\n본 계약은 {{CLIENT_COMPANY}}(이하 \"갑\")과 위브 팀(이하 \"을\")이 {{PROJECT_TITLE}} 용역 수행을 위해 체결한다.\n\n## 제2조 (용역 범위)\n- 용역 내용: {{PROJECT_DESCRIPTION}}\n- 납품물: {{DELIVERABLES}}\n\n## 제3조 (계약 기간)\n- 기간: {{START_DATE}} ~ {{END_DATE}} ({{DURATION}})\n\n## 제4조 (대금 지급)\n- 총 계약 금액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제5조 (일반 조항)\n1. 갑과 을은 계약을 성실히 이행한다.\n2. 분쟁 발생 시 서울중앙지방법원을 1심 관할로 한다.\n\n발행일: {{CONTRACT_DATE}}\n\n갑: __________________ (인)\n을: __________________ (인)`
+  },
+  {
+    id: 'service-contract',
+    name: '서비스 제공 계약서',
+    documentType: 'contract',
+    category: 'service',
+    description: '정기 유지보수나 서비스 제공형 프로젝트에 적합한 계약서',
+    template: `# 서비스 제공 계약서\n\n## 제1조 (서비스 내용)\n- 서비스명: {{PROJECT_TITLE}}\n- 주요 업무: {{PROJECT_DESCRIPTION}}\n\n## 제2조 (서비스 기간)\n- 서비스 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 제3조 (서비스 대가)\n- 총액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제4조 (지원 및 유지보수)\n- 갑은 필요한 자료를 제공하고, 을은 SLA에 맞춰 대응한다.\n\n## 제5조 (기타)\n- 본 계약에서 정하지 않은 사항은 상호 협의하여 정한다.\n\n발행일: {{CONTRACT_DATE}}` 
+  },
+  {
+    id: 'marketing-contract',
+    name: '마케팅 캠페인 계약서',
+    documentType: 'contract',
+    category: 'marketing',
+    description: '디지털 마케팅, 광고 등 캠페인 수행 시 사용할 계약서',
+    template: `# 마케팅 캠페인 계약서\n\n## 제1조 (캠페인 개요)\n- 캠페인명: {{PROJECT_TITLE}}\n- 캠페인 기간: {{START_DATE}} ~ {{END_DATE}}\n- 주요 KPI: 매출 증대, 신규 리드 확보 등\n\n## 제2조 (용역의 범위)\n- 콘텐츠 제작, 매체 집행, 성과 분석을 포함한다.\n\n## 제3조 (대가 및 정산)\n- 총 캠페인 비용: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제4조 (성과 보고)\n- 을은 월간 보고서를 제공하며, 주요 지표를 공유한다.\n\n발행일: {{CONTRACT_DATE}}` 
+  },
+  {
+    id: 'nda-contract',
+    name: '비밀유지 협약(NDA)',
+    documentType: 'contract',
+    category: 'nda',
+    description: '프로젝트 논의 전 기본으로 체결하는 비밀유지 협약',
+    template: `# 비밀유지 협약서 (NDA)\n\n## 제1조 (목적)\n본 협약은 {{CLIENT_COMPANY}}(갑)와 위브 팀(을)이 {{PROJECT_TITLE}} 관련 정보를 교환함에 있어 기밀을 유지하기 위함이다.\n\n## 제2조 (기밀 정보)\n- 기술 자료, 사업 전략, 가격 정책, 고객 정보 등을 포함한다.\n\n## 제3조 (의무)\n- 계약 종료 후 3년간 기밀을 유지하며 제3자에게 공개하지 않는다.\n\n## 제4조 (예외)\n- 이미 공개된 정보, 독자적으로 취득한 정보는 예외로 한다.\n\n발행일: {{CONTRACT_DATE}}` 
+  },
+  {
+    id: 'standard-quote',
+    name: '표준 견적서',
+    documentType: 'quote',
+    category: 'standard',
+    description: '일반 프리랜서/프로젝트 제안 시 사용하는 기본 견적서',
+    template: `# 견적서\n\n## 고객 정보\n- 고객명: {{CLIENT_NAME}}\n- 회사명: {{CLIENT_COMPANY}}\n\n## 프로젝트 개요\n- 프로젝트명: {{PROJECT_TITLE}}\n- 작업 기간: {{START_DATE}} ~ {{END_DATE}}\n- 제공 산출물: {{DELIVERABLES}}\n\n## 비용 산정\n- 총 금액: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n## 비고\n- 본 견적은 발행일로부터 30일간 유효합니다.\n- 추가 요구사항 발생 시 견적이 변경될 수 있습니다.\n\n발행일: {{ISSUE_DATE}}` 
+  },
+  {
+    id: 'web-quote',
+    name: '웹 개발 견적서',
+    documentType: 'quote',
+    category: 'web',
+    description: '웹사이트/웹앱 개발 프로젝트 전용 견적서',
+    template: `# 웹 개발 견적서\n\n## 프로젝트 정보\n- 프로젝트명: {{PROJECT_TITLE}}\n- 작업 범위: {{PROJECT_DESCRIPTION}}\n- 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 기능 목록\n- 핵심 기능: {{REQUIREMENTS}}\n\n## 견적\n- 총 비용: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n## 유의사항\n- 디자인/기능 변경 시 추가 비용이 발생할 수 있습니다.\n\n발행일: {{ISSUE_DATE}}` 
+  },
+  {
+    id: 'standard-invoice',
+    name: '표준 청구서',
+    documentType: 'invoice',
+    category: 'standard',
+    description: '세금계산서/청구서를 대체하는 기본 양식',
+    template: `# 청구서\n\n## 공급자 정보\n- 회사명: 위브 팀\n- 사업자등록번호: 123-45-67890\n- 주소: 서울특별시 강남구 테헤란로 123\n\n## 공급받는자 정보\n- 회사명: {{CLIENT_COMPANY}}\n- 담당자: {{CLIENT_NAME}}\n\n## 청구 내역\n- 품목: {{PROJECT_TITLE}}\n- 공급가액: {{SUPPLY_AMOUNT}}\n- 세액: {{TAX_AMOUNT}}\n- 합계: {{TOTAL_AMOUNT}}\n\n## 결제 정보\n- 결제 조건: {{PAYMENT_TERMS}}\n- 결제 기한: {{PAYMENT_DUE_DATE}}\n- 계좌 정보: {{BANK_ACCOUNT}}\n\n발행일: {{INVOICE_DATE}}`
+  }
+];
+
+const quoteContractTemplates = quoteTemplates.filter((template) => template.documentType === 'contract');
+const quoteInvoiceTemplates = quoteTemplates.filter((template) => template.documentType === 'invoice');
+const quoteEstimateTemplates = quoteTemplates.filter((template) => template.documentType === 'quote');
+
+const applyDataToTemplate = (
+  template: string,
+  clientData: ClientData,
+  projectData: ProjectData,
+  additionalData?: Record<string, string>
+): string => {
+  let result = template;
+
+  const replaceMap: Record<string, string | undefined> = {
+    CLIENT_NAME: clientData.name,
+    CLIENT_COMPANY: clientData.company,
+    CLIENT_EMAIL: clientData.email,
+    CLIENT_PHONE: clientData.phone,
+    CLIENT_ADDRESS: clientData.address,
+    CLIENT_BUSINESS_NUMBER: clientData.businessNumber,
+    PROJECT_TITLE: projectData.title,
+    PROJECT_DESCRIPTION: projectData.description,
+    START_DATE: projectData.startDate,
+    END_DATE: projectData.endDate,
+    DURATION: projectData.duration,
+    TOTAL_AMOUNT: projectData.totalAmount ? formatCurrency(projectData.totalAmount) : undefined,
+    PAYMENT_TERMS: projectData.paymentTerms,
+    DELIVERABLES: projectData.deliverables?.map((item) => `- ${item}`).join('\n'),
+    REQUIREMENTS: projectData.requirements?.map((item) => `- ${item}`).join('\n')
+  };
+
+  Object.entries(replaceMap).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    result = result.replace(regex, value ?? `[${key}]`);
+  });
+
+  if (additionalData) {
+    Object.entries(additionalData).forEach(([key, value]) => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      result = result.replace(regex, value ?? `[${key}]`);
+    });
+  }
+
+  result = result.replace(/{{ISSUE_DATE}}/g, formatISODate(new Date()) ?? '[발행일]');
+  return result;
+};
 
 const measureClosestDuration = (start?: string, end?: string): string | undefined => {
   if (!start || !end) {
