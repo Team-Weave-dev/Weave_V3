@@ -8,6 +8,9 @@
 
 ```
 components/
+├── projects/           # 📊 프로젝트 관련 컴포넌트
+│   └── ProjectDetail/  # 🗂️ 프로젝트 상세 컴포넌트
+│       └── index.tsx   # 재사용 가능한 프로젝트 상세 뷰 (탭 구조)
 └── ui/                 # 🎨 shadcn/ui 기반 컴포넌트 (39개)
     ├── claude.md       # UI 컴포넌트 상세 가이드
     ├── header.tsx      # 🧭 상단 헤더 네비게이션
@@ -88,6 +91,54 @@ components/
 // 페이지 구조 및 레이아웃
 - HeroSection      # 히어로 섹션 (Basic, Centered, Split)
 - Footer           # 푸터 (Basic, Minimal)
+```
+
+## 📊 프로젝트 전용 컴포넌트
+
+### ProjectDetail 컴포넌트
+**위치**: `src/components/projects/ProjectDetail/index.tsx`
+
+재사용 가능한 프로젝트 상세 정보 표시 컴포넌트로, 탭 기반 구조를 제공합니다.
+
+#### 주요 특징
+- **4개 탭 구조**: Overview, Contract, Billing, Documents
+- **반응형 모드**: full (전체화면) / compact (패널) 모드 지원
+- **중앙화 통합**: 모든 텍스트와 스타일이 config 시스템과 연동
+- **최적화된 UI**: 중복 제거로 깔끔한 정보 표시
+
+#### 사용법
+```typescript
+import ProjectDetail from '@/components/projects/ProjectDetail'
+
+// 전체화면 모드 (프로젝트 상세 페이지)
+<ProjectDetail
+  project={projectData}
+  mode="full"
+  onEdit={handleEdit}
+  onClose={handleClose}
+/>
+
+// 패널 모드 (DetailView 컴포넌트 내부)
+<ProjectDetail
+  project={projectData}
+  mode="compact"
+/>
+```
+
+#### 최근 변경사항 (2025-09-24)
+- **UI 최적화**: Progress Overview 섹션 제거
+  - 중복된 대형 진행률 카드 제거 (프로젝트 진도 + 결제 진행)
+  - 헤더 → 탭 직접 연결로 더 깔끔한 레이아웃
+  - 모든 정보는 Overview 탭에서 체계적으로 제공
+
+#### Props
+```typescript
+interface ProjectDetailProps {
+  project: ProjectTableRow;
+  mode?: 'full' | 'compact';
+  onClose?: () => void;
+  onEdit?: () => void;
+}
 ```
 
 ## 🔧 컴포넌트 사용 가이드

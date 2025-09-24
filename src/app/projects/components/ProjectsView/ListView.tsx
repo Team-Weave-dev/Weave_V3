@@ -10,7 +10,8 @@ import { useProjectTable } from '@/lib/hooks/useProjectTable';
 import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.types';
 import { getProjectPageText } from '@/config/brand';
 import { layout, defaults } from '@/config/constants';
-import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw, GripVertical, Eye, EyeOff } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 interface ListViewProps {
   projects: ProjectTableRow[];
@@ -86,6 +87,38 @@ export default function ListView({
   // Handle row click
   const handleRowClick = (project: ProjectTableRow) => {
     onProjectClick(project.no);
+  };
+
+  // 컬럼 드래그 앤 드롭 핸들러
+  const handleColumnDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = [...config.columns];
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // order 값 업데이트
+    const updatedColumns = items.map((col, index) => ({
+      ...col,
+      order: index
+    }));
+
+    updateConfig({
+      ...config,
+      columns: updatedColumns
+    });
+  };
+
+  // 컬럼 표시/숨김 토글
+  const handleColumnVisibilityToggle = (columnId: string) => {
+    const updatedColumns = config.columns.map(col =>
+      col.id === columnId ? { ...col, visible: !col.visible } : col
+    );
+
+    updateConfig({
+      ...config,
+      columns: updatedColumns
+    });
   };
 
   return (
@@ -288,57 +321,73 @@ export default function ListView({
           <div className="mt-4 p-4 bg-background border border-border rounded-md space-y-4">
             <h3 className="text-sm font-medium">{getProjectPageText.columnSettingsButton('ko')}</h3>
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">{getProjectPageText.columnLabel('ko')}</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="projectName" defaultChecked />
-                  <label htmlFor="projectName" className="text-sm">
-                    {getProjectPageText.columnProjectName('ko')}
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="client" defaultChecked />
-                  <label htmlFor="client" className="text-sm">
-                    {getProjectPageText.columnClient('ko')}
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="status" defaultChecked />
-                  <label htmlFor="status" className="text-sm">
-                    {getProjectPageText.columnStatus('ko')}
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="progress" defaultChecked />
-                  <label htmlFor="progress" className="text-sm">
-                    {getProjectPageText.columnProgress('ko')}
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="registeredDate" defaultChecked />
-                  <label htmlFor="registeredDate" className="text-sm">
-                    {getProjectPageText.columnRegisteredDate('ko')}
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="dueDate" defaultChecked />
-                  <label htmlFor="dueDate" className="text-sm">
-                    {getProjectPageText.columnDueDate('ko')}
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="modifiedDate" defaultChecked />
-                  <label htmlFor="modifiedDate" className="text-sm">
-                    {getProjectPageText.columnModifiedDate('ko')}
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="actions" defaultChecked />
-                  <label htmlFor="actions" className="text-sm">
-                    {getProjectPageText.columnActions('ko')}
-                  </label>
-                </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">{getProjectPageText.columnDragToReorder('ko')}</p>
+                <p className="text-sm text-muted-foreground">{getProjectPageText.columnEyeIconDescription('ko')}</p>
               </div>
+
+              <DragDropContext onDragEnd={handleColumnDragEnd}>
+                <Droppable droppableId="column-settings">
+                  {(provided) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="space-y-2"
+                    >
+                      {config.columns
+                        .sort((a, b) => a.order - b.order)
+                        .map((column, index) => (
+                          <Draggable
+                            key={column.id}
+                            draggableId={column.id}
+                            index={index}
+                          >
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`flex items-center space-x-3 p-3 rounded-md border transition-all ${
+                                  snapshot.isDragging
+                                    ? 'bg-muted border-primary shadow-md'
+                                    : 'bg-background hover:bg-muted/50'
+                                }`}
+                              >
+                                {/* 드래그 핸들 */}
+                                <div
+                                  {...provided.dragHandleProps}
+                                  className="cursor-grab active:cursor-grabbing"
+                                >
+                                  <GripVertical className={`${layout.heights.icon} text-muted-foreground`} />
+                                </div>
+
+                                {/* 표시/숨김 토글 */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleColumnVisibilityToggle(column.id)}
+                                  className="h-8 w-8 p-0"
+                                  title={column.visible ? getProjectPageText.columnHideColumn('ko') : getProjectPageText.columnShowColumn('ko')}
+                                >
+                                  {column.visible ? (
+                                    <Eye className={`${layout.heights.icon} text-primary`} />
+                                  ) : (
+                                    <EyeOff className={`${layout.heights.icon} text-muted-foreground`} />
+                                  )}
+                                </Button>
+
+                                {/* 컬럼명 */}
+                                <span className="flex-1 text-sm font-medium">
+                                  {getProjectPageText[`column${column.id.charAt(0).toUpperCase() + column.id.slice(1).replace(/([A-Z])/g, '$1')}`]?.('ko') || column.label}
+                                </span>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             </div>
 
             {/* Column Reset Button */}

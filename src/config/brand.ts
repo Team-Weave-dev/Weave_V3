@@ -465,6 +465,10 @@ export const uiText = {
         // 컬럼 설정
         columns: {
           label: { ko: "표시할 컬럼", en: "Visible Columns" },
+          dragToReorder: { ko: "드래그하여 순서 변경", en: "Drag to reorder" },
+          eyeIconDescription: { ko: "아이콘을 클릭하여 컬럼 숨김/보이기", en: "Click icon to show/hide columns" },
+          showColumn: { ko: "컬럼 보이기", en: "Show column" },
+          hideColumn: { ko: "컬럼 숨기기", en: "Hide column" },
           options: {
             projectName: { ko: "프로젝트명", en: "Project Name" },
             client: { ko: "고객사", en: "Client" },
@@ -1163,6 +1167,10 @@ export const getProjectPageText = {
 
   // Column Settings
   columnLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.label[lang],
+  columnDragToReorder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.dragToReorder[lang],
+  columnEyeIconDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.eyeIconDescription[lang],
+  columnShowColumn: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.showColumn[lang],
+  columnHideColumn: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.hideColumn[lang],
   columnProjectName: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.projectName[lang],
   columnClient: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.client[lang],
   columnStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.columns.options.status[lang],

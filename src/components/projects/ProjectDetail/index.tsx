@@ -80,38 +80,6 @@ export default function ProjectDetail({
           )}
         </div>
 
-        {/* Progress Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">
-                {getProjectPageText.projectProgress(lang)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-semibold">{project.progress || 0}%</span>
-                <BriefcaseIcon className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <ProjectProgress value={project.progress || 0} size="md" />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">
-                {getProjectPageText.paymentProgress(lang)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-semibold">{project.paymentProgress || 0}%</span>
-                <CreditCardIcon className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <ProjectProgress value={project.paymentProgress || 0} size="md" />
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Tabs */}
