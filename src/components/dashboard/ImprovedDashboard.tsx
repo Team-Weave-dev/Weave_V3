@@ -37,6 +37,7 @@ import { QuickActionsWidget } from '@/components/ui/widgets/QuickActionsWidget';
 import { ProjectSummaryWidget } from '@/components/ui/widgets/ProjectSummaryWidget';
 import { TodoListWidget } from '@/components/ui/widgets/TodoListWidget';
 import { CalendarWidget } from '@/components/ui/widgets/CalendarWidget';
+import { TaxDeadlineWidget } from '@/components/ui/widgets/TaxDeadlineWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 
 interface ImprovedDashboardProps {
@@ -274,8 +275,9 @@ export function ImprovedDashboard({
         todoList: { x: 5, y: 2, w: 4, h: 3 },
         chart: { x: 0, y: 3, w: 5, h: 2 },
         calendar: { x: 0, y: 5, w: 5, h: 3 },
-        quickActions: { x: 5, y: 5, w: 4, h: 1 },
-        custom: { x: 5, y: 6, w: 4, h: 2 },
+        taxDeadline: { x: 5, y: 5, w: 4, h: 3 },
+        quickActions: { x: 5, y: 8, w: 4, h: 1 },
+        custom: { x: 0, y: 8, w: 5, h: 1 },
       };
       const seen = new Set<ImprovedWidget['type']>();
       const selected: ImprovedWidget[] = [];
@@ -351,6 +353,14 @@ export function ImprovedDashboard({
         maxW: 6,
         maxH: 4,
       });
+      ensure('taxDeadline', {
+        id: 'widget_tax_1',
+        type: 'taxDeadline',
+        title: '세무 일정',
+        position: defaultPos.taxDeadline,
+        minW: 2,
+        minH: 2,
+      });
       ensure('quickActions', {
         id: 'widget_actions_1',
         type: 'quickActions',
@@ -414,10 +424,18 @@ export function ImprovedDashboard({
           maxH: 4,
         },
         {
+          id: 'widget_tax_1',
+          type: 'taxDeadline',
+          title: '세무 일정',
+          position: { x: 5, y: 5, w: 4, h: 3 },
+          minW: 2,
+          minH: 2,
+        },
+        {
           id: 'widget_actions_1',
           type: 'quickActions',
           title: '빠른 작업',
-          position: { x: 5, y: 5, w: 4, h: 1 },
+          position: { x: 5, y: 8, w: 4, h: 1 },
           minW: 2,
           minH: 1,
         },
@@ -710,6 +728,14 @@ export function ImprovedDashboard({
           title={widget.title}
           events={widget.data || mockCalendarEvents}
           showToday={true}
+        />;
+      case 'taxDeadline':
+        return <TaxDeadlineWidget
+          title={widget.title}
+          showOnlyUpcoming={true}
+          maxItems={5}
+          highlightDays={7}
+          lang="ko"
         />;
       default:
         return (

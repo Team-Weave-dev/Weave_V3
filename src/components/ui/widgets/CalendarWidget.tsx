@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,8 @@ import { cn } from '@/lib/utils';
 import type { CalendarWidgetProps, CalendarEvent } from '@/types/dashboard';
 import { format, isSameDay, startOfDay, isToday, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, startOfMonth, endOfMonth, addDays, getDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { getWidgetText } from '@/config/brand';
+import { typography } from '@/config/constants';
 
 // 이벤트 타입별 색상 및 아이콘 매핑 (구글 캘린더 스타일)
 const eventTypeConfig = {
@@ -733,7 +735,7 @@ const AgendaView = ({
 };
 
 export function CalendarWidget({
-  title = '캘린더',
+  title,
   selectedDate: initialDate,
   events = [],
   onDateSelect,
@@ -745,6 +747,7 @@ export function CalendarWidget({
   view = 'month',
   lang = 'ko'
 }: CalendarWidgetProps) {
+  const displayTitle = title || getWidgetText.calendar.title('ko');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate || new Date());
   const [currentView, setCurrentView] = useState(view);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -874,17 +877,14 @@ export function CalendarWidget({
   return (
     <>
       <Card className="h-full flex flex-col" ref={containerRef}>
-        <CardHeader className="pb-2 px-3 py-2 calendar-header">
-          {/* 상단 툴바 */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
-              {/* 햄버거 메뉴 (구글 캘린더 스타일) */}
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-              <span className="text-base font-semibold">{title}</span>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+              <CardDescription className={typography.text.description}>
+                {getWidgetText.calendar.description('ko')}
+              </CardDescription>
             </div>
-            
             <div className="flex items-center gap-1">
               {/* 검색 */}
               <Popover>
@@ -936,6 +936,8 @@ export function CalendarWidget({
               </Button>
             </div>
           </div>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden p-2" ref={contentRef}>
           
           {/* 네비게이션 바 */}
           <div className="flex items-center justify-between mt-2">
@@ -1006,9 +1008,6 @@ export function CalendarWidget({
               </PopoverContent>
             </Popover>
           </div>
-        </CardHeader>
-        
-        <CardContent className="flex-1 overflow-hidden p-2" ref={contentRef}>
           {/* 뷰별 콘텐츠 렌더링 */}
           {currentView === 'month' && (
             <MonthView

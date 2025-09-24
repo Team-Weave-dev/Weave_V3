@@ -4,5 +4,16 @@ export { QuickActionsWidget } from './QuickActionsWidget';
 export { ProjectSummaryWidget } from './ProjectSummaryWidget';
 export { TodoListWidget } from './TodoListWidget';
 export { CalendarWidget } from './CalendarWidget';
-export type { ProjectReview, ProjectSummaryWidgetProps, TodoListWidgetProps, CalendarWidgetProps, CalendarEvent } from '@/types/dashboard';
+export { TaxDeadlineWidget } from './TaxDeadlineWidget';
+export type { 
+  ProjectReview, 
+  ProjectSummaryWidgetProps, 
+  TodoListWidgetProps, 
+  CalendarWidgetProps, 
+  CalendarEvent,
+  TaxDeadlineWidgetProps,
+  TaxDeadline,
+  TaxCategory,
+  TaxStatus 
+} from '@/types/dashboard';
 

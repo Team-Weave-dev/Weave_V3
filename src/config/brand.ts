@@ -1046,6 +1046,7 @@ export const getWidgetText = {
   },
   todoList: {
     title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.title[lang],
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘의 작업을 관리하고 우선순위를 설정하세요' : 'Manage today\'s tasks and set priorities',
     addTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.addTask[lang],
     placeholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.placeholder[lang],
     priorities: {
@@ -1057,6 +1058,14 @@ export const getWidgetText = {
     noTasks: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.noTasks[lang],
     completedTasks: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.completedTasks[lang],
     deleteTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.deleteTask[lang]
+  },
+  calendar: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '캘린더' : 'Calendar',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일정을 확인하고 새로운 이벤트를 추가하세요' : 'View your schedule and add new events'
+  },
+  taxDeadline: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세무 일정' : 'Tax Schedule',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '중요한 세무 신고 마감일을 한눈에 확인하세요' : 'Track important tax filing deadlines at a glance'
   }
 }
 

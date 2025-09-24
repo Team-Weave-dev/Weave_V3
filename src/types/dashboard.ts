@@ -155,3 +155,54 @@ export interface CalendarWidgetProps {
   view?: 'month' | 'week' | 'day' | 'agenda';
   lang?: 'ko' | 'en';
 }
+
+// 세무 일정 위젯 인터페이스
+export type TaxCategory = 
+  | 'VAT'            // 부가가치세
+  | 'income-tax'     // 소득세
+  | 'corporate-tax'  // 법인세
+  | 'local-tax'      // 지방세
+  | 'withholding'    // 원천세
+  | 'property-tax'   // 재산세
+  | 'customs'        // 관세
+  | 'other';         // 기타
+
+export type TaxStatus = 
+  | 'upcoming'       // 예정
+  | 'urgent'         // 긴급 (D-3 이내)
+  | 'overdue'        // 연체
+  | 'completed'      // 완료
+  | 'in-progress';   // 진행중
+
+export interface TaxDeadline {
+  id: string;
+  title: string;                  // 세무 일정 이름
+  category: TaxCategory;          // 세금 종류
+  
+  // 일정 정보
+  deadlineDay: number;            // 마감일 (1-31)
+  deadlineMonth?: number;         // 특정 월 (연간 일정용)
+  frequency: 'monthly' | 'quarterly' | 'yearly';  // 반복 주기
+  
+  // 중요도 및 상태
+  importance: 'critical' | 'high' | 'medium' | 'low';
+  
+  // 표시 정보
+  description?: string;           // 간단한 설명
+  taxPeriod?: string;            // 과세 기간 (예: "전월분", "1분기")
+  note?: string;                 // 추가 안내사항
+}
+
+export interface TaxDeadlineWidgetProps {
+  id?: string;
+  title?: string;
+  selectedMonth?: number;          // 선택된 월 (1-12, null은 전체)
+  showOnlyUpcoming?: boolean;      // 다가오는 일정만 표시
+  maxItems?: number;              // 표시할 최대 항목 수 (기본: 5)
+  compactMode?: boolean;          // 컴팩트 모드 (1x1 크기용)
+  categories?: TaxCategory[];     // 표시할 세금 카테고리
+  highlightDays?: number;         // D-day 며칠 전부터 강조 (기본: 7)
+  onDeadlineClick?: (deadline: TaxDeadline) => void;
+  onMonthChange?: (month: number) => void;
+  lang?: 'ko' | 'en';
+}

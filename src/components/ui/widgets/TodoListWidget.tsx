@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -753,7 +753,7 @@ export function TodoListWidget({
       "h-full flex flex-col overflow-hidden transition-all",
       isDragging && "shadow-lg"
     )}>
-      <CardHeader className="space-y-1">
+      <CardHeader>
         <CardTitle className={cn(typography.widget.title, "flex items-center justify-between")}>
           <span>{displayTitle}</span>
           <Button
@@ -768,6 +768,9 @@ export function TodoListWidget({
             <Plus className="h-3 w-3" />
           </Button>
         </CardTitle>
+        <CardDescription className={typography.text.description}>
+          {getWidgetText.todoList.description('ko')}
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-2">
         {/* 기본 섹션 작업 추가 - 상단에 한 번만 표시 */}
