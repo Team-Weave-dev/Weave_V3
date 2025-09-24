@@ -32,17 +32,21 @@ export default function ProjectDocumentGeneratorModal({
 }: ProjectDocumentGeneratorModalProps) {
   const templates = useMemo<ProjectDocumentTemplate[]>(() => getTemplatesForCategory(category), [category]);
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectDocumentTemplate | null>(null);
+  const [previewPayload, setPreviewPayload] = useState<GeneratedDocumentPayload | null>(null);
   const [previewContent, setPreviewContent] = useState('');
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const { toast } = useToast();
 
   const handlePreview = (template: ProjectDocumentTemplate) => {
     const payload = template.build({ project });
     setSelectedTemplate(template);
+    setPreviewPayload(payload);
     setPreviewContent(payload.content);
+    setIsPreviewOpen(true);
   };
 
   const handleGenerate = () => {
-    if (!selectedTemplate) {
+    if (!selectedTemplate || !previewPayload) {
       toast({
         title: '템플릿을 먼저 선택하세요',
         description: '문서를 생성할 템플릿을 선택 후 생성 버튼을 눌러주세요.'
@@ -50,14 +54,15 @@ export default function ProjectDocumentGeneratorModal({
       return;
     }
 
-    const payload = selectedTemplate.build({ project });
     const customizedPayload = {
-      ...payload,
-      content: previewContent || payload.content
+      ...previewPayload,
+      content: previewContent || previewPayload.content
     };
     onGenerate(customizedPayload);
     setSelectedTemplate(null);
+    setPreviewPayload(null);
     setPreviewContent('');
+    setIsPreviewOpen(false);
     onOpenChange(false);
   };
 
@@ -70,8 +75,20 @@ export default function ProjectDocumentGeneratorModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+    <>
+      <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          setSelectedTemplate(null);
+          setPreviewPayload(null);
+          setPreviewContent('');
+          setIsPreviewOpen(false);
+        }
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent className="max-w-2xl">
         <DialogHeader className="space-y-2">
           <DialogTitle>{categoryLabelMap[category]} 템플릿 선택</DialogTitle>
           <DialogDescription>
@@ -109,43 +126,60 @@ export default function ProjectDocumentGeneratorModal({
                   </div>
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <p className="text-xs text-muted-foreground">템플릿 ID: {template.id}</p>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant={isSelected ? 'secondary' : 'outline'} onClick={() => handlePreview(template)}>
-                        미리보기
-                      </Button>
-                    </div>
+                    <Button size="sm" variant={isSelected ? 'secondary' : 'outline'} onClick={() => handlePreview(template)}>
+                      미리보기
+                    </Button>
                   </div>
                 </div>
               );
             })}
           </div>
         </ScrollArea>
-        <div className="space-y-4 border-t pt-4">
-          <h4 className="text-sm font-semibold">미리보기</h4>
-          <Textarea
-            value={previewContent}
-            onChange={(event) => setPreviewContent(event.target.value)}
-            placeholder={selectedTemplate ? '문서 내용을 필요에 맞게 수정하세요.' : '템플릿을 선택하면 미리보기가 표시됩니다.'}
-            className="min-h-[280px]"
-            disabled={!selectedTemplate}
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPreviewContent('');
-                setSelectedTemplate(null);
-                onOpenChange(false);
-              }}
-            >
-              닫기
-            </Button>
-            <Button onClick={handleGenerate} disabled={!selectedTemplate}>
-              생성하기
-            </Button>
-          </div>
+      </DialogContent>
+    </Dialog>
+
+      <Dialog
+      open={isPreviewOpen}
+      onOpenChange={(next) => {
+        if (!next) {
+          setIsPreviewOpen(false);
+          setPreviewPayload(null);
+          setPreviewContent('');
+          setSelectedTemplate(null);
+        }
+      }}
+    >
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{previewPayload?.name ?? '문서 미리보기'}</DialogTitle>
+          <DialogDescription>
+            생성 전에 내용을 확인하고 필요한 경우 수정한 뒤 생성 버튼을 눌러주세요.
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
+          value={previewContent}
+          onChange={(event) => setPreviewContent(event.target.value)}
+          className="min-h-[320px]"
+          placeholder="문서 내용을 입력하세요"
+        />
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsPreviewOpen(false);
+              setPreviewPayload(null);
+              setPreviewContent('');
+              setSelectedTemplate(null);
+            }}
+          >
+            취소
+          </Button>
+          <Button onClick={handleGenerate}>
+            생성하기
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
