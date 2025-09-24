@@ -263,6 +263,85 @@ const processedData = useMemo(() => {
 - **확장성**: 새 탭 추가 용이
 - **유지보수**: 중앙화된 설정으로 수정 편의
 
+## 📋 향후 구현 계획 (TODO)
+
+### 🗂️ 프로젝트 자료현황 - 실제 데이터 연동
+
+현재 **하드코딩된 상태**에서 **실제 문서 데이터 연동**으로 업그레이드 예정:
+
+#### 현재 상태 (임시 구현)
+```typescript
+// 현재는 고정된 상태 표시
+<span className="text-xs text-red-600 font-medium mb-1">
+  {getProjectPageText.statusPending(lang)} {/* "미보유" */}
+</span>
+<span className="text-xs text-muted-foreground">10월 12일</span> {/* 고정 날짜 */}
+```
+
+#### 향후 구현 계획
+1. **실제 문서 존재 여부 확인**
+   - 각 문서 유형별로 실제 파일 존재 확인
+   - 문서가 없는 경우: **"미보유"** 표시
+   - 문서가 있는 경우: **"완료"** 표시
+
+2. **실제 문서 저장 날짜 표시**
+   - 하드코딩된 "10월 12일" 제거
+   - 각 문서의 실제 저장/업데이트 날짜 표시
+   - 날짜 포맷: `MM월 DD일` (한국어)
+
+3. **문서관리 탭과의 실시간 동기화**
+   - 문서관리 탭에서 파일 업로드/삭제 시
+   - 자료현황 카드가 실시간으로 상태 업데이트
+   - 양방향 데이터 바인딩 구현
+
+#### 구현 예상 코드
+```typescript
+// ProjectTableRow 타입 확장
+interface DocumentStatus {
+  hasContract: boolean;
+  contractDate?: Date;
+  hasInvoice: boolean;
+  invoiceDate?: Date;
+  invoiceCount: number;
+  hasReport: boolean;
+  reportDate?: Date;
+  hasEstimate: boolean;
+  estimateDate?: Date;
+  hasOthers: boolean;
+  othersDate?: Date;
+}
+
+interface ProjectTableRow {
+  // 기존 필드들...
+  documents: DocumentStatus;
+}
+
+// 동적 상태 표시
+const getDocumentStatus = (hasDocument: boolean) => {
+  return hasDocument
+    ? { text: getProjectPageText.statusCompleted(lang), color: 'green' }
+    : { text: getProjectPageText.statusPending(lang), color: 'red' };
+}
+
+// 실제 날짜 표시
+const getDocumentDate = (date?: Date) => {
+  if (!date) return '';
+  return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+}
+```
+
+#### 데이터 흐름 설계
+```
+문서관리 탭 (업로드/삭제) → 프로젝트 데이터 업데이트 → 자료현황 카드 리렌더링
+     ↓
+실시간 상태 동기화 → 즉시 UI 반영 → 사용자 피드백
+```
+
+#### API 연동 계획
+- **파일 존재 확인**: `GET /api/projects/{id}/documents/status`
+- **문서 메타데이터**: `GET /api/projects/{id}/documents/metadata`
+- **실시간 업데이트**: WebSocket 또는 Server-Sent Events
+
 ## 🔗 관련 문서
 
 - [`../../app/projects/claude.md`](../../app/projects/claude.md) - 프로젝트 페이지 시스템

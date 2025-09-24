@@ -41,8 +41,23 @@ export default function ProjectDetail({
   const lang = 'ko'; // TODO: 나중에 언어 설정과 연동
 
   // Tab state management for nested structure
+  const [mainTab, setMainTab] = useState('overview');
   const [documentSubTab, setDocumentSubTab] = useState('contract');
   const [taxSubTab, setTaxSubTab] = useState('taxInvoice');
+
+  // Handler for document card clicks - navigates to document management tab
+  const handleDocumentCardClick = (documentType: string) => {
+    setMainTab('documentManagement');
+    setDocumentSubTab(documentType);
+  };
+
+  // Handler for keyboard navigation on document cards
+  const handleDocumentCardKeyDown = (event: React.KeyboardEvent, documentType: string) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleDocumentCardClick(documentType);
+    }
+  };
 
   const statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
     completed: 'status-soft-completed',
@@ -97,7 +112,7 @@ export default function ProjectDetail({
       </div>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={mainTab} onValueChange={setMainTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">
             {getProjectPageText.tabOverview(lang)}
@@ -112,110 +127,244 @@ export default function ProjectDetail({
 
         {/* Overview Tab */}
         <TabsContent value="overview">
-          <Card>
-            <CardHeader>
-              <CardTitle>{getProjectPageText.tabOverview(lang)}</CardTitle>
-              <CardDescription>
-                {getProjectPageText.overviewDesc(lang)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 프로젝트 정보 */}
-                <div>
-                  <h3 className="text-base font-semibold mb-4">
-                    {getProjectPageText.projectInfo(lang)}
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4" />
-                        {getProjectPageText.registered(lang)}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {new Date(project.registrationDate).toLocaleDateString('ko-KR')}
-                      </span>
+          <div className="space-y-6">
+            {/* 1. 기존 프로젝트 정보 카드 (개요) - 최상단 */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 프로젝트 정보 */}
+                  <div>
+                    <h3 className="text-base font-semibold mb-4">
+                      {getProjectPageText.projectInfo(lang)}
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4" />
+                          {getProjectPageText.registered(lang)}
+                        </span>
+                        <span className="text-sm font-medium">
+                          {new Date(project.registrationDate).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                          <ClockIcon className="h-4 w-4" />
+                          {getProjectPageText.dueDate(lang)}
+                        </span>
+                        <span className="text-sm font-medium">
+                          {new Date(project.dueDate).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4" />
+                          {getProjectPageText.modified(lang)}
+                        </span>
+                        <span className="text-sm font-medium">
+                          {new Date(project.modifiedDate).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground flex items-center gap-2">
-                        <ClockIcon className="h-4 w-4" />
-                        {getProjectPageText.dueDate(lang)}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {new Date(project.dueDate).toLocaleDateString('ko-KR')}
-                      </span>
+                  </div>
+
+                  {/* 프로젝트 상태 */}
+                  <div>
+                    <h3 className="text-base font-semibold mb-4">
+                      {getProjectPageText.projectStatus(lang)}
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm">{getProjectPageText.taskProgress(lang)}</span>
+                            <span className="text-sm font-medium">{project.progress}%</span>
+                          </div>
+                          <ProjectProgress value={project.progress || 0} size="sm" />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm">{getProjectPageText.paymentStatus(lang)}</span>
+                            <span className="text-sm font-medium">{project.paymentProgress}%</span>
+                          </div>
+                          <ProjectProgress value={project.paymentProgress || 0} size="sm" />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">{getProjectPageText.currentStage(lang)}</span>
+                        <Badge variant={statusVariantMap[project.status]}>
+                          {getProjectStatusText(project.status, lang)}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground flex items-center gap-2">
-                        <CheckCircleIcon className="h-4 w-4" />
-                        {getProjectPageText.modified(lang)}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {new Date(project.modifiedDate).toLocaleDateString('ko-KR')}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 2. 프로젝트 상세 정보 섹션 - 중간 */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  {/* 총 금액 */}
+                  <div className="flex items-center justify-between py-2 border-b">
+                    <span className="text-sm text-muted-foreground">
+                      {getProjectPageText.fieldTotalAmount(lang)}
+                    </span>
+                    <span className="text-sm font-medium">
+                      {getProjectPageText.placeholderNotSet(lang)} {getProjectPageText.placeholderAmount(lang)}
+                    </span>
+                  </div>
+
+                  {/* 프로젝트명 */}
+                  <div className="flex items-center justify-between py-2 border-b">
+                    <span className="text-sm text-muted-foreground">
+                      {getProjectPageText.fieldProjectName(lang)}
+                    </span>
+                    <span className="text-sm font-medium">
+                      {getProjectPageText.placeholderNotSet(lang)}
+                    </span>
+                  </div>
+
+                  {/* 정산방식 */}
+                  <div className="flex items-center justify-between py-2 border-b">
+                    <span className="text-sm text-muted-foreground">
+                      {getProjectPageText.fieldSettlementMethod(lang)}
+                    </span>
+                    <span className="text-sm font-medium">
+                      {getProjectPageText.placeholderNotSet(lang)}
+                    </span>
+                  </div>
+
+                  {/* 선급 */}
+                  <div className="flex items-center justify-between py-2 border-b">
+                    <span className="text-sm text-muted-foreground">
+                      {getProjectPageText.fieldAdvance(lang)}
+                    </span>
+                    <span className="text-sm font-medium">
+                      {getProjectPageText.placeholderNotSet(lang)}
+                    </span>
+                  </div>
+
+                  {/* 프로젝트 내용 */}
+                  <div className="py-2">
+                    <span className="text-sm text-muted-foreground block mb-2">
+                      {getProjectPageText.fieldProjectContent(lang)}
+                    </span>
+                    <div className="min-h-[60px] p-3 border rounded-md bg-muted/30">
+                      <span className="text-sm text-muted-foreground">
+                        {getProjectPageText.placeholderNoContent(lang)}
                       </span>
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* 프로젝트 상태 */}
-                <div>
-                  <h3 className="text-base font-semibold mb-4">
-                    {getProjectPageText.projectStatus(lang)}
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm">{getProjectPageText.taskProgress(lang)}</span>
-                          <span className="text-sm font-medium">{project.progress}%</span>
-                        </div>
-                        <ProjectProgress value={project.progress || 0} size="sm" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm">{getProjectPageText.paymentStatus(lang)}</span>
-                          <span className="text-sm font-medium">{project.paymentProgress}%</span>
-                        </div>
-                        <ProjectProgress value={project.paymentProgress || 0} size="sm" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{getProjectPageText.currentStage(lang)}</span>
-                      <Badge variant={statusVariantMap[project.status]}>
-                        {getProjectStatusText(project.status, lang)}
-                      </Badge>
-                    </div>
+            {/* 3. 프로젝트 자료 현황 섹션 - 최하단 */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {/* 계약서 */}
+                  <div
+                    className="flex flex-col items-center p-4 border rounded-lg bg-red-50 border-red-200 cursor-pointer hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                    onClick={() => handleDocumentCardClick('contract')}
+                    onKeyDown={(e) => handleDocumentCardKeyDown(e, 'contract')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${getProjectPageText.documentContract(lang)} - ${getProjectPageText.statusPending(lang)}`}
+                  >
+                    <FileTextIcon className="h-8 w-8 text-red-600 mb-2" />
+                    <h3 className="font-medium text-sm text-center mb-1">
+                      {getProjectPageText.documentContract(lang)}
+                    </h3>
+                    <span className="text-xs text-red-600 font-medium mb-1">
+                      {getProjectPageText.statusPending(lang)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">10월 12일</span>
+                  </div>
+
+                  {/* 청구서 */}
+                  <div
+                    className="flex flex-col items-center p-4 border rounded-lg bg-red-50 border-red-200 cursor-pointer hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                    onClick={() => handleDocumentCardClick('invoice')}
+                    onKeyDown={(e) => handleDocumentCardKeyDown(e, 'invoice')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${getProjectPageText.documentInvoice(lang)} (2) - ${getProjectPageText.statusPending(lang)}`}
+                  >
+                    <CreditCardIcon className="h-8 w-8 text-red-600 mb-2" />
+                    <h3 className="font-medium text-sm text-center mb-1">
+                      {getProjectPageText.documentInvoice(lang)} (2)
+                    </h3>
+                    <span className="text-xs text-red-600 font-medium mb-1">
+                      {getProjectPageText.statusPending(lang)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">10월 12일</span>
+                  </div>
+
+                  {/* 보고서 */}
+                  <div
+                    className="flex flex-col items-center p-4 border rounded-lg bg-green-50 border-green-200 cursor-pointer hover:bg-green-100 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                    onClick={() => handleDocumentCardClick('report')}
+                    onKeyDown={(e) => handleDocumentCardKeyDown(e, 'report')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${getProjectPageText.documentReport(lang)} - ${getProjectPageText.statusCompleted(lang)}`}
+                  >
+                    <FileTextIcon className="h-8 w-8 text-green-600 mb-2" />
+                    <h3 className="font-medium text-sm text-center mb-1">
+                      {getProjectPageText.documentReport(lang)}
+                    </h3>
+                    <span className="text-xs text-green-600 font-medium mb-1">
+                      {getProjectPageText.statusCompleted(lang)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">10월 12일</span>
+                  </div>
+
+                  {/* 견적서 */}
+                  <div
+                    className="flex flex-col items-center p-4 border rounded-lg bg-red-50 border-red-200 cursor-pointer hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                    onClick={() => handleDocumentCardClick('estimate')}
+                    onKeyDown={(e) => handleDocumentCardKeyDown(e, 'estimate')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${getProjectPageText.documentEstimate(lang)} - ${getProjectPageText.statusPending(lang)}`}
+                  >
+                    <FileTextIcon className="h-8 w-8 text-red-600 mb-2" />
+                    <h3 className="font-medium text-sm text-center mb-1">
+                      {getProjectPageText.documentEstimate(lang)}
+                    </h3>
+                    <span className="text-xs text-red-600 font-medium mb-1">
+                      {getProjectPageText.statusPending(lang)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">10월 12일</span>
+                  </div>
+
+                  {/* 기타문서 */}
+                  <div
+                    className="flex flex-col items-center p-4 border rounded-lg bg-red-50 border-red-200 cursor-pointer hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                    onClick={() => handleDocumentCardClick('others')}
+                    onKeyDown={(e) => handleDocumentCardKeyDown(e, 'others')}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${getProjectPageText.documentOthers(lang)} - ${getProjectPageText.statusPending(lang)}`}
+                  >
+                    <FileTextIcon className="h-8 w-8 text-red-600 mb-2" />
+                    <h3 className="font-medium text-sm text-center mb-1">
+                      {getProjectPageText.documentOthers(lang)}
+                    </h3>
+                    <span className="text-xs text-red-600 font-medium mb-1">
+                      {getProjectPageText.statusPending(lang)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">10월 12일</span>
                   </div>
                 </div>
-              </div>
-
-              {/* 추가 정보 섹션 */}
-              <div className="mt-6 pt-6 border-t">
-                <div className="flex items-center gap-4 text-sm">
-                  {project.hasContract && (
-                    <div className="flex items-center gap-1">
-                      <FileTextIcon className="h-4 w-4 text-green-600" />
-                      <span>{getProjectPageText.hasContract(lang)}</span>
-                    </div>
-                  )}
-                  {project.hasBilling && (
-                    <div className="flex items-center gap-1">
-                      <CreditCardIcon className="h-4 w-4 text-blue-600" />
-                      <span>{getProjectPageText.hasBilling(lang)}</span>
-                    </div>
-                  )}
-                  {project.hasDocuments && (
-                    <div className="flex items-center gap-1">
-                      <FileTextIcon className="h-4 w-4 text-purple-600" />
-                      <span>{getProjectPageText.hasDocuments(lang)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Document Management Tab with Sub Tabs */}

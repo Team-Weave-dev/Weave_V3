@@ -563,6 +563,46 @@ export const uiText = {
         billingInfo: { ko: "청구/정산 정보", en: "Billing Information" },
         documentInfo: { ko: "프로젝트 문서", en: "Project Documents" }
       },
+      // 프로젝트 자료 현황 섹션
+      documentsStatus: {
+        title: { ko: "프로젝트 자료 현황", en: "Project Documents Status" },
+        documents: {
+          contract: { ko: "계약서", en: "Contract" },
+          invoice: { ko: "청구서", en: "Invoice" },
+          report: { ko: "보고서", en: "Report" },
+          estimate: { ko: "견적서", en: "Estimate" },
+          others: { ko: "기타문서", en: "Other Documents" }
+        },
+        status: {
+          pending: { ko: "미보유", en: "Pending" },
+          completed: { ko: "완료", en: "Completed" }
+        },
+        dateFormat: {
+          month: { ko: "월", en: "" },
+          day: { ko: "일", en: "" }
+        }
+      },
+      // 프로젝트 상세 정보 섹션
+      projectDetails: {
+        title: { ko: "프로젝트 상세 정보", en: "Project Detail Information" },
+        fields: {
+          totalAmount: { ko: "총 금액", en: "Total Amount" },
+          projectName: { ko: "프로젝트명", en: "Project Name" },
+          settlementMethod: { ko: "정산방식", en: "Settlement Method" },
+          advance: { ko: "선급", en: "Advance" },
+          projectContent: { ko: "프로젝트 내용", en: "Project Content" }
+        },
+        placeholders: {
+          notSet: { ko: "미설정", en: "Not Set" },
+          noContent: { ko: "내용 없음", en: "No Content" },
+          amount: { ko: "원", en: "KRW" }
+        },
+        actions: {
+          edit: { ko: "편집", en: "Edit" },
+          save: { ko: "저장", en: "Save" },
+          cancel: { ko: "취소", en: "Cancel" }
+        }
+      },
       messages: {
         contractLoading: { ko: "계약서 정보를 불러오는 중입니다...", en: "Loading contract information..." },
         contractEmpty: { ko: "등록된 계약서가 없습니다", en: "No contract registered" },
@@ -1304,6 +1344,30 @@ export const getProjectPageText = {
   // Actions
   edit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.edit[lang],
   close: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.close[lang],
+
+  // 프로젝트 자료 현황
+  documentsStatusTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.title[lang],
+  documentContract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.documents.contract[lang],
+  documentInvoice: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.documents.invoice[lang],
+  documentReport: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.documents.report[lang],
+  documentEstimate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.documents.estimate[lang],
+  documentOthers: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.documents.others[lang],
+  statusPending: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.status.pending[lang],
+  statusCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.status.completed[lang],
+
+  // 프로젝트 상세 정보
+  projectDetailsTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.title[lang],
+  fieldTotalAmount: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.totalAmount[lang],
+  fieldProjectName: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.projectName[lang],
+  fieldSettlementMethod: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.settlementMethod[lang],
+  fieldAdvance: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.advance[lang],
+  fieldProjectContent: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.projectContent[lang],
+  placeholderNotSet: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.placeholders.notSet[lang],
+  placeholderNoContent: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.placeholders.noContent[lang],
+  placeholderAmount: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.placeholders.amount[lang],
+  actionEdit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.edit[lang],
+  actionSave: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.save[lang],
+  actionCancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.cancel[lang],
 
   // Delete Modal
   deleteModalTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.title[lang],
