@@ -109,20 +109,14 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
         }),
         
         addWidget: (widget) => set((state) => {
+          // ID 중복 방지: 동일 ID가 이미 있으면 추가하지 않음
+          if (state.widgets.some(w => w.id === widget.id)) {
+            console.log(`Widget with ID ${widget.id} already exists, skipping`);
+            return;
+          }
+          
           // 충돌 체크
           const positions = state.widgets.map(w => w.position);
-          // ID 중복 방지: 동일 ID가 있으면 접미사를 붙여 고유화
-          if (state.widgets.some(w => w.id === widget.id)) {
-            const base = widget.id || 'widget';
-            let i = 2;
-            let newId = `${base}_${i}`;
-            const existingIds = new Set(state.widgets.map(w => w.id));
-            while (existingIds.has(newId)) {
-              i += 1;
-              newId = `${base}_${i}`;
-            }
-            widget = { ...widget, id: newId };
-          }
           if (!checkCollisionWithItems(widget.position, positions)) {
             state.widgets.push(widget);
           } else {

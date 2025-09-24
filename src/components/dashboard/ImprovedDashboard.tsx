@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { getDashboardText } from '@/config/brand';
 import { 
   Settings, 
   Save, 
@@ -31,9 +32,6 @@ import {
   getTransformStyle
 } from '@/lib/dashboard/grid-utils';
 import { ImprovedWidget, WidgetCallbacks } from '@/types/improved-dashboard';
-import { StatsWidget } from '@/components/ui/widgets/StatsWidget';
-import { ChartWidget } from '@/components/ui/widgets/ChartWidget';
-import { QuickActionsWidget } from '@/components/ui/widgets/QuickActionsWidget';
 import { ProjectSummaryWidget } from '@/components/ui/widgets/ProjectSummaryWidget';
 import { TodoListWidget } from '@/components/ui/widgets/TodoListWidget';
 import { CalendarWidget } from '@/components/ui/widgets/CalendarWidget';
@@ -47,28 +45,7 @@ interface ImprovedDashboardProps {
 }
 
 // 테스트 데이터
-const mockStatsData = [
-  { label: '매출', value: '₩47,250,000', change: 12.5, changeType: 'increase' as const },
-  { label: '고객', value: '3,842', change: -5.4, changeType: 'decrease' as const },
-  { label: '주문', value: '1,827', change: 8.2, changeType: 'increase' as const },
-  { label: '전환율', value: '3.24%', change: 2.1, changeType: 'increase' as const },
-];
 
-const mockChartData = {
-  labels: ['월', '화', '수', '목', '금', '토', '일'],
-  datasets: [
-    {
-      label: '매출',
-      data: [13, 20, 15, 22, 19, 25, 21],
-      color: 'primary'
-    },
-    {
-      label: '비용',
-      data: [8, 12, 10, 13, 10, 14, 12],
-      color: 'secondary'
-    }
-  ]
-};
 
 // 프로젝트 요약 위젯 목업 데이터
 const mockProjects = [
@@ -266,18 +243,18 @@ export function ImprovedDashboard({
   
   // 초기화
   useEffect(() => {
-    if (initialWidgets.length > 0 && widgets.length === 0) {
+    // 이미 위젯이 있으면 초기화하지 않음
+    if (widgets.length > 0) return;
+    
+    if (initialWidgets.length > 0) {
       // 시작 레이아웃: 타입별 1개만 유지하고 기본 포지션에 배치
       const defaultPos: Record<ImprovedWidget['type'], GridPosition> = {
         // 9x9 그리드 기준 배치
         projectSummary: { x: 0, y: 0, w: 5, h: 3 },
-        stats: { x: 5, y: 0, w: 4, h: 2 },
-        todoList: { x: 5, y: 2, w: 4, h: 3 },
-        chart: { x: 0, y: 3, w: 5, h: 2 },
-        calendar: { x: 0, y: 5, w: 5, h: 3 },
-        taxDeadline: { x: 5, y: 5, w: 4, h: 3 },
-        quickActions: { x: 5, y: 8, w: 4, h: 1 },
-        custom: { x: 0, y: 8, w: 5, h: 1 },
+        todoList: { x: 5, y: 0, w: 4, h: 3 },
+        calendar: { x: 0, y: 3, w: 5, h: 3 },
+        taxDeadline: { x: 5, y: 3, w: 4, h: 3 },
+        custom: { x: 0, y: 6, w: 9, h: 1 },
       };
       const seen = new Set<ImprovedWidget['type']>();
       const selected: ImprovedWidget[] = [];
@@ -290,8 +267,6 @@ export function ImprovedDashboard({
           position: defaultPos[w.type] ?? w.position ?? { x: 0, y: 0, w: 4, h: 2 },
           data:
             w.type === 'projectSummary' ? (w.data ?? mockProjects) :
-            w.type === 'stats' ? (w.data ?? mockStatsData) :
-            w.type === 'chart' ? (w.data ?? mockChartData) :
             w.data,
         };
         selected.push(normalized);
@@ -313,16 +288,6 @@ export function ImprovedDashboard({
         minW: 3,
         minH: 2,
       });
-      ensure('stats', {
-        id: 'widget_stats_1',
-        type: 'stats',
-        title: '통계 대시보드',
-        position: defaultPos.stats,
-        data: mockStatsData,
-        minW: 2,
-        minH: 1,
-        maxW: 9,
-      });
       ensure('todoList', {
         id: 'widget_todo_1',
         type: 'todoList',
@@ -332,15 +297,6 @@ export function ImprovedDashboard({
         minW: 2,
         minH: 2,
         maxW: 5,
-      });
-      ensure('chart', {
-        id: 'widget_chart_1',
-        type: 'chart',
-        title: '주간 트렌드',
-        position: defaultPos.chart,
-        data: mockChartData,
-        minW: 3,
-        minH: 2,
       });
       ensure('calendar', {
         id: 'widget_calendar_1',
@@ -361,17 +317,9 @@ export function ImprovedDashboard({
         minW: 2,
         minH: 2,
       });
-      ensure('quickActions', {
-        id: 'widget_actions_1',
-        type: 'quickActions',
-        title: '빠른 작업',
-        position: defaultPos.quickActions,
-        minW: 2,
-        minH: 1,
-      });
 
       selected.forEach((w) => addWidget(w));
-    } else if (widgets.length === 0) {
+    } else {
       // 테스트 위젯 생성
       const testWidgets: ImprovedWidget[] = [
         {
@@ -384,33 +332,14 @@ export function ImprovedDashboard({
           minH: 2,
         },
         {
-          id: 'widget_stats_1',
-          type: 'stats',
-          title: '통계 대시보드',
-          position: { x: 5, y: 0, w: 4, h: 2 },
-          data: mockStatsData,
-          minW: 2,
-          minH: 1,
-          maxW: 9,
-        },
-        {
           id: 'widget_todo_1',
           type: 'todoList',
           title: '할 일 목록',
-          position: { x: 5, y: 2, w: 4, h: 3 },
+          position: { x: 5, y: 0, w: 4, h: 3 },
           data: mockTodoData,
           minW: 2,
           minH: 2,
           maxW: 5,
-        },
-        {
-          id: 'widget_chart_1',
-          type: 'chart',
-          title: '주간 트렌드',
-          position: { x: 0, y: 3, w: 5, h: 2 },
-          data: mockChartData,
-          minW: 3,
-          minH: 2,
         },
         {
           id: 'widget_calendar_1',
@@ -427,22 +356,14 @@ export function ImprovedDashboard({
           id: 'widget_tax_1',
           type: 'taxDeadline',
           title: '세무 일정',
-          position: { x: 5, y: 5, w: 4, h: 3 },
+          position: { x: 5, y: 3, w: 4, h: 3 },
           minW: 2,
           minH: 2,
-        },
-        {
-          id: 'widget_actions_1',
-          type: 'quickActions',
-          title: '빠른 작업',
-          position: { x: 5, y: 8, w: 4, h: 1 },
-          minW: 2,
-          minH: 1,
         },
       ];
       testWidgets.forEach((w) => addWidget(w));
     }
-  }, [initialWidgets, widgets.length, addWidget]);
+  }, []); // 빈 의존성 배열로 변경하여 최초 1회만 실행
 
   // 중복 ID 위젯 정리 (개발/StrictMode에서 이중 마운트 대비)
   useEffect(() => {
@@ -692,12 +613,11 @@ export function ImprovedDashboard({
     
     const newWidget: ImprovedWidget = {
       id: `widget_${Date.now()}`,
-      type: 'stats',
+      type: 'custom',
       title: '새 위젯',
       position: emptySpace,
-      data: mockStatsData,
       minW: 2,
-      minH: 1,
+      minH: 2,
     };
     
     addWidget(newWidget);
@@ -706,12 +626,6 @@ export function ImprovedDashboard({
   // 위젯 렌더링
   const renderWidget = useCallback((widget: ImprovedWidget) => {
     switch (widget.type) {
-      case 'stats':
-        return <StatsWidget title={widget.title} stats={widget.data || mockStatsData} />;
-      case 'chart':
-        return <ChartWidget title={widget.title} data={widget.data || mockChartData} />;
-      case 'quickActions':
-        return <QuickActionsWidget title={widget.title} />;
       case 'projectSummary':
         return <ProjectSummaryWidget 
           title={widget.title} 
@@ -794,7 +708,7 @@ export function ImprovedDashboard({
               onClick={() => setIsCompact(!isCompact)}
             >
               <Layers className="h-4 w-4 mr-2" />
-              자동 정렬
+              {getDashboardText.autoLayout('ko')}
             </Button>
             <Button
               size="sm"
@@ -802,7 +716,7 @@ export function ImprovedDashboard({
               onClick={() => compactWidgets('vertical')}
             >
               <Grid3x3 className="h-4 w-4 mr-2" />
-              압축
+              {getDashboardText.manualAlign('ko')}
             </Button>
           </div>
         </div>
@@ -812,7 +726,7 @@ export function ImprovedDashboard({
             <>
               <Button size="sm" variant="outline" onClick={handleAddWidget}>
                 <Plus className="h-4 w-4 mr-2" />
-                위젯 추가
+                {getDashboardText.addWidget('ko')}
               </Button>
               <div className="h-6 w-px bg-border mx-2" />
             </>
@@ -826,12 +740,12 @@ export function ImprovedDashboard({
             {isEditMode ? (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                완료
+                {getDashboardText.complete('ko')}
               </>
             ) : (
               <>
                 <Settings className="h-4 w-4 mr-2" />
-                편집
+                {getDashboardText.editMode('ko')}
               </>
             )}
           </Button>

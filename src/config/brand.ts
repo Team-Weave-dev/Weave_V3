@@ -1514,7 +1514,12 @@ export const getDashboardText = {
   title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '대시보드' : 'Dashboard',
   subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '비즈니스 현황을 한눈에' : 'Your Business at a Glance',
   welcome: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '환영합니다' : 'Welcome',
-  overview: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전체 현황' : 'Overview'
+  overview: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전체 현황' : 'Overview',
+  autoLayout: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '자동 정렬' : 'Auto Layout',
+  manualAlign: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '정렬' : 'Align',
+  editMode: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '편집' : 'Edit',
+  complete: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료' : 'Done',
+  addWidget: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 추가' : 'Add Widget'
 }
 
 // 세금 관리 텍스트

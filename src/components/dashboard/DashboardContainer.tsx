@@ -4,89 +4,12 @@ import React, { useState, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { StatsWidget } from '@/components/ui/widgets/StatsWidget';
-import { ChartWidget } from '@/components/ui/widgets/ChartWidget';
-import { QuickActionsWidget } from '@/components/ui/widgets/QuickActionsWidget';
 import { Grid3x3, Settings, Plus, Save, Undo2, Redo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Widget, DashboardLayout } from '@/types/dashboard';
 
-// 목 데이터
-const mockStatsData = [
-  { label: '매출', value: '₩47,250,000', change: 12.5, changeType: 'increase' as const },
-  { label: '고객', value: '3,842', change: -5.4, changeType: 'decrease' as const },
-  { label: '주문', value: '1,827', change: 8.2, changeType: 'increase' as const },
-  { label: '전환율', value: '3.24%', change: 2.1, changeType: 'increase' as const },
-];
-
-const mockChartData = {
-  labels: ['월', '화', '수', '목', '금', '토', '일'],
-  datasets: [
-    {
-      label: '매출',
-      data: [13, 20, 15, 22, 19, 25, 21],
-      color: 'primary'
-    },
-    {
-      label: '비용',
-      data: [8, 12, 10, 13, 10, 14, 12],
-      color: 'secondary'
-    }
-  ]
-};
-
-const defaultWidgets: Widget[] = [
-  {
-    id: 'widget_stats_1',
-    type: 'stats',
-    title: '통계 대시보드',
-    position: {
-      gridColumn: '1 / span 2',
-      gridRow: '1 / span 2',
-      gridColumnStart: 1,
-      gridColumnEnd: 3,
-      gridRowStart: 1,
-      gridRowEnd: 3,
-      width: 2,
-      height: 2,
-    },
-    size: { width: 2, height: 2 },
-    data: mockStatsData,
-  },
-  {
-    id: 'widget_chart_1',
-    type: 'chart',
-    title: '주간 트렌드 차트',
-    position: {
-      gridColumn: '3 / span 3',
-      gridRow: '1 / span 2',
-      gridColumnStart: 3,
-      gridColumnEnd: 6,
-      gridRowStart: 1,
-      gridRowEnd: 3,
-      width: 3,
-      height: 2,
-    },
-    size: { width: 3, height: 2 },
-    data: mockChartData,
-  },
-  {
-    id: 'widget_actions_1',
-    type: 'quickActions',
-    title: '빠른 작업',
-    position: {
-      gridColumn: '1 / span 2',
-      gridRow: '3 / span 1',
-      gridColumnStart: 1,
-      gridColumnEnd: 3,
-      gridRowStart: 3,
-      gridRowEnd: 4,
-      width: 2,
-      height: 1,
-    },
-    size: { width: 2, height: 1 },
-  },
-];
+// 빈 위젯 배열 (이전에 사용하던 위젯들이 삭제됨)
+const defaultWidgets: Widget[] = [];
 
 interface DashboardContainerProps {
   initialWidgets?: Widget[];
@@ -108,20 +31,12 @@ export function DashboardContainer({ initialWidgets = defaultWidgets }: Dashboar
   }, [widgets]);
 
   const renderWidget = (widget: Widget) => {
-    switch (widget.type) {
-      case 'stats':
-        return <StatsWidget title={widget.title} stats={widget.data || mockStatsData} />;
-      case 'chart':
-        return <ChartWidget title={widget.title} data={widget.data || mockChartData} />;
-      case 'quickActions':
-        return <QuickActionsWidget title={widget.title} />;
-      default:
-        return (
-          <Card className="h-full p-4">
-            <p className="text-muted-foreground">위젯 타입: {widget.type}</p>
-          </Card>
-        );
-    }
+    // 현재 사용 가능한 위젯이 없으므로 기본 카드만 렌더링
+    return (
+      <Card className="h-full p-4">
+        <p className="text-muted-foreground">위젯 타입: {widget.type}</p>
+      </Card>
+    );
   };
 
   return (

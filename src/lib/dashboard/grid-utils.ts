@@ -186,54 +186,73 @@ export function findEmptySpace(
 }
 
 /**
- * 컴팩트 레이아웃 생성 (위쪽으로 압축)
+ * 컴팩트 레이아웃 생성 (빈 줄 제거, 위젯 순서 유지)
+ * 사용자가 배치한 위젯들의 상대적 순서는 유지하면서 빈 공간만 제거
  */
 export function compactLayout(
   items: GridPosition[],
   config: GridConfig,
   compactType: 'vertical' | 'horizontal' = 'vertical'
 ): GridPosition[] {
-  const sorted = [...items].sort((a, b) => {
-    if (compactType === 'vertical') {
-      // Y 좌표 우선, 같으면 X 좌표로 정렬
-      return a.y - b.y || a.x - b.x;
-    } else {
-      // X 좌표 우선, 같으면 Y 좌표로 정렬
-      return a.x - b.x || a.y - b.y;
-    }
-  });
+  // 원본 순서 유지 (정렬하지 않음)
+  const itemsWithIndex = items.map((item, index) => ({ item, originalIndex: index }));
   
-  const compacted: GridPosition[] = [];
-  
-  for (const item of sorted) {
-    let newPosition = { ...item };
-    
-    if (compactType === 'vertical') {
-      // 위쪽으로 최대한 이동
-      while (newPosition.y > 0) {
-        const testPosition = { ...newPosition, y: newPosition.y - 1 };
-        if (!checkCollisionWithItems(testPosition, compacted)) {
-          newPosition = testPosition;
-        } else {
-          break;
-        }
+  if (compactType === 'vertical') {
+    // 빈 줄 제거 로직
+    // 1. 각 Y 레벨에 위젯이 있는지 확인
+    const occupiedRows = new Set<number>();
+    items.forEach(item => {
+      for (let y = item.y; y < item.y + item.h; y++) {
+        occupiedRows.add(y);
       }
-    } else {
-      // 왼쪽으로 최대한 이동
-      while (newPosition.x > 0) {
-        const testPosition = { ...newPosition, x: newPosition.x - 1 };
-        if (!checkCollisionWithItems(testPosition, compacted)) {
-          newPosition = testPosition;
-        } else {
-          break;
-        }
+    });
+    
+    // 2. 빈 줄 계산 (연속된 빈 줄들)
+    const sortedOccupiedRows = Array.from(occupiedRows).sort((a, b) => a - b);
+    const rowMapping = new Map<number, number>();
+    let compactedY = 0;
+    
+    for (let y = 0; y <= Math.max(...sortedOccupiedRows, 0); y++) {
+      if (occupiedRows.has(y)) {
+        rowMapping.set(y, compactedY);
+        compactedY++;
       }
     }
     
-    compacted.push(newPosition);
+    // 3. 위젯들을 빈 줄 제거 후 위치로 이동 (순서 유지)
+    return items.map(item => ({
+      ...item,
+      y: rowMapping.get(item.y) ?? item.y
+    }));
+    
+  } else {
+    // horizontal 압축: 빈 열 제거
+    // 1. 각 X 레벨에 위젯이 있는지 확인
+    const occupiedCols = new Set<number>();
+    items.forEach(item => {
+      for (let x = item.x; x < item.x + item.w; x++) {
+        occupiedCols.add(x);
+      }
+    });
+    
+    // 2. 빈 열 계산
+    const sortedOccupiedCols = Array.from(occupiedCols).sort((a, b) => a - b);
+    const colMapping = new Map<number, number>();
+    let compactedX = 0;
+    
+    for (let x = 0; x <= Math.max(...sortedOccupiedCols, 0); x++) {
+      if (occupiedCols.has(x)) {
+        colMapping.set(x, compactedX);
+        compactedX++;
+      }
+    }
+    
+    // 3. 위젯들을 빈 열 제거 후 위치로 이동 (순서 유지)
+    return items.map(item => ({
+      ...item,
+      x: colMapping.get(item.x) ?? item.x
+    }));
   }
-  
-  return compacted;
 }
 
 /**
