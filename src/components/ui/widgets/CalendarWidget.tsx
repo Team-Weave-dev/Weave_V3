@@ -120,7 +120,7 @@ const MiniEvent = ({ event, onClick, displayMode = 'bar' }: {
         }}
         title={`${event.startTime || ''} ${event.title}`}
       >
-        <div className={cn("w-1 h-1 rounded-full flex-shrink-0", config.color)} />
+        <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", config.color)} />
       </div>
     );
   }
@@ -405,7 +405,9 @@ const MonthView = ({
   onDateSelect,
   onEventClick,
   selectedDate,
-  containerHeight
+  containerHeight,
+  containerWidth,
+  gridSize
 }: { 
   currentDate: Date;
   events: CalendarEvent[];
@@ -413,6 +415,8 @@ const MonthView = ({
   onEventClick?: (event: CalendarEvent) => void;
   selectedDate?: Date;
   containerHeight: number;
+  containerWidth?: number;
+  gridSize?: { w: number; h: number };
 }) => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -432,19 +436,62 @@ const MonthView = ({
   // 동적 높이 계산 - 반응형 (더 정밀한 계산)
   const headerHeight = 24; // 헤더 높이 축소
   const weekCount = weeks.length;
-  const borderHeight = weekCount; // 각 행의 border 1px
-  const availableHeight = containerHeight - headerHeight - borderHeight;
-  const cellHeight = Math.max(28, Math.floor(availableHeight / weekCount));
+  const borderHeight = weekCount + 1; // 각 행의 border 1px + 헤더 border
+  const availableHeight = Math.max(200, containerHeight - headerHeight - borderHeight - 8); // 최소 높이 보장
+  const cellHeight = Math.max(24, Math.floor(availableHeight / weekCount));
   
-  // 높이에 따른 표시 모드 결정 (더 세밀한 분류)
+  // 개선된 반응형 표시 모드 결정 - 점 모드 제거, 최소 2열 지원
   const getDisplayMode = () => {
-    if (cellHeight < 40) return 'dot';      // 아주 작은 경우 점으로
-    if (cellHeight < 55) return 'compact';  // 작은 경우 컴팩트
-    if (cellHeight < 75) return 'bar';      // 중간 경우 바 형태
-    return 'full';                          // 큰 경우 전체 표시
+    // 1. 컨테이너 실제 너비 기반 우선 판단
+    const actualWidth = containerWidth || (containerHeight * (gridSize?.w || 4) / (gridSize?.h || 3));
+    const estimatedCellWidth = actualWidth / 7; // 7일 기준
+    
+    // 2. 그리드 크기와 픽셀 크기를 종합적으로 고려
+    if (gridSize) {
+      // 작은 그리드 (2열) - 최소 크기
+      if (gridSize.w === 2) {
+        // 높이에 따라 compact 또는 bar 모드
+        if (cellHeight < 55 || gridSize.h <= 2) return 'compact';
+        if (cellHeight < 70 || estimatedCellWidth < 70) return 'bar';
+        return 'full';
+      }
+      
+      // 중간 그리드 (3열)
+      if (gridSize.w === 3) {
+        // 셀 높이에 따라 세밀하게 조정
+        if (cellHeight < 50 || gridSize.h <= 2) return 'compact';
+        if (cellHeight < 75) return 'bar';
+        return 'full';
+      }
+      
+      // 큰 그리드 (4열 이상)
+      if (gridSize.w >= 4) {
+        // 충분한 공간이 있을 때만 full 모드
+        if (cellHeight < 55) return 'compact';
+        if (cellHeight < 70) return 'bar';
+        return 'full';
+      }
+    }
+    
+    // 3. 그리드 정보가 없을 때 순수 높이 기반 (폴백) - 점 모드 제외
+    if (cellHeight < 55) return 'compact';
+    if (cellHeight < 75) return 'bar';
+    return 'full';
   };
   
   const displayMode = getDisplayMode();
+  
+  // 디버깅용 (개발 환경에서만)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Calendar responsive debug:', {
+      gridSize,
+      cellHeight,
+      containerWidth,
+      containerHeight,
+      displayMode,
+      actualWidth: containerWidth || (containerHeight * (gridSize?.w || 4) / (gridSize?.h || 3))
+    });
+  }
   
   return (
     <div className="flex flex-col h-full">
@@ -478,7 +525,6 @@ const MonthView = ({
               
               // 높이에 따른 최대 표시 이벤트 수 및 표시 방법 조정
               const maxEventsToShow = 
-                displayMode === 'dot' ? 5 :        // 점 모드: 5개까지 점으로
                 displayMode === 'compact' ? 2 :    // 컴팩트: 2개까지
                 displayMode === 'bar' ? 3 :        // 바 모드: 3개까지
                 4;                                  // 풀 모드: 4개까지
@@ -487,8 +533,7 @@ const MonthView = ({
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    "border-r last:border-0 cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden flex flex-col",
-                    displayMode === 'dot' ? "px-1 py-0.5" : "p-1",
+                    "border-r last:border-0 cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden flex flex-col p-1",
                     !isCurrentMonth && "bg-muted/30",
                     isToday(day) && "bg-primary/10",
                     isSelected && "ring-2 ring-primary"
@@ -497,7 +542,6 @@ const MonthView = ({
                   onClick={() => onDateSelect?.(day)}
                 >
                   <div className={cn(
-                    displayMode === 'dot' ? "text-[9px] leading-none mb-0.5" : 
                     displayMode === 'compact' ? "text-[10px] leading-none mb-0.5" : 
                     displayMode === 'bar' ? "text-[11px] mb-0.5" :
                     "text-sm mb-1",
@@ -513,47 +557,24 @@ const MonthView = ({
                   {/* 이벤트 목록 - 높이별 레이아웃 */}
                   <div className={cn(
                     "flex-1 overflow-hidden",
-                    displayMode === 'dot' ? "flex flex-wrap gap-[2px] content-start" :
                     displayMode === 'compact' ? "space-y-[1px]" :
                     "space-y-0.5"
                   )}>
-                    {displayMode === 'dot' ? (
-                      // 점 모드: 이벤트를 점으로 표시
-                      <>
-                        {dayEvents.slice(0, maxEventsToShow).map((event) => (
-                          <MiniEvent
-                            key={event.id}
-                            event={event}
-                            onClick={() => onEventClick?.(event)}
-                            displayMode="dot"
-                          />
-                        ))}
-                        {dayEvents.length > maxEventsToShow && (
-                          <span className="text-[9px] text-muted-foreground">
-                            +{dayEvents.length - maxEventsToShow}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      // 다른 모드들: 바/컴팩트/풀 형태로 표시
-                      <>
-                        {dayEvents.slice(0, maxEventsToShow).map((event) => (
-                          <MiniEvent
-                            key={event.id}
-                            event={event}
-                            onClick={() => onEventClick?.(event)}
-                            displayMode={displayMode}
-                          />
-                        ))}
-                        {dayEvents.length > maxEventsToShow && (
-                          <div className={cn(
-                            displayMode === 'compact' ? "text-[9px]" : "text-[10px]",
-                            "text-muted-foreground px-0.5"
-                          )}>
-                            +{dayEvents.length - maxEventsToShow}
-                          </div>
-                        )}
-                      </>
+                    {dayEvents.slice(0, maxEventsToShow).map((event) => (
+                      <MiniEvent
+                        key={event.id}
+                        event={event}
+                        onClick={() => onEventClick?.(event)}
+                        displayMode={displayMode}
+                      />
+                    ))}
+                    {dayEvents.length > maxEventsToShow && (
+                      <div className={cn(
+                        displayMode === 'compact' ? "text-[9px]" : "text-[10px]",
+                        "text-muted-foreground px-0.5"
+                      )}>
+                        +{dayEvents.length - maxEventsToShow}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -745,8 +766,9 @@ export function CalendarWidget({
   showWeekNumbers = false,
   showToday = true,
   view = 'month',
-  lang = 'ko'
-}: CalendarWidgetProps) {
+  lang = 'ko',
+  gridSize
+}: CalendarWidgetProps & { gridSize?: { w: number; h: number } }) {
   const displayTitle = title || getWidgetText.calendar.title('ko');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate || new Date());
   const [currentView, setCurrentView] = useState(view);
@@ -759,30 +781,57 @@ export function CalendarWidget({
   const contentRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // 컨테이너 크기 감지 및 반응형 처리
+  // 개선된 컨테이너 크기 감지 및 반응형 처리
   useEffect(() => {
     const updateSize = () => {
+      // 전체 카드 컨테이너와 콘텐츠 영역 모두 확인
       if (containerRef.current && contentRef.current) {
-        const headerHeight = containerRef.current.querySelector('.calendar-header')?.clientHeight || 0;
-        const contentHeight = containerRef.current.clientHeight - headerHeight;
+        // 전체 카드 크기
+        const cardRect = containerRef.current.getBoundingClientRect();
+        // 콘텐츠 영역 크기
+        const contentRect = contentRef.current.getBoundingClientRect();
+        
+        // 네비게이션 바 높이 계산
+        const navBar = contentRef.current.querySelector('.calendar-nav');
+        const navHeight = navBar ? navBar.getBoundingClientRect().height : 32;
+        
+        // 패딩 계산 (CardContent의 px-1 pb-2 = 4px + 8px)
+        const horizontalPadding = 8; // px-1 * 2
+        const verticalPadding = 12; // pb-2 + mb-2
+        
+        // 실제 사용 가능한 크기 계산
+        const availableWidth = contentRect.width - horizontalPadding;
+        const availableHeight = Math.max(100, contentRect.height - navHeight - verticalPadding);
         
         setContainerSize({
-          width: containerRef.current.clientWidth,
-          height: contentHeight
+          width: availableWidth,
+          height: availableHeight
         });
       }
     };
 
+    // 초기 실행 및 지연 실행 (DOM 렌더링 완료 보장)
     updateSize();
-    const resizeObserver = new ResizeObserver(updateSize);
+    const timeoutId = setTimeout(updateSize, 100);
+    
+    // ResizeObserver로 크기 변화 감지
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(updateSize);
+    });
+    
+    // 전체 카드와 콘텐츠 영역 모두 관찰
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
+    if (contentRef.current) {
+      resizeObserver.observe(contentRef.current);
+    }
 
     return () => {
+      clearTimeout(timeoutId);
       resizeObserver.disconnect();
     };
-  }, []);
+  }, [currentView]);
 
   // 검색된 이벤트 필터링
   const filteredEvents = useMemo(() => {
@@ -937,115 +986,123 @@ export function CalendarWidget({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden p-2" ref={contentRef}>
-          
-          {/* 네비게이션 바 */}
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleToday}
-                className="h-7 px-2 text-xs"
-              >
-                오늘
-              </Button>
-              <div className="flex items-center ml-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handlePrev}
-                  className="h-7 w-7 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleNext}
-                  className="h-7 w-7 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              <span className="text-sm font-medium px-2">
-                {getViewTitle()}
-              </span>
-            </div>
-            
-            {/* 일정 추가 버튼 */}
-            <Popover open={showEventPopover} onOpenChange={setShowEventPopover}>
-              <PopoverTrigger asChild>
-                <Button size="sm" className="h-7 px-2">
-                  <Plus className="h-3 w-3 mr-1" />
-                  <span className="text-xs">일정</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
-                <div className="space-y-3">
-                  <h4 className="font-medium text-sm">새 일정 만들기</h4>
-                  <Input placeholder="일정 제목" className="h-8" />
-                  <Input type="datetime-local" className="h-8" />
-                  <div className="flex justify-end gap-2">
+        <CardContent className="flex-1 overflow-hidden px-1 pb-2" ref={contentRef}>
+          <div className="flex flex-col h-full">
+            {/* 네비게이션 바 */}
+            <div className="calendar-nav mb-2 px-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToday}
+                    className="h-7 px-2 text-xs"
+                  >
+                    오늘
+                  </Button>
+                  <div className="flex items-center ml-2">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={() => setShowEventPopover(false)}
+                      onClick={handlePrev}
+                      className="h-7 w-7 p-0"
                     >
-                      취소
+                      <ChevronLeft className="h-4 w-4" />
                     </Button>
                     <Button
+                      variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        // TODO: 일정 추가 로직
-                        setShowEventPopover(false);
-                      }}
+                      onClick={handleNext}
+                      className="h-7 w-7 p-0"
                     >
-                      저장
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
+                  <span className="text-sm font-medium px-2">
+                    {getViewTitle()}
+                  </span>
                 </div>
-              </PopoverContent>
-            </Popover>
+                
+                {/* 일정 추가 버튼 */}
+                <Popover open={showEventPopover} onOpenChange={setShowEventPopover}>
+                  <PopoverTrigger asChild>
+                    <Button size="sm" className="h-7 px-2">
+                      <Plus className="h-3 w-3 mr-1" />
+                      <span className="text-xs">일정</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="end">
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-sm">새 일정 만들기</h4>
+                      <Input placeholder="일정 제목" className="h-8" />
+                      <Input type="datetime-local" className="h-8" />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowEventPopover(false)}
+                        >
+                          취소
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            // TODO: 일정 추가 로직
+                            setShowEventPopover(false);
+                          }}
+                        >
+                          저장
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
+            {/* 뷰별 콘텐츠 렌더링 */}
+            <div className="flex-1 overflow-hidden">
+              {currentView === 'month' && (
+                <MonthView
+                  currentDate={currentDate}
+                  events={filteredEvents}
+                  onDateSelect={handleDateSelect}
+                  onEventClick={handleEventClick}
+                  selectedDate={selectedDate}
+                  containerHeight={containerSize.height}
+                  containerWidth={containerSize.width}
+                  gridSize={gridSize}
+                />
+              )}
+              
+              {currentView === 'week' && (
+                <WeekView
+                  currentDate={currentDate}
+                  events={filteredEvents}
+                  onDateSelect={handleDateSelect}
+                  onEventClick={handleEventClick}
+                  containerHeight={containerSize.height}
+                />
+              )}
+              
+              {currentView === 'day' && (
+                <DayView
+                  currentDate={currentDate}
+                  events={filteredEvents}
+                  onEventClick={handleEventClick}
+                  containerHeight={containerSize.height}
+                />
+              )}
+              
+              {currentView === 'agenda' && (
+                <AgendaView
+                  events={filteredEvents}
+                  onEventClick={handleEventClick}
+                  containerHeight={containerSize.height}
+                />
+              )}
+            </div>
           </div>
-          {/* 뷰별 콘텐츠 렌더링 */}
-          {currentView === 'month' && (
-            <MonthView
-              currentDate={currentDate}
-              events={filteredEvents}
-              onDateSelect={handleDateSelect}
-              onEventClick={handleEventClick}
-              selectedDate={selectedDate}
-              containerHeight={containerSize.height}
-            />
-          )}
-          
-          {currentView === 'week' && (
-            <WeekView
-              currentDate={currentDate}
-              events={filteredEvents}
-              onDateSelect={handleDateSelect}
-              onEventClick={handleEventClick}
-              containerHeight={containerSize.height}
-            />
-          )}
-          
-          {currentView === 'day' && (
-            <DayView
-              currentDate={currentDate}
-              events={filteredEvents}
-              onEventClick={handleEventClick}
-              containerHeight={containerSize.height}
-            />
-          )}
-          
-          {currentView === 'agenda' && (
-            <AgendaView
-              events={filteredEvents}
-              onEventClick={handleEventClick}
-              containerHeight={containerSize.height}
-            />
-          )}
         </CardContent>
       </Card>
       

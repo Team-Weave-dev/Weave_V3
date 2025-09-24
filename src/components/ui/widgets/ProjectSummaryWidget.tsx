@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   AlertCircle, 
   Users, 
@@ -68,7 +69,7 @@ export function ProjectSummaryWidget({
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">
-      <CardHeader className="space-y-1">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className={typography.widget.title}>
             {displayTitle}
@@ -81,32 +82,40 @@ export function ProjectSummaryWidget({
           {getWidgetText.projectSummary.viewProgress(lang)}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 overflow-auto min-h-0">
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all" className={typography.text.xs}>전체</TabsTrigger>
-            <TabsTrigger value="active" className={typography.text.xs}>진행중</TabsTrigger>
-            <TabsTrigger value="urgent" className={typography.text.xs}>긴급</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all" className="space-y-2 mt-4">
-            {sortedProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} lang={lang} onProjectClick={onProjectClick} />
-            ))}
-          </TabsContent>
-          
-          <TabsContent value="active" className="space-y-2 mt-4">
-            {sortedProjects.filter(p => p.status === 'normal' || p.status === 'warning').map((project) => (
-              <ProjectCard key={project.id} project={project} lang={lang} onProjectClick={onProjectClick} />
-            ))}
-          </TabsContent>
-          
-          <TabsContent value="urgent" className="space-y-2 mt-4">
-            {sortedProjects.filter(p => p.status === 'critical').map((project) => (
-              <ProjectCard key={project.id} project={project} lang={lang} onProjectClick={onProjectClick} />
-            ))}
-          </TabsContent>
-        </Tabs>
+      <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-2">
+        <div className="flex flex-col h-full">
+          <div className="mb-2 px-3">
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all" className={typography.text.xs}>전체</TabsTrigger>
+                <TabsTrigger value="active" className={typography.text.xs}>진행중</TabsTrigger>
+                <TabsTrigger value="urgent" className={typography.text.xs}>긴급</TabsTrigger>
+              </TabsList>
+              
+              <ScrollArea className="flex-1 mt-2">
+                <div className="space-y-2 px-3">
+                  <TabsContent value="all" className="space-y-2 mt-0">
+                    {sortedProjects.map((project) => (
+                      <ProjectCard key={project.id} project={project} lang={lang} onProjectClick={onProjectClick} />
+                    ))}
+                  </TabsContent>
+                  
+                  <TabsContent value="active" className="space-y-2 mt-0">
+                    {sortedProjects.filter(p => p.status === 'normal' || p.status === 'warning').map((project) => (
+                      <ProjectCard key={project.id} project={project} lang={lang} onProjectClick={onProjectClick} />
+                    ))}
+                  </TabsContent>
+                  
+                  <TabsContent value="urgent" className="space-y-2 mt-0">
+                    {sortedProjects.filter(p => p.status === 'critical').map((project) => (
+                      <ProjectCard key={project.id} project={project} lang={lang} onProjectClick={onProjectClick} />
+                    ))}
+                  </TabsContent>
+                </div>
+              </ScrollArea>
+            </Tabs>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

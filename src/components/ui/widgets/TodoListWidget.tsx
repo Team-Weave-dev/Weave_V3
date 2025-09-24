@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Plus, 
   Trash2, 
@@ -773,8 +774,11 @@ export function TodoListWidget({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-2">
-        {/* 기본 섹션 작업 추가 - 상단에 한 번만 표시 */}
-        {isAdding && addingSectionId === 'default' && sections[0]?.id === 'default' && (
+        <div className="flex flex-col h-full">
+          <ScrollArea className="flex-1">
+            <div className="space-y-2 px-3">
+              {/* 기본 섹션 작업 추가 - 상단에 한 번만 표시 */}
+              {isAdding && addingSectionId === 'default' && sections[0]?.id === 'default' && (
           <div className="flex gap-1 p-1 bg-gray-50 dark:bg-gray-900/50 rounded mb-2">
             <Input
               ref={inputRef}
@@ -833,15 +837,18 @@ export function TodoListWidget({
           </div>
         )}
         
-        {/* 섹션별 렌더링 */}
-        {sections.map(section => renderSection(section))}
-        
-        {/* 작업이 없을 때 */}
-        {localTasks.length === 0 && !isAdding && (
-          <div className="text-center py-8 text-gray-400">
-            <p className="text-sm">{getWidgetText.todoList.noTasks('ko')}</p>
-          </div>
-        )}
+              {/* 섹션별 렌더링 */}
+              {sections.map(section => renderSection(section))}
+              
+              {/* 작업이 없을 때 */}
+              {localTasks.length === 0 && !isAdding && (
+                <div className="text-center py-8 text-gray-400">
+                  <p className="text-sm">{getWidgetText.todoList.noTasks('ko')}</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );

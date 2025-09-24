@@ -348,7 +348,7 @@ export function ImprovedDashboard({
         title: '캘린더',
         position: defaultPos.calendar,
         data: mockCalendarEvents,
-        minW: 3,
+        minW: 2,
         minH: 2,
         maxW: 6,
         maxH: 4,
@@ -728,6 +728,7 @@ export function ImprovedDashboard({
           title={widget.title}
           events={widget.data || mockCalendarEvents}
           showToday={true}
+          gridSize={{ w: widget.position.w, h: widget.position.h }}
         />;
       case 'taxDeadline':
         return <TaxDeadlineWidget
