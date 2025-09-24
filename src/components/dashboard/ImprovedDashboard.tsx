@@ -36,6 +36,7 @@ import { ProjectSummaryWidget } from '@/components/ui/widgets/ProjectSummaryWidg
 import { TodoListWidget } from '@/components/ui/widgets/TodoListWidget';
 import { CalendarWidget } from '@/components/ui/widgets/CalendarWidget';
 import { TaxDeadlineWidget } from '@/components/ui/widgets/TaxDeadlineWidget';
+import { KPIWidget } from '@/components/ui/widgets/KPIWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 
 interface ImprovedDashboardProps {
@@ -258,7 +259,8 @@ export function ImprovedDashboard({
         todoList: { x: 5, y: 0, w: 4, h: 3 },
         calendar: { x: 0, y: 3, w: 5, h: 3 },
         taxDeadline: { x: 5, y: 3, w: 4, h: 3 },
-        custom: { x: 0, y: 6, w: 9, h: 1 },
+        kpiMetrics: { x: 0, y: 6, w: 9, h: 2 },
+        custom: { x: 0, y: 8, w: 9, h: 1 },
       };
       const seen = new Set<ImprovedWidget['type']>();
       const selected: ImprovedWidget[] = [];
@@ -321,6 +323,15 @@ export function ImprovedDashboard({
         minW: 2,
         minH: 2,
       });
+      ensure('kpiMetrics', {
+        id: 'widget_kpi_1',
+        type: 'kpiMetrics',
+        title: '핵심 성과 지표',
+        position: defaultPos.kpiMetrics,
+        minW: 4,
+        minH: 2,
+        maxW: 9,
+      });
 
       selected.forEach((w) => addWidget(w));
     } else {
@@ -346,6 +357,22 @@ export function ImprovedDashboard({
           maxW: 5,
         },
         {
+          id: 'widget_kpi_1',
+          type: 'kpiMetrics',
+          title: '핵심 성과 지표',
+          position: { x: 0, y: 3, w: 5, h: 2 },
+          minW: 4,
+          minH: 2,
+        },
+        {
+          id: 'widget_tax_1',
+          type: 'taxDeadline',
+          title: '세무 일정',
+          position: { x: 5, y: 3, w: 4, h: 2 },
+          minW: 2,
+          minH: 2,
+        },
+        {
           id: 'widget_calendar_1',
           type: 'calendar',
           title: '캘린더',
@@ -355,14 +382,6 @@ export function ImprovedDashboard({
           minH: 2,
           maxW: 6,
           maxH: 4,
-        },
-        {
-          id: 'widget_tax_1',
-          type: 'taxDeadline',
-          title: '세무 일정',
-          position: { x: 5, y: 3, w: 4, h: 3 },
-          minW: 2,
-          minH: 2,
         },
       ];
       testWidgets.forEach((w) => addWidget(w));
@@ -650,6 +669,13 @@ export function ImprovedDashboard({
           events={widget.data || mockCalendarEvents}
           showToday={true}
           gridSize={{ w: widget.position.w, h: widget.position.h }}
+        />;
+      case 'kpiMetrics':
+        return <KPIWidget
+          title={widget.title}
+          metrics={widget.data}
+          lang="ko"
+          variant={widget.position.w <= 3 ? 'compact' : 'detailed'}
         />;
       case 'taxDeadline':
         return <TaxDeadlineWidget

@@ -1661,5 +1661,28 @@ export const getWidgetText = {
     revenue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '수익' : 'Revenue',
     expenses: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지출' : 'Expenses',
     profit: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '이익' : 'Profit'
+  },
+  kpiMetrics: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '핵심 성과 지표' : 'KPI Metrics',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '주요 비즈니스 지표를 한눈에 확인하세요' : 'View key business metrics at a glance',
+    monthlyRevenue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월 매출' : 'Monthly Revenue',
+    yearlyRevenue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '연간 매출' : 'Yearly Revenue',
+    activeProjects: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 프로젝트' : 'Active Projects',
+    totalProjects: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '총 프로젝트' : 'Total Projects',
+    completedTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료 작업' : 'Completed Tasks',
+    yearlyTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '연간 작업' : 'Yearly Tasks',
+    growth: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '성장률' : 'Growth Rate',
+    target: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '목표' : 'Target',
+    actual: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '실제' : 'Actual',
+    trend: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '추세' : 'Trend',
+    increase: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '증가' : 'Increase',
+    decrease: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '감소' : 'Decrease',
+    unchanged: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '변동없음' : 'Unchanged',
+    unit: {
+      currency: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '원' : 'KRW',
+      count: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '건' : 'items',
+      percent: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '%' : '%',
+      days: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일' : 'days'
+    }
   }
 }

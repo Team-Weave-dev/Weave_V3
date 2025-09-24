@@ -1,0 +1,350 @@
+'use client';
+
+import React, { useMemo, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  DollarSign,
+  Briefcase,
+  CheckCircle2,
+  Activity,
+  Calendar
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { getWidgetText } from '@/config/brand';
+import { typography } from '@/config/constants';
+
+// KPI 데이터 타입 정의
+interface KPIMetric {
+  id: string;
+  label: string;
+  value: string | number;
+  unit?: string;
+  target?: string | number;
+  trend?: 'up' | 'down' | 'stable';
+  trendValue?: string;
+  progress?: number;
+  icon: React.ReactNode;
+  color: 'default' | 'success' | 'warning' | 'error' | 'info';
+}
+
+interface KPIWidgetProps {
+  metrics?: KPIMetric[];
+  title?: string;
+  lang?: 'ko' | 'en';
+  variant?: 'compact' | 'detailed';
+  periodType?: 'monthly' | 'yearly';
+  onPeriodChange?: (period: 'monthly' | 'yearly') => void;
+}
+
+// 월간 KPI 데이터
+const monthlyMetrics: KPIMetric[] = [
+  {
+    id: 'revenue',
+    label: getWidgetText.kpiMetrics.monthlyRevenue('ko'),
+    value: '4,250',
+    unit: '만원',
+    target: '5,000',
+    trend: 'up',
+    trendValue: '+12%',
+    progress: 85,
+    icon: <DollarSign className="h-4 w-4" />,
+    color: 'success'
+  },
+  {
+    id: 'projects',
+    label: getWidgetText.kpiMetrics.activeProjects('ko'),
+    value: 7,
+    unit: '건',
+    target: 10,
+    trend: 'stable',
+    trendValue: '0%',
+    progress: 70,
+    icon: <Briefcase className="h-4 w-4" />,
+    color: 'info'
+  },
+  {
+    id: 'tasks',
+    label: getWidgetText.kpiMetrics.completedTasks('ko'),
+    value: 43,
+    unit: '건',
+    target: 50,
+    trend: 'up',
+    trendValue: '+8%',
+    progress: 86,
+    icon: <CheckCircle2 className="h-4 w-4" />,
+    color: 'success'
+  }
+];
+
+// 연간 KPI 데이터
+const yearlyMetrics: KPIMetric[] = [
+  {
+    id: 'revenue',
+    label: getWidgetText.kpiMetrics.yearlyRevenue?.('ko') || '연간 매출',
+    value: '5.1',
+    unit: '억원',
+    target: '6',
+    trend: 'up',
+    trendValue: '+18%',
+    progress: 85,
+    icon: <DollarSign className="h-4 w-4" />,
+    color: 'success'
+  },
+  {
+    id: 'projects',
+    label: getWidgetText.kpiMetrics.totalProjects?.('ko') || '총 프로젝트',
+    value: 84,
+    unit: '건',
+    target: 120,
+    trend: 'up',
+    trendValue: '+15%',
+    progress: 70,
+    icon: <Briefcase className="h-4 w-4" />,
+    color: 'info'
+  },
+  {
+    id: 'tasks',
+    label: getWidgetText.kpiMetrics.yearlyTasks?.('ko') || '연간 작업',
+    value: 516,
+    unit: '건',
+    target: 600,
+    trend: 'up',
+    trendValue: '+23%',
+    progress: 86,
+    icon: <CheckCircle2 className="h-4 w-4" />,
+    color: 'success'
+  }
+];
+
+// 트렌드 아이콘 컴포넌트
+const TrendIcon = ({ trend, className }: { trend?: 'up' | 'down' | 'stable'; className?: string }) => {
+  switch (trend) {
+    case 'up':
+      return <TrendingUp className={cn("h-3 w-3 text-green-500", className)} />;
+    case 'down':
+      return <TrendingDown className={cn("h-3 w-3 text-red-500", className)} />;
+    case 'stable':
+      return <Minus className={cn("h-3 w-3 text-gray-500", className)} />;
+    default:
+      return null;
+  }
+};
+
+// 색상 변형 매핑 - 다른 위젯과 통일
+const getColorClasses = (color: KPIMetric['color'], isHighlighted: boolean = false) => {
+  if (isHighlighted) {
+    switch (color) {
+      case 'success':
+        return 'bg-green-50/70 border-green-200/50';
+      case 'warning':
+        return 'bg-orange-50/70 border-orange-200/50';
+      case 'error':
+        return 'bg-red-50/70 border-red-200/50';
+      case 'info':
+        return 'bg-blue-50/70 border-blue-200/50';
+      default:
+        return 'bg-gray-50/70 border-gray-200/50';
+    }
+  }
+  // 기본 카드 스타일 - 다른 위젯과 동일
+  return 'bg-background hover:bg-accent';
+};
+
+// 텍스트 색상 매핑
+const getTextColorClass = (color: KPIMetric['color']) => {
+  switch (color) {
+    case 'success':
+      return 'text-green-600';
+    case 'warning':
+      return 'text-orange-600';
+    case 'error':
+      return 'text-red-600';
+    case 'info':
+      return 'text-blue-600';
+    default:
+      return 'text-muted-foreground';
+  }
+};
+
+// 진행률 색상 매핑
+const getProgressColor = (progress?: number) => {
+  if (!progress) return 'bg-gray-300';
+  if (progress >= 90) return 'bg-green-500';
+  if (progress >= 70) return 'bg-blue-500';
+  if (progress >= 50) return 'bg-yellow-500';
+  return 'bg-red-500';
+};
+
+export function KPIWidget({ 
+  metrics,
+  title,
+  lang = 'ko',
+  variant = 'detailed',
+  periodType = 'monthly',
+  onPeriodChange
+}: KPIWidgetProps) {
+  const displayTitle = title || getWidgetText.kpiMetrics.title(lang);
+  const [currentPeriod, setCurrentPeriod] = useState<'monthly' | 'yearly'>(periodType);
+  
+  // 기본 메트릭스 선택
+  const defaultMetrics = currentPeriod === 'monthly' ? monthlyMetrics : yearlyMetrics;
+  const displayMetrics = metrics || defaultMetrics;
+  
+  // 기간 변경 핸들러
+  const handlePeriodChange = (value: string) => {
+    const period = value as 'monthly' | 'yearly';
+    setCurrentPeriod(period);
+    onPeriodChange?.(period);
+  };
+  
+  // 반응형 그리드 컬럼 계산
+  const gridCols = useMemo(() => {
+    // 작은 위젯(w<=3): 1열
+    // 중간 위젯(w=4-5): 2열  
+    // 큰 위젯(w>=6): 3열
+    return variant === 'compact' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+  }, [variant]);
+
+  return (
+    <Card className="h-full flex flex-col overflow-hidden">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+            <CardDescription className={typography.text.description}>
+              {getWidgetText.kpiMetrics.description(lang)}
+            </CardDescription>
+          </div>
+          <Select value={currentPeriod} onValueChange={handlePeriodChange}>
+            <SelectTrigger className="w-[100px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="monthly">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>월간</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="yearly">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>연간</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-2">
+        <ScrollArea className="h-full">
+          <div className={cn(
+            "grid gap-2 px-3",
+            gridCols
+          )}>
+            {displayMetrics.map((metric) => {
+              const isHighValue = metric.progress && metric.progress >= 80;
+              
+              return (
+                <div
+                  key={metric.id}
+                  className={cn(
+                    "p-3 rounded-lg border transition-colors",
+                    isHighValue ? "bg-primary/5 border-primary/20" : "hover:bg-accent"
+                  )}
+                >
+                  <div className="space-y-2">
+                    {/* 헤더: 아이콘 + 라벨 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="text-muted-foreground">
+                          {metric.icon}
+                        </div>
+                        <span className="text-sm font-medium">
+                          {metric.label}
+                        </span>
+                      </div>
+                      {metric.trend && (
+                        <TrendIcon trend={metric.trend} />
+                      )}
+                    </div>
+
+                    {/* 값 표시 */}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold">
+                        {metric.value}
+                      </span>
+                      {metric.unit && (
+                        <span className="text-sm text-muted-foreground">
+                          {metric.unit}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* 트렌드와 목표 */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {metric.trendValue && (
+                        <Badge 
+                          variant={metric.trend === 'up' ? 'default' : metric.trend === 'down' ? 'error' : 'secondary'}
+                          className="text-xs h-5 px-1.5"
+                        >
+                          {metric.trendValue}
+                        </Badge>
+                      )}
+                      {metric.target && (
+                        <span className="text-xs text-muted-foreground">
+                          목표: {metric.target}{metric.unit}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Progress bar */}
+                    {metric.progress !== undefined && (
+                      <div className="space-y-1">
+                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full transition-all duration-500",
+                              getProgressColor(metric.progress)
+                            )}
+                            style={{ width: `${metric.progress}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-muted-foreground text-right">
+                          {metric.progress}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* 빈 상태 */}
+          {displayMetrics.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Activity className="h-8 w-8 mb-2 opacity-30" />
+              <p className="text-sm">
+                KPI 데이터가 없습니다
+              </p>
+            </div>
+          )}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
