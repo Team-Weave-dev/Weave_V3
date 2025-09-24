@@ -1341,10 +1341,10 @@ export const getViewModeText = {
 // 홈 페이지 텍스트
 export const getHomeText = {
   hero: {
-    badge: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '🚀 1인 기업을 위한 완벽한 솔루션' : '🚀 Perfect Solution for Solo Entrepreneurs',
-    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'Weave와 함께\n사업을 더 쉽게' : 'Make Business\nEasier with Weave',
-    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프리랜서와 1인 기업을 위한 통합 비즈니스 플랫폼' : 'Integrated Business Platform for Freelancers and Solo Entrepreneurs',
-    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 관리부터 세무 신고까지, 당신의 비즈니스 성장을 위한 모든 도구를 한 곳에서 제공합니다.' : 'From project management to tax filing, all the tools you need for your business growth in one place.',
+    badge: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '🚀 프리랜서 & 1인 기업을 위한 완벽한 솔루션' : '🚀 Perfect Solution for Freelancers & Solopreneurs',
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '나를 위한 단 하나의 업무 플랫폼' : 'Your One and Only Work Platform',
+    subtitle: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 관리부터 세무 신고까지' : 'From Project Management to Tax Filing',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프리랜서와 1인 기업이 클라이언트, 프로젝트 관리, 세무 업무를 한 곳에서 해결할 수 있는 통합 솔루션입니다.' : 'An integrated solution for solopreneurs and freelancers to manage clients, track projects, and handle taxes all in one place.',
     primaryAction: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지금 시작하기' : 'Get Started',
     secondaryAction: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '자세히 알아보기' : 'Learn More'
   },
