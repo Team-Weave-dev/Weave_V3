@@ -37,7 +37,11 @@ interface QuoteTemplate {
     | 'consulting'
     | 'marketing'
     | 'creative'
-    | 'nda';
+    | 'nda'
+    | 'education'
+    | 'maintenance'
+    | 'freelance'
+    | 'licensing';
   description: string;
   template: string;
 }
@@ -102,7 +106,47 @@ const quoteTemplates: QuoteTemplate[] = [
     documentType: 'contract',
     category: 'service',
     description: '정기 유지보수나 서비스 제공형 프로젝트에 적합한 계약서',
-    template: `# 서비스 제공 계약서\n\n## 제1조 (서비스 내용)\n- 서비스명: {{PROJECT_TITLE}}\n- 주요 업무: {{PROJECT_DESCRIPTION}}\n\n## 제2조 (서비스 기간)\n- 서비스 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 제3조 (서비스 대가)\n- 총액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제4조 (지원 및 유지보수)\n- 갑은 필요한 자료를 제공하고, 을은 SLA에 맞춰 대응한다.\n\n## 제5조 (기타)\n- 본 계약에서 정하지 않은 사항은 상호 협의하여 정한다.\n\n발행일: {{CONTRACT_DATE}}` 
+    template: `# 서비스 제공 계약서\n\n## 제1조 (서비스 내용)\n- 서비스명: {{PROJECT_TITLE}}\n- 주요 업무: {{PROJECT_DESCRIPTION}}\n\n## 제2조 (서비스 기간)\n- 서비스 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 제3조 (서비스 대가)\n- 총액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제4조 (지원 및 유지보수)\n- 갑은 필요한 자료를 제공하고, 을은 SLA에 맞춰 대응한다.\n\n## 제5조 (기타)\n- 본 계약에서 정하지 않은 사항은 상호 협의하여 정한다.\n\n발행일: {{CONTRACT_DATE}}`
+  },
+  {
+    id: 'software-contract',
+    name: '소프트웨어 개발 계약서',
+    documentType: 'contract',
+    category: 'software',
+    description: '맞춤형 소프트웨어 구축 프로젝트 전용 계약서',
+    template: `# 소프트웨어 개발 계약서\n\n## 제1조 (개발 범위)\n- 프로젝트명: {{PROJECT_TITLE}}\n- 개발 범위: {{PROJECT_DESCRIPTION}}\n- 산출물: {{DELIVERABLES}}\n\n## 제2조 (개발 일정)\n- 기간: {{START_DATE}} ~ {{END_DATE}}\n- 중간 점검은 월 단위로 실시한다.\n\n## 제3조 (대금 지급)\n- 총액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제4조 (기술 지원)\n- 납품 후 30일간 무상 유지보수 제공.\n\n발행일: {{CONTRACT_DATE}}`
+  },
+  {
+    id: 'consulting-contract',
+    name: '컨설팅 계약서',
+    documentType: 'contract',
+    category: 'consulting',
+    description: '전략/IT/비즈니스 컨설팅 프로젝트용 계약서',
+    template: `# 컨설팅 용역 계약서\n\n## 제1조 (용역 목적)\n- 프로젝트명: {{PROJECT_TITLE}}\n- 용역 범위: {{PROJECT_DESCRIPTION}}\n\n## 제2조 (수행 방식)\n- 정기 워크숍 및 리포트 제공.\n\n## 제3조 (보수)\n- 총액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제4조 (산출물)\n- 주요 산출물: {{DELIVERABLES}}\n\n발행일: {{CONTRACT_DATE}}`
+  },
+  {
+    id: 'education-contract',
+    name: '교육/강의 계약서',
+    documentType: 'contract',
+    category: 'education',
+    description: '기업 교육, 강연, 워크숍 등에 사용 가능한 계약서',
+    template: `# 교육/강의 계약서\n\n## 제1조 (교육 개요)\n- 프로그램명: {{PROJECT_TITLE}}\n- 교육 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 제2조 (교육 내용)\n- 교육 설명: {{PROJECT_DESCRIPTION}}\n- 제공 자료: {{DELIVERABLES}}\n\n## 제3조 (강사료)\n- 총 금액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n발행일: {{CONTRACT_DATE}}`
+  },
+  {
+    id: 'maintenance-contract',
+    name: '유지보수 계약서',
+    documentType: 'contract',
+    category: 'maintenance',
+    description: '운영/유지보수 서비스 제공 시 사용하는 계약서',
+    template: `# 유지보수 계약서\n\n## 제1조 (서비스 범위)\n- 프로젝트명: {{PROJECT_TITLE}}\n- 주요 업무: 버그 대응, 업데이트 반영 등\n\n## 제2조 (지원 시간)\n- 기본 지원 시간: 월 40시간\n\n## 제3조 (대가)\n- 월 유지보수 비용: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n발행일: {{CONTRACT_DATE}}`
+  },
+  {
+    id: 'freelance-contract',
+    name: '프리랜서 계약서',
+    documentType: 'contract',
+    category: 'freelance',
+    description: '개인 프리랜서와 체결하는 간편 계약서',
+    template: `# 프리랜서 계약서\n\n## 제1조 (용역 내용)\n- 프로젝트명: {{PROJECT_TITLE}}\n- 세부 작업: {{PROJECT_DESCRIPTION}}\n\n## 제2조 (기간)\n- 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 제3조 (보수)\n- 금액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n발행일: {{CONTRACT_DATE}}`
   },
   {
     id: 'marketing-contract',
@@ -110,7 +154,23 @@ const quoteTemplates: QuoteTemplate[] = [
     documentType: 'contract',
     category: 'marketing',
     description: '디지털 마케팅, 광고 등 캠페인 수행 시 사용할 계약서',
-    template: `# 마케팅 캠페인 계약서\n\n## 제1조 (캠페인 개요)\n- 캠페인명: {{PROJECT_TITLE}}\n- 캠페인 기간: {{START_DATE}} ~ {{END_DATE}}\n- 주요 KPI: 매출 증대, 신규 리드 확보 등\n\n## 제2조 (용역의 범위)\n- 콘텐츠 제작, 매체 집행, 성과 분석을 포함한다.\n\n## 제3조 (대가 및 정산)\n- 총 캠페인 비용: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제4조 (성과 보고)\n- 을은 월간 보고서를 제공하며, 주요 지표를 공유한다.\n\n발행일: {{CONTRACT_DATE}}` 
+    template: `# 마케팅 캠페인 계약서\n\n## 제1조 (캠페인 개요)\n- 캠페인명: {{PROJECT_TITLE}}\n- 캠페인 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 제2조 (용역 범위)\n- 업무: 콘텐츠 제작, 매체 집행, 성과 분석\n\n## 제3조 (대가 및 정산)\n- 비용: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n발행일: {{CONTRACT_DATE}}`
+  },
+  {
+    id: 'creative-contract',
+    name: '디자인/영상 제작 계약서',
+    documentType: 'contract',
+    category: 'creative',
+    description: '디자인, 영상, 사진 등 창작 프로젝트 전용 계약서',
+    template: `# 창작물 제작 계약서\n\n## 제1조 (작업 범위)\n- 프로젝트명: {{PROJECT_TITLE}}\n- 작업 내용: {{PROJECT_DESCRIPTION}}\n\n## 제2조 (산출물)\n- 전달물: {{DELIVERABLES}}\n\n## 제3조 (대금)\n- 금액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n## 제4조 (저작권)\n- 대금 지급 완료 시 저작권은 갑에게 귀속된다.\n\n발행일: {{CONTRACT_DATE}}`
+  },
+  {
+    id: 'licensing-contract',
+    name: '라이선스 계약서',
+    documentType: 'contract',
+    category: 'licensing',
+    description: '콘텐츠/소프트웨어 라이선스 제공 계약서',
+    template: `# 라이선스 계약서\n\n## 제1조 (라이선스 범위)\n- 대상: {{PROJECT_TITLE}}\n- 사용 범위: {{PROJECT_DESCRIPTION}}\n\n## 제2조 (기간 및 대가)\n- 기간: {{START_DATE}} ~ {{END_DATE}}\n- 라이선스 비용: {{TOTAL_AMOUNT}}\n\n## 제3조 (사용 조건)\n- 갑은 정해진 범위 내에서만 콘텐츠를 사용한다.\n\n발행일: {{CONTRACT_DATE}}`
   },
   {
     id: 'nda-contract',
@@ -118,7 +178,15 @@ const quoteTemplates: QuoteTemplate[] = [
     documentType: 'contract',
     category: 'nda',
     description: '프로젝트 논의 전 기본으로 체결하는 비밀유지 협약',
-    template: `# 비밀유지 협약서 (NDA)\n\n## 제1조 (목적)\n본 협약은 {{CLIENT_COMPANY}}(갑)와 위브 팀(을)이 {{PROJECT_TITLE}} 관련 정보를 교환함에 있어 기밀을 유지하기 위함이다.\n\n## 제2조 (기밀 정보)\n- 기술 자료, 사업 전략, 가격 정책, 고객 정보 등을 포함한다.\n\n## 제3조 (의무)\n- 계약 종료 후 3년간 기밀을 유지하며 제3자에게 공개하지 않는다.\n\n## 제4조 (예외)\n- 이미 공개된 정보, 독자적으로 취득한 정보는 예외로 한다.\n\n발행일: {{CONTRACT_DATE}}` 
+    template: `# 비밀유지 협약서 (NDA)\n\n## 제1조 (목적)\n본 협약은 {{CLIENT_COMPANY}}(갑)와 위브 팀(을)이 {{PROJECT_TITLE}} 관련 정보를 교환함에 있어 기밀을 유지하기 위함이다.\n\n## 제2조 (기밀 정보)\n- 기술 자료, 사업 전략, 가격 정책, 고객 정보 등을 포함한다.\n\n## 제3조 (의무)\n- 계약 종료 후 3년간 기밀을 유지하며 제3자에게 공개하지 않는다.\n\n## 제4조 (예외)\n- 이미 공개된 정보, 독자적으로 취득한 정보는 예외로 한다.\n\n발행일: {{CONTRACT_DATE}}`
+  },
+  {
+    id: 'translation-contract',
+    name: '번역 서비스 계약서',
+    documentType: 'contract',
+    category: 'creative',
+    description: '문서/콘텐츠 번역 프로젝트에 사용하는 계약서',
+    template: `# 번역 서비스 계약서\n\n## 제1조 (용역 범위)\n- 프로젝트명: {{PROJECT_TITLE}}\n- 번역 언어: {{PROJECT_DESCRIPTION}}\n\n## 제2조 (납품)\n- 납품물: {{DELIVERABLES}}\n- 납기: {{END_DATE}}\n\n## 제3조 (보수)\n- 금액: {{TOTAL_AMOUNT}}\n- 지급 조건: {{PAYMENT_TERMS}}\n\n발행일: {{CONTRACT_DATE}}`
   },
   {
     id: 'standard-quote',
@@ -126,7 +194,7 @@ const quoteTemplates: QuoteTemplate[] = [
     documentType: 'quote',
     category: 'standard',
     description: '일반 프리랜서/프로젝트 제안 시 사용하는 기본 견적서',
-    template: `# 견적서\n\n## 고객 정보\n- 고객명: {{CLIENT_NAME}}\n- 회사명: {{CLIENT_COMPANY}}\n\n## 프로젝트 개요\n- 프로젝트명: {{PROJECT_TITLE}}\n- 작업 기간: {{START_DATE}} ~ {{END_DATE}}\n- 제공 산출물: {{DELIVERABLES}}\n\n## 비용 산정\n- 총 금액: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n## 비고\n- 본 견적은 발행일로부터 30일간 유효합니다.\n- 추가 요구사항 발생 시 견적이 변경될 수 있습니다.\n\n발행일: {{ISSUE_DATE}}` 
+    template: `# 견적서\n\n## 고객 정보\n- 고객명: {{CLIENT_NAME}}\n- 회사명: {{CLIENT_COMPANY}}\n\n## 프로젝트 개요\n- 프로젝트명: {{PROJECT_TITLE}}\n- 작업 기간: {{START_DATE}} ~ {{END_DATE}}\n- 제공 산출물: {{DELIVERABLES}}\n\n## 비용 산정\n- 총 금액: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n## 비고\n- 본 견적은 발행일로부터 30일간 유효합니다.\n- 추가 요구사항 발생 시 견적이 변경될 수 있습니다.\n\n발행일: {{ISSUE_DATE}}`
   },
   {
     id: 'web-quote',
@@ -134,7 +202,31 @@ const quoteTemplates: QuoteTemplate[] = [
     documentType: 'quote',
     category: 'web',
     description: '웹사이트/웹앱 개발 프로젝트 전용 견적서',
-    template: `# 웹 개발 견적서\n\n## 프로젝트 정보\n- 프로젝트명: {{PROJECT_TITLE}}\n- 작업 범위: {{PROJECT_DESCRIPTION}}\n- 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 기능 목록\n- 핵심 기능: {{REQUIREMENTS}}\n\n## 견적\n- 총 비용: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n## 유의사항\n- 디자인/기능 변경 시 추가 비용이 발생할 수 있습니다.\n\n발행일: {{ISSUE_DATE}}` 
+    template: `# 웹 개발 견적서\n\n## 프로젝트 정보\n- 프로젝트명: {{PROJECT_TITLE}}\n- 작업 범위: {{PROJECT_DESCRIPTION}}\n- 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 기능 목록\n- 핵심 기능: {{REQUIREMENTS}}\n\n## 견적\n- 총 비용: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n## 유의사항\n- 디자인/기능 변경 시 추가 비용이 발생할 수 있습니다.\n\n발행일: {{ISSUE_DATE}}`
+  },
+  {
+    id: 'consulting-quote',
+    name: '컨설팅 견적서',
+    documentType: 'quote',
+    category: 'consulting',
+    description: '컨설팅, 자문 서비스용 견적서',
+    template: `# 컨설팅 견적서\n\n## 프로젝트 개요\n- 프로젝트명: {{PROJECT_TITLE}}\n- 목적: {{PROJECT_DESCRIPTION}}\n- 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 제공 항목\n{{DELIVERABLES}}\n\n## 견적\n- 총 비용: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n발행일: {{ISSUE_DATE}}`
+  },
+  {
+    id: 'marketing-quote',
+    name: '마케팅 견적서',
+    documentType: 'quote',
+    category: 'marketing',
+    description: '마케팅/광고 캠페인 제안 시 사용하는 견적서',
+    template: `# 마케팅 캠페인 견적서\n\n## 캠페인 개요\n- 캠페인명: {{PROJECT_TITLE}}\n- 캠페인 기간: {{START_DATE}} ~ {{END_DATE}}\n\n## 제공 서비스\n{{DELIVERABLES}}\n\n## 견적\n- 총 비용: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n발행일: {{ISSUE_DATE}}`
+  },
+  {
+    id: 'creative-quote',
+    name: '디자인/영상 견적서',
+    documentType: 'quote',
+    category: 'creative',
+    description: '디자인, 영상, 사진 촬영 견적서',
+    template: `# 창작물 제작 견적서\n\n## 프로젝트 개요\n- 프로젝트명: {{PROJECT_TITLE}}\n- 작업 내용: {{PROJECT_DESCRIPTION}}\n- 일정: {{START_DATE}} ~ {{END_DATE}}\n\n## 제공 항목\n{{DELIVERABLES}}\n\n## 견적\n- 총 비용: {{TOTAL_AMOUNT}}\n- 결제 조건: {{PAYMENT_TERMS}}\n\n발행일: {{ISSUE_DATE}}`
   },
   {
     id: 'standard-invoice',

@@ -113,6 +113,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 ### 핵심 기능
 - **카테고리 매핑**: `'contract' | 'invoice' | 'estimate' | 'report' | 'others'` 카테고리별 템플릿 목록을 제공합니다.
 - **데이터 주입**: `ClientData`, `ProjectData`, 추가 파생 정보를 자동으로 주입하여 placeholder를 채웁니다.
+- **계약 템플릿**: 표준/서비스/소프트웨어/컨설팅/교육/유지보수/프리랜서/마케팅/라이선스/크리에이티브/NDA 등 create-docs의 주요 계약 템플릿을 내장했습니다.
+- **견적·청구 템플릿**: 표준/웹/컨설팅/마케팅/크리에이티브 견적서와 표준 청구서를 제공합니다.
 - **커스텀 템플릿**: 보고서/회의록 등 자체 정의 템플릿을 함께 제공하여 없는 카테고리를 보완합니다.
 - **생성 결과**: 템플릿 이름과 콘텐츠, 템플릿 ID를 포함한 `GeneratedDocumentPayload` 반환.
 
