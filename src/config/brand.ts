@@ -662,6 +662,38 @@ export const uiText = {
         ko: "진행 상황과 우선순위를 한눈에 확인하세요",
         en: "View progress and priorities at a glance"
       }
+    },
+    todoList: {
+      title: {
+        ko: "할 일 목록",
+        en: "Todo List"
+      },
+      addTask: {
+        ko: "새 작업 추가",
+        en: "Add new task"
+      },
+      placeholder: {
+        ko: "작업을 입력하세요...",
+        en: "Enter a task..."
+      },
+      priorities: {
+        p1: { ko: "긴급", en: "Urgent" },
+        p2: { ko: "높음", en: "High" },
+        p3: { ko: "보통", en: "Normal" },
+        p4: { ko: "낮음", en: "Low" }
+      },
+      noTasks: {
+        ko: "할 일이 없습니다",
+        en: "No tasks"
+      },
+      completedTasks: {
+        ko: "완료된 작업",
+        en: "Completed tasks"
+      },
+      deleteTask: {
+        ko: "작업 삭제",
+        en: "Delete task"
+      }
     }
   },
 
@@ -1011,6 +1043,20 @@ export const getWidgetText = {
     addProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.addProject[lang],
     projectsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.projectsInProgress[lang],
     viewProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.projectSummary.viewProgress[lang]
+  },
+  todoList: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.title[lang],
+    addTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.addTask[lang],
+    placeholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.placeholder[lang],
+    priorities: {
+      p1: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.priorities.p1[lang],
+      p2: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.priorities.p2[lang],
+      p3: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.priorities.p3[lang],
+      p4: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.priorities.p4[lang]
+    },
+    noTasks: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.noTasks[lang],
+    completedTasks: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.completedTasks[lang],
+    deleteTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.widgets.todoList.deleteTask[lang]
   }
 }
 

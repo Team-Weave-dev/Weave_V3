@@ -18,7 +18,7 @@ export interface WidgetSize {
 
 export interface Widget {
   id: string;
-  type: 'stats' | 'chart' | 'quickActions' | 'progress' | 'list' | 'custom' | 'projectSummary';
+  type: 'stats' | 'chart' | 'quickActions' | 'progress' | 'list' | 'custom' | 'projectSummary' | 'todoList';
   title: string;
   position: WidgetPosition;
   size: WidgetSize;
@@ -90,4 +90,40 @@ export interface ProjectSummaryWidgetProps {
   title?: string;
   lang?: 'ko' | 'en';
   onProjectClick?: (project: ProjectReview) => void;
+}
+
+// TodoList 위젯 인터페이스
+export type TodoPriority = 'p1' | 'p2' | 'p3' | 'p4';
+
+export interface TodoSection {
+  id: string;
+  name: string;
+  order: number;
+  isExpanded: boolean;
+  color?: string;
+  icon?: string;
+}
+
+export interface TodoTask {
+  id: string;
+  title: string;
+  completed: boolean;
+  priority: TodoPriority;
+  parentId?: string;
+  depth: number;
+  children?: TodoTask[];
+  sectionId?: string;
+  order: number;
+  isExpanded?: boolean;
+  createdAt: Date;
+  completedAt?: Date;
+}
+
+export interface TodoListWidgetProps {
+  title?: string;
+  tasks?: TodoTask[];
+  onTaskAdd?: (task: Omit<TodoTask, 'id' | 'createdAt'>) => void;
+  onTaskToggle?: (taskId: string) => void;
+  onTaskDelete?: (taskId: string) => void;
+  onTaskUpdate?: (taskId: string, updates: Partial<TodoTask>) => void;
 }

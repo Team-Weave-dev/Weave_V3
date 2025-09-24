@@ -35,6 +35,7 @@ import { StatsWidget } from '@/components/ui/widgets/StatsWidget';
 import { ChartWidget } from '@/components/ui/widgets/ChartWidget';
 import { QuickActionsWidget } from '@/components/ui/widgets/QuickActionsWidget';
 import { ProjectSummaryWidget } from '@/components/ui/widgets/ProjectSummaryWidget';
+import { TodoListWidget } from '@/components/ui/widgets/TodoListWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 
 interface ImprovedDashboardProps {
@@ -115,6 +116,61 @@ const mockProjects = [
   },
 ];
 
+// 테스트용 Todo 데이터
+const mockTodoData = [
+  {
+    id: 'todo-1',
+    title: '프로젝트 제안서 작성',
+    completed: false,
+    priority: 'p1' as const,
+    depth: 0,
+    order: 0,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24)
+  },
+  {
+    id: 'todo-2',
+    title: '클라이언트 미팅 준비',
+    completed: false,
+    priority: 'p2' as const,
+    depth: 0,
+    order: 1,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12)
+  },
+  {
+    id: 'todo-3',
+    title: '디자인 시안 검토',
+    completed: true,
+    priority: 'p3' as const,
+    depth: 0,
+    order: 2,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
+    completedAt: new Date(Date.now() - 1000 * 60 * 60 * 6)
+  },
+  {
+    id: 'todo-4',
+    title: '개발 환경 설정',
+    completed: false,
+    priority: 'p3' as const,
+    depth: 0,
+    order: 3,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5)
+  },
+  {
+    id: 'todo-5',
+    title: '테스트 케이스 작성',
+    completed: false,
+    priority: 'p4' as const,
+    depth: 0,
+    order: 4,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
+  }
+];
+
 export function ImprovedDashboard({
   initialWidgets = [],
   callbacks,
@@ -160,7 +216,6 @@ export function ImprovedDashboard({
   const containerRef = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState({ width: 120, height: 120 });
   const [isCompact, setIsCompact] = useState(true);
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // 초기화
   useEffect(() => {
@@ -170,7 +225,8 @@ export function ImprovedDashboard({
         // 9x9 그리드 기준 배치
         projectSummary: { x: 0, y: 0, w: 5, h: 3 },
         stats: { x: 5, y: 0, w: 4, h: 2 },
-        chart: { x: 0, y: 3, w: 9, h: 2 },
+        todoList: { x: 5, y: 2, w: 4, h: 3 },
+        chart: { x: 0, y: 3, w: 5, h: 2 },
         quickActions: { x: 0, y: 5, w: 9, h: 1 },
         custom: { x: 0, y: 6, w: 4, h: 2 },
       };
@@ -218,6 +274,16 @@ export function ImprovedDashboard({
         minH: 1,
         maxW: 9,
       });
+      ensure('todoList', {
+        id: 'widget_todo_1',
+        type: 'todoList',
+        title: '할 일 목록',
+        position: defaultPos.todoList,
+        data: mockTodoData,
+        minW: 2,
+        minH: 2,
+        maxW: 5,
+      });
       ensure('chart', {
         id: 'widget_chart_1',
         type: 'chart',
@@ -260,10 +326,20 @@ export function ImprovedDashboard({
           maxW: 9,
         },
         {
+          id: 'widget_todo_1',
+          type: 'todoList',
+          title: '할 일 목록',
+          position: { x: 5, y: 2, w: 4, h: 3 },
+          data: mockTodoData,
+          minW: 2,
+          minH: 2,
+          maxW: 5,
+        },
+        {
           id: 'widget_chart_1',
           type: 'chart',
           title: '주간 트렌드',
-          position: { x: 0, y: 3, w: 9, h: 2 },
+          position: { x: 0, y: 3, w: 5, h: 2 },
           data: mockChartData,
           minW: 3,
           minH: 2,
@@ -518,29 +594,6 @@ export function ImprovedDashboard({
     callbacks?.onResizeStart?.(widget, e.nativeEvent);
   }, [isEditMode, widgets, cellSize, config, editState, startResizing, updateResizing, stopResizing, resizeWidgetSmart, callbacks, isCompact, compactWidgets]);
   
-  // Long Press 감지
-  const handleLongPressStart = useCallback((e: React.MouseEvent | React.TouchEvent, widgetId: string) => {
-    if (isEditMode) return;
-    
-    e.preventDefault();
-    
-    longPressTimerRef.current = setTimeout(() => {
-      selectWidget(widgetId);
-      enterEditMode();
-      
-      // 햅틱 피드백
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-    }, 700);
-  }, [isEditMode, selectWidget, enterEditMode]);
-  
-  const handleLongPressEnd = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
   
   // 위젯 추가
   const handleAddWidget = useCallback(() => {
@@ -577,6 +630,11 @@ export function ImprovedDashboard({
           title={widget.title} 
           projects={widget.data || []}
           lang="ko"
+        />;
+      case 'todoList':
+        return <TodoListWidget 
+          title={widget.title} 
+          tasks={widget.data || mockTodoData}
         />;
       default:
         return (
@@ -765,22 +823,28 @@ export function ImprovedDashboard({
                   className={cn(
                     "h-full transition-all duration-200",
                     isEditMode && !widget.static && "scale-95",
-                    isEditMode && !widget.static && widget.isDraggable !== false && "cursor-move",
                     editState.draggedWidget?.id === widget.id && "opacity-80 cursor-grabbing"
                   )}
-                  onMouseDown={(e) => {
-                    if (isEditMode && !widget.static && widget.isDraggable !== false) {
-                      handleDragStart(e, widget);
-                    } else if (!isEditMode) {
-                      handleLongPressStart(e, widget.id);
-                    }
-                  }}
-                  onMouseUp={!isEditMode ? handleLongPressEnd : undefined}
-                  onMouseLeave={!isEditMode ? handleLongPressEnd : undefined}
-                  onTouchStart={(e) => !isEditMode && handleLongPressStart(e, widget.id)}
-                  onTouchEnd={handleLongPressEnd}
                   onClick={(e) => !isEditMode && callbacks?.onWidgetClick?.(widget, e.nativeEvent)}
                 >
+                  {/* 편집 모드 드래그 핸들 */}
+                  {isEditMode && !widget.static && widget.isDraggable !== false && widget.type !== 'todoList' && (
+                    <div 
+                      className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-gray-100/50 to-transparent dark:from-gray-800/50 cursor-move z-10"
+                      onMouseDown={(e) => handleDragStart(e, widget)}
+                    >
+                      <div className="flex items-center justify-center h-full">
+                        <Grip className="h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
+                  )}
+                  {/* TodoList 위젯은 전체 헤더 영역을 드래그 핸들로 사용 */}
+                  {isEditMode && !widget.static && widget.isDraggable !== false && widget.type === 'todoList' && (
+                    <div 
+                      className="absolute top-0 left-0 right-0 h-12 cursor-move z-10"
+                      onMouseDown={(e) => handleDragStart(e, widget)}
+                    />
+                  )}
                   {renderWidget(widget)}
                 </div>
                 
