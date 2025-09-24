@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Typography from '@/components/ui/typography';
 import ProjectDetail from '@/components/projects/ProjectDetail';
 import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.types';
@@ -78,6 +78,16 @@ export default function DetailView({
     });
   }, [projects, searchQuery, statusFilter, clientFilter]);
 
+  const selectProjectById = useCallback((projectId: string) => {
+    setSelectedProjectId(projectId);
+
+    const indexInFiltered = filteredProjects.findIndex(project => project.id === projectId);
+    if (indexInFiltered !== -1) {
+      const newPage = Math.floor(indexInFiltered / pageSize) + 1;
+      setCurrentPage(prev => (prev === newPage ? prev : newPage));
+    }
+  }, [filteredProjects, pageSize]);
+
   // 페이지네이션된 프로젝트 목록
   const paginatedProjects = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
@@ -96,14 +106,50 @@ export default function DetailView({
     return clients.sort();
   }, [projects]);
 
-  // 페이지 변경 핸들러
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+  const navigationProjects = useMemo(() => {
+    return [...filteredProjects].sort((a, b) => a.no.localeCompare(b.no));
+  }, [filteredProjects]);
 
   const selectedProject = selectedProjectId
     ? projects.find(p => p.id === selectedProjectId)
     : null;
+
+  const navigationIndex = useMemo(() => {
+    if (!selectedProject) {
+      return -1;
+    }
+    return navigationProjects.findIndex(project => project.id === selectedProject.id);
+  }, [navigationProjects, selectedProject]);
+
+  const canNavigatePrevious = navigationIndex > 0;
+  const canNavigateNext = navigationIndex !== -1 && navigationIndex < navigationProjects.length - 1;
+
+  const handleNavigatePrevious = useCallback(() => {
+    if (!canNavigatePrevious) {
+      return;
+    }
+
+    const previousProject = navigationProjects[navigationIndex - 1];
+    if (previousProject) {
+      selectProjectById(previousProject.id);
+    }
+  }, [canNavigatePrevious, navigationProjects, navigationIndex, selectProjectById]);
+
+  const handleNavigateNext = useCallback(() => {
+    if (!canNavigateNext) {
+      return;
+    }
+
+    const nextProject = navigationProjects[navigationIndex + 1];
+    if (nextProject) {
+      selectProjectById(nextProject.id);
+    }
+  }, [canNavigateNext, navigationProjects, navigationIndex, selectProjectById]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
     completed: 'status-soft-completed',
@@ -134,7 +180,7 @@ export default function DetailView({
   }, [projects.length]);
 
   const handleProjectClick = (projectId: string) => {
-    setSelectedProjectId(projectId);
+    selectProjectById(projectId);
   };
 
   const handleResetFilters = () => {
@@ -412,6 +458,10 @@ export default function DetailView({
             mode="compact"
             onEdit={() => handleEditProject(selectedProject.id)}
             onDelete={() => handleDeleteProject(selectedProject.id)}
+            onNavigatePrevious={handleNavigatePrevious}
+            onNavigateNext={handleNavigateNext}
+            canNavigatePrevious={canNavigatePrevious}
+            canNavigateNext={canNavigateNext}
           />
         ) : (
           <Card className="h-[calc(100vh-200px)]">

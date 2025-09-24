@@ -407,7 +407,9 @@ export const uiText = {
       header: {
         title: { ko: "프로젝트 관리", en: "Project Management" },
         description: { ko: "모든 프로젝트를 관리하고 추적합니다", en: "Manage and track all your projects" },
-        newProject: { ko: "새 프로젝트", en: "New Project" }
+        newProject: { ko: "새 프로젝트", en: "New Project" },
+        previousProject: { ko: "이전 프로젝트", en: "Previous Project" },
+        nextProject: { ko: "다음 프로젝트", en: "Next Project" }
       },
       stats: {
         total: { ko: "전체 프로젝트", en: "Total Projects" },
@@ -1209,6 +1211,8 @@ export const getProjectPageText = {
   headerTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.title[lang],
   headerDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.description[lang],
   newProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.newProject[lang],
+  previousProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.previousProject[lang],
+  nextProject: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.header.nextProject[lang],
 
   // Stats
   statsTotal: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.total[lang],

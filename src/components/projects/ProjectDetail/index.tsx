@@ -33,7 +33,10 @@ import {
   Edit3Icon,
   XIcon,
   Trash2Icon,
-  FilePlus2Icon
+  FilePlus2Icon,
+  PlusIcon,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface ProjectDetailProps {
@@ -42,6 +45,11 @@ interface ProjectDetailProps {
   onClose?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onCreateProject?: () => void;
+  onNavigatePrevious?: () => void;
+  onNavigateNext?: () => void;
+  canNavigatePrevious?: boolean;
+  canNavigateNext?: boolean;
 }
 
 type DocumentTabValue = 'contract' | 'invoice' | 'report' | 'estimate' | 'others';
@@ -98,7 +106,12 @@ export default function ProjectDetail({
   mode = 'full',
   onClose,
   onEdit,
-  onDelete
+  onDelete,
+  onCreateProject,
+  onNavigatePrevious,
+  onNavigateNext,
+  canNavigatePrevious = false,
+  canNavigateNext = false
 }: ProjectDetailProps) {
   const lang = 'ko'; // TODO: 나중에 언어 설정과 연동
   const { toast } = useToast();
@@ -513,6 +526,36 @@ export default function ProjectDetail({
             </div>
           </div>
           <div className="flex gap-2">
+            {onNavigatePrevious && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onNavigatePrevious}
+                disabled={!canNavigatePrevious}
+                className="h-9 w-9"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">{getProjectPageText.previousProject(lang)}</span>
+              </Button>
+            )}
+            {onNavigateNext && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onNavigateNext}
+                disabled={!canNavigateNext}
+                className="h-9 w-9"
+              >
+                <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">{getProjectPageText.nextProject(lang)}</span>
+              </Button>
+            )}
+            {mode === 'full' && onCreateProject && (
+              <Button variant="default" onClick={onCreateProject} className="gap-2">
+                <PlusIcon className="h-4 w-4" />
+                {getProjectPageText.newProject(lang)}
+              </Button>
+            )}
             {onEdit && (
               <Button variant="outline" onClick={onEdit} className="gap-2" size={mode === 'compact' ? 'sm' : 'default'}>
                 <Edit3Icon className="h-4 w-4" />
