@@ -104,12 +104,12 @@ interface ProjectDetailProps {
 - 문서가 2개 이상 존재하면 카드 제목 옆에 `({count})`를 추가합니다.
 - 카드 클릭/엔터 시 Document Management 탭의 해당 서브 탭으로 이동합니다.
 
-#### 문서 생성 모달 & 미리보기
-- 카드/탭의 `문서 생성` 버튼은 `ProjectDocumentGeneratorModal`을 열어 템플릿을 선택하도록 합니다.
-- 템플릿 선택 시 `src/lib/document-generator/templates.ts`의 `build` 함수가 프로젝트/클라이언트 데이터를 주입한 콘텐츠를 생성합니다.
-- 생성된 문서는 로컬 state(`documents`)에 즉시 추가되고 상태는 `draft`로 표시됩니다. 자동으로 Document Management 탭으로 전환되며 미리보기 다이얼로그가 함께 열립니다.
-- 미리보기(`Dialog + ScrollArea`)를 통해 생성된 Markdown을 확인할 수 있으며, 이후 사용자 편집 로직을 연결할 수 있습니다.
-- Document Management 각 탭 헤더에는 `문서 생성`(템플릿이 없으면 비활성화)과 `삭제` 버튼이 함께 노출되며, 생성된 문서 목록 행에는 `보기`/`편집` 액션이 제공됩니다. 편집은 모달 내 `Textarea`를 통해 바로 수정/저장할 수 있습니다.
+#### 문서 생성/삭제 모달 흐름
+- `문서 생성` 버튼은 `ProjectDocumentGeneratorModal`을 열어 템플릿을 선택합니다. 미리보기 버튼을 누르면 별도의 미리보기 모달이 열리고, 여기서 내용을 수정 후 `생성하기`를 눌러야 실제 문서가 목록에 추가됩니다.
+- 템플릿 콘텐츠는 `src/lib/document-generator/templates.ts`에서 프로젝트/클라이언트 데이터를 주입해 생성합니다.
+- 생성된 문서는 로컬 state(`documents`)에 반영되고 상태는 `draft`로 초기화됩니다. Document Management 탭과 개요 카드 상태가 즉시 동기화됩니다.
+- 탭 헤더에는 `문서 생성`(템플릿이 없을 땐 비활성)과 `전체 삭제` 버튼이 노출됩니다. 삭제는 항상 `DocumentDeleteDialog`를 통해 확인하며, 목록 행에서는 `보기`/`편집`/`삭제` 액션을 제공합니다.
+- `DocumentDeleteDialog`는 `border-primary` 테두리, `secondary` 취소 버튼, `destructive` 삭제 버튼을 사용하는 공통 모달로, 텍스트는 모두 `brand.ts`에서 관리합니다.
 
 ### 2. Contract 탭
 ```typescript

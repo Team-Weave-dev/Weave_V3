@@ -205,8 +205,8 @@ This project includes Model Context Protocol configuration:
 
 - **2025-09-25**: Project document generation workflow - Template modal + preview integration
   - `src/lib/document-generator/templates.ts`에서 `create-docs/lib` 템플릿을 계약/견적/청구/기타 카테고리로 매핑하고 프로젝트 데이터를 주입하는 생성 헬퍼를 추가했습니다.
-  - Document Management 탭에 템플릿 기반 문서 생성/삭제 버튼과 목록 내 보기·편집 액션을 추가하고, 생성 문서를 로컬 상태(`ProjectDetail`)에서 즉시 관리할 수 있게 했습니다.
-  - `ProjectDocumentGeneratorModal` + 미리보기/편집 다이얼로그를 통해 템플릿 선택, 내용 확인, 인라인 편집·저장을 지원하며 개요 카드 상태와 동기화됩니다.
+  - Document Management 탭에 템플릿 기반 문서 생성/삭제 버튼과 목록 내 보기·편집·삭제 액션을 추가하고, 생성 문서를 로컬 상태(`ProjectDetail`)에서 즉시 관리할 수 있게 했습니다.
+  - `ProjectDocumentGeneratorModal` + 미리보기/편집 다이얼로그를 통해 템플릿 선택, 내용 확인, 인라인 편집·저장을 지원하며 개요 카드 상태와 동기화됩니다. 모든 삭제 흐름은 `DocumentDeleteDialog`(공통 삭제 모달)에서 brand 텍스트와 primary 테두리를 사용합니다.
 
 ---
 

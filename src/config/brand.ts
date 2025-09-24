@@ -583,6 +583,14 @@ export const uiText = {
           day: { ko: "일", en: "" }
         }
       },
+      documentDeleteModal: {
+        singleTitle: { ko: "문서를 삭제하시겠습니까?", en: "Delete document?" },
+        singleDescription: { ko: "선택한 문서는 삭제 후 복구할 수 없습니다.", en: "This document cannot be recovered after deletion." },
+        bulkTitle: { ko: "모든 문서를 삭제할까요?", en: "Delete all documents?" },
+        bulkDescription: { ko: "해당 범주의 문서를 모두 삭제하면 다시 가져올 수 없습니다.", en: "All documents in this category will be permanently removed." },
+        confirmLabel: { ko: "삭제", en: "Delete" },
+        cancelLabel: { ko: "취소", en: "Cancel" }
+      },
       // 프로젝트 상세 정보 섹션
       projectDetails: {
         title: { ko: "프로젝트 상세 정보", en: "Project Detail Information" },
@@ -1356,6 +1364,12 @@ export const getProjectPageText = {
   statusPending: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.status.pending[lang],
   statusInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.status.inProgress[lang],
   statusCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentsStatus.status.completed[lang],
+  deleteSingleTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentDeleteModal.singleTitle[lang],
+  deleteSingleDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentDeleteModal.singleDescription[lang],
+  deleteBulkTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentDeleteModal.bulkTitle[lang],
+  deleteBulkDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentDeleteModal.bulkDescription[lang],
+  deleteConfirmLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentDeleteModal.confirmLabel[lang],
+  deleteCancelLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.documentDeleteModal.cancelLabel[lang],
 
   // 프로젝트 상세 정보
   projectDetailsTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.title[lang],

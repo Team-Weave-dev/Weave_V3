@@ -8,6 +8,7 @@ import { Badge, type BadgeProps } from '@/components/ui/badge';
 import ProjectProgress from '@/components/ui/project-progress';
 import { getProjectPageText, getProjectStatusText } from '@/config/brand';
 import ProjectDocumentGeneratorModal from '@/components/projects/DocumentGeneratorModal';
+import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
@@ -117,6 +118,16 @@ export default function ProjectDetail({
     open: false,
     category: 'contract',
     targetSubTab: 'contract'
+  });
+  const [deleteDialogState, setDeleteDialogState] = useState<{
+    open: boolean;
+    mode: 'single' | 'bulk';
+    targetType: DocumentInfo['type'];
+    targetDoc?: DocumentInfo;
+  }>({
+    open: false,
+    mode: 'single',
+    targetType: 'contract'
   });
   const [previewDocument, setPreviewDocument] = useState<DocumentInfo | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -339,26 +350,44 @@ export default function ProjectDetail({
     openDocumentDialog(doc, true);
   };
 
-  const handleDeleteDocuments = (type: DocumentInfo['type']) => {
-    const targetDocs = documentsByType[type];
-    if (targetDocs.length === 0) {
+  const confirmDelete = () => {
+    const { mode, targetDoc, targetType } = deleteDialogState;
+
+    if (mode === 'single' && targetDoc) {
+      setDocuments((prev) => prev.filter((doc) => doc.id !== targetDoc.id));
+      toast({
+        title: '문서를 삭제했습니다',
+        description: `${targetDoc.name} 문서를 제거했습니다.`
+      });
+    } else {
+      const docs = documentsByType[targetType];
+      if (docs.length === 0) {
+        toast({
+          title: '삭제할 문서가 없습니다',
+          description: '현재 탭에는 삭제할 문서가 존재하지 않습니다.'
+        });
+      } else {
+        setDocuments((prev) => prev.filter((doc) => doc.type !== targetType));
+        toast({
+          title: '문서를 삭제했습니다',
+          description: '선택한 카테고리의 문서를 제거했습니다.'
+        });
+      }
+    }
+
+    setDeleteDialogState((prev) => ({ ...prev, open: false, targetDoc: undefined }));
+  };
+
+  const requestBulkDelete = (type: DocumentInfo['type']) => {
+    const existing = documentsByType[type];
+    if (existing.length === 0) {
       toast({
         title: '삭제할 문서가 없습니다',
         description: '현재 탭에는 삭제할 문서가 존재하지 않습니다.'
       });
       return;
     }
-
-    const confirmed = window.confirm('선택한 카테고리의 모든 문서를 삭제하시겠습니까?');
-    if (!confirmed) {
-      return;
-    }
-
-    setDocuments((prev) => prev.filter((doc) => doc.type !== type));
-    toast({
-      title: '문서가 삭제되었습니다',
-      description: '선택한 카테고리의 문서를 제거했습니다.'
-    });
+    setDeleteDialogState({ open: true, mode: 'bulk', targetType: type });
   };
 
   const renderDocumentSection = (
@@ -405,13 +434,14 @@ export default function ProjectDetail({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => {
-                  setDocuments((prev) => prev.filter((item) => item.id !== doc.id));
-                  toast({
-                    title: '문서를 삭제했습니다',
-                    description: `${doc.name} 문서를 제거했습니다.`
-                  });
-                }}
+                onClick={() =>
+                  setDeleteDialogState({
+                    open: true,
+                    mode: 'single',
+                    targetType: doc.type,
+                    targetDoc: doc
+                  })
+                }
               >
                 삭제
               </Button>
@@ -734,16 +764,16 @@ export default function ProjectDetail({
                             >
                               <FilePlus2Icon className="mr-2 h-4 w-4" /> 문서 생성
                             </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => handleDeleteDocuments(config.type)}
-                            disabled={documentsForTab.length === 0}
-                          >
-                            <Trash2Icon className="mr-2 h-4 w-4" /> 전체 삭제
-                          </Button>
-                        </div>
-                      </CardHeader>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => requestBulkDelete(config.type)}
+                              disabled={documentsForTab.length === 0}
+                            >
+                              <Trash2Icon className="mr-2 h-4 w-4" /> 전체 삭제
+                            </Button>
+                          </div>
+                        </CardHeader>
                         <CardContent>
                           {renderDocumentSection(
                             documentsForTab,
@@ -909,6 +939,20 @@ export default function ProjectDetail({
         project={project}
         onOpenChange={(open) => setGeneratorState((prev) => ({ ...prev, open }))}
         onGenerate={handleDocumentGenerated}
+      />
+
+      <DocumentDeleteDialog
+        open={deleteDialogState.open}
+        mode={deleteDialogState.mode}
+        targetName={deleteDialogState.mode === 'single' ? deleteDialogState.targetDoc?.name : undefined}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteDialogState((prev) => ({ ...prev, open: false, targetDoc: undefined }));
+          } else {
+            setDeleteDialogState((prev) => ({ ...prev, open: true }));
+          }
+        }}
+        onConfirm={confirmDelete}
       />
 
       <Dialog
