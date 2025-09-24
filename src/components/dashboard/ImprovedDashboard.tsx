@@ -42,6 +42,8 @@ interface ImprovedDashboardProps {
   initialWidgets?: ImprovedWidget[];
   callbacks?: WidgetCallbacks;
   className?: string;
+  hideToolbar?: boolean;
+  isCompactControlled?: boolean;
 }
 
 // 테스트 데이터
@@ -198,7 +200,9 @@ const mockTodoData = [
 export function ImprovedDashboard({
   initialWidgets = [],
   callbacks,
-  className
+  className,
+  hideToolbar = false,
+  isCompactControlled
 }: ImprovedDashboardProps) {
   // 스토어 구독
   const widgets = useImprovedDashboardStore(selectWidgets);
@@ -239,7 +243,7 @@ export function ImprovedDashboard({
   // 로컬 상태
   const containerRef = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState({ width: 120, height: 120 });
-  const [isCompact, setIsCompact] = useState(true);
+  const [isCompact, setIsCompact] = useState(isCompactControlled ?? true);
   
   // 초기화
   useEffect(() => {
@@ -421,10 +425,11 @@ export function ImprovedDashboard({
   
   // Compact 레이아웃 적용
   useEffect(() => {
-    if (isCompact && config.compactType) {
+    const compact = isCompactControlled ?? isCompact;
+    if (compact && config.compactType) {
       compactWidgets(config.compactType);
     }
-  }, [isCompact, config.compactType, compactWidgets]);
+  }, [isCompactControlled, isCompact, config.compactType, compactWidgets]);
   
   // 드래그 핸들러
   const handleDragStart = useCallback((e: React.MouseEvent, widget: ImprovedWidget) => {
@@ -516,7 +521,8 @@ export function ImprovedDashboard({
       }
       
       // 자동 정렬 옵션이 켜져 있으면 압축 실행
-      if (isCompact && config.compactType) {
+      const compact = isCompactControlled ?? isCompact;
+      if (compact && config.compactType) {
         compactWidgets(config.compactType);
       }
 
@@ -585,7 +591,8 @@ export function ImprovedDashboard({
       }
       
       // 자동 정렬 옵션이 켜져 있으면 압축 실행
-      if (isCompact && config.compactType) {
+      const compact = isCompactControlled ?? isCompact;
+      if (compact && config.compactType) {
         compactWidgets(config.compactType);
       }
 
@@ -698,10 +705,14 @@ export function ImprovedDashboard({
 
   return (
     <div className={cn("w-full", className)}>
-      {/* 툴바 */}
-      <div className="flex items-center justify-between py-4">
-        <div className="flex items-center gap-4">
+      {/* 툴바 - hideToolbar가 false이고 편집 모드일 때만 표시 */}
+      {!hideToolbar && isEditMode && (
+        <div className="flex items-center justify-between py-4">
           <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleAddWidget}>
+              <Plus className="h-4 w-4 mr-2" />
+              {getDashboardText.addWidget('ko')}
+            </Button>
             <Button
               size="sm"
               variant={isCompact ? "default" : "outline"}
@@ -719,38 +730,17 @@ export function ImprovedDashboard({
               {getDashboardText.manualAlign('ko')}
             </Button>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {isEditMode && (
-            <>
-              <Button size="sm" variant="outline" onClick={handleAddWidget}>
-                <Plus className="h-4 w-4 mr-2" />
-                {getDashboardText.addWidget('ko')}
-              </Button>
-              <div className="h-6 w-px bg-border mx-2" />
-            </>
-          )}
           
           <Button 
             size="sm"
-            variant={isEditMode ? "default" : "outline"}
-            onClick={() => isEditMode ? exitEditMode() : enterEditMode()}
+            variant="default"
+            onClick={exitEditMode}
           >
-            {isEditMode ? (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {getDashboardText.complete('ko')}
-              </>
-            ) : (
-              <>
-                <Settings className="h-4 w-4 mr-2" />
-                {getDashboardText.editMode('ko')}
-              </>
-            )}
+            <Save className="h-4 w-4 mr-2" />
+            {getDashboardText.complete('ko')}
           </Button>
         </div>
-      </div>
+      )}
       
       {/* 그리드 컨테이너 */}
       <div 
@@ -843,8 +833,8 @@ export function ImprovedDashboard({
                   )}
                   onClick={(e) => !isEditMode && callbacks?.onWidgetClick?.(widget, e.nativeEvent)}
                 >
-                  {/* 편집 모드 드래그 핸들 */}
-                  {isEditMode && !widget.static && widget.isDraggable !== false && widget.type !== 'todoList' && (
+                  {/* 편집 모드 드래그 핸들 - 모든 위젯에 동일하게 적용 */}
+                  {isEditMode && !widget.static && widget.isDraggable !== false && (
                     <div 
                       className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-gray-100/50 to-transparent dark:from-gray-800/50 cursor-move z-10"
                       onMouseDown={(e) => handleDragStart(e, widget)}
@@ -853,13 +843,6 @@ export function ImprovedDashboard({
                         <Grip className="h-4 w-4 text-gray-400" />
                       </div>
                     </div>
-                  )}
-                  {/* TodoList 위젯은 전체 헤더 영역을 드래그 핸들로 사용 */}
-                  {isEditMode && !widget.static && widget.isDraggable !== false && widget.type === 'todoList' && (
-                    <div 
-                      className="absolute top-0 left-0 right-0 h-12 cursor-move z-10"
-                      onMouseDown={(e) => handleDragStart(e, widget)}
-                    />
                   )}
                   {renderWidget(widget)}
                 </div>
