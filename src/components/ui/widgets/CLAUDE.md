@@ -290,6 +290,9 @@ export interface YourDataType {
 2. **TodoListWidget.tsx** - 복잡한 상호작용이 있는 위젯
 3. **CalendarWidget.tsx** - 툴바가 많은 위젯
 4. **ProjectSummaryWidget.tsx** - 탭과 상태 관리가 있는 위젯
+5. **ChartWidget.tsx** - 데이터 시각화 차트 위젯
+6. **QuickActionsWidget.tsx** - 간단한 액션 버튼 위젯
+7. **StatsWidget.tsx** - 통계 및 메트릭 표시 위젯
 
 ## 🚨 주의사항
 

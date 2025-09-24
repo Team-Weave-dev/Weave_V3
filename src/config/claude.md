@@ -8,8 +8,9 @@
 
 ```
 config/
-├── brand.ts       # 🏷️ 브랜드 정보, UI 텍스트, 다국어 지원
-└── constants.ts   # 📐 레이아웃 상수, 매직 넘버, 스타일 값
+├── brand.ts         # 🏷️ 브랜드 정보, UI 텍스트, 다국어 지원
+├── color-palette.ts # 🎨 색상 팔레트 시스템, 테마 색상 관리
+└── constants.ts     # 📐 레이아웃 상수, 매직 넘버, 스타일 값
 ```
 
 ## 🏷️ brand.ts - 브랜드 및 UI 텍스트 관리
@@ -139,6 +140,118 @@ import { layout, typography } from '@/config/constants'
     제목
   </h1>
 </div>
+```
+
+## 🎨 color-palette.ts - 색상 팔레트 및 테마 시스템
+
+### 주요 기능
+- **다중 팔레트**: 5가지 색상 테마 (soft, vivid, monochrome, highContrast, nature)
+- **시맨틱 색상**: 상태별 의미있는 색상 정의
+- **프로젝트 상태 색상**: 프로젝트 진행 상태별 전용 색상
+- **접근성 지원**: 고대비 모드 및 색각 이상자 배려
+- **CSS 변수 생성**: 동적 테마 변경을 위한 CSS 변수 자동 생성
+
+### 팔레트 타입 구조
+```typescript
+export type ColorPalette = {
+  name: string
+  description: string
+  colors: {
+    // 시맨틱 상태 색상
+    success: { hsl: string; foreground: string }
+    warning: { hsl: string; foreground: string }
+    error: { hsl: string; foreground: string }
+    info: { hsl: string; foreground: string }
+
+    // 프로젝트 상태 색상
+    projectReview: { hsl: string; foreground: string }
+    projectComplete: { hsl: string; foreground: string }
+    projectCancelled: { hsl: string; foreground: string }
+    projectPlanning: { hsl: string; foreground: string }
+    projectOnhold: { hsl: string; foreground: string }
+    projectInprogress: { hsl: string; foreground: string }
+  }
+}
+```
+
+### 사용 가능한 팔레트
+
+**1. Soft Palette (기본)**
+- 부드럽고 연한 파스텔 톤
+- 일반적인 사용자 환경에 적합
+- 눈의 피로도 최소화
+
+**2. Vivid Palette**
+- 선명하고 강렬한 색상
+- 시각적 임팩트가 중요한 경우
+- 디스플레이 품질이 우수한 환경
+
+**3. Monochrome Palette**
+- 흑백 계열의 미니멀한 색상
+- 전문적이고 깔끔한 인상
+- 색상 구분이 어려운 환경
+
+**4. High Contrast Palette**
+- WCAG 접근성 지침 최적화
+- 시각 장애 사용자 배려
+- 저조도 환경에서 가독성 향상
+
+**5. Nature Palette**
+- 자연에서 영감받은 편안한 색상
+- 장시간 사용 시 눈의 피로 감소
+- 친환경적 브랜드 이미지
+
+### 사용 예시
+```typescript
+import { getPalette, generateCSSVariables, defaultPalette } from '@/config/color-palette'
+
+// 기본 팔레트 사용
+const currentPalette = defaultPalette
+
+// 특정 팔레트 선택
+const vividTheme = getPalette('vivid')
+const accessibleTheme = getPalette('highContrast')
+
+// CSS 변수 생성 (동적 테마 변경)
+const cssVars = generateCSSVariables(currentPalette)
+
+// 컴포넌트에서 색상 사용
+const statusColor = currentPalette.colors.success.hsl
+const projectStatusColor = currentPalette.colors.projectComplete.hsl
+```
+
+### CSS 변수 활용
+```css
+/* 생성된 CSS 변수 활용 */
+.success-status {
+  background-color: hsl(var(--success));
+  color: hsl(var(--success-foreground));
+}
+
+.project-complete {
+  background-color: hsl(var(--project-complete));
+  color: hsl(var(--project-complete-foreground));
+}
+```
+
+### 팔레트 확장 가이드
+```typescript
+// 새로운 팔레트 추가
+export const customPalette: ColorPalette = {
+  name: 'custom',
+  description: '사용자 정의 색상 팔레트',
+  colors: {
+    // 모든 필수 색상 정의 필요
+    success: { hsl: '120 50% 50%', foreground: '0 0% 100%' },
+    // ... 기타 색상들
+  }
+}
+
+// colorPalettes 객체에 추가
+export const colorPalettes = {
+  // 기존 팔레트들...
+  custom: customPalette
+}
 ```
 
 ## 🚨 하드코딩 방지 규칙
