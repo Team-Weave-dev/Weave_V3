@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProjectReview } from '@/types/dashboard';
-import { uiText, getWidgetText } from '@/config/brand';
+import { getWidgetText } from '@/config/brand';
 import { typography } from '@/config/constants';
 
 interface ProjectSummaryWidgetProps {
@@ -39,8 +39,8 @@ export function ProjectSummaryWidget({
   onProjectClick,
   maxProjects = 3
 }: ProjectSummaryWidgetProps) {
-  const texts = uiText.projectWidget;
-  const displayTitle = title || texts.title[lang];
+  const widgetText = getWidgetText.projectSummary;
+  const displayTitle = title ?? widgetText.title(lang);
   
   // 상위 프로젝트만 표시 (우선순위: critical > warning > normal > completed)
   const sortedProjects = [...projects]
@@ -55,12 +55,12 @@ export function ProjectSummaryWidget({
       <Card className="h-full">
         <CardHeader>
           <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
-          <CardDescription>{getWidgetText.projectSummary.noProjects(lang)}</CardDescription>
+          <CardDescription>{widgetText.noProjects(lang)}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Activity className="h-12 w-12 mb-4 opacity-30" />
-            <p className={typography.text.small}>{getWidgetText.projectSummary.addProject(lang)}</p>
+            <p className={typography.text.small}>{widgetText.addProject(lang)}</p>
           </div>
         </CardContent>
       </Card>
@@ -75,11 +75,11 @@ export function ProjectSummaryWidget({
             {displayTitle}
           </CardTitle>
           <Badge variant="secondary" className={typography.widget.badge}>
-            {sortedProjects.length}{getWidgetText.projectSummary.projectsInProgress(lang)}
+            {sortedProjects.length}{widgetText.projectsInProgress(lang)}
           </Badge>
         </div>
         <CardDescription className={typography.text.description}>
-          {getWidgetText.projectSummary.viewProgress(lang)}
+          {widgetText.viewProgress(lang)}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-2">
