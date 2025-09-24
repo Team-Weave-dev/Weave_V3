@@ -377,7 +377,7 @@ export default function ListView({
 
                                 {/* 컬럼명 */}
                                 <span className="flex-1 text-sm font-medium">
-                                  {getProjectPageText[`column${column.id.charAt(0).toUpperCase() + column.id.slice(1).replace(/([A-Z])/g, '$1')}`]?.('ko') || column.label}
+                                  {column.label}
                                 </span>
                               </div>
                             )}

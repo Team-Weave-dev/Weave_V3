@@ -817,17 +817,17 @@ export default function ComponentsPage() {
                       <Tabs defaultValue="overview" className="space-y-2">
                         <TabsList>
                           <TabsTrigger value="overview">{getProjectPageText.tabOverview("ko")}</TabsTrigger>
-                          <TabsTrigger value="contract">{getProjectPageText.tabContract("ko")}</TabsTrigger>
-                          <TabsTrigger value="billing">{getProjectPageText.tabBilling("ko")}</TabsTrigger>
+                          <TabsTrigger value="documentManagement">{getProjectPageText.tabDocumentManagement("ko")}</TabsTrigger>
+                          <TabsTrigger value="taxManagement">{getProjectPageText.tabTaxManagement("ko")}</TabsTrigger>
                         </TabsList>
                         <TabsContent value="overview" className="text-sm text-muted-foreground">
                           {getProjectPageText.overviewDesc("ko")}
                         </TabsContent>
-                        <TabsContent value="contract" className="text-sm text-muted-foreground">
-                          {getProjectPageText.contractDesc("ko")}
+                        <TabsContent value="documentManagement" className="text-sm text-muted-foreground">
+                          {getProjectPageText.documentManagementDesc("ko")}
                         </TabsContent>
-                        <TabsContent value="billing" className="text-sm text-muted-foreground">
-                          {getProjectPageText.billingDesc("ko")}
+                        <TabsContent value="taxManagement" className="text-sm text-muted-foreground">
+                          {getProjectPageText.taxManagementDesc("ko")}
                         </TabsContent>
                       </Tabs>
                     </CardContent>

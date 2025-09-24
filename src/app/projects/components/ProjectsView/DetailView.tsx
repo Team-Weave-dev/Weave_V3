@@ -7,6 +7,7 @@ import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.t
 import { getProjectPageText, getProjectStatusText } from '@/config/brand';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ProjectProgress from '@/components/ui/project-progress';
 import Pagination from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,10 @@ export default function DetailView({
 
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
+
+  // 삭제 모달 상태
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const lang = 'ko';
 
   // 필터링된 프로젝트 목록
   const filteredProjects = useMemo(() => {
@@ -137,6 +142,27 @@ export default function DetailView({
     setStatusFilter('all');
     setClientFilter('all');
     setCurrentPage(1);
+  };
+
+  const handleEditProject = (projectId?: string) => {
+    // TODO: Implement edit functionality
+    const projectToEdit = projectId || selectedProjectId;
+    console.log('Edit project:', projectToEdit);
+  };
+
+  const handleDeleteProject = (projectId?: string) => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    // TODO: Implement actual delete functionality
+    const projectToDelete = selectedProjectId;
+    console.log('Deleting project:', projectToDelete);
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
   };
 
   if (loading) {
@@ -384,6 +410,8 @@ export default function DetailView({
           <ProjectDetail
             project={selectedProject}
             mode="compact"
+            onEdit={() => handleEditProject(selectedProject.id)}
+            onDelete={() => handleDeleteProject(selectedProject.id)}
           />
         ) : (
           <Card className="h-[calc(100vh-200px)]">
@@ -396,6 +424,25 @@ export default function DetailView({
         )}
       </div>
       </div>
+
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{getProjectPageText.deleteModalTitle(lang)}</DialogTitle>
+            <DialogDescription>
+              {getProjectPageText.deleteModalMessage(lang)}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelDelete}>
+              {getProjectPageText.deleteModalCancel(lang)}
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              {getProjectPageText.deleteModalConfirm(lang)}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

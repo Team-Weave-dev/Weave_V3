@@ -508,16 +508,48 @@ export const uiText = {
         progress: { ko: "진행률", en: "Progress" }
       },
       tabs: {
+        // 메인 탭
         overview: { ko: "개요", en: "Overview" },
-        contract: { ko: "계약서", en: "Contract" },
-        billing: { ko: "청구/정산", en: "Billing" },
-        documents: { ko: "문서", en: "Documents" }
+        documentManagement: { ko: "문서관리", en: "Document Management" },
+        taxManagement: { ko: "세무관리", en: "Tax Management" },
+
+        // 문서관리 서브탭
+        documentSubs: {
+          contract: { ko: "계약서", en: "Contract" },
+          invoice: { ko: "청구서", en: "Invoice" },
+          report: { ko: "보고서", en: "Report" },
+          estimate: { ko: "견적서", en: "Estimate" },
+          others: { ko: "기타문서", en: "Other Documents" }
+        },
+
+        // 세무관리 서브탭
+        taxSubs: {
+          taxInvoice: { ko: "세금계산서", en: "Tax Invoice" },
+          withholding: { ko: "원천세", en: "Withholding Tax" },
+          vat: { ko: "부가세", en: "VAT" },
+          cashReceipt: { ko: "현금영수증", en: "Cash Receipt" },
+          cardReceipt: { ko: "카드영수증", en: "Card Receipt" }
+        }
       },
       descriptions: {
+        // 메인 탭 설명
         overviewDesc: { ko: "프로젝트의 전체적인 현황과 주요 정보를 확인할 수 있습니다", en: "View overall project status and key information" },
+        documentManagementDesc: { ko: "프로젝트와 관련된 모든 문서를 관리할 수 있습니다", en: "Manage all project-related documents" },
+        taxManagementDesc: { ko: "프로젝트의 세무 관련 문서와 정보를 관리할 수 있습니다", en: "Manage tax-related documents and information" },
+
+        // 문서관리 서브탭 설명
         contractDesc: { ko: "프로젝트 계약서 정보를 확인할 수 있습니다", en: "View project contract information" },
-        billingDesc: { ko: "청구 및 정산 정보를 확인할 수 있습니다", en: "View billing and settlement information" },
-        documentsDesc: { ko: "프로젝트 관련 문서를 확인할 수 있습니다", en: "View project-related documents" }
+        invoiceDesc: { ko: "청구서 및 정산 정보를 확인할 수 있습니다", en: "View invoice and settlement information" },
+        reportDesc: { ko: "프로젝트 진행 보고서를 확인할 수 있습니다", en: "View project progress reports" },
+        estimateDesc: { ko: "프로젝트 견적서 정보를 확인할 수 있습니다", en: "View project estimate information" },
+        othersDesc: { ko: "기타 프로젝트 관련 문서를 확인할 수 있습니다", en: "View other project-related documents" },
+
+        // 세무관리 서브탭 설명
+        taxInvoiceDesc: { ko: "세금계산서 정보를 확인할 수 있습니다", en: "View tax invoice information" },
+        withholdingDesc: { ko: "원천세 관련 정보를 확인할 수 있습니다", en: "View withholding tax information" },
+        vatDesc: { ko: "부가가치세 관련 정보를 확인할 수 있습니다", en: "View VAT-related information" },
+        cashReceiptDesc: { ko: "현금영수증 정보를 확인할 수 있습니다", en: "View cash receipt information" },
+        cardReceiptDesc: { ko: "카드영수증 정보를 확인할 수 있습니다", en: "View card receipt information" }
       },
       labels: {
         projectStatus: { ko: "프로젝트 상태", en: "Project Status" },
@@ -542,6 +574,12 @@ export const uiText = {
       actions: {
         edit: { ko: "편집", en: "Edit" },
         close: { ko: "닫기", en: "Close" }
+      },
+      deleteModal: {
+        title: { ko: "프로젝트 삭제 확인", en: "Confirm Project Deletion" },
+        message: { ko: "이 프로젝트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.", en: "Are you sure you want to delete this project? This action cannot be undone." },
+        confirm: { ko: "삭제", en: "Delete" },
+        cancel: { ko: "취소", en: "Cancel" }
       }
     },
     // 색상 팔레트 시스템
@@ -1205,17 +1243,43 @@ export const getProjectPageText = {
   moreDetails: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.moreDetails[lang],
   progress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.detail.progress[lang],
 
-  // Tabs
+  // Main Tabs
   tabOverview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.overview[lang],
-  tabContract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.contract[lang],
-  tabBilling: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.billing[lang],
-  tabDocuments: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documents[lang],
+  tabDocumentManagement: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentManagement[lang],
+  tabTaxManagement: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxManagement[lang],
 
-  // Descriptions
+  // Document Management Sub Tabs
+  tabContract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.contract[lang],
+  tabInvoice: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.invoice[lang],
+  tabReport: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.report[lang],
+  tabEstimate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.estimate[lang],
+  tabOthers: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.documentSubs.others[lang],
+
+  // Tax Management Sub Tabs
+  tabTaxInvoice: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.taxInvoice[lang],
+  tabWithholding: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.withholding[lang],
+  tabVat: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.vat[lang],
+  tabCashReceipt: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.cashReceipt[lang],
+  tabCardReceipt: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.tabs.taxSubs.cardReceipt[lang],
+
+  // Main Tab Descriptions
   overviewDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.overviewDesc[lang],
+  documentManagementDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.documentManagementDesc[lang],
+  taxManagementDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.taxManagementDesc[lang],
+
+  // Document Management Sub Tab Descriptions
   contractDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.contractDesc[lang],
-  billingDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.billingDesc[lang],
-  documentsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.documentsDesc[lang],
+  invoiceDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.invoiceDesc[lang],
+  reportDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.reportDesc[lang],
+  estimateDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.estimateDesc[lang],
+  othersDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.othersDesc[lang],
+
+  // Tax Management Sub Tab Descriptions
+  taxInvoiceDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.taxInvoiceDesc[lang],
+  withholdingDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.withholdingDesc[lang],
+  vatDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.vatDesc[lang],
+  cashReceiptDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.cashReceiptDesc[lang],
+  cardReceiptDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.descriptions.cardReceiptDesc[lang],
 
   // Labels
   projectStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.projectStatus[lang],
@@ -1239,7 +1303,13 @@ export const getProjectPageText = {
 
   // Actions
   edit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.edit[lang],
-  close: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.close[lang]
+  close: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.close[lang],
+
+  // Delete Modal
+  deleteModalTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.title[lang],
+  deleteModalMessage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.message[lang],
+  deleteModalConfirm: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.confirm[lang],
+  deleteModalCancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.cancel[lang]
 }
 
 // 프로젝트 상태 텍스트 헬퍼 함수
