@@ -194,8 +194,9 @@ export function KPIWidget({
   lang = 'ko',
   variant = 'detailed',
   periodType = 'monthly',
-  onPeriodChange
-}: KPIWidgetProps) {
+  onPeriodChange,
+  defaultSize = { w: 5, h: 2 }
+}: KPIWidgetProps & { defaultSize?: { w: number; h: number } }) {
   const displayTitle = title || getWidgetText.kpiMetrics.title(lang);
   const [currentPeriod, setCurrentPeriod] = useState<'monthly' | 'yearly'>(periodType);
   

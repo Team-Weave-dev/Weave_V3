@@ -38,6 +38,7 @@ import { CalendarWidget } from '@/components/ui/widgets/CalendarWidget';
 import { TaxDeadlineWidget } from '@/components/ui/widgets/TaxDeadlineWidget';
 import { KPIWidget } from '@/components/ui/widgets/KPIWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
+import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults';
 
 interface ImprovedDashboardProps {
   initialWidgets?: ImprovedWidget[];
@@ -252,15 +253,39 @@ export function ImprovedDashboard({
     if (widgets.length > 0) return;
     
     if (initialWidgets.length > 0) {
-      // 시작 레이아웃: 타입별 1개만 유지하고 기본 포지션에 배치
+      // 시작 레이아웃: 9x8 그리드 기준으로 위치 설정
       const defaultPos: Record<ImprovedWidget['type'], GridPosition> = {
-        // 9x9 그리드 기준 배치
-        projectSummary: { x: 0, y: 0, w: 5, h: 3 },
-        todoList: { x: 5, y: 0, w: 4, h: 3 },
-        calendar: { x: 0, y: 3, w: 5, h: 3 },
-        taxDeadline: { x: 5, y: 3, w: 4, h: 3 },
-        kpiMetrics: { x: 0, y: 6, w: 9, h: 2 },
-        custom: { x: 0, y: 8, w: 9, h: 1 },
+        // 9x8 그리드 기준 배치
+        calendar: { 
+          x: 0, y: 0, 
+          w: 5, 
+          h: 4 
+        }, // 캘린더 (왼쪽 상단, 5x4)
+        projectSummary: { 
+          x: 5, y: 0, 
+          w: 4, 
+          h: 4 
+        }, // 프로젝트 현황 (오른쪽 상단, 4x4)
+        kpiMetrics: { 
+          x: 0, y: 4, 
+          w: 5, 
+          h: 2 
+        }, // 핵심 성과 지표 (왼쪽 중단, 5x2)
+        taxDeadline: { 
+          x: 0, y: 6, 
+          w: 5, 
+          h: 2 
+        }, // 세무 일정 (왼쪽 하단, 5x2)
+        todoList: { 
+          x: 5, y: 4, 
+          w: 4, 
+          h: 4 
+        }, // 할 일 목록 (오른쪽 하단, 4x4)
+        custom: { 
+          x: 0, y: 8, 
+          w: 2, 
+          h: 2 
+        }, // 커스텀 (예비 공간, 2x2)
       };
       const seen = new Set<ImprovedWidget['type']>();
       const selected: ImprovedWidget[] = [];
@@ -335,53 +360,73 @@ export function ImprovedDashboard({
 
       selected.forEach((w) => addWidget(w));
     } else {
-      // 테스트 위젯 생성
+      // 테스트 위젯 생성 - 기본 크기 사용
       const testWidgets: ImprovedWidget[] = [
+        {
+          id: 'widget_calendar_1',
+          type: 'calendar',
+          title: '캘린더',
+          position: { 
+            x: 0, y: 0, 
+            w: getDefaultWidgetSize('calendar').width,
+            h: getDefaultWidgetSize('calendar').height
+          },
+          data: mockCalendarEvents,
+          minW: getDefaultWidgetSize('calendar').minWidth || 2,
+          minH: getDefaultWidgetSize('calendar').minHeight || 2,
+          maxW: getDefaultWidgetSize('calendar').maxWidth || 6,
+          maxH: getDefaultWidgetSize('calendar').maxHeight || 6,
+        },
         {
           id: 'widget_project_1',
           type: 'projectSummary',
           title: '프로젝트 현황',
-          position: { x: 0, y: 0, w: 5, h: 3 },
+          position: { 
+            x: 3, y: 0, 
+            w: getDefaultWidgetSize('projectSummary').width,
+            h: getDefaultWidgetSize('projectSummary').height
+          },
           data: mockProjects,
-          minW: 3,
-          minH: 2,
-        },
-        {
-          id: 'widget_todo_1',
-          type: 'todoList',
-          title: '할 일 목록',
-          position: { x: 5, y: 0, w: 4, h: 3 },
-          data: mockTodoData,
-          minW: 2,
-          minH: 2,
-          maxW: 5,
+          minW: getDefaultWidgetSize('projectSummary').minWidth || 2,
+          minH: getDefaultWidgetSize('projectSummary').minHeight || 2,
         },
         {
           id: 'widget_kpi_1',
           type: 'kpiMetrics',
           title: '핵심 성과 지표',
-          position: { x: 0, y: 3, w: 5, h: 2 },
-          minW: 4,
-          minH: 2,
+          position: { 
+            x: 5, y: 0, 
+            w: getDefaultWidgetSize('kpi').width,
+            h: getDefaultWidgetSize('kpi').height
+          },
+          minW: getDefaultWidgetSize('kpi').minWidth || 1,
+          minH: getDefaultWidgetSize('kpi').minHeight || 2,
         },
         {
           id: 'widget_tax_1',
           type: 'taxDeadline',
           title: '세무 일정',
-          position: { x: 5, y: 3, w: 4, h: 2 },
-          minW: 2,
-          minH: 2,
+          position: { 
+            x: 6, y: 0, 
+            w: getDefaultWidgetSize('taxDeadline').width,
+            h: getDefaultWidgetSize('taxDeadline').height
+          },
+          minW: getDefaultWidgetSize('taxDeadline').minWidth || 1,
+          minH: getDefaultWidgetSize('taxDeadline').minHeight || 2,
         },
         {
-          id: 'widget_calendar_1',
-          type: 'calendar',
-          title: '캘린더',
-          position: { x: 0, y: 5, w: 5, h: 3 },
-          data: mockCalendarEvents,
-          minW: 3,
-          minH: 2,
-          maxW: 6,
-          maxH: 4,
+          id: 'widget_todo_1',
+          type: 'todoList',
+          title: '할 일 목록',
+          position: { 
+            x: 7, y: 0, 
+            w: getDefaultWidgetSize('todoList').width,
+            h: getDefaultWidgetSize('todoList').height
+          },
+          data: mockTodoData,
+          minW: getDefaultWidgetSize('todoList').minWidth || 2,
+          minH: getDefaultWidgetSize('todoList').minHeight || 2,
+          maxW: getDefaultWidgetSize('todoList').maxWidth || 4,
         },
       ];
       testWidgets.forEach((w) => addWidget(w));
@@ -631,7 +676,8 @@ export function ImprovedDashboard({
   
   // 위젯 추가
   const handleAddWidget = useCallback(() => {
-    const emptySpace = findSpaceForWidget(2, 2);
+    const defaultSize = getDefaultWidgetSize('custom');
+    const emptySpace = findSpaceForWidget(defaultSize.width, defaultSize.height);
     if (!emptySpace) {
       alert('위젯을 추가할 공간이 없습니다.');
       return;
@@ -642,8 +688,8 @@ export function ImprovedDashboard({
       type: 'custom',
       title: '새 위젯',
       position: emptySpace,
-      minW: 2,
-      minH: 2,
+      minW: defaultSize.minWidth || 2,
+      minH: defaultSize.minHeight || 2,
     };
     
     addWidget(newWidget);
@@ -655,7 +701,7 @@ export function ImprovedDashboard({
       case 'projectSummary':
         return <ProjectSummaryWidget 
           title={widget.title} 
-          projects={widget.data || []}
+          projects={widget.data || mockProjects}
           lang="ko"
         />;
       case 'todoList':
@@ -773,7 +819,8 @@ export function ImprovedDashboard({
         ref={containerRef}
         className="relative"
         style={{ 
-          minHeight: '600px',
+          // maxRows(9) * (rowHeight(120) + gap(16)) = 9 * 136 = 1224px
+          minHeight: `${(config.maxRows || 9) * (config.rowHeight + config.gap)}px`,
           background: isEditMode 
             ? `repeating-linear-gradient(
                 0deg,

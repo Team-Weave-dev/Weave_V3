@@ -222,7 +222,7 @@ const calculateDday = (deadlineDay: number, deadlineMonth?: number) => {
   return diffDays;
 };
 
-const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps> = ({
+const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: number; h: number } }> = ({
   title = '세무 일정',
   selectedMonth,
   showOnlyUpcoming = true,
@@ -232,7 +232,8 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps> = ({
   highlightDays = 7,
   onDeadlineClick,
   onMonthChange,
-  lang = 'ko'
+  lang = 'ko',
+  defaultSize = { w: 5, h: 2 }
 }) => {
   const displayTitle = title || getWidgetText.taxDeadline.title('ko');
   const [currentSelectedMonth, setCurrentSelectedMonth] = useState<number | undefined>(selectedMonth);

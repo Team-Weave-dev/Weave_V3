@@ -8,14 +8,11 @@ import { Grid3x3, Settings, Plus, Save, Undo2, Redo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Widget, DashboardLayout } from '@/types/dashboard';
 
-// 빈 위젯 배열 (이전에 사용하던 위젯들이 삭제됨)
-const defaultWidgets: Widget[] = [];
-
 interface DashboardContainerProps {
   initialWidgets?: Widget[];
 }
 
-export function DashboardContainer({ initialWidgets = defaultWidgets }: DashboardContainerProps) {
+export function DashboardContainer({ initialWidgets = [] }: DashboardContainerProps) {
   const [widgets, setWidgets] = useState<Widget[]>(initialWidgets);
   const [isEditMode, setIsEditMode] = useState(false);
   const [columns, setColumns] = useState(5);

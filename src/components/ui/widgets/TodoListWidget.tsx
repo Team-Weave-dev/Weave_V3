@@ -37,8 +37,9 @@ export function TodoListWidget({
   onTaskAdd,
   onTaskToggle,
   onTaskDelete,
-  onTaskUpdate
-}: TodoListWidgetProps) {
+  onTaskUpdate,
+  defaultSize = { w: 4, h: 4 }
+}: TodoListWidgetProps & { defaultSize?: { w: number; h: number } }) {
   const displayTitle = title || getWidgetText.todoList.title('ko');
   const [localTasks, setLocalTasks] = useState<TodoTask[]>(tasks);
   const [sections, setSections] = useState<TodoSection[]>([

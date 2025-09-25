@@ -16,6 +16,15 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [isCompact, setIsCompact] = useState(true)
   
+  // 초기 위젯 설정 (9x8 그리드 기준)
+  const initialWidgets = [
+    { id: 'widget_calendar_1', type: 'calendar' as const, title: '캘린더' },
+    { id: 'widget_project_1', type: 'projectSummary' as const, title: '프로젝트 현황' },
+    { id: 'widget_kpi_1', type: 'kpiMetrics' as const, title: '핵심 성과 지표' },
+    { id: 'widget_tax_1', type: 'taxDeadline' as const, title: '세무 일정' },
+    { id: 'widget_todo_1', type: 'todoList' as const, title: '할 일 목록' },
+  ]
+  
   const isEditMode = useImprovedDashboardStore(selectIsEditMode)
   const enterEditMode = useImprovedDashboardStore(state => state.enterEditMode)
   const exitEditMode = useImprovedDashboardStore(state => state.exitEditMode)
@@ -139,7 +148,57 @@ export default function DashboardPage() {
       </div>
       
       {/* 대시보드 위젯 */}
-      <ImprovedDashboard isCompactControlled={isCompact} hideToolbar />
+      <ImprovedDashboard 
+        isCompactControlled={isCompact} 
+        hideToolbar 
+        initialWidgets={[
+          {
+            id: 'calendar_widget_1',
+            type: 'calendar' as const,
+            title: '캘린더',
+            position: { x: 0, y: 0, w: 5, h: 4 },
+            minW: 2,
+            minH: 2,
+            data: [],  // 초기 데이터는 컴포넌트 내부에서 설정됨
+          },
+          {
+            id: 'project_summary_widget_1',
+            type: 'projectSummary' as const,
+            title: '프로젝트 현황',
+            position: { x: 5, y: 0, w: 4, h: 4 },
+            minW: 2,
+            minH: 2,
+            data: [],  // 초기 데이터는 컴포넌트 내부에서 설정됨
+          },
+          {
+            id: 'kpi_metrics_widget_1',
+            type: 'kpiMetrics' as const,
+            title: '핵심 성과 지표',
+            position: { x: 0, y: 4, w: 5, h: 2 },
+            minW: 2,
+            minH: 2,
+            data: undefined,  // KPI는 데이터 없이도 작동
+          },
+          {
+            id: 'tax_deadline_widget_1',
+            type: 'taxDeadline' as const,
+            title: '세무 일정',
+            position: { x: 0, y: 6, w: 5, h: 2 },
+            minW: 2,
+            minH: 2,
+            data: undefined,  // 세무 일정은 내부 데이터 사용
+          },
+          {
+            id: 'todo_list_widget_1',
+            type: 'todoList' as const,
+            title: '할 일 목록',
+            position: { x: 5, y: 4, w: 4, h: 4 },
+            minW: 2,
+            minH: 2,
+            data: [],  // 초기 데이터는 컴포넌트 내부에서 설정됨
+          },
+        ]}
+      />
     </div>
   )
 }

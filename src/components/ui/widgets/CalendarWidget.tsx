@@ -407,7 +407,8 @@ const MonthView = ({
   selectedDate,
   containerHeight,
   containerWidth,
-  gridSize
+  gridSize,
+  defaultSize = { w: 5, h: 4 }
 }: { 
   currentDate: Date;
   events: CalendarEvent[];
@@ -417,12 +418,16 @@ const MonthView = ({
   containerHeight: number;
   containerWidth?: number;
   gridSize?: { w: number; h: number };
+  defaultSize?: { w: number; h: number };
 }) => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { locale: ko });
   const calendarEnd = endOfWeek(monthEnd, { locale: ko });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  
+  // 그리드 크기가 없으면 기본값 사용
+  const effectiveGridSize = gridSize || defaultSize;
   
   // 요일 배열
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
@@ -432,6 +437,7 @@ const MonthView = ({
   for (let i = 0; i < calendarDays.length; i += 7) {
     weeks.push(calendarDays.slice(i, i + 7));
   }
+  
   
   // 동적 높이 계산 - 반응형 (더 정밀한 계산)
   const headerHeight = 24; // 헤더 높이 축소
@@ -443,29 +449,29 @@ const MonthView = ({
   // 개선된 반응형 표시 모드 결정 - 점 모드 제거, 최소 2열 지원
   const getDisplayMode = () => {
     // 1. 컨테이너 실제 너비 기반 우선 판단
-    const actualWidth = containerWidth || (containerHeight * (gridSize?.w || 4) / (gridSize?.h || 3));
+    const actualWidth = containerWidth || (containerHeight * (effectiveGridSize.w || 4) / (effectiveGridSize.h || 3));
     const estimatedCellWidth = actualWidth / 7; // 7일 기준
     
     // 2. 그리드 크기와 픽셀 크기를 종합적으로 고려
-    if (gridSize) {
+    if (effectiveGridSize) {
       // 작은 그리드 (2열) - 최소 크기
-      if (gridSize.w === 2) {
+      if (effectiveGridSize.w === 2) {
         // 높이에 따라 compact 또는 bar 모드
-        if (cellHeight < 55 || gridSize.h <= 2) return 'compact';
+        if (cellHeight < 55 || effectiveGridSize.h <= 2) return 'compact';
         if (cellHeight < 70 || estimatedCellWidth < 70) return 'bar';
         return 'full';
       }
       
       // 중간 그리드 (3열)
-      if (gridSize.w === 3) {
+      if (effectiveGridSize.w === 3) {
         // 셀 높이에 따라 세밀하게 조정
-        if (cellHeight < 50 || gridSize.h <= 2) return 'compact';
+        if (cellHeight < 50 || effectiveGridSize.h <= 2) return 'compact';
         if (cellHeight < 75) return 'bar';
         return 'full';
       }
       
       // 큰 그리드 (4열 이상)
-      if (gridSize.w >= 4) {
+      if (effectiveGridSize.w >= 4) {
         // 충분한 공간이 있을 때만 full 모드
         if (cellHeight < 55) return 'compact';
         if (cellHeight < 70) return 'bar';
@@ -484,12 +490,12 @@ const MonthView = ({
   // 디버깅용 (개발 환경에서만)
   if (process.env.NODE_ENV === 'development') {
     console.log('Calendar responsive debug:', {
-      gridSize,
+      gridSize: effectiveGridSize,
       cellHeight,
       containerWidth,
       containerHeight,
       displayMode,
-      actualWidth: containerWidth || (containerHeight * (gridSize?.w || 4) / (gridSize?.h || 3))
+      actualWidth: containerWidth || (containerHeight * (effectiveGridSize.w || 4) / (effectiveGridSize.h || 3))
     });
   }
   
@@ -767,8 +773,11 @@ export function CalendarWidget({
   showToday = true,
   view = 'month',
   lang = 'ko',
-  gridSize
-}: CalendarWidgetProps & { gridSize?: { w: number; h: number } }) {
+  gridSize,
+  defaultSize = { w: 5, h: 4 }
+}: CalendarWidgetProps & { gridSize?: { w: number; h: number }; defaultSize?: { w: number; h: number } }) {
+  // 그리드 크기가 없으면 기본값 사용
+  const effectiveGridSize = gridSize || defaultSize;
   const displayTitle = title || getWidgetText.calendar.title('ko');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate || new Date());
   const [currentView, setCurrentView] = useState(view);
@@ -1071,7 +1080,7 @@ export function CalendarWidget({
                   selectedDate={selectedDate}
                   containerHeight={containerSize.height}
                   containerWidth={containerSize.width}
-                  gridSize={gridSize}
+                  gridSize={effectiveGridSize}
                 />
               )}
               

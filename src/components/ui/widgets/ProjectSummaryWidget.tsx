@@ -37,8 +37,9 @@ export function ProjectSummaryWidget({
   title,
   lang = 'ko',
   onProjectClick,
-  maxProjects = 3
-}: ProjectSummaryWidgetProps) {
+  maxProjects = 3,
+  defaultSize = { w: 4, h: 4 }
+}: ProjectSummaryWidgetProps & { defaultSize?: { w: number; h: number } }) {
   const widgetText = getWidgetText.projectSummary;
   const displayTitle = title ?? widgetText.title(lang);
   
