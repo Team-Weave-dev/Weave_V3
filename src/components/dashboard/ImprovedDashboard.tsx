@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// Animation removed - framer-motion no longer needed
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -1022,9 +1022,8 @@ export function ImprovedDashboard({
             : undefined,
         }}
       >
-        <AnimatePresence>
-          {widgets.map((widget) => (
-            <motion.div
+        {widgets.map((widget) => (
+            <div
               key={widget.id}
               className={cn(
                 "absolute",
@@ -1042,40 +1041,30 @@ export function ImprovedDashboard({
                 widget.static && "opacity-80"
               )}
               style={getWidgetStyle(widget)}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1,
-              }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
             >
               <div className="relative h-full overflow-hidden">
                 {/* 편집 컨트롤 */}
                 {isEditMode && !widget.static && (
                   <div className="absolute -inset-2 z-30 pointer-events-none">
                     {/* 삭제 버튼 */}
-                    <motion.button
-                      className="absolute -top-2 -left-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg pointer-events-auto hover:bg-red-600 z-20"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                    <button
+                      className="absolute -top-2 -left-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg pointer-events-auto hover:bg-red-600 hover:scale-110 active:scale-90 transition-transform z-20"
                       onClick={() => {
                         removeWidget(widget.id);
                         callbacks?.onWidgetRemove?.(widget.id);
                       }}
                     >
                       <X className="h-4 w-4" />
-                    </motion.button>
+                    </button>
                     
                     {/* 크기 조절 핸들 */}
                     {(widget.isResizable !== false) && (
-                      <motion.button
-                        className="absolute -bottom-2 -right-2 w-7 h-7 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg pointer-events-auto cursor-se-resize hover:bg-primary/90 z-20"
-                        whileHover={{ scale: 1.1 }}
+                      <button
+                        className="absolute -bottom-2 -right-2 w-7 h-7 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg pointer-events-auto cursor-se-resize hover:bg-primary/90 hover:scale-110 transition-transform z-20"
                         onMouseDown={(e) => handleResizeStart(e, widget)}
                       >
                         <Maximize2 className="h-3 w-3" />
-                      </motion.button>
+                      </button>
                     )}
                   </div>
                 )}
@@ -1110,9 +1099,8 @@ export function ImprovedDashboard({
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
           ))}
-        </AnimatePresence>
         
         {/* 드래그 플레이스홀더 */}
         {editState.hoveredPosition && !editState.dragOverWidgetId && (
