@@ -126,7 +126,7 @@ export default function TaxManagementPage() {
       </Card>
 
       {/* 특징 카드들 */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 mt-6">
         <Card>
           <CardHeader>
             <CardTitle className={typography.title.subsection}>{getTaxManagementText.features.partnership.title('ko')}</CardTitle>
