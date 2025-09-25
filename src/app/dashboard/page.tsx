@@ -7,7 +7,8 @@ import { ImprovedDashboard } from '@/components/dashboard/ImprovedDashboard'
 import { layout, typography } from '@/config/constants'
 import { getDashboardText } from '@/config/brand'
 import { Button } from '@/components/ui/button'
-import { Settings, Save, Plus, Layers, Grid3x3 } from 'lucide-react'
+import Typography from '@/components/ui/typography'
+import { Settings, Save, Plus, Layers, Grid3x3, LayoutDashboard } from 'lucide-react'
 import { useImprovedDashboardStore, selectIsEditMode } from '@/lib/stores/useImprovedDashboardStore'
 
 export default function DashboardPage() {
@@ -91,16 +92,24 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={`max-w-[1300px] mx-auto ${layout.spacing.page.paddingX} ${layout.spacing.page.paddingY} ${layout.spacing.page.contentGap}`}>
+    <div className="container mx-auto p-6">
       {/* 헤더 */}
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h1 className={typography.title.page}>{getDashboardText.title('ko')}</h1>
-          <p className={typography.text.subtitle}>
-            {getDashboardText.subtitle('ko')}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
+              <LayoutDashboard className="w-6 h-6 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Typography variant="h2" className="text-2xl text-foreground mb-1">
+                {getDashboardText.title('ko')}
+              </Typography>
+              <Typography variant="body1" className="text-muted-foreground">
+                {getDashboardText.subtitle('ko')}
+              </Typography>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
           {!isEditMode ? (
             <Button
               size="sm"
@@ -144,6 +153,7 @@ export default function DashboardPage() {
               </Button>
             </>
           )}
+          </div>
         </div>
       </div>
       

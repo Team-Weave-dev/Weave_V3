@@ -1,20 +1,30 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import Typography from '@/components/ui/typography'
 import { getTaxManagementText } from '@/config/brand'
 import { layout, typography } from '@/config/constants'
 import { FileText, Calculator, Building2, Clock } from 'lucide-react'
 
 export default function TaxManagementPage() {
   return (
-    <div className={`max-w-[1300px] mx-auto ${layout.spacing.page.paddingX} ${layout.spacing.page.paddingY} ${layout.spacing.page.contentGap}`}>
+    <div className="container mx-auto p-6">
       {/* 헤더 */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className={typography.title.page}>{getTaxManagementText.title('ko')}</h1>
-          <p className={typography.text.subtitle}>
-            {getTaxManagementText.subtitle('ko')}
-          </p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
+              <Calculator className="w-6 h-6 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Typography variant="h2" className="text-2xl text-foreground mb-1">
+                {getTaxManagementText.title('ko')}
+              </Typography>
+              <Typography variant="body1" className="text-muted-foreground">
+                {getTaxManagementText.subtitle('ko')}
+              </Typography>
+            </div>
+          </div>
         </div>
       </div>
 
