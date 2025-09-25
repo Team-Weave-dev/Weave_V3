@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, ChevronDown, ChevronUp, RotateCcw, AlertCircleIcon } from 'lucide-react';
+import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
+import { getViewModeText } from '@/config/brand';
 import { layout } from '@/config/constants';
 import { removeCustomProject, updateCustomProject } from '@/lib/mock/projects';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +49,8 @@ interface DetailViewProps {
   loading?: boolean;
   showColumnSettings?: boolean; // 컬럼 설정 버튼 표시 여부
   onProjectsChange?: () => void; // 프로젝트 목록 변경 시 호출되는 콜백
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 /**
@@ -66,7 +70,9 @@ export default function DetailView({
   selectedProjectId: initialSelectedId,
   loading = false,
   showColumnSettings = false, // 기본값은 false (DetailView에서는 숨김)
-  onProjectsChange
+  onProjectsChange,
+  viewMode,
+  onViewModeChange
 }: DetailViewProps) {
   const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
@@ -522,10 +528,19 @@ export default function DetailView({
       {/* Filter Bar */}
       <div className="mb-6 p-4 bg-background rounded-lg border">
         <div className="flex items-center gap-4">
+          <SimpleViewModeSwitch
+            mode={viewMode}
+            onModeChange={onViewModeChange}
+            labels={{
+              list: getViewModeText.listView('ko'),
+              detail: getViewModeText.detailView('ko')
+            }}
+            ariaLabel={getViewModeText.title('ko')}
+          />
           <Input
             type="text"
             placeholder={getProjectPageText.searchPlaceholder('ko')}
-            className="flex-1"
+            className="flex-1 min-w-64"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -533,7 +548,7 @@ export default function DetailView({
             }}
           />
 
-          <div className={`flex items-center ${layout.page.header.actions}`}>
+          <div className={`flex items-center ${layout.page.header.actions} flex-shrink-0`}>
             {/* 필터 버튼 */}
             <Button
               variant="secondary"
