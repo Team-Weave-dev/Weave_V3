@@ -473,7 +473,7 @@ export const uiText = {
           hideColumn: { ko: "컬럼 숨기기", en: "Hide column" },
           options: {
             projectName: { ko: "프로젝트명", en: "Project Name" },
-            client: { ko: "고객사", en: "Client" },
+            client: { ko: "클라이언트", en: "Client" },
             status: { ko: "상태", en: "Status" },
             progress: { ko: "진행률", en: "Progress" },
             registeredDate: { ko: "등록일", en: "Registered Date" },
@@ -497,10 +497,10 @@ export const uiText = {
         projectList: { ko: "프로젝트 목록", en: "Project List" },
         noProjectSelected: { ko: "프로젝트가 선택되지 않았습니다", en: "No project selected" },
         projectNo: { ko: "프로젝트 번호", en: "Project No" },
-        client: { ko: "고객사", en: "Client" },
+        client: { ko: "클라이언트", en: "Client" },
         progressStatus: { ko: "진행 상황", en: "Progress Status" },
         projectProgress: { ko: "프로젝트 진도", en: "Project Progress" },
-        paymentProgress: { ko: "결제 진행", en: "Payment Progress" },
+        paymentProgress: { ko: "수금상태", en: "Payment Status" },
         projectInfo: { ko: "프로젝트 정보", en: "Project Info" },
         registered: { ko: "등록일", en: "Registered" },
         dueDate: { ko: "마감일", en: "Due Date" },
@@ -556,7 +556,7 @@ export const uiText = {
       labels: {
         projectStatus: { ko: "프로젝트 상태", en: "Project Status" },
         taskProgress: { ko: "작업 진행률", en: "Task Progress" },
-        paymentStatus: { ko: "결제 진행률", en: "Payment Status" },
+        paymentStatus: { ko: "수금상태", en: "Payment Status" },
         currentStage: { ko: "현재 단계:", en: "Current Stage:" },
         hasContract: { ko: "계약서 있음", en: "Has Contract" },
         hasBilling: { ko: "청구서 있음", en: "Has Billing" },
@@ -593,6 +593,75 @@ export const uiText = {
         confirmLabel: { ko: "삭제", en: "Delete" },
         cancelLabel: { ko: "취소", en: "Cancel" }
       },
+      // 프로젝트 생성 모달
+      createModal: {
+        title: { ko: "새 프로젝트 생성", en: "Create New Project" },
+        subtitle: { ko: "프로젝트 정보를 입력해주세요", en: "Please enter project information" },
+        fields: {
+          projectName: {
+            label: { ko: "프로젝트명 *", en: "Project Name *" },
+            placeholder: { ko: "프로젝트 이름을 입력하세요", en: "Enter project name" },
+            extractFromContract: { ko: "계약서에서 추출", en: "Extract from contract" }
+          },
+          client: {
+            label: { ko: "클라이언트 *", en: "Client *" },
+            placeholder: { ko: "클라이언트 이름을 입력하세요", en: "Enter client name" },
+            extractFromContract: { ko: "계약서에서 추출", en: "Extract from contract" }
+          },
+          settlementMethod: {
+            label: { ko: "정산방식 *", en: "Settlement Method *" },
+            placeholder: { ko: "정산방식을 선택하세요", en: "Select settlement method" },
+            extractFromContract: { ko: "계약서에서 추출", en: "Extract from contract" }
+          },
+          projectContent: {
+            label: { ko: "프로젝트 내용", en: "Project Content" },
+            placeholder: { ko: "프로젝트 상세 내용을 입력하세요", en: "Enter project details" },
+            extractFromContract: { ko: "계약서에서 추출", en: "Extract from contract" }
+          },
+          registrationDate: {
+            label: { ko: "등록일 *", en: "Registration Date *" },
+            placeholder: { ko: "등록일을 선택하세요", en: "Select registration date" },
+            autoFill: { ko: "현재 시간 자동 입력", en: "Auto-fill current time" },
+            manualInput: { ko: "직접 입력", en: "Manual input" }
+          },
+          dueDate: {
+            label: { ko: "마감일 *", en: "Due Date *" },
+            placeholder: { ko: "마감일을 선택하세요", en: "Select due date" },
+            fromContract: { ko: "계약서 마감일", en: "Contract due date" }
+          },
+          currentStage: {
+            label: { ko: "현재 단계", en: "Current Stage" },
+            defaultValue: { ko: "기획", en: "Planning" },
+            note: { ko: "생성 시 기본값: 기획", en: "Default on creation: Planning" }
+          },
+          paymentStatus: {
+            label: { ko: "수금상태 *", en: "Payment Status *" },
+            placeholder: { ko: "수금상태를 선택하세요", en: "Select payment status" }
+          }
+        },
+        buttons: {
+          create: { ko: "프로젝트 생성", en: "Create Project" },
+          cancel: { ko: "취소", en: "Cancel" },
+          extractFromContract: { ko: "계약서 업로드", en: "Upload Contract" }
+        },
+        validation: {
+          projectNameRequired: { ko: "프로젝트명을 입력하세요", en: "Project name is required" },
+          clientRequired: { ko: "클라이언트를 입력하세요", en: "Client is required" },
+          settlementMethodRequired: { ko: "정산방식을 선택하세요", en: "Settlement method is required" },
+          registrationDateRequired: { ko: "등록일을 선택하세요", en: "Registration date is required" },
+          dueDateRequired: { ko: "마감일을 선택하세요", en: "Due date is required" },
+          paymentStatusRequired: { ko: "수금상태를 선택하세요", en: "Payment status is required" },
+          dueDateAfterRegistration: { ko: "마감일은 등록일 이후여야 합니다", en: "Due date must be after registration date" }
+        },
+        success: {
+          title: { ko: "프로젝트 생성 완료", en: "Project Created Successfully" },
+          message: { ko: "새 프로젝트가 성공적으로 생성되었습니다", en: "New project has been created successfully" }
+        },
+        error: {
+          title: { ko: "프로젝트 생성 실패", en: "Project Creation Failed" },
+          message: { ko: "프로젝트 생성 중 오류가 발생했습니다", en: "An error occurred while creating the project" }
+        }
+      },
       // 프로젝트 상세 정보 섹션
       projectDetails: {
         title: { ko: "프로젝트 상세 정보", en: "Project Detail Information" },
@@ -601,7 +670,9 @@ export const uiText = {
           projectName: { ko: "프로젝트명", en: "Project Name" },
           settlementMethod: { ko: "정산방식", en: "Settlement Method" },
           advance: { ko: "선급", en: "Advance" },
-          projectContent: { ko: "프로젝트 내용", en: "Project Content" }
+          projectContent: { ko: "프로젝트 내용", en: "Project Content" },
+          paymentStatus: { ko: "수금상태", en: "Payment Status" },
+          client: { ko: "클라이언트", en: "Client" }
         },
         placeholders: {
           notSet: { ko: "미설정", en: "Not Set" },
@@ -612,6 +683,20 @@ export const uiText = {
           edit: { ko: "편집", en: "Edit" },
           save: { ko: "저장", en: "Save" },
           cancel: { ko: "취소", en: "Cancel" }
+        },
+        // 정산방식 옵션
+        settlementMethods: {
+          not_set: { ko: "미설정", en: "Not Set" },
+          advance_final: { ko: "선금+잔금", en: "Advance+Final" },
+          advance_interim_final: { ko: "선금+중도금+잔금", en: "Advance+Interim+Final" },
+          post_payment: { ko: "후불", en: "Post Payment" }
+        },
+        // 수금상태 옵션
+        paymentStatuses: {
+          not_started: { ko: "미시작", en: "Not Started" },
+          advance_completed: { ko: "선금 완료", en: "Advance Completed" },
+          interim_completed: { ko: "중도금 완료", en: "Interim Completed" },
+          final_completed: { ko: "잔금 완료", en: "Final Completed" }
         }
       },
       messages: {
@@ -1685,4 +1770,20 @@ export const getWidgetText = {
       days: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일' : 'days'
     }
   }
+}
+
+// 정산방식 헬퍼 함수
+export const getSettlementMethodText = {
+  not_set: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.settlementMethods.not_set[lang],
+  advance_final: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.settlementMethods.advance_final[lang],
+  advance_interim_final: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.settlementMethods.advance_interim_final[lang],
+  post_payment: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.settlementMethods.post_payment[lang]
+}
+
+// 수금상태 헬퍼 함수
+export const getPaymentStatusText = {
+  not_started: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.not_started[lang],
+  advance_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.advance_completed[lang],
+  interim_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.interim_completed[lang],
+  final_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.final_completed[lang]
 }

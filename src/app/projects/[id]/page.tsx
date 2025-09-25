@@ -1,8 +1,5 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
 import ProjectDetailClient from './ProjectDetailClient';
-import { fetchMockProject } from '@/lib/mock/projects';
-import type { ProjectTableRow } from '@/lib/types/project-table.types';
 
 interface ProjectPageProps {
   params: Promise<{
@@ -18,32 +15,15 @@ interface ProjectPageProps {
  *
  * Features:
  * - Full screen project detail view
- * - Data fetching with error handling
+ * - Client-side data fetching with localStorage support
  * - 404 handling for invalid project IDs
  */
-async function getProject(id: string): Promise<ProjectTableRow | null> {
-  // 중앙화된 mock 데이터 사용
-  const project = await fetchMockProject(id);
-
-  // 실제 구현에서는 API 호출
-  // const response = await fetch(`/api/projects/${id}`);
-  // if (!response.ok) return null;
-  // return response.json();
-
-  return project;
-}
-
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const resolvedParams = await params;
-  const project = await getProject(resolvedParams.id);
-
-  if (!project) {
-    notFound();
-  }
 
   return (
     <Suspense fallback={<ProjectPageSkeleton />}>
-      <ProjectDetailClient project={project} />
+      <ProjectDetailClient projectId={resolvedParams.id} />
     </Suspense>
   );
 }

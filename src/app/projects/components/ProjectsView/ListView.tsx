@@ -18,6 +18,7 @@ interface ListViewProps {
   onProjectClick: (projectNo: string) => void;
   loading?: boolean;
   showColumnSettings?: boolean; // 컬럼 설정 버튼 표시 여부
+  onProjectsChange?: () => void; // 프로젝트 데이터 변경 시 호출될 콜백
 }
 
 /**
@@ -37,7 +38,8 @@ export default function ListView({
   projects,
   onProjectClick,
   loading = false,
-  showColumnSettings = true // 기본값은 true (ListView에서는 표시)
+  showColumnSettings = true, // 기본값은 true (ListView에서는 표시)
+  onProjectsChange
 }: ListViewProps) {
   const [selectedProjectIndex, setSelectedProjectIndex] = useState(-1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -72,7 +74,7 @@ export default function ListView({
     handleSelectAll,
     handleDeselectAll,
     handleDeleteSelected
-  } = useProjectTable(projects);
+  } = useProjectTable(projects, onProjectsChange);
 
   // Stats for display
   const stats = useMemo(() => {

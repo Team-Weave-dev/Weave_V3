@@ -89,12 +89,38 @@ interface ProjectDetailProps {
 
 ### 1. Overview 탭
 ```typescript
-// 프로젝트 기본 정보 및 진행 현황
-- 프로젝트 기본 정보 (제목, 설명, 상태)
-- 진행률 표시 (ProjectProgress 컴포넌트 활용)
-- 클라이언트 정보
-- 주요 마일스톤
-- 프로젝트 태그 및 카테고리
+// 통합된 프로젝트 정보 카드 레이아웃
+- 좌측 영역: 프로젝트명, 클라이언트, 정산방식(드롭다운)
+- 우측 영역: 등록일, 마감일, 수정일
+- 하단 영역: 작업 진행률, 현재 단계, 프로젝트 내용
+- 수금상태: Badge 컴포넌트로 시각적 표시
+- 중앙화 텍스트: 모든 UI 텍스트 brand.ts에서 관리
+```
+
+#### 카드 통합 및 레이아웃 개선 (2025-09-25)
+- **기존**: "프로젝트 정보"와 "프로젝트 상태" 카드 분리
+- **개선**: 하나의 "프로젝트 정보" 카드로 통합
+- **제거**: 선급항목 필드 완전 제거
+- **추가**: 정산방식 Select 컴포넌트 (미설정, 선금+잔금, 선금+중도금+잔금, 후불)
+- **변경**: 결제 진행률 → 수금상태 Badge 시스템
+
+#### 새로운 기능 구성요소
+```typescript
+// 정산방식 드롭다운
+<Select>
+  <SelectValue>{getSettlementMethodText.not_set('ko')}</SelectValue>
+  <SelectContent>
+    <SelectItem value="advance_final">
+      {getSettlementMethodText.advance_final('ko')}
+    </SelectItem>
+    // 기타 옵션들...
+  </SelectContent>
+</Select>
+
+// 수금상태 배지
+<Badge variant={paymentStatus === 'not_started' ? 'secondary' : 'default'}>
+  {getPaymentStatusText[paymentStatus]('ko')}
+</Badge>
 ```
 
 #### 자료 현황 카드 데이터 흐름

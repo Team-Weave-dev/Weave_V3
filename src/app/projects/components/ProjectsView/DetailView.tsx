@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Typography from '@/components/ui/typography';
 import ProjectDetail from '@/components/projects/ProjectDetail';
 import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.types';
-import { getProjectPageText, getProjectStatusText } from '@/config/brand';
+import { getProjectPageText, getProjectStatusText, getPaymentStatusText } from '@/config/brand';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { DeleteDialog } from '@/components/ui/dialogDelete';
@@ -15,12 +15,15 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, ChevronDown, ChevronUp, RotateCcw, AlertCircleIcon } from 'lucide-react';
 import { layout } from '@/config/constants';
+import { removeCustomProject } from '@/lib/mock/projects';
+import { useToast } from '@/hooks/use-toast';
 
 interface DetailViewProps {
   projects: ProjectTableRow[];
   selectedProjectId: string | null;
   loading?: boolean;
   showColumnSettings?: boolean; // 컬럼 설정 버튼 표시 여부
+  onProjectsChange?: () => void; // 프로젝트 목록 변경 시 호출되는 콜백
 }
 
 /**
@@ -39,8 +42,10 @@ export default function DetailView({
   projects,
   selectedProjectId: initialSelectedId,
   loading = false,
-  showColumnSettings = false // 기본값은 false (DetailView에서는 숨김)
+  showColumnSettings = false, // 기본값은 false (DetailView에서는 숨김)
+  onProjectsChange
 }: DetailViewProps) {
+  const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     initialSelectedId || (projects.length > 0 ? projects[0].id : null)
   );
@@ -201,10 +206,68 @@ export default function DetailView({
   };
 
   const handleConfirmDelete = () => {
-    // TODO: Implement actual delete functionality
-    const projectToDelete = selectedProjectId;
-    console.log('Deleting project:', projectToDelete);
-    setIsDeleteModalOpen(false);
+    const selectedProject = projects.find(p => p.id === selectedProjectId);
+    if (!selectedProject) {
+      console.log('⚠️ 삭제할 프로젝트를 찾을 수 없음:', selectedProjectId);
+      setIsDeleteModalOpen(false);
+      return;
+    }
+
+    try {
+      // localStorage에서 프로젝트 삭제
+      const deleted = removeCustomProject(selectedProject.no);
+
+      if (deleted) {
+        console.log('✅ DetailView 프로젝트 삭제 성공:', {
+          id: selectedProject.id,
+          no: selectedProject.no,
+          name: selectedProject.name
+        });
+
+        // 성공 토스트 표시
+        toast({
+          title: "프로젝트 삭제 완료",
+          description: `${selectedProject.name} 프로젝트가 성공적으로 삭제되었습니다.`,
+        });
+
+        // 부모 컴포넌트에 변경사항 알림
+        if (onProjectsChange) {
+          onProjectsChange();
+        }
+
+        // 선택된 프로젝트 초기화 (다른 프로젝트 자동 선택)
+        const remainingProjects = projects.filter(p => p.id !== selectedProject.id);
+        if (remainingProjects.length > 0) {
+          setSelectedProjectId(remainingProjects[0].id);
+        } else {
+          setSelectedProjectId(null);
+        }
+
+        setIsDeleteModalOpen(false);
+      } else {
+        console.log('⚠️ DetailView 프로젝트 삭제 실패: 프로젝트를 찾을 수 없음', selectedProject.no);
+
+        // 실패 토스트 표시
+        toast({
+          title: "삭제 실패",
+          description: "프로젝트를 찾을 수 없거나 삭제할 수 없습니다.",
+          variant: "destructive",
+        });
+
+        setIsDeleteModalOpen(false);
+      }
+    } catch (error) {
+      console.error('❌ DetailView 프로젝트 삭제 중 오류 발생:', error);
+
+      // 오류 토스트 표시
+      toast({
+        title: "삭제 오류",
+        description: "프로젝트 삭제 중 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      });
+
+      setIsDeleteModalOpen(false);
+    }
   };
 
   const handleCancelDelete = () => {
@@ -404,9 +467,14 @@ export default function DetailView({
                             {project.no} • {project.client}
                           </p>
                         </div>
-                        <Badge variant={getStatusVariant(project.status)} className="ml-2">
-                          {getProjectStatusText(project.status, 'ko')}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={project.paymentProgress === 'not_started' ? 'secondary' : 'default'} className="text-xs">
+                            {getPaymentStatusText[project.paymentProgress || 'not_started']('ko')}
+                          </Badge>
+                          <Badge variant={getStatusVariant(project.status)}>
+                            {getProjectStatusText(project.status, 'ko')}
+                          </Badge>
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -416,13 +484,6 @@ export default function DetailView({
                             <span className="font-medium">{project.progress || 0}%</span>
                           </div>
                           <ProjectProgress value={project.progress || 0} size="sm" />
-                        </div>
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-muted-foreground">결제</span>
-                            <span className="font-medium">{project.paymentProgress || 0}%</span>
-                          </div>
-                          <ProjectProgress value={project.paymentProgress || 0} size="sm" />
                         </div>
                       </div>
 
