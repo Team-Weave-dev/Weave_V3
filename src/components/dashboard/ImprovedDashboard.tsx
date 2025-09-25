@@ -97,6 +97,34 @@ const mockProjects = [
     currentStatus: '권한 매트릭스 설계 재검토 필요',
     issues: ['인증 전략 충돌', '권한 동기화 지연'],
   },
+  {
+    id: 'proj_4',
+    projectId: 'W-104',
+    projectName: 'ERP 시스템 통합',
+    client: 'TechFlow',
+    pm: '최기획',
+    status: 'normal',
+    statusLabel: '정상',
+    progress: 45,
+    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25),
+    daysRemaining: 25,
+    budget: { total: 120000000, spent: 48000000, currency: 'KRW' },
+    currentStatus: 'API 연동 테스트 진행 중',
+  },
+  {
+    id: 'proj_5',
+    projectId: 'W-105',
+    projectName: 'AI 챗봇 개발',
+    client: 'Smart Solutions',
+    pm: '정리드',
+    status: 'normal',
+    statusLabel: '정상',
+    progress: 90,
+    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+    daysRemaining: 7,
+    budget: { total: 55000000, spent: 48000000, currency: 'KRW' },
+    currentStatus: '최종 QA 테스트 및 문서화 작업',
+  },
 ];
 
 // 테스트용 캘린더 이벤트 데이터
@@ -141,6 +169,49 @@ const mockCalendarEvents = [
     startTime: '18:00',
     endTime: '21:00',
     type: 'other' as const
+  },
+  {
+    id: 'event-6',
+    title: '클라이언트 데모',
+    description: 'Acme Corp 프로젝트 시연',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),
+    startTime: '15:00',
+    endTime: '16:30',
+    type: 'meeting' as const
+  },
+  {
+    id: 'event-7',
+    title: '스프린트 회고',
+    description: '2주차 스프린트 회고 미팅',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4),
+    startTime: '11:00',
+    endTime: '12:00',
+    type: 'meeting' as const
+  },
+  {
+    id: 'event-8',
+    title: '보안 감사',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 6),
+    allDay: true,
+    type: 'deadline' as const
+  },
+  {
+    id: 'event-9',
+    title: '기술 세미나',
+    description: 'React 19 새로운 기능',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 8),
+    startTime: '16:00',
+    endTime: '18:00',
+    type: 'other' as const
+  },
+  {
+    id: 'event-10',
+    title: '월간 성과 리뷰',
+    description: '팀 성과 및 KPI 검토',
+    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
+    startTime: '09:00',
+    endTime: '10:30',
+    type: 'meeting' as const
   }
 ];
 
@@ -154,7 +225,8 @@ const mockTodoData = [
     depth: 0,
     order: 0,
     sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24)
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2)
   },
   {
     id: 'todo-2',
@@ -196,8 +268,111 @@ const mockTodoData = [
     order: 4,
     sectionId: 'default',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
+  },
+  {
+    id: 'todo-6',
+    title: 'API 문서 업데이트',
+    completed: true,
+    priority: 'p2' as const,
+    depth: 0,
+    order: 5,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72),
+    completedAt: new Date(Date.now() - 1000 * 60 * 60 * 24)
+  },
+  {
+    id: 'todo-7',
+    title: '버그 수정: 로그인 이슈',
+    completed: false,
+    priority: 'p1' as const,
+    depth: 0,
+    order: 6,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
+    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24)
+  },
+  {
+    id: 'todo-8',
+    title: '성능 최적화 분석',
+    completed: false,
+    priority: 'p3' as const,
+    depth: 0,
+    order: 7,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36)
+  },
+  {
+    id: 'todo-9',
+    title: '데이터베이스 백업 스크립트',
+    completed: true,
+    priority: 'p2' as const,
+    depth: 0,
+    order: 8,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 96),
+    completedAt: new Date(Date.now() - 1000 * 60 * 60 * 48)
+  },
+  {
+    id: 'todo-10',
+    title: '릴리즈 노트 작성',
+    completed: false,
+    priority: 'p4' as const,
+    depth: 0,
+    order: 9,
+    sectionId: 'default',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8)
   }
 ];
+
+// KPI 메트릭 목 데이터
+const mockKPIMetrics = [
+  {
+    id: 'kpi-1',
+    title: '월간 매출',
+    value: 285000000,
+    unit: 'KRW',
+    change: 12.5,
+    changeType: 'increase' as const,
+    period: '전월 대비',
+    icon: 'TrendingUp',
+    color: 'success' as const,
+  },
+  {
+    id: 'kpi-2',
+    title: '진행중 프로젝트',
+    value: 8,
+    unit: '개',
+    change: 2,
+    changeType: 'increase' as const,
+    period: '지난주 대비',
+    icon: 'Briefcase',
+    color: 'primary' as const,
+  },
+  {
+    id: 'kpi-3',
+    title: '팀 효율성',
+    value: 94,
+    unit: '%',
+    change: 3.2,
+    changeType: 'increase' as const,
+    period: '전주 대비',
+    icon: 'TrendingUp',
+    color: 'success' as const,
+  },
+  {
+    id: 'kpi-4',
+    title: '고객 만족도',
+    value: 4.8,
+    unit: '/ 5.0',
+    change: 0.3,
+    changeType: 'increase' as const,
+    period: '전분기 대비',
+    icon: 'Star',
+    color: 'warning' as const,
+  },
+];
+
+// 세무 일정 목 데이터 (TaxDeadlineWidget 내부에 하드코딩되어 있어 별도 데이터 불필요)
 
 export function ImprovedDashboard({
   initialWidgets = [],
@@ -353,6 +528,7 @@ export function ImprovedDashboard({
         type: 'kpiMetrics',
         title: '핵심 성과 지표',
         position: defaultPos.kpiMetrics,
+        data: mockKPIMetrics,
         minW: 4,
         minH: 2,
         maxW: 9,
@@ -399,6 +575,7 @@ export function ImprovedDashboard({
             w: getDefaultWidgetSize('kpi').width,
             h: getDefaultWidgetSize('kpi').height
           },
+          data: mockKPIMetrics,
           minW: getDefaultWidgetSize('kpi').minWidth || 1,
           minH: getDefaultWidgetSize('kpi').minHeight || 2,
         },

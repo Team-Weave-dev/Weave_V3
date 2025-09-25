@@ -159,7 +159,7 @@ export default function DashboardPage() {
             position: { x: 0, y: 0, w: 5, h: 4 },
             minW: 2,
             minH: 2,
-            data: [],  // 초기 데이터는 컴포넌트 내부에서 설정됨
+            // data를 제거하거나 undefined로 설정하면 컴포넌트 내부 목데이터 사용
           },
           {
             id: 'project_summary_widget_1',
@@ -168,7 +168,7 @@ export default function DashboardPage() {
             position: { x: 5, y: 0, w: 4, h: 4 },
             minW: 2,
             minH: 2,
-            data: [],  // 초기 데이터는 컴포넌트 내부에서 설정됨
+            // data를 제거하거나 undefined로 설정하면 컴포넌트 내부 목데이터 사용
           },
           {
             id: 'kpi_metrics_widget_1',
@@ -177,7 +177,6 @@ export default function DashboardPage() {
             position: { x: 0, y: 4, w: 5, h: 2 },
             minW: 2,
             minH: 2,
-            data: undefined,  // KPI는 데이터 없이도 작동
           },
           {
             id: 'tax_deadline_widget_1',
@@ -186,7 +185,6 @@ export default function DashboardPage() {
             position: { x: 0, y: 6, w: 5, h: 2 },
             minW: 2,
             minH: 2,
-            data: undefined,  // 세무 일정은 내부 데이터 사용
           },
           {
             id: 'todo_list_widget_1',
@@ -195,7 +193,7 @@ export default function DashboardPage() {
             position: { x: 5, y: 4, w: 4, h: 4 },
             minW: 2,
             minH: 2,
-            data: [],  // 초기 데이터는 컴포넌트 내부에서 설정됨
+            // data를 제거하거나 undefined로 설정하면 컴포넌트 내부 목데이터 사용
           },
         ]}
       />
