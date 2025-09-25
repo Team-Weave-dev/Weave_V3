@@ -157,6 +157,24 @@ const getCategoryIcon = (category: TaxCategory) => {
   }
 };
 
+// 카테고리별 Badge variant 매핑
+const getCategoryVariant = (category: TaxCategory) => {
+  switch (category) {
+    case 'VAT':
+      return 'status-soft-info' as const;
+    case 'income-tax':
+      return 'status-soft-warning' as const;
+    case 'corporate-tax':
+      return 'status-soft-inprogress' as const;
+    case 'withholding':
+      return 'status-soft-success' as const;
+    case 'local-tax':
+      return 'status-soft-planning' as const;
+    default:
+      return 'outline' as const;
+  }
+};
+
 // 카테고리 라벨 매핑
 const getCategoryLabel = (category: TaxCategory, lang: 'ko' | 'en' = 'ko') => {
   const labels = {
@@ -172,19 +190,19 @@ const getCategoryLabel = (category: TaxCategory, lang: 'ko' | 'en' = 'ko') => {
   return labels[category]?.[lang] || category;
 };
 
-// 중요도별 색상 매핑
+// 중요도별 색상 매핑 - 중앙화된 Badge variants 사용
 const getImportanceColor = (importance: string) => {
   switch (importance) {
     case 'critical':
-      return 'error';
+      return 'status-soft-error' as const;
     case 'high':
-      return 'default';
+      return 'status-soft-warning' as const;
     case 'medium':
-      return 'secondary';
+      return 'status-soft-info' as const;
     case 'low':
-      return 'outline';
+      return 'outline' as const;
     default:
-      return 'secondary';
+      return 'status-soft-info' as const;
   }
 };
 
@@ -366,13 +384,21 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge 
-                            variant={getImportanceColor(deadline.importance)}
+                            variant={getCategoryVariant(deadline.category)}
                             className="text-xs"
                           >
                             {getCategoryLabel(deadline.category, lang)}
                           </Badge>
+                          <Badge 
+                            variant={getImportanceColor(deadline.importance)}
+                            className="text-xs"
+                          >
+                            {deadline.importance === 'critical' ? '긴급' :
+                             deadline.importance === 'high' ? '중요' :
+                             deadline.importance === 'medium' ? '보통' : '낮음'}
+                          </Badge>
                           {deadline.frequency === 'monthly' && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="status-soft-planning" className="text-xs">
                               매월
                             </Badge>
                           )}

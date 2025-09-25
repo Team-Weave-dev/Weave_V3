@@ -6,6 +6,16 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Dialog,
@@ -52,42 +62,54 @@ import { format, isSameDay, startOfDay, isToday, startOfWeek, endOfWeek, eachDay
 import { ko } from 'date-fns/locale';
 import { getWidgetText } from '@/config/brand';
 import { typography } from '@/config/constants';
+import { 
+  loadCalendarEvents, 
+  addCalendarEvent, 
+  updateCalendarEvent, 
+  deleteCalendarEvent 
+} from '@/lib/mock/calendar-events';
 
 // 이벤트 타입별 색상 및 아이콘 매핑 (구글 캘린더 스타일)
 const eventTypeConfig = {
   meeting: { 
     color: 'bg-blue-500',
-    lightColor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400', 
+    lightColor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+    badgeVariant: 'status-soft-info' as const,
     icon: Users,
     label: '회의'
   },
   task: { 
     color: 'bg-green-500',
-    lightColor: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', 
+    lightColor: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+    badgeVariant: 'status-soft-success' as const,
     icon: CheckCircle2,
     label: '작업'
   },
   reminder: { 
     color: 'bg-yellow-500',
-    lightColor: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400', 
+    lightColor: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+    badgeVariant: 'status-soft-warning' as const,
     icon: AlertCircle,
     label: '알림'
   },
   deadline: { 
     color: 'bg-red-500',
-    lightColor: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400', 
+    lightColor: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+    badgeVariant: 'status-soft-error' as const,
     icon: Clock,
     label: '마감'
   },
   holiday: { 
     color: 'bg-purple-500',
-    lightColor: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400', 
+    lightColor: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+    badgeVariant: 'status-soft-completed' as const,
     icon: CalendarDays,
     label: '휴일'
   },
   other: { 
     color: 'bg-gray-500',
-    lightColor: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400', 
+    lightColor: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
+    badgeVariant: 'status-soft-planning' as const,
     icon: CalendarIcon,
     label: '기타'
   }
@@ -220,7 +242,7 @@ const EventDetailModal = ({
               </div>
               <div>
                 <DialogTitle className="text-lg">{event.title}</DialogTitle>
-                <Badge variant="outline" className={cn("mt-1", config.lightColor)}>
+                <Badge variant={config.badgeVariant} className="mt-1 text-xs">
                   {config.label}
                 </Badge>
               </div>
@@ -268,6 +290,16 @@ const EventDetailModal = ({
               )}
             </div>
           </div>
+          
+          {/* 장소 */}
+          {event.location && (
+            <div className="flex items-start gap-3">
+              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm">{event.location}</p>
+              </div>
+            </div>
+          )}
           
           {/* 설명 */}
           {event.description && (
@@ -713,7 +745,7 @@ const AgendaView = ({
                   <h3 className="text-sm font-semibold text-muted-foreground">
                     {format(date, 'M월 d일 EEEE', { locale: ko })}
                     {isToday(date) && (
-                      <Badge variant="secondary" className="ml-2">오늘</Badge>
+                      <Badge variant="status-soft-info" className="ml-2 text-xs">오늘</Badge>
                     )}
                   </h3>
                 </div>
@@ -745,7 +777,7 @@ const AgendaView = ({
                             </p>
                           )}
                         </div>
-                        <Badge variant="outline" className={cn("text-xs", config.lightColor)}>
+                        <Badge variant={config.badgeVariant} className="text-xs">
                           {config.label}
                         </Badge>
                       </div>
@@ -764,7 +796,7 @@ const AgendaView = ({
 export function CalendarWidget({
   title,
   selectedDate: initialDate,
-  events = [],
+  events: propEvents,
   onDateSelect,
   onEventClick,
   onEventAdd,
@@ -789,6 +821,31 @@ export function CalendarWidget({
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  
+  // 새 일정 폼 상태
+  const [newEventTitle, setNewEventTitle] = useState('');
+  const [newEventDate, setNewEventDate] = useState('');
+  const [newEventLocation, setNewEventLocation] = useState('');
+  const [newEventDescription, setNewEventDescription] = useState('');
+  const [newEventAllDay, setNewEventAllDay] = useState(true);
+  const [newEventStartTime, setNewEventStartTime] = useState('');
+  const [newEventEndTime, setNewEventEndTime] = useState('');
+  const [newEventType, setNewEventType] = useState<'meeting' | 'task' | 'reminder' | 'deadline' | 'holiday' | 'other'>('meeting');
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  
+  // 로컴스토리지에서 이벤트 로드 및 상태 관리
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  
+  // 컴포넌트 마운트 시 로컴스토리지에서 이벤트 로드
+  useEffect(() => {
+    // propEvents가 제공되면 사용, 아니면 로컴스토리지에서 로드
+    if (propEvents && propEvents.length > 0) {
+      setEvents(propEvents);
+    } else {
+      const loadedEvents = loadCalendarEvents();
+      setEvents(loadedEvents);
+    }
+  }, [propEvents]);
 
   // 개선된 컨테이너 크기 감지 및 반응형 처리
   useEffect(() => {
@@ -1033,34 +1090,219 @@ export function CalendarWidget({
                 </div>
                 
                 {/* 일정 추가 버튼 */}
-                <Popover open={showEventPopover} onOpenChange={setShowEventPopover}>
+                <Popover open={showEventPopover} onOpenChange={(open) => {
+                  setShowEventPopover(open);
+                  if (open && !editingEvent) {
+                    // 폼 초기화 (현재 선택된 날짜로 설정) - 편집 모드가 아닐 때만
+                    setNewEventTitle('');
+                    setNewEventDate(selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
+                    setNewEventLocation('');
+                    setNewEventDescription('');
+                    setNewEventAllDay(true);
+                    setNewEventStartTime('09:00');
+                    setNewEventEndTime('10:00');
+                    setNewEventType('meeting');
+                  }
+                  if (!open) {
+                    // 팝오버를 닫을 때 편집 모드 초기화
+                    setEditingEvent(null);
+                  }
+                }}>
                   <PopoverTrigger asChild>
                     <Button size="sm" className="h-7 px-2">
                       <Plus className="h-3 w-3 mr-1" />
                       <span className="text-xs">일정</span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80" align="end">
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm">새 일정 만들기</h4>
-                      <Input placeholder="일정 제목" className="h-8" />
-                      <Input type="datetime-local" className="h-8" />
-                      <div className="flex justify-end gap-2">
+                  <PopoverContent className="w-96" align="end">
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-sm">
+                        {editingEvent ? '일정 수정' : '새 일정 만들기'}
+                      </h4>
+                      
+                      {/* 제목 */}
+                      <div className="space-y-2">
+                        <Label htmlFor="event-title" className="text-xs">제목</Label>
+                        <Input 
+                          id="event-title"
+                          placeholder="일정 제목" 
+                          className="h-8"
+                          value={newEventTitle}
+                          onChange={(e) => setNewEventTitle(e.target.value)}
+                        />
+                      </div>
+
+                      {/* 일정 타입 */}
+                      <div className="space-y-2">
+                        <Label htmlFor="event-type" className="text-xs">유형</Label>
+                        <Select value={newEventType} onValueChange={(value) => setNewEventType(value as any)}>
+                          <SelectTrigger id="event-type" className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="meeting">회의</SelectItem>
+                            <SelectItem value="task">작업</SelectItem>
+                            <SelectItem value="reminder">알림</SelectItem>
+                            <SelectItem value="deadline">마감</SelectItem>
+                            <SelectItem value="holiday">휴일</SelectItem>
+                            <SelectItem value="other">기타</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* 날짜 */}
+                      <div className="space-y-2">
+                        <Label htmlFor="event-date" className="text-xs">날짜</Label>
+                        <Input 
+                          id="event-date"
+                          type="date" 
+                          className="h-8"
+                          value={newEventDate}
+                          onChange={(e) => setNewEventDate(e.target.value)}
+                        />
+                      </div>
+
+                      {/* 종일 일정 토글 */}
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="all-day" className="text-xs">종일 일정</Label>
+                        <Switch
+                          id="all-day"
+                          checked={newEventAllDay}
+                          onCheckedChange={setNewEventAllDay}
+                        />
+                      </div>
+
+                      {/* 시간 선택 (종일 아닐 때만) */}
+                      {!newEventAllDay && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="start-time" className="text-xs">시작 시간</Label>
+                            <Input
+                              id="start-time"
+                              type="time"
+                              className="h-8"
+                              value={newEventStartTime}
+                              onChange={(e) => setNewEventStartTime(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="end-time" className="text-xs">종료 시간</Label>
+                            <Input
+                              id="end-time"
+                              type="time"
+                              className="h-8"
+                              value={newEventEndTime}
+                              onChange={(e) => setNewEventEndTime(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 장소 */}
+                      <div className="space-y-2">
+                        <Label htmlFor="event-location" className="text-xs">
+                          <MapPin className="inline h-3 w-3 mr-1" />
+                          장소
+                        </Label>
+                        <Input 
+                          id="event-location"
+                          placeholder="장소 입력 (선택사항)" 
+                          className="h-8"
+                          value={newEventLocation}
+                          onChange={(e) => setNewEventLocation(e.target.value)}
+                        />
+                      </div>
+
+                      {/* 설명 */}
+                      <div className="space-y-2">
+                        <Label htmlFor="event-description" className="text-xs">설명</Label>
+                        <Textarea 
+                          id="event-description"
+                          placeholder="설명 입력 (선택사항)"
+                          className="min-h-[60px] text-sm resize-none"
+                          value={newEventDescription}
+                          onChange={(e) => setNewEventDescription(e.target.value)}
+                        />
+                      </div>
+
+                      {/* 버튼들 */}
+                      <div className="flex justify-end gap-2 pt-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setShowEventPopover(false)}
+                          onClick={() => {
+                            setShowEventPopover(false);
+                            setEditingEvent(null);
+                            // 폼 초기화
+                            setNewEventTitle('');
+                            setNewEventDate('');
+                            setNewEventLocation('');
+                            setNewEventDescription('');
+                            setNewEventAllDay(true);
+                            setNewEventStartTime('');
+                            setNewEventEndTime('');
+                            setNewEventType('meeting');
+                          }}
                         >
                           취소
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => {
-                            // TODO: 일정 추가 로직
+                            if (editingEvent) {
+                              // 편집 모드: 기존 이벤트 업데이트
+                              const updatedEvent: CalendarEvent = {
+                                ...editingEvent,
+                                title: newEventTitle || '제목 없음',
+                                date: new Date(newEventDate || format(new Date(), 'yyyy-MM-dd')),
+                                type: newEventType,
+                                allDay: newEventAllDay,
+                                startTime: !newEventAllDay ? newEventStartTime : undefined,
+                                endTime: !newEventAllDay ? newEventEndTime : undefined,
+                                location: newEventLocation || undefined,
+                                description: newEventDescription || undefined,
+                              };
+                              
+                              // 로컴스토리지에 업데이트
+                              const updatedEvents = updateCalendarEvent(updatedEvent);
+                              setEvents(updatedEvents);
+                            } else {
+                              // 추가 모드: 새 이벤트 생성
+                              const newEvent: CalendarEvent = {
+                                id: `event-${Date.now()}`,
+                                title: newEventTitle || '제목 없음',
+                                date: new Date(newEventDate || format(new Date(), 'yyyy-MM-dd')),
+                                type: newEventType,
+                                allDay: newEventAllDay,
+                                startTime: !newEventAllDay ? newEventStartTime : undefined,
+                                endTime: !newEventAllDay ? newEventEndTime : undefined,
+                                location: newEventLocation || undefined,
+                                description: newEventDescription || undefined,
+                              };
+                              
+                              // 로컴스토리지에 추가
+                              const updatedEvents = addCalendarEvent(newEvent);
+                              setEvents(updatedEvents);
+                              
+                              // 콜백이 있으면 호출
+                              onEventAdd?.(new Date(newEventDate || format(new Date(), 'yyyy-MM-dd')), newEvent);
+                            }
+                            
+                            // 폼 초기화 및 닫기
                             setShowEventPopover(false);
+                            setEditingEvent(null);
+                            setNewEventTitle('');
+                            setNewEventDate('');
+                            setNewEventLocation('');
+                            setNewEventDescription('');
+                            setNewEventAllDay(true);
+                            setNewEventStartTime('');
+                            setNewEventEndTime('');
+                            setNewEventType('meeting');
                           }}
+                          disabled={!newEventTitle}
                         >
-                          저장
+                          {editingEvent ? '수정' : '저장'}
                         </Button>
                       </div>
                     </div>
@@ -1124,14 +1366,31 @@ export function CalendarWidget({
           setSelectedEvent(null);
         }}
         onEdit={(event) => {
-          // TODO: 편집 로직
-          console.log('Edit event:', event);
-        }}
-        onDelete={(event) => {
-          // TODO: 삭제 로직
-          console.log('Delete event:', event);
+          // 편집할 이벤트 정보를 폼에 설정
+          setEditingEvent(event);
+          setNewEventTitle(event.title);
+          setNewEventDate(format(new Date(event.date), 'yyyy-MM-dd'));
+          setNewEventLocation(event.location || '');
+          setNewEventDescription(event.description || '');
+          setNewEventAllDay(event.allDay || false);
+          setNewEventStartTime(event.startTime || '');
+          setNewEventEndTime(event.endTime || '');
+          setNewEventType(event.type || 'meeting');
+          
+          // 모달 닫고 편집 팝오버 열기
           setShowEventDetail(false);
           setSelectedEvent(null);
+          setShowEventPopover(true);
+        }}
+        onDelete={(event) => {
+          // 삭제 확인 후 처리
+          if (window.confirm('이 일정을 삭제하시겠습니까?')) {
+            // 로컴스토리지에서 삭제
+            const updatedEvents = deleteCalendarEvent(event.id);
+            setEvents(updatedEvents);
+            setShowEventDetail(false);
+            setSelectedEvent(null);
+          }
         }}
       />
     </>

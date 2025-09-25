@@ -179,13 +179,13 @@ const getTextColorClass = (color: KPIMetric['color']) => {
   }
 };
 
-// 진행률 색상 매핑
+// 진행률 색상 매핑 - 중앙화된 색상 시스템 사용
 const getProgressColor = (progress?: number) => {
-  if (!progress) return 'bg-gray-300';
-  if (progress >= 90) return 'bg-green-500';
-  if (progress >= 70) return 'bg-blue-500';
-  if (progress >= 50) return 'bg-yellow-500';
-  return 'bg-red-500';
+  if (!progress) return 'bg-muted';
+  if (progress >= 90) return 'bg-green-500 dark:bg-green-400';
+  if (progress >= 70) return 'bg-primary';
+  if (progress >= 50) return 'bg-yellow-500 dark:bg-yellow-400';
+  return 'bg-destructive';
 };
 
 export function KPIWidget({ 
@@ -283,20 +283,18 @@ export function KPIWidget({
                       )}
                     </div>
 
-                    {/* 값 표시 */}
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold">
-                        {metric.value}
-                      </span>
-                      {metric.unit && (
-                        <span className="text-sm text-muted-foreground">
-                          {metric.unit}
+                    {/* 값 표시 및 트렌드 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold">
+                          {metric.value}
                         </span>
-                      )}
-                    </div>
-
-                    {/* 트렌드와 목표 */}
-                    <div className="flex items-center gap-2 flex-wrap">
+                        {metric.unit && (
+                          <span className="text-sm text-muted-foreground">
+                            {metric.unit}
+                          </span>
+                        )}
+                      </div>
                       {metric.trendValue && (
                         <Badge 
                           variant={metric.trend === 'up' ? 'default' : metric.trend === 'down' ? 'error' : 'secondary'}
@@ -305,17 +303,24 @@ export function KPIWidget({
                           {metric.trendValue}
                         </Badge>
                       )}
-                      {metric.target && (
+                    </div>
+
+                    {/* 목표 */}
+                    {metric.target && (
+                      <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">
                           목표: {metric.target}{metric.unit}
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
-                    {/* Progress bar */}
+                    {/* Progress bar with percentage on left */}
                     {metric.progress !== undefined && (
-                      <div className="space-y-1">
-                        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-muted-foreground min-w-[32px]">
+                          {metric.progress}%
+                        </span>
+                        <div className="h-1.5 flex-1 bg-muted rounded-full overflow-hidden">
                           <div 
                             className={cn(
                               "h-full transition-all duration-500",
@@ -323,9 +328,6 @@ export function KPIWidget({
                             )}
                             style={{ width: `${metric.progress}%` }}
                           />
-                        </div>
-                        <div className="text-xs text-muted-foreground text-right">
-                          {metric.progress}%
                         </div>
                       </div>
                     )}

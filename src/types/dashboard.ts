@@ -133,6 +133,7 @@ export interface CalendarEvent {
   id: string;
   title: string;
   description?: string;
+  location?: string;
   date: Date;
   startTime?: string;
   endTime?: string;

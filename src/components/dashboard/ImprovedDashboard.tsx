@@ -127,8 +127,12 @@ const mockProjects = [
   },
 ];
 
-// 테스트용 캘린더 이벤트 데이터
-const mockCalendarEvents = [
+// 캘린더 이벤트는 CalendarWidget에서 자체적으로 로컴스토리지에서 로드
+const mockCalendarEvents = undefined; // CalendarWidget이 자체적으로 로컴스토리지에서 로드
+
+// 레거시 코드 (삭제 예정)
+/*
+const OLD_mockCalendarEvents = [
   {
     id: 'event-1',
     title: '프로젝트 킥오프 미팅',
@@ -214,6 +218,7 @@ const mockCalendarEvents = [
     type: 'meeting' as const
   }
 ];
+*/
 
 // 테스트용 Todo 데이터
 const mockTodoData = [
@@ -509,7 +514,7 @@ export function ImprovedDashboard({
         type: 'calendar',
         title: '캘린더',
         position: defaultPos.calendar,
-        data: mockCalendarEvents,
+        data: undefined, // CalendarWidget이 자체적으로 로컴스토리지에서 로드
         minW: 2,
         minH: 2,
         maxW: 6,
@@ -547,7 +552,7 @@ export function ImprovedDashboard({
             w: getDefaultWidgetSize('calendar').width,
             h: getDefaultWidgetSize('calendar').height
           },
-          data: mockCalendarEvents,
+          data: undefined, // CalendarWidget이 자체적으로 로컴스토리지에서 로드
           minW: getDefaultWidgetSize('calendar').minWidth || 2,
           minH: getDefaultWidgetSize('calendar').minHeight || 2,
           maxW: getDefaultWidgetSize('calendar').maxWidth || 6,
@@ -889,7 +894,7 @@ export function ImprovedDashboard({
       case 'calendar':
         return <CalendarWidget
           title={widget.title}
-          events={widget.data || mockCalendarEvents}
+          events={widget.data} // undefined일 경우 자체적으로 로컴스토리지에서 로드
           showToday={true}
           gridSize={{ w: widget.position.w, h: widget.position.h }}
         />;

@@ -6,8 +6,8 @@
 export const brand = {
   // 브랜드명
   name: {
-    ko: "UI 컴포넌트 라이브러리",
-    en: "UI Components Library"
+    ko: "Weave",
+    en: "Weave"
   },
 
   // 회사명
@@ -18,11 +18,11 @@ export const brand = {
 
   // 설명
   description: {
-    ko: "shadcn/ui 기반의 현대적인 React 컴포넌트 라이브러리입니다.",
-    en: "Modern React UI components built with Next.js and shadcn/ui",
+    ko: "솔로프리너를 위한 완벽한 솔루션입니다.",
+    en: "it's the perfect solution for solo entrepreneurs.",
     extended: {
-      ko: "재사용 가능하고 접근성이 뛰어난 컴포넌트들을 제공합니다.",
-      en: "Provides reusable and accessible components."
+      ko: "프리랜서와 1인 기업이 클라이언트, 프로젝트 관리, 세무 업무를 한 곳에서 해결할 수 있습니다.",
+      en: "Freelancers and sole proprietors can manage clients, projects, and tax affairs all in one place."
     }
   },
 
@@ -38,20 +38,20 @@ export const brand = {
   logo: {
     favicon: "/favicon.ico",
     alt: {
-      ko: "UI 컴포넌트 라이브러리 로고",
-      en: "UI Components Library logo"
+      ko: "Weave 로고",
+      en: "Weave logo"
     }
   },
 
   // 메타데이터
   metadata: {
     title: {
-      ko: "UI 컴포넌트 라이브러리",
-      en: "UI Components Library"
+      ko: "Weave",
+      en: "Weave"
     },
     description: {
-      ko: "shadcn/ui 기반의 현대적인 React 컴포넌트 라이브러리",
-      en: "Modern React UI components built with Next.js and shadcn/ui"
+      ko: "솔로프리너를 위한 완벽한 솔루션입니다.",
+      en: "it's the perfect solution for solo entrepreneurs."
     }
   },
 

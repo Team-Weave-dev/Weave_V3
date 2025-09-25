@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
@@ -12,6 +14,7 @@ import {
   XCircle,
   Calendar,
   Activity,
+  ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProjectReview } from '@/types/dashboard';
@@ -80,26 +83,39 @@ export function ProjectSummaryWidget({
           </Badge>
         </div>
         
-        {/* 상태별 카운트 표시 */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Activity className="h-3.5 w-3.5 text-blue-700" />
-            <span className={`${typography.text.xs} text-blue-700`}>
-              정상 {statusCounts.normal}
-            </span>
+        {/* 상태별 카운트 표시 및 더보기 버튼 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Activity className="h-3.5 w-3.5 text-blue-700" />
+              <span className={`${typography.text.xs} text-blue-700`}>
+                정상 {statusCounts.normal}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <AlertTriangle className="h-3.5 w-3.5 text-yellow-700" />
+              <span className={`${typography.text.xs} text-yellow-700`}>
+                주의 {statusCounts.warning}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <XCircle className="h-3.5 w-3.5 text-red-700" />
+              <span className={`${typography.text.xs} text-red-700`}>
+                긴급 {statusCounts.critical}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <AlertTriangle className="h-3.5 w-3.5 text-yellow-700" />
-            <span className={`${typography.text.xs} text-yellow-700`}>
-              주의 {statusCounts.warning}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <XCircle className="h-3.5 w-3.5 text-red-700" />
-            <span className={`${typography.text.xs} text-red-700`}>
-              긴급 {statusCounts.critical}
-            </span>
-          </div>
+          
+          <Link href="/projects" passHref>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
+            >
+              더보기
+              <ArrowRight className="ml-1 h-3 w-3" />
+            </Button>
+          </Link>
         </div>
       </CardHeader>
       
