@@ -9,6 +9,7 @@ import type {
   TableSortState
 } from '@/lib/types/project-table.types';
 import { PROJECT_COLUMNS } from '@/lib/config/project-columns';
+import { removeCustomProject } from '@/lib/mock/projects';
 
 // 중앙화된 칼럼 설정 사용 - 개요 탭과 동일한 데이터 소스
 const DEFAULT_COLUMNS: ProjectTableColumn[] = PROJECT_COLUMNS;
@@ -34,7 +35,7 @@ const DEFAULT_PAGINATION = {
 // 로컬스토리지 키 - 설정 영속화
 const STORAGE_KEY = 'weave-project-table-config';
 
-export function useProjectTable(initialData: ProjectTableRow[] = []) {
+export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsChange?: () => void) {
   // 하이드레이션 상태 추적
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -94,11 +95,9 @@ export function useProjectTable(initialData: ProjectTableRow[] = []) {
 
   const [data, setData] = useState<ProjectTableRow[]>(initialData);
 
-  // initialData가 변경되면 data 업데이트
+  // initialData가 변경되면 data 업데이트 (조건 없이 항상 동기화)
   useEffect(() => {
-    if (initialData.length > 0) {
-      setData(initialData);
-    }
+    setData(initialData);
   }, [initialData]);
 
   // 하이드레이션이 완료되면 저장된 설정 적용
@@ -330,13 +329,40 @@ export function useProjectTable(initialData: ProjectTableRow[] = []) {
   const handleDeleteSelected = useCallback(() => {
     if (selectedItems.length === 0) return;
 
-    // 실제로는 여기서 삭제 확인 모달을 띄우거나 부모 컴포넌트에 이벤트를 전달
-    console.log('삭제할 항목들:', selectedItems);
+    const projectsToDelete = data.filter(project => selectedItems.includes(project.id));
+    let deletedCount = 0;
+
+    console.log('🗑️ ListView 벌크 삭제 시작:', {
+      선택된항목수: selectedItems.length,
+      삭제할프로젝트: projectsToDelete.map(p => ({ id: p.id, no: p.no, name: p.name }))
+    });
+
+    // 각 프로젝트를 개별적으로 삭제
+    projectsToDelete.forEach(project => {
+      try {
+        const deleted = removeCustomProject(project.no);
+        if (deleted) {
+          deletedCount++;
+          console.log(`✅ 프로젝트 삭제 성공: ${project.no} - ${project.name}`);
+        } else {
+          console.log(`⚠️ 프로젝트 삭제 실패: ${project.no} - ${project.name}`);
+        }
+      } catch (error) {
+        console.error(`❌ 프로젝트 삭제 중 오류: ${project.no}`, error);
+      }
+    });
+
+    console.log(`🎯 ListView 벌크 삭제 완료: ${deletedCount}/${projectsToDelete.length}개 삭제됨`);
+
+    // 부모 컴포넌트에 변경사항 알림
+    if (onProjectsChange) {
+      onProjectsChange();
+    }
 
     // 삭제 후 상태 초기화
     setSelectedItems([]);
     setIsDeleteMode(false);
-  }, [selectedItems]);
+  }, [selectedItems, data, onProjectsChange]);
 
   // 전체 초기화 (컬럼 + 필터)
   const resetAll = useCallback(() => {
@@ -400,6 +426,13 @@ function mergeColumns(
 
   return defaultColumns.map(defaultCol => {
     const savedCol = savedColumnMap.get(defaultCol.id);
-    return savedCol ? { ...defaultCol, ...savedCol } : defaultCol;
+    if (!savedCol) return defaultCol;
+
+    // label은 항상 현재 코드(defaultCol)를 우선하여 하드코딩 문제 방지
+    return {
+      ...defaultCol,
+      ...savedCol,
+      label: defaultCol.label  // localStorage의 오래된 label을 현재 코드로 덮어씀
+    };
   });
 }

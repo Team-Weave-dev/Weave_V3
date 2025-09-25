@@ -2,7 +2,8 @@ import type {
   DocumentInfo,
   DocumentStatus,
   ProjectDocumentStatus,
-  ProjectTableRow
+  ProjectTableRow,
+  PaymentStatus
 } from '@/lib/types/project-table.types';
 
 /**
@@ -52,21 +53,27 @@ export function generateMockProjects(): ProjectTableRow[] {
     );
 
     const progress = Math.floor(seededRandom(seed4) * 101);
-    let paymentProgress = 0;
+    // 수금상태 결정 (프로젝트 진행률 기반)
+    let paymentProgress: PaymentStatus = 'not_started';
 
     if (progress >= 80) {
-      paymentProgress = Math.floor(80 + seededRandom(seed5) * 21);
+      // 80% 이상 진행: 잔금 완료 또는 중도금 완료
+      paymentProgress = seededRandom(seed5) > 0.5 ? 'final_completed' : 'interim_completed';
     } else if (progress >= 50) {
-      paymentProgress = Math.floor(30 + seededRandom(seed5) * 51);
+      // 50% 이상 진행: 중도금 완료 또는 선금 완료
+      paymentProgress = seededRandom(seed5) > 0.6 ? 'interim_completed' : 'advance_completed';
     } else if (progress >= 20) {
-      paymentProgress = Math.floor(10 + seededRandom(seed5) * 31);
+      // 20% 이상 진행: 선금 완료
+      paymentProgress = 'advance_completed';
     } else {
-      paymentProgress = Math.floor(seededRandom(seed5) * 21);
+      // 20% 미만 진행: 미시작
+      paymentProgress = 'not_started';
     }
 
     const statusIndex = Math.floor(seededRandom(seed1 + seed2) * statuses.length);
+    // 완료된 프로젝트는 대부분 잔금 완료
     if (statuses[statusIndex] === 'completed' && seededRandom(seed3 + seed4) > 0.3) {
-      paymentProgress = 100;
+      paymentProgress = 'final_completed';
     }
 
     const documents = generateProjectDocuments({
@@ -99,28 +106,208 @@ export function generateMockProjects(): ProjectTableRow[] {
 
 /**
  * Get a single project by ID or No
+ * 기본 mock 데이터와 사용자 생성 프로젝트 모두에서 검색
  */
 export function getMockProjectById(id: string): ProjectTableRow | null {
-  const projects = generateMockProjects();
-  return projects.find(p => p.id === id || p.no === id) || null;
+  console.log('🔍 getMockProjectById 호출됨. 검색할 ID:', id);
+
+  // 먼저 사용자 생성 프로젝트에서 찾기
+  const customProjects = getCustomProjects();
+  console.log('📋 사용자 생성 프로젝트 개수:', customProjects.length);
+
+  if (customProjects.length > 0) {
+    console.log('📝 사용자 생성 프로젝트 목록:', customProjects.map(p => ({ id: p.id, no: p.no, name: p.name })));
+  }
+
+  const customProject = customProjects.find(p => p.id === id || p.no === id);
+  if (customProject) {
+    console.log('✅ 사용자 생성 프로젝트에서 발견:', { id: customProject.id, no: customProject.no, name: customProject.name });
+    return customProject;
+  }
+
+  console.log('⚠️ 사용자 생성 프로젝트에서 찾을 수 없음. 기본 mock 데이터에서 검색 중...');
+
+  // 없으면 기본 mock 데이터에서 찾기
+  const baseMockProjects = generateMockProjects();
+  const baseMockProject = baseMockProjects.find(p => p.id === id || p.no === id);
+
+  if (baseMockProject) {
+    console.log('✅ 기본 mock 데이터에서 발견:', { id: baseMockProject.id, no: baseMockProject.no, name: baseMockProject.name });
+    return baseMockProject;
+  }
+
+  console.log('❌ 프로젝트를 찾을 수 없음:', id);
+  return null;
+}
+
+// localStorage 키 상수
+const CUSTOM_PROJECTS_KEY = 'weave_custom_projects';
+
+/**
+ * localStorage에서 사용자가 생성한 프로젝트들 가져오기
+ * SSR 환경에서는 빈 배열 반환
+ */
+function getCustomProjects(): ProjectTableRow[] {
+  // SSR 환경에서는 localStorage 접근 불가
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const stored = localStorage.getItem(CUSTOM_PROJECTS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error reading custom projects from localStorage:', error);
+    return [];
+  }
+}
+
+/**
+ * localStorage에 사용자가 생성한 프로젝트 저장
+ * SSR 환경에서는 아무것도 하지 않음
+ */
+function saveCustomProjects(projects: ProjectTableRow[]): void {
+  // SSR 환경에서는 localStorage 접근 불가
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(CUSTOM_PROJECTS_KEY, JSON.stringify(projects));
+  } catch (error) {
+    console.error('Error saving custom projects to localStorage:', error);
+  }
+}
+
+/**
+ * 새 프로젝트 추가
+ */
+export function addCustomProject(project: ProjectTableRow): void {
+  console.log('💾 addCustomProject 호출됨:', { id: project.id, no: project.no, name: project.name });
+
+  const existingProjects = getCustomProjects();
+  console.log('📋 기존 프로젝트 개수:', existingProjects.length);
+
+  const updatedProjects = [project, ...existingProjects];
+  console.log('📝 업데이트된 프로젝트 개수:', updatedProjects.length);
+
+  saveCustomProjects(updatedProjects);
+
+  // 저장 후 검증
+  const verifyProjects = getCustomProjects();
+  const savedProject = verifyProjects.find(p => p.id === project.id || p.no === project.no);
+  if (savedProject) {
+    console.log('✅ 프로젝트 저장 성공:', { id: savedProject.id, no: savedProject.no, name: savedProject.name });
+  } else {
+    console.log('❌ 프로젝트 저장 실패!');
+  }
+}
+
+/**
+ * 프로젝트 업데이트 (ID 또는 번호로)
+ */
+export function updateCustomProject(idOrNo: string, updates: Partial<ProjectTableRow>): boolean {
+  const existingProjects = getCustomProjects();
+  const projectIndex = existingProjects.findIndex(p => p.id === idOrNo || p.no === idOrNo);
+
+  if (projectIndex !== -1) {
+    // 기존 프로젝트를 업데이트하고 수정일 갱신
+    const updatedProject = {
+      ...existingProjects[projectIndex],
+      ...updates,
+      modifiedDate: new Date().toISOString()
+    };
+
+    existingProjects[projectIndex] = updatedProject;
+    saveCustomProjects(existingProjects);
+
+    console.log('✅ 프로젝트 업데이트 성공:', {
+      id: updatedProject.id,
+      no: updatedProject.no,
+      name: updatedProject.name
+    });
+
+    return true;
+  }
+
+  console.log('⚠️ 프로젝트 업데이트 실패: 프로젝트를 찾을 수 없음', idOrNo);
+  return false;
+}
+
+/**
+ * 프로젝트 삭제 (ID 또는 번호로)
+ */
+export function removeCustomProject(idOrNo: string): boolean {
+  const existingProjects = getCustomProjects();
+  const filteredProjects = existingProjects.filter(
+    p => p.id !== idOrNo && p.no !== idOrNo
+  );
+
+  if (filteredProjects.length !== existingProjects.length) {
+    saveCustomProjects(filteredProjects);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * 모든 사용자 생성 프로젝트 삭제
+ * SSR 환경에서는 아무것도 하지 않음
+ */
+export function clearCustomProjects(): void {
+  // SSR 환경에서는 localStorage 접근 불가
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(CUSTOM_PROJECTS_KEY);
+  } catch (error) {
+    console.error('Error clearing custom projects:', error);
+  }
 }
 
 /**
  * Simulate async data fetching
+ * Clean Slate 접근법: localStorage의 사용자 생성 프로젝트만 반환
  */
 export async function fetchMockProjects(): Promise<ProjectTableRow[]> {
+  console.log('🚀 fetchMockProjects 호출됨 (Clean Slate 시스템)');
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
-  return generateMockProjects();
+
+  // 빈 상태에서 시작 - localStorage 프로젝트만 반환
+  const customProjects = getCustomProjects();
+  console.log('📋 fetchMockProjects: 로드된 프로젝트 수:', customProjects.length);
+
+  if (customProjects.length > 0) {
+    console.log('📝 로드된 프로젝트들:', customProjects.map(p => ({ id: p.id, no: p.no, name: p.name })));
+  } else {
+    console.log('ℹ️ 사용자 생성 프로젝트가 없습니다. 빈 배열을 반환합니다.');
+  }
+
+  return customProjects;
 }
 
 /**
  * Simulate async single project fetching
  */
 export async function fetchMockProject(id: string): Promise<ProjectTableRow | null> {
+  console.log('🎯 fetchMockProject 호출됨. 검색할 ID:', id);
+
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 200));
-  return getMockProjectById(id);
+
+  const project = getMockProjectById(id);
+
+  if (project) {
+    console.log('✅ fetchMockProject 성공:', { id: project.id, no: project.no, name: project.name });
+  } else {
+    console.log('❌ fetchMockProject 실패. 프로젝트를 찾을 수 없습니다:', id);
+  }
+
+  return project;
 }
 
 interface DocumentGenerationParams {

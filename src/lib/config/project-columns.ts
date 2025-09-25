@@ -132,7 +132,7 @@ export const PROJECT_COLUMNS: EnhancedProjectTableColumn[] = [
   {
     id: 'paymentProgress',
     key: 'paymentProgress',
-    label: '수급현황',
+    label: '수금상태',
     sortable: true,
     filterable: false,
     width: 110,

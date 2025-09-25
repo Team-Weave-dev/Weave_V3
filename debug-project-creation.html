@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>프로젝트 생성 디버깅</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>프로젝트 생성 데이터 플로우 디버깅</h1>
+
+    <div class="section">
+        <h2>1. localStorage 상태 확인</h2>
+        <button onclick="checkLocalStorage()">localStorage 확인</button>
+        <button onclick="clearLocalStorage()">localStorage 초기화</button>
+        <pre id="localStorageResult"></pre>
+    </div>
+
+    <div class="section">
+        <h2>2. 테스트 프로젝트 생성</h2>
+        <button onclick="createTestProject()">테스트 프로젝트 생성</button>
+        <pre id="createProjectResult"></pre>
+    </div>
+
+    <div class="section">
+        <h2>3. 생성된 프로젝트 확인</h2>
+        <button onclick="verifyCreatedProject()">프로젝트 데이터 확인</button>
+        <pre id="verifyResult"></pre>
+    </div>
+
+    <script>
+        const CUSTOM_PROJECTS_KEY = 'weave_custom_projects';
+
+        function checkLocalStorage() {
+            try {
+                const stored = localStorage.getItem(CUSTOM_PROJECTS_KEY);
+                const projects = stored ? JSON.parse(stored) : [];
+                document.getElementById('localStorageResult').textContent =
+                    `저장된 프로젝트 개수: ${projects.length}\n` +
+                    JSON.stringify(projects, null, 2);
+            } catch (error) {
+                document.getElementById('localStorageResult').textContent =
+                    `Error: ${error.message}`;
+            }
+        }
+
+        function clearLocalStorage() {
+            localStorage.removeItem(CUSTOM_PROJECTS_KEY);
+            document.getElementById('localStorageResult').textContent =
+                'localStorage 초기화 완료';
+        }
+
+        function createTestProject() {
+            try {
+                // 테스트 프로젝트 데이터 생성 (ProjectCreateModal과 동일한 구조)
+                const formData = {
+                    name: '테스트 프로젝트',
+                    client: '테스트 클라이언트',
+                    settlementMethod: 'advance_final',
+                    projectContent: '테스트 프로젝트 내용입니다.',
+                    registrationDate: new Date(),
+                    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30일 후
+                    paymentStatus: 'not_started'
+                };
+
+                // newProject 객체 생성 (ProjectCreateModal과 동일)
+                const newProject = {
+                    name: formData.name,
+                    client: formData.client,
+                    registrationDate: formData.registrationDate.toISOString().split('T')[0],
+                    dueDate: formData.dueDate.toISOString().split('T')[0],
+                    status: 'planning',
+                    progress: 0,
+                    settlementMethod: formData.settlementMethod,
+                    paymentStatus: formData.paymentStatus,
+                    paymentProgress: formData.paymentStatus,
+                    projectContent: formData.projectContent,
+                    totalAmount: 0,
+                    hasContract: false,
+                    hasBilling: false,
+                    hasDocuments: false
+                };
+
+                // ProjectsView와 동일한 방식으로 ID 및 추가 필드 생성
+                const timestamp = Date.now();
+                const existingProjects = JSON.parse(localStorage.getItem(CUSTOM_PROJECTS_KEY) || '[]');
+                const projectWithId = {
+                    ...newProject,
+                    id: `project-${timestamp}`,
+                    no: `WEAVE_${String(existingProjects.length + 1).padStart(3, '0')}`,
+                    modifiedDate: new Date().toISOString().split('T')[0],
+                    documents: [],
+                    documentStatus: {
+                        contract: { exists: false, status: 'none', count: 0 },
+                        invoice: { exists: false, status: 'none', count: 0 },
+                        report: { exists: false, status: 'none', count: 0 },
+                        estimate: { exists: false, status: 'none', count: 0 },
+                        etc: { exists: false, status: 'none', count: 0 }
+                    }
+                };
+
+                // localStorage에 저장
+                const updatedProjects = [projectWithId, ...existingProjects];
+                localStorage.setItem(CUSTOM_PROJECTS_KEY, JSON.stringify(updatedProjects));
+
+                document.getElementById('createProjectResult').textContent =
+                    '테스트 프로젝트 생성 완료:\n' + JSON.stringify(projectWithId, null, 2);
+
+            } catch (error) {
+                document.getElementById('createProjectResult').textContent =
+                    `Error: ${error.message}`;
+            }
+        }
+
+        function verifyCreatedProject() {
+            try {
+                const stored = localStorage.getItem(CUSTOM_PROJECTS_KEY);
+                const projects = stored ? JSON.parse(stored) : [];
+
+                if (projects.length === 0) {
+                    document.getElementById('verifyResult').textContent = '생성된 프로젝트가 없습니다.';
+                    return;
+                }
+
+                const latestProject = projects[0];
+                const verification = {
+                    '프로젝트명': latestProject.name,
+                    '클라이언트': latestProject.client,
+                    '정산방식': latestProject.settlementMethod,
+                    '등록일': latestProject.registrationDate,
+                    '마감일': latestProject.dueDate,
+                    '수금상태': latestProject.paymentStatus,
+                    '프로젝트 내용': latestProject.projectContent,
+                    '현재 단계': latestProject.status,
+                    '진행률': latestProject.progress + '%',
+                    '프로젝트 번호': latestProject.no
+                };
+
+                document.getElementById('verifyResult').textContent =
+                    '최신 프로젝트 검증:\n' + JSON.stringify(verification, null, 2);
+
+            } catch (error) {
+                document.getElementById('verifyResult').textContent =
+                    `Error: ${error.message}`;
+            }
+        }
+
+        // 페이지 로드 시 localStorage 상태 자동 확인
+        window.onload = function() {
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

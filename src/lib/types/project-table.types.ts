@@ -22,7 +22,12 @@ export interface ProjectTableRow {
   status: ProjectStatus;
   dueDate: string;
   modifiedDate: string;
-  paymentProgress?: number;   // 수급현황 진행률 (총금액 대비 입금액 비율)
+  paymentProgress?: PaymentStatus;   // 수금상태 (배지로 표시)
+  // 새로운 필드 추가
+  settlementMethod?: SettlementMethod;  // 정산방식
+  paymentStatus?: PaymentStatus;        // 수금상태
+  totalAmount?: number;                 // 총 금액
+  projectContent?: string;              // 프로젝트 내용
   // 지연 로딩 최적화를 위한 플래그
   hasContract?: boolean;
   hasBilling?: boolean;
@@ -42,6 +47,20 @@ export type ProjectStatus =
   | 'completed'
   | 'on_hold'
   | 'cancelled';
+
+// 정산방식 타입
+export type SettlementMethod =
+  | 'not_set'              // 미설정
+  | 'advance_final'        // 선금+잔금
+  | 'advance_interim_final' // 선금+중도금+잔금
+  | 'post_payment';        // 후불
+
+// 수금상태 타입
+export type PaymentStatus =
+  | 'advance_completed'    // 선금 완료
+  | 'interim_completed'    // 중도금 완료
+  | 'final_completed'      // 잔금 완료
+  | 'not_started';         // 미시작
 
 export interface ContractInfo {
   totalAmount?: number;       // 계약서 총 금액

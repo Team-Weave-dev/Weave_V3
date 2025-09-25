@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import {
   GripVertical,
@@ -15,13 +15,14 @@ import Pagination from '@/components/ui/pagination';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import ProjectProgress from '@/components/ui/project-progress';
-import { getProjectStatusText } from '@/config/brand';
+import { getProjectStatusText, getPaymentStatusText } from '@/config/brand';
 import type {
   ProjectTableColumn,
   ProjectTableRow,
   ProjectTableConfig,
   TableFilterState,
-  TableSortState
+  TableSortState,
+  PaymentStatus
 } from '@/lib/types/project-table.types';
 
 export interface AdvancedTableProps {
@@ -53,6 +54,13 @@ export function AdvancedTable({
   onSelectAll,
   onDeselectAll
 }: AdvancedTableProps) {
+  // StrictMode와 호환을 위한 클라이언트 사이드 렌더링 상태
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   const [draggedColumns, setDraggedColumns] = useState<ProjectTableColumn[] | null>(null);
   // 컬럼 리사이징 상태
@@ -278,16 +286,14 @@ export function AdvancedTable({
           />
         );
       case 'payment_progress':
-        return (
-          <ProjectProgress
-            value={Number(value) || 0}
-            size="sm"
-            showLabel
-            labelPlacement="bottom"
-            labelClassName="text-[11px] text-muted-foreground font-medium"
-            className="max-w-[120px]"
-          />
-        );
+        {
+          const paymentStatus = value as PaymentStatus || 'not_started';
+          return (
+            <Badge variant={paymentStatus === 'not_started' ? 'secondary' : 'default'} className="text-xs">
+              {getPaymentStatusText[paymentStatus]('ko')}
+            </Badge>
+          );
+        }
       case 'status':
         {
           const statusValue = value as ProjectTableRow['status'];
@@ -308,34 +314,35 @@ export function AdvancedTable({
       {/* 테이블 */}
       <Card>
         <Table>
-          <DragDropContext
-            onDragStart={handleDragStart}
-            onDragEnd={handleColumnReorder}
-            onDragUpdate={handleDragUpdate}
-          >
-            <Droppable
-              droppableId="table-header"
-              direction="horizontal"
-              renderClone={(provided, snapshot, rubric) => {
-                const column = visibleColumns[rubric.source.index];
-                return (
-                  <TableHead
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    className="select-none opacity-90 shadow-2xl scale-110 bg-background border-2 border-primary z-[1000] rounded-md"
-                    style={{
-                      width: getColumnWidth(column),
-                      ...provided.draggableProps.style,
-                    }}
-                  >
-                    <div className="flex items-center gap-2 px-2">
-                      <span className="flex-shrink-0 font-medium">{column.label}</span>
-                      {column.sortable && (
-                        <div className="flex flex-col flex-shrink-0">
-                          <SortAsc className="w-3 h-3 text-muted-foreground" />
-                          <SortDesc className="w-3 h-3 -mt-1 text-muted-foreground" />
-                        </div>
+          {isClient ? (
+            <DragDropContext
+              onDragStart={handleDragStart}
+              onDragEnd={handleColumnReorder}
+              onDragUpdate={handleDragUpdate}
+            >
+              <Droppable
+                droppableId="table-header"
+                direction="horizontal"
+                renderClone={(provided, snapshot, rubric) => {
+                  const column = visibleColumns[rubric.source.index];
+                  return (
+                    <TableHead
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className="select-none opacity-90 shadow-2xl scale-110 bg-background border-2 border-primary z-[1000] rounded-md"
+                      style={{
+                        width: getColumnWidth(column),
+                        ...provided.draggableProps.style,
+                      }}
+                    >
+                      <div className="flex items-center gap-2 px-2">
+                        <span className="flex-shrink-0 font-medium">{column.label}</span>
+                        {column.sortable && (
+                          <div className="flex flex-col flex-shrink-0">
+                            <SortAsc className="w-3 h-3 text-muted-foreground" />
+                            <SortDesc className="w-3 h-3 -mt-1 text-muted-foreground" />
+                          </div>
                       )}
                     </div>
                   </TableHead>
@@ -457,8 +464,71 @@ export function AdvancedTable({
                   </TableRow>
                 </TableHeader>
               )}
-            </Droppable>
-          </DragDropContext>
+              </Droppable>
+            </DragDropContext>
+          ) : (
+            // 서버 사이드 렌더링용 정적 헤더 (드래그앤드롭 비활성화)
+            <TableHeader>
+              <TableRow>
+                {/* 삭제 모드일 때 체크박스 헤더 */}
+                {isDeleteMode && (
+                  <TableHead className="w-12 px-2">
+                    <Checkbox
+                      checked={selectedItems.length === data.length && data.length > 0}
+                      onCheckedChange={selectedItems.length === data.length ? onDeselectAll : onSelectAll}
+                      aria-label="전체 선택"
+                    />
+                  </TableHead>
+                )}
+                {visibleColumns.map((column, index) => (
+                  <TableHead
+                    key={column.id}
+                    data-column-id={column.id}
+                    data-column-key={column.key}
+                    className="select-none cursor-pointer hover:bg-secondary hover:shadow-sm"
+                    style={{
+                      width: getColumnWidth(column),
+                      minWidth: getColumnWidth(column),
+                      maxWidth: getColumnWidth(column),
+                    }}
+                    onClick={() => {
+                      if (column.sortable) {
+                        handleSort(column.key as string);
+                      }
+                    }}
+                    onMouseEnter={() => setHoveredColumnIndex(index)}
+                    onMouseLeave={() => setHoveredColumnIndex(null)}
+                  >
+                    <div className="flex items-center gap-2 relative">
+                      <span className="flex-shrink-0">{column.label}</span>
+                      {column.sortable && (
+                        <div className="flex flex-col flex-shrink-0">
+                          <SortAsc className={`w-3 h-3 ${config.sort.column === column.key && config.sort.direction === 'asc'
+                              ? 'text-primary'
+                              : 'text-muted-foreground'
+                            }`} />
+                          <SortDesc className={`w-3 h-3 -mt-1 ${config.sort.column === column.key && config.sort.direction === 'desc'
+                              ? 'text-primary'
+                              : 'text-muted-foreground'
+                            }`} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 컬럼 리사이저 (정적 버전) */}
+                    {index < visibleColumns.length - 1 && (hoveredColumnIndex === index || hoveredColumnIndex === index + 1 || resizingColumnId === column.id) && (
+                      <div
+                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-border hover:bg-primary transition-colors z-10"
+                        // TODO: 컬럼 리사이징 기능 구현 예정
+                        // onMouseDown={(e) => startColumnResize(e, column.id, getColumnWidth(column))}
+                        style={{ right: '-2px' }}
+                      />
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+          )}
           <TableBody>
             {loading ? (
               // 로딩 스켈레톤 행들

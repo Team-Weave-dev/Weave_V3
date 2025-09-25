@@ -59,19 +59,55 @@ export const getNavText = {
   docs: (lang: 'ko' | 'en' = 'ko') => uiText.navigation.docs[lang],
   // ...
 }
+
+// 프로젝트 정산방식 텍스트 (2025-09-25 추가)
+export const getSettlementMethodText = {
+  not_set: (lang: 'ko' | 'en' = 'ko') =>
+    uiText.componentDemo.projectPage.projectDetails.settlementMethods.not_set[lang],
+  advance_final: (lang: 'ko' | 'en' = 'ko') =>
+    uiText.componentDemo.projectPage.projectDetails.settlementMethods.advance_final[lang],
+  advance_interim_final: (lang: 'ko' | 'en' = 'ko') =>
+    uiText.componentDemo.projectPage.projectDetails.settlementMethods.advance_interim_final[lang],
+  post_payment: (lang: 'ko' | 'en' = 'ko') =>
+    uiText.componentDemo.projectPage.projectDetails.settlementMethods.post_payment[lang]
+}
+
+// 프로젝트 수금상태 텍스트 (2025-09-25 추가)
+export const getPaymentStatusText = {
+  not_started: (lang: 'ko' | 'en' = 'ko') =>
+    uiText.componentDemo.projectPage.projectDetails.paymentStatuses.not_started[lang],
+  advance_completed: (lang: 'ko' | 'en' = 'ko') =>
+    uiText.componentDemo.projectPage.projectDetails.paymentStatuses.advance_completed[lang],
+  interim_completed: (lang: 'ko' | 'en' = 'ko') =>
+    uiText.componentDemo.projectPage.projectDetails.paymentStatuses.interim_completed[lang],
+  final_completed: (lang: 'ko' | 'en' = 'ko') =>
+    uiText.componentDemo.projectPage.projectDetails.paymentStatuses.final_completed[lang]
+}
 ```
 
 ### 사용 예시
 ```typescript
 // ✅ 올바른 사용법
-import { getBrandName, getNavText } from '@/config/brand'
+import {
+  getBrandName,
+  getNavText,
+  getSettlementMethodText,
+  getPaymentStatusText
+} from '@/config/brand'
 
+// 기본 텍스트 사용
 const title = getBrandName('ko')  // "UI 컴포넌트 라이브러리"
 const homeText = getNavText.home('ko')  // "홈"
+
+// 프로젝트 정산방식 텍스트 사용 (2025-09-25 추가)
+const settlementText = getSettlementMethodText.advance_final('ko')  // "선금+잔금"
+const paymentText = getPaymentStatusText.advance_completed('ko')  // "선금 완료"
 
 // ❌ 절대 금지
 const title = "UI 컴포넌트 라이브러리"
 const homeText = "홈"
+const settlementText = "선금+잔금"
+const paymentText = "선금 완료"
 ```
 
 ## 📐 constants.ts - 레이아웃 상수 및 스타일 값
