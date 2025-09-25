@@ -572,12 +572,12 @@ export function ImprovedDashboard({
           title: '핵심 성과 지표',
           position: { 
             x: 5, y: 0, 
-            w: getDefaultWidgetSize('kpi').width,
-            h: getDefaultWidgetSize('kpi').height
+            w: getDefaultWidgetSize('kpiMetrics').width,
+            h: getDefaultWidgetSize('kpiMetrics').height
           },
           data: mockKPIMetrics,
-          minW: getDefaultWidgetSize('kpi').minWidth || 1,
-          minH: getDefaultWidgetSize('kpi').minHeight || 2,
+          minW: getDefaultWidgetSize('kpiMetrics').minWidth || 1,
+          minH: getDefaultWidgetSize('kpiMetrics').minHeight || 2,
         },
         {
           id: 'widget_tax_1',

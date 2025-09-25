@@ -10,12 +10,16 @@ import { Button } from '@/components/ui/button'
 import Typography from '@/components/ui/typography'
 import { Settings, Save, Plus, Layers, Grid3x3, LayoutDashboard } from 'lucide-react'
 import { useImprovedDashboardStore, selectIsEditMode } from '@/lib/stores/useImprovedDashboardStore'
+import { WidgetSelectorModal } from '@/components/dashboard/WidgetSelectorModal'
+import { ImprovedWidget } from '@/types/improved-dashboard'
+import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults'
 
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isCompact, setIsCompact] = useState(true)
+  const [widgetModalOpen, setWidgetModalOpen] = useState(false)
   
   // 초기 위젯 설정 (9x8 그리드 기준)
   const initialWidgets = [
@@ -27,6 +31,7 @@ export default function DashboardPage() {
   ]
   
   const isEditMode = useImprovedDashboardStore(selectIsEditMode)
+  const widgets = useImprovedDashboardStore(state => state.widgets)
   const enterEditMode = useImprovedDashboardStore(state => state.enterEditMode)
   const exitEditMode = useImprovedDashboardStore(state => state.exitEditMode)
   const compactWidgets = useImprovedDashboardStore(state => state.compactWidgets)
@@ -34,19 +39,37 @@ export default function DashboardPage() {
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
   
   const handleAddWidget = () => {
-    const emptySpace = findSpaceForWidget(2, 2)
+    setWidgetModalOpen(true)
+  }
+
+  const handleSelectWidget = (type: ImprovedWidget['type']) => {
+    const defaultSize = getDefaultWidgetSize(type)
+    const emptySpace = findSpaceForWidget(defaultSize.width, defaultSize.height)
+    
     if (!emptySpace) {
-      alert('위젯을 추가할 공간이 없습니다.')
+      alert('위젯을 추가할 공간이 없습니다. 기존 위젯을 조정해주세요.')
       return
     }
-    
-    const newWidget = {
-      id: `widget_${Date.now()}`,
-      type: 'custom' as const,
-      title: '새 위젯',
+
+    // 위젯 타입별 기본 제목 설정
+    const widgetTitles: Record<ImprovedWidget['type'], string> = {
+      calendar: '캘린더',
+      todoList: '할 일 목록',
+      projectSummary: '프로젝트 현황',
+      kpiMetrics: '핵심 성과 지표',
+      taxDeadline: '세무 일정',
+      custom: '새 위젯'
+    }
+
+    const newWidget: ImprovedWidget = {
+      id: `widget_${type}_${Date.now()}`,
+      type,
+      title: widgetTitles[type],
       position: emptySpace,
-      minW: 2,
-      minH: 2,
+      minW: defaultSize.minWidth || 2,
+      minH: defaultSize.minHeight || 2,
+      maxW: defaultSize.maxWidth,
+      maxH: defaultSize.maxHeight,
     }
     
     addWidget(newWidget)
@@ -156,6 +179,14 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      
+      {/* 위젯 선택 모달 */}
+      <WidgetSelectorModal
+        open={widgetModalOpen}
+        onOpenChange={setWidgetModalOpen}
+        onSelectWidget={handleSelectWidget}
+        existingWidgets={widgets}
+      />
       
       {/* 대시보드 위젯 */}
       <ImprovedDashboard 

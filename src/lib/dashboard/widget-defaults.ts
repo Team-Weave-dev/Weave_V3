@@ -3,7 +3,7 @@
  * 대시보드 위젯들의 기본 크기를 정의합니다.
  */
 
-export type WidgetType = 'calendar' | 'projectSummary' | 'kpi' | 'taxDeadline' | 'todoList' | 'custom';
+export type WidgetType = 'calendar' | 'projectSummary' | 'kpiMetrics' | 'taxDeadline' | 'todoList' | 'custom';
 
 export interface WidgetDefaultSize {
   width: number;
@@ -20,43 +20,43 @@ export interface WidgetDefaultSize {
  */
 export const WIDGET_DEFAULT_SIZES: Record<WidgetType, WidgetDefaultSize> = {
   calendar: {
-    width: 3,
-    height: 3,
+    width: 2,
+    height: 2,
     minWidth: 2,
     minHeight: 2,
-    maxWidth: 6,
-    maxHeight: 6
+    maxWidth: 5,
+    maxHeight: 5
   },
   projectSummary: {
     width: 2,
-    height: 3,
+    height: 2,
     minWidth: 2,
     minHeight: 2,
-    maxWidth: 4,
+    maxWidth: 5,
     maxHeight: 5
   },
-  kpi: {
-    width: 1,
-    height: 3,
+  kpiMetrics: {
+    width: 2,
+    height: 2,
     minWidth: 1,
     minHeight: 2,
-    maxWidth: 2,
-    maxHeight: 4
+    maxWidth: 5,
+    maxHeight: 5
   },
   taxDeadline: {
-    width: 1,
-    height: 3,
+    width: 2,
+    height: 2,
     minWidth: 1,
     minHeight: 2,
-    maxWidth: 2,
-    maxHeight: 4
+    maxWidth: 5,
+    maxHeight: 5
   },
   todoList: {
     width: 2,
-    height: 3,
+    height: 2,
     minWidth: 2,
     minHeight: 2,
-    maxWidth: 4,
+    maxWidth: 5,
     maxHeight: 5
   },
   custom: {
@@ -64,8 +64,8 @@ export const WIDGET_DEFAULT_SIZES: Record<WidgetType, WidgetDefaultSize> = {
     height: 2,
     minWidth: 1,
     minHeight: 1,
-    maxWidth: 9,
-    maxHeight: 9
+    maxWidth: 5,
+    maxHeight: 5
   }
 };
 
@@ -85,7 +85,7 @@ export function getRecommendedPosition(type: WidgetType, _existingWidgets?: any[
   const recommendedPositions: Record<WidgetType, { x: number; y: number }> = {
     calendar: { x: 0, y: 0 },      // 좌상단 (메인 포커스)
     projectSummary: { x: 3, y: 0 }, // 캘린더 우측
-    kpi: { x: 5, y: 0 },            // 프로젝트 우측
+    kpiMetrics: { x: 5, y: 0 },      // 프로젝트 우측
     taxDeadline: { x: 6, y: 0 },    // KPI 우측
     todoList: { x: 7, y: 0 },       // 맨 우측
     custom: { x: 0, y: 0 }          // 기본 위치

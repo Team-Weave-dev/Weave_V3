@@ -1,0 +1,161 @@
+'use client'
+
+import React from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import {
+  Calendar,
+  ListTodo,
+  Receipt,
+  TrendingUp,
+  Briefcase,
+  Check
+} from 'lucide-react'
+import { ImprovedWidget } from '@/types/improved-dashboard'
+import { getDashboardText } from '@/config/brand'
+
+interface WidgetOption {
+  type: ImprovedWidget['type']
+  title: string
+  description: string
+  icon: React.ElementType
+  available: boolean
+}
+
+interface WidgetSelectorModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSelectWidget: (type: ImprovedWidget['type']) => void
+  existingWidgets: ImprovedWidget[]
+}
+
+export function WidgetSelectorModal({
+  open,
+  onOpenChange,
+  onSelectWidget,
+  existingWidgets
+}: WidgetSelectorModalProps) {
+  // 위젯 옵션 정의
+  const widgetOptions: WidgetOption[] = [
+    {
+      type: 'calendar',
+      title: '캘린더',
+      description: '월간 캘린더 및 일정 관리',
+      icon: Calendar,
+      available: true
+    },
+    {
+      type: 'todoList',
+      title: '할 일 목록',
+      description: '작업 관리 및 우선순위 설정',
+      icon: ListTodo,
+      available: true
+    },
+    {
+      type: 'projectSummary',
+      title: '프로젝트 현황',
+      description: '진행 중인 프로젝트 요약',
+      icon: Briefcase,
+      available: true
+    },
+    {
+      type: 'kpiMetrics',
+      title: '핵심 성과 지표',
+      description: '주요 비즈니스 메트릭',
+      icon: TrendingUp,
+      available: true
+    },
+    {
+      type: 'taxDeadline',
+      title: '세무 일정',
+      description: '세무 신고 및 납부 일정',
+      icon: Receipt,
+      available: true
+    }
+  ]
+
+  // 이미 추가된 위젯 타입 확인
+  const existingTypes = new Set(existingWidgets.map(w => w.type))
+
+  const handleSelectWidget = (type: ImprovedWidget['type']) => {
+    onSelectWidget(type)
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{getDashboardText.selectWidget('ko')}</DialogTitle>
+          <DialogDescription>
+            대시보드에 추가할 위젯을 선택하세요. 동일한 위젯을 여러 개 추가할 수 있습니다.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          {widgetOptions.map((option) => {
+            const Icon = option.icon
+            const isAdded = existingTypes.has(option.type)
+            
+            return (
+              <button
+                key={option.type}
+                onClick={() => handleSelectWidget(option.type)}
+                disabled={!option.available}
+                className={cn(
+                  "relative p-4 rounded-lg border-2 text-left transition-all",
+                  "hover:border-primary hover:bg-accent/50",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                  !option.available && "opacity-50 cursor-not-allowed",
+                  "group"
+                )}
+              >
+                {/* 이미 추가된 위젯 표시 */}
+                {isAdded && (
+                  <div className="absolute top-2 right-2">
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3">
+                  <div className={cn(
+                    "p-2 rounded-md",
+                    "bg-primary/10 text-primary",
+                    "group-hover:bg-primary group-hover:text-primary-foreground",
+                    "transition-colors"
+                  )}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm mb-1">
+                      {option.title}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {option.description}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex justify-end mt-6">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {getDashboardText.cancel('ko')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -1604,7 +1604,9 @@ export const getDashboardText = {
   manualAlign: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '정렬' : 'Align',
   editMode: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '편집' : 'Edit',
   complete: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료' : 'Done',
-  addWidget: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 추가' : 'Add Widget'
+  addWidget: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 추가' : 'Add Widget',
+  selectWidget: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 선택' : 'Select Widget',
+  cancel: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '취소' : 'Cancel'
 }
 
 // 세금 관리 텍스트

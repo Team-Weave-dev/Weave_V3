@@ -9,6 +9,65 @@
 3. **접근성 보장**: WCAG 2.1 AA 준수
 4. **반응형 디자인**: 모든 화면 크기에서 적절히 작동
 
+## 📏 위젯 크기 시스템 (2025-09-25 업데이트)
+
+### 표준 크기 규격
+모든 대시보드 위젯은 다음의 통일된 크기 시스템을 따릅니다:
+
+```typescript
+// src/lib/dashboard/widget-defaults.ts
+export const WIDGET_DEFAULT_SIZES = {
+  // 모든 위젯 공통
+  width: 2,        // 초기 추가 시 2x2 크기
+  height: 2,       // 초기 추가 시 2x2 크기
+  minWidth: 1-2,   // 최소 너비 (위젯별 차이)
+  minHeight: 2,    // 최소 높이 (공통)
+  maxWidth: 5,     // 최대 너비 5 (공통)
+  maxHeight: 5,    // 최대 높이 5 (공통)
+}
+```
+
+### 위젯별 세부 크기 규격
+
+| 위젯 타입 | 최소 크기 | 기본 크기 | 최대 크기 |
+|-----------|-----------|-----------|-----------|
+| **캘린더** | 2x2 | 2x2 | 5x5 |
+| **프로젝트 현황** | 2x2 | 2x2 | 5x5 |
+| **핵심 성과 지표** | 1x2 | 2x2 | 5x5 |
+| **세무 일정** | 1x2 | 2x2 | 5x5 |
+| **할 일 목록** | 2x2 | 2x2 | 5x5 |
+| **커스텀** | 1x1 | 2x2 | 5x5 |
+
+### 크기 규칙
+1. **초기 크기**: 모든 위젯은 2x2로 추가됨 (사용자 친화적 일관성)
+2. **최소 높이**: 모든 위젯 최소 높이 2 (콘텐츠 가독성 보장)
+3. **최대 크기**: 모든 위젯 최대 5x5 (대시보드 밸런스 유지)
+4. **리사이징**: 편집 모드에서 사용자가 크기 조절 가능
+
+### 크기별 반응형 디자인
+```typescript
+// 위젯 내부 반응형 처리 예시
+export function YourWidget({ gridSize, ...props }: YourWidgetProps) {
+  // 그리드 크기에 따른 레이아웃 조정
+  const isCompact = gridSize && (gridSize.w <= 2 || gridSize.h <= 2);
+  const isMedium = gridSize && (gridSize.w <= 3 || gridSize.h <= 3);
+  const isLarge = gridSize && (gridSize.w > 3 && gridSize.h > 3);
+  
+  return (
+    <Card>
+      {/* 크기별 조건부 렌더링 */}
+      {isCompact ? (
+        <CompactView />
+      ) : isMedium ? (
+        <MediumView />
+      ) : (
+        <FullView />
+      )}
+    </Card>
+  );
+}
+```
+
 ## 📐 위젯 구조 표준
 
 ### 1. 기본 컴포넌트 구조
@@ -282,17 +341,35 @@ export interface YourDataType {
 - [ ] 반응형 레이아웃 확인
 - [ ] 다크모드 지원 확인
 
-## 📝 참고 위젯
+## 📝 현재 사용 가능한 위젯 (2025-09-25 기준)
 
-다음 위젯들을 참고하여 일관성 유지:
+대시보드에서 사용 가능한 위젯 목록:
 
-1. **TaxDeadlineWidget.tsx** - 표준 구조의 좋은 예시
-2. **TodoListWidget.tsx** - 복잡한 상호작용이 있는 위젯
-3. **CalendarWidget.tsx** - 툴바가 많은 위젯
-4. **ProjectSummaryWidget.tsx** - 탭과 상태 관리가 있는 위젯
-5. **ChartWidget.tsx** - 데이터 시각화 차트 위젯
-6. **QuickActionsWidget.tsx** - 간단한 액션 버튼 위젯
-7. **StatsWidget.tsx** - 통계 및 메트릭 표시 위젯
+1. **CalendarWidget.tsx** - 월간 캘린더 및 일정 관리
+2. **TodoListWidget.tsx** - 드래그 앤 드롭 할 일 관리
+3. **ProjectSummaryWidget.tsx** - 프로젝트 현황 탭 뷰
+4. **KPIWidget.tsx** - 핵심 성과 지표 메트릭
+5. **TaxDeadlineWidget.tsx** - 세무 일정 및 D-day 알림
+
+### 위젯 추가 시스템
+
+**위젯 선택 모달 (`WidgetSelectorModal.tsx`)**:
+- 편집 모드에서 "위젯 추가" 버튼 클릭 시 표시
+- 모든 위젯 타입을 아이콘과 설명과 함께 표시
+- 이미 추가된 위젯도 선택 가능 (중복 허용)
+- 선택 시 자동으로 2x2 크기로 빈 공간에 추가
+
+### 위젯 타입 정의
+```typescript
+// src/types/improved-dashboard.ts
+export type ImprovedWidget['type'] = 
+  | 'calendar'
+  | 'todoList'
+  | 'projectSummary'
+  | 'kpiMetrics'
+  | 'taxDeadline'
+  | 'custom'
+```
 
 ## 🚨 주의사항
 
