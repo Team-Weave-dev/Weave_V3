@@ -244,7 +244,7 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
   title = '세무 일정',
   selectedMonth,
   showOnlyUpcoming = true,
-  maxItems = 5,
+  maxItems = 10,
   compactMode = false,
   categories,
   highlightDays = 7,
@@ -254,14 +254,22 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
   defaultSize = { w: 5, h: 2 }
 }) => {
   const displayTitle = title || getWidgetText.taxDeadline.title('ko');
-  const [currentSelectedMonth, setCurrentSelectedMonth] = useState<number | undefined>(selectedMonth);
+  const [viewMode, setViewMode] = useState<'next3months' | 'all' | number>('next3months');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  // 월 선택 핸들러
-  const handleMonthChange = (value: string) => {
-    const month = value === 'all' ? undefined : parseInt(value);
-    setCurrentSelectedMonth(month);
-    onMonthChange?.(month || 0);
+  // 뷰 모드 핸들러
+  const handleViewModeChange = (value: string) => {
+    if (value === 'next3months') {
+      setViewMode('next3months');
+      onMonthChange?.(0);
+    } else if (value === 'all') {
+      setViewMode('all');
+      onMonthChange?.(0);
+    } else {
+      const month = parseInt(value);
+      setViewMode(month);
+      onMonthChange?.(month);
+    }
   };
 
   // 항목 확장/축소 토글
@@ -275,6 +283,28 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
     setExpandedItems(newExpanded);
   };
 
+  // 오늘부터 3개월 후까지의 일정 가져오기
+  const getNext3MonthsDeadlines = (deadlines: TaxDeadline[]) => {
+    const today = new Date();
+    const threeMonthsLater = new Date();
+    threeMonthsLater.setMonth(today.getMonth() + 3);
+    
+    return deadlines.map(deadline => {
+      const dday = calculateDday(deadline.deadlineDay, deadline.deadlineMonth);
+      const deadlineDate = new Date(today);
+      deadlineDate.setDate(today.getDate() + dday);
+      
+      return {
+        ...deadline,
+        dday,
+        deadlineDate
+      };
+    }).filter(d => {
+      // 오늘부터 3개월 이내의 일정만 필터링
+      return d.dday >= 0 && d.dday <= 90;
+    });
+  };
+
   // 필터링된 세무 일정
   const filteredDeadlines = useMemo(() => {
     let filtered = [...KOREAN_TAX_CALENDAR];
@@ -284,25 +314,41 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
       filtered = filtered.filter(d => categories.includes(d.category));
     }
 
-    // 월 필터
-    if (currentSelectedMonth) {
-      filtered = filtered.filter(d => {
+    // 뷰 모드에 따른 필터링
+    let withDday;
+    
+    if (viewMode === 'next3months') {
+      // 향후 3개월 일정
+      withDday = getNext3MonthsDeadlines(filtered);
+    } else if (viewMode === 'all') {
+      // 전체 일정
+      withDday = filtered.map(deadline => ({
+        ...deadline,
+        dday: calculateDday(deadline.deadlineDay, deadline.deadlineMonth)
+      }));
+      
+      // 다가오는 일정만 표시
+      if (showOnlyUpcoming) {
+        withDday = withDday.filter(d => d.dday >= 0);
+      }
+    } else {
+      // 특정 월 필터
+      const monthFilter = filtered.filter(d => {
         if (d.frequency === 'monthly') {
           return true; // 매월 반복
         }
-        return d.deadlineMonth === currentSelectedMonth;
+        return d.deadlineMonth === viewMode;
       });
-    }
-
-    // D-day 계산 및 정렬
-    const withDday = filtered.map(deadline => ({
-      ...deadline,
-      dday: calculateDday(deadline.deadlineDay, deadline.deadlineMonth)
-    }));
-
-    // 다가오는 일정만 표시
-    if (showOnlyUpcoming) {
-      withDday.filter(d => d.dday >= 0);
+      
+      withDday = monthFilter.map(deadline => ({
+        ...deadline,
+        dday: calculateDday(deadline.deadlineDay, deadline.deadlineMonth)
+      }));
+      
+      // 다가오는 일정만 표시
+      if (showOnlyUpcoming) {
+        withDday = withDday.filter(d => d.dday >= 0);
+      }
     }
 
     // D-day 기준으로 정렬
@@ -310,7 +356,7 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
 
     // 최대 항목 수 제한
     return withDday.slice(0, maxItems);
-  }, [currentSelectedMonth, categories, showOnlyUpcoming, maxItems]);
+  }, [viewMode, categories, showOnlyUpcoming, maxItems]);
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">
@@ -324,13 +370,14 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
           </div>
           <div className="flex items-center gap-1">
             <Select
-              value={currentSelectedMonth?.toString() || 'all'}
-              onValueChange={handleMonthChange}
+              value={viewMode === 'next3months' ? 'next3months' : viewMode === 'all' ? 'all' : viewMode.toString()}
+              onValueChange={handleViewModeChange}
             >
-              <SelectTrigger className="w-[100px] h-8">
-                <SelectValue placeholder="전체" />
+              <SelectTrigger className="w-[120px] h-8">
+                <SelectValue placeholder="향후 3개월" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="next3months">향후 3개월</SelectItem>
                 <SelectItem value="all">전체</SelectItem>
                 {Array.from({ length: 12 }, (_, i) => (
                   <SelectItem key={i + 1} value={(i + 1).toString()}>
