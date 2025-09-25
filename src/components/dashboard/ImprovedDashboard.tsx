@@ -889,7 +889,8 @@ export function ImprovedDashboard({
       case 'todoList':
         return <TodoListWidget 
           title={widget.title} 
-          tasks={widget.data || mockTodoData}
+          // tasks prop을 전달하지 않아서 위젯 내부의 목데이터를 사용하도록 함
+          // tasks={widget.data || mockTodoData}
         />;
       case 'calendar':
         return <CalendarWidget

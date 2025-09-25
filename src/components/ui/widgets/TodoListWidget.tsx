@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,553 @@ const priorityColors: Record<TodoPriority, { badge: string; icon: string }> = {
   p4: { badge: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400', icon: 'text-gray-400' }
 };
 
+// 로컬 스토리지 키
+const STORAGE_KEY = 'weave_dashboard_todos';
+const SECTIONS_KEY = 'weave_dashboard_todo_sections';
+
+// 초기 목데이터 생성 함수
+const generateInitialData = (): { tasks: TodoTask[], sections: TodoSection[] } => {
+  console.log('generateInitialData called');
+  
+  const sections: TodoSection[] = [
+    { id: 'urgent', name: '🔥 긴급', order: 0, isExpanded: true },
+    { id: 'work', name: '💼 업무', order: 1, isExpanded: true },
+    { id: 'personal', name: '🏠 개인', order: 2, isExpanded: true },
+    { id: 'learning', name: '📚 학습', order: 3, isExpanded: true },
+    { id: 'ideas', name: '💡 아이디어', order: 4, isExpanded: false }
+  ];
+
+  const tasks: TodoTask[] = [
+    // 긴급 섹션 태스크
+    {
+      id: 'urgent-1',
+      title: '세금 신고 마감 (D-3)',
+      completed: false,
+      priority: 'p1' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'urgent-1-1',
+          title: '영수증 정리하기',
+          completed: true,
+          priority: 'p1' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'urgent',
+          parentId: 'urgent-1',
+          order: 0,
+          isExpanded: false,
+          createdAt: new Date(),
+          completedAt: new Date()
+        },
+        {
+          id: 'urgent-1-2',
+          title: '세무사 상담 예약',
+          completed: false,
+          priority: 'p1' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'urgent',
+          parentId: 'urgent-1',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date()
+        }
+      ],
+      sectionId: 'urgent',
+      parentId: undefined,
+      order: 0,
+      isExpanded: true,
+      createdAt: new Date()
+    },
+    {
+      id: 'urgent-2',
+      title: '임대차 계약서 검토',
+      completed: false,
+      priority: 'p1' as TodoPriority,
+      depth: 0,
+      children: [],
+      sectionId: 'urgent',
+      parentId: undefined,
+      order: 1,
+      isExpanded: false,
+      createdAt: new Date()
+    },
+    
+    // 업무 섹션 태스크
+    {
+      id: 'work-1',
+      title: 'Q4 마케팅 전략 수립',
+      completed: false,
+      priority: 'p2' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'work-1-1',
+          title: '시장 트렌드 분석',
+          completed: true,
+          priority: 'p2' as TodoPriority,
+          depth: 1,
+          children: [
+            {
+              id: 'work-1-1-1',
+              title: '경쟁사 분석 보고서',
+              completed: true,
+              priority: 'p3' as TodoPriority,
+              depth: 2,
+              children: [],
+              sectionId: 'work',
+              parentId: 'work-1-1',
+              order: 0,
+              isExpanded: false,
+              createdAt: new Date(),
+              completedAt: new Date()
+            },
+            {
+              id: 'work-1-1-2',
+              title: '소비자 동향 조사',
+              completed: false,
+              priority: 'p3' as TodoPriority,
+              depth: 2,
+              children: [],
+              sectionId: 'work',
+              parentId: 'work-1-1',
+              order: 1,
+              isExpanded: false,
+              createdAt: new Date()
+            }
+          ],
+          sectionId: 'work',
+          parentId: 'work-1',
+          order: 0,
+          isExpanded: true,
+          createdAt: new Date(),
+          completedAt: new Date()
+        },
+        {
+          id: 'work-1-2',
+          title: '예산 배분 계획',
+          completed: false,
+          priority: 'p1' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'work',
+          parentId: 'work-1',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date()
+        },
+        {
+          id: 'work-1-3',
+          title: 'KPI 목표 설정',
+          completed: false,
+          priority: 'p2' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'work',
+          parentId: 'work-1',
+          order: 2,
+          isExpanded: false,
+          createdAt: new Date()
+        }
+      ],
+      sectionId: 'work',
+      parentId: undefined,
+      order: 0,
+      isExpanded: true,
+      createdAt: new Date()
+    },
+    {
+      id: 'work-2',
+      title: '신규 프로젝트 킥오프',
+      completed: false,
+      priority: 'p2' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'work-2-1',
+          title: '팀원 역할 분담',
+          completed: false,
+          priority: 'p2' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'work',
+          parentId: 'work-2',
+          order: 0,
+          isExpanded: false,
+          createdAt: new Date()
+        },
+        {
+          id: 'work-2-2',
+          title: '프로젝트 일정 수립',
+          completed: false,
+          priority: 'p2' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'work',
+          parentId: 'work-2',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date()
+        }
+      ],
+      sectionId: 'work',
+      parentId: undefined,
+      order: 1,
+      isExpanded: false,
+      createdAt: new Date()
+    },
+    {
+      id: 'work-3',
+      title: '주간 보고서 작성',
+      completed: true,
+      priority: 'p3' as TodoPriority,
+      depth: 0,
+      children: [],
+      sectionId: 'work',
+      parentId: undefined,
+      order: 2,
+      isExpanded: false,
+      createdAt: new Date(),
+      completedAt: new Date()
+    },
+    
+    // 개인 섹션 태스크
+    {
+      id: 'personal-1',
+      title: '건강 관리 루틴',
+      completed: false,
+      priority: 'p2' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'personal-1-1',
+          title: '매일 30분 운동',
+          completed: false,
+          priority: 'p2' as TodoPriority,
+          depth: 1,
+          children: [
+            {
+              id: 'personal-1-1-1',
+              title: '월/수/금 - 근력운동',
+              completed: false,
+              priority: 'p3' as TodoPriority,
+              depth: 2,
+              children: [],
+              sectionId: 'personal',
+              parentId: 'personal-1-1',
+              order: 0,
+              isExpanded: false,
+              createdAt: new Date()
+            },
+            {
+              id: 'personal-1-1-2',
+              title: '화/목 - 유산소',
+              completed: false,
+              priority: 'p3' as TodoPriority,
+              depth: 2,
+              children: [],
+              sectionId: 'personal',
+              parentId: 'personal-1-1',
+              order: 1,
+              isExpanded: false,
+              createdAt: new Date()
+            }
+          ],
+          sectionId: 'personal',
+          parentId: 'personal-1',
+          order: 0,
+          isExpanded: true,
+          createdAt: new Date()
+        },
+        {
+          id: 'personal-1-2',
+          title: '영양제 챙기기',
+          completed: true,
+          priority: 'p3' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'personal',
+          parentId: 'personal-1',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date(),
+          completedAt: new Date()
+        }
+      ],
+      sectionId: 'personal',
+      parentId: undefined,
+      order: 0,
+      isExpanded: true,
+      createdAt: new Date()
+    },
+    {
+      id: 'personal-2',
+      title: '집안일 정리',
+      completed: false,
+      priority: 'p3' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'personal-2-1',
+          title: '대청소 계획',
+          completed: false,
+          priority: 'p3' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'personal',
+          parentId: 'personal-2',
+          order: 0,
+          isExpanded: false,
+          createdAt: new Date()
+        },
+        {
+          id: 'personal-2-2',
+          title: '냉장고 정리',
+          completed: false,
+          priority: 'p4' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'personal',
+          parentId: 'personal-2',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date()
+        }
+      ],
+      sectionId: 'personal',
+      parentId: undefined,
+      order: 1,
+      isExpanded: false,
+      createdAt: new Date()
+    },
+    {
+      id: 'personal-3',
+      title: '친구 생일 선물 준비',
+      completed: false,
+      priority: 'p2' as TodoPriority,
+      depth: 0,
+      children: [],
+      sectionId: 'personal',
+      parentId: undefined,
+      order: 2,
+      isExpanded: false,
+      createdAt: new Date()
+    },
+    
+    // 학습 섹션 태스크
+    {
+      id: 'learning-1',
+      title: 'Next.js 15 새로운 기능 학습',
+      completed: false,
+      priority: 'p3' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'learning-1-1',
+          title: 'Server Actions 심화',
+          completed: true,
+          priority: 'p3' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'learning',
+          parentId: 'learning-1',
+          order: 0,
+          isExpanded: false,
+          createdAt: new Date(),
+          completedAt: new Date()
+        },
+        {
+          id: 'learning-1-2',
+          title: 'Partial Prerendering',
+          completed: false,
+          priority: 'p3' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'learning',
+          parentId: 'learning-1',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date()
+        },
+        {
+          id: 'learning-1-3',
+          title: 'Turbopack 최적화',
+          completed: false,
+          priority: 'p4' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'learning',
+          parentId: 'learning-1',
+          order: 2,
+          isExpanded: false,
+          createdAt: new Date()
+        }
+      ],
+      sectionId: 'learning',
+      parentId: undefined,
+      order: 0,
+      isExpanded: true,
+      createdAt: new Date()
+    },
+    {
+      id: 'learning-2',
+      title: 'AI/ML 기초 공부',
+      completed: false,
+      priority: 'p3' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'learning-2-1',
+          title: 'Python 기초 복습',
+          completed: false,
+          priority: 'p3' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'learning',
+          parentId: 'learning-2',
+          order: 0,
+          isExpanded: false,
+          createdAt: new Date()
+        },
+        {
+          id: 'learning-2-2',
+          title: 'TensorFlow 튜토리얼',
+          completed: false,
+          priority: 'p4' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'learning',
+          parentId: 'learning-2',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date()
+        }
+      ],
+      sectionId: 'learning',
+      parentId: undefined,
+      order: 1,
+      isExpanded: false,
+      createdAt: new Date()
+    },
+    
+    // 아이디어 섹션 태스크
+    {
+      id: 'idea-1',
+      title: '사이드 프로젝트 아이디어',
+      completed: false,
+      priority: 'p4' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'idea-1-1',
+          title: '할 일 관리 앱 고도화',
+          completed: false,
+          priority: 'p4' as TodoPriority,
+          depth: 1,
+          children: [
+            {
+              id: 'idea-1-1-1',
+              title: 'AI 기반 우선순위 추천',
+              completed: false,
+              priority: 'p4' as TodoPriority,
+              depth: 2,
+              children: [],
+              sectionId: 'ideas',
+              parentId: 'idea-1-1',
+              order: 0,
+              isExpanded: false,
+              createdAt: new Date()
+            },
+            {
+              id: 'idea-1-1-2',
+              title: '팀 협업 기능',
+              completed: false,
+              priority: 'p4' as TodoPriority,
+              depth: 2,
+              children: [],
+              sectionId: 'ideas',
+              parentId: 'idea-1-1',
+              order: 1,
+              isExpanded: false,
+              createdAt: new Date()
+            }
+          ],
+          sectionId: 'ideas',
+          parentId: 'idea-1',
+          order: 0,
+          isExpanded: false,
+          createdAt: new Date()
+        },
+        {
+          id: 'idea-1-2',
+          title: '개인 재무 관리 도구',
+          completed: false,
+          priority: 'p4' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'ideas',
+          parentId: 'idea-1',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date()
+        }
+      ],
+      sectionId: 'ideas',
+      parentId: undefined,
+      order: 0,
+      isExpanded: false,
+      createdAt: new Date()
+    },
+    {
+      id: 'idea-2',
+      title: '블로그 콘텐츠 기획',
+      completed: false,
+      priority: 'p4' as TodoPriority,
+      depth: 0,
+      children: [
+        {
+          id: 'idea-2-1',
+          title: '개발자 생산성 도구 리뷰',
+          completed: false,
+          priority: 'p4' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'ideas',
+          parentId: 'idea-2',
+          order: 0,
+          isExpanded: false,
+          createdAt: new Date()
+        },
+        {
+          id: 'idea-2-2',
+          title: '코드 리뷰 베스트 프랙티스',
+          completed: false,
+          priority: 'p4' as TodoPriority,
+          depth: 1,
+          children: [],
+          sectionId: 'ideas',
+          parentId: 'idea-2',
+          order: 1,
+          isExpanded: false,
+          createdAt: new Date()
+        }
+      ],
+      sectionId: 'ideas',
+      parentId: undefined,
+      order: 1,
+      isExpanded: false,
+      createdAt: new Date()
+    }
+  ];
+
+  console.log('generateInitialData - tasks created:', tasks.length, 'tasks');
+  console.log('generateInitialData - sections created:', sections.length, 'sections');
+  console.log('generateInitialData - full tasks:', tasks);
+  
+  return { tasks, sections };
+};
+
 export function TodoListWidget({ 
   title, 
   tasks = [], 
@@ -41,10 +588,93 @@ export function TodoListWidget({
   defaultSize = { w: 4, h: 4 }
 }: TodoListWidgetProps & { defaultSize?: { w: number; h: number } }) {
   const displayTitle = title || getWidgetText.todoList.title('ko');
-  const [localTasks, setLocalTasks] = useState<TodoTask[]>(tasks);
-  const [sections, setSections] = useState<TodoSection[]>([
-    { id: 'default', name: '기본', order: 0, isExpanded: true }
-  ]);
+  
+  // 로컬 스토리지에서 데이터 로드 또는 초기 데이터 생성
+  const loadInitialData = useCallback(() => {
+    // SSR 체크 - 서버에서는 초기 데이터 반환
+    if (typeof window === 'undefined') {
+      console.log('SSR detected, returning initial data');
+      return generateInitialData();
+    }
+    
+    try {
+      const savedTasks = localStorage.getItem(STORAGE_KEY);
+      const savedSections = localStorage.getItem(SECTIONS_KEY);
+      
+      console.log('LocalStorage savedTasks:', savedTasks);
+      console.log('LocalStorage savedSections:', savedSections);
+      
+      if (savedTasks && savedSections && savedTasks !== '[]') {
+        // 저장된 데이터가 있으면 사용
+        const parsedTasks = JSON.parse(savedTasks);
+        const parsedSections = JSON.parse(savedSections);
+        
+        // Date 객체 복원
+        parsedTasks.forEach((task: any) => {
+          task.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
+          task.completedAt = task.completedAt ? new Date(task.completedAt) : undefined;
+          if (task.children) {
+            task.children.forEach((child: any) => {
+              child.createdAt = child.createdAt ? new Date(child.createdAt) : new Date();
+              child.completedAt = child.completedAt ? new Date(child.completedAt) : undefined;
+            });
+          }
+        });
+        
+        console.log('Returning saved data');
+        return { tasks: parsedTasks, sections: parsedSections };
+      } else {
+        // 초기 데이터 생성
+        console.log('Generating initial data');
+        const initialData = generateInitialData();
+        console.log('Generated initial data:', initialData);
+        return initialData;
+      }
+    } catch (error) {
+      console.error('Failed to load todo data from localStorage:', error);
+      const initialData = generateInitialData();
+      console.log('Generated initial data after error:', initialData);
+      return initialData;
+    }
+  }, []);
+  
+  // 초기화 또는 리셋을 위한 플래그 (개발 시 true로 설정하면 데이터 리셋)
+  // 데이터가 보이지 않으면 true로 설정 후 새로고침, 그 다음 false로 다시 변경
+  const FORCE_RESET = true; // 한 번 true로 설정 후 새로고침, 그 다음 false로 변경
+  
+  const [localTasks, setLocalTasks] = useState<TodoTask[]>(() => {
+    console.log('Initializing localTasks...');
+    if (FORCE_RESET && typeof window !== 'undefined') {
+      console.log('FORCE_RESET is true, clearing localStorage');
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SECTIONS_KEY);
+    }
+    
+    // props로 전달된 tasks가 있으면 우선 사용
+    if (tasks && tasks.length > 0) {
+      console.log('Using tasks from props:', tasks);
+      return tasks;
+    }
+    
+    // 로컬 스토리지 또는 초기 데이터 로드
+    const loadedData = loadInitialData();
+    console.log('LoadInitialData returned:', loadedData);
+    const { tasks: initialTasks } = loadedData;
+    console.log('Loaded tasks:', initialTasks);
+    console.log('Tasks length:', initialTasks?.length || 0);
+    return initialTasks || [];
+  });
+  
+  const [sections, setSections] = useState<TodoSection[]>(() => {
+    if (FORCE_RESET && typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SECTIONS_KEY);
+    }
+    
+    const { sections: initialSections } = loadInitialData();
+    console.log('Loaded sections:', initialSections);
+    return initialSections;
+  });
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<TodoPriority>('p3');
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
@@ -62,8 +692,22 @@ export function TodoListWidget({
 
   // 외부 tasks prop 변경 시 동기화
   useEffect(() => {
-    setLocalTasks(tasks);
+    if (tasks.length > 0) {
+      setLocalTasks(tasks);
+    }
   }, [tasks]);
+  
+  // 로컬 스토리지에 저장
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(localTasks));
+        localStorage.setItem(SECTIONS_KEY, JSON.stringify(sections));
+      } catch (error) {
+        console.error('Failed to save todo data to localStorage:', error);
+      }
+    }
+  }, [localTasks, sections]);
 
   // 새 작업 추가
   const handleAddTask = (sectionId: string = 'default', parentId?: string) => {
@@ -527,7 +1171,9 @@ export function TodoListWidget({
 
   // 섹션별로 작업 그룹화
   const getTasksBySection = (sectionId: string) => {
-    return localTasks.filter(task => (task.sectionId || 'default') === sectionId && !task.parentId);
+    const filtered = localTasks.filter(task => (task.sectionId || 'default') === sectionId && !task.parentId);
+    console.log(`Section ${sectionId}: found ${filtered.length} tasks`, filtered);
+    return filtered;
   };
 
   // 섹션 렌더링
@@ -537,8 +1183,8 @@ export function TodoListWidget({
     
     return (
       <div key={section.id} className="mb-2">
-        {/* 섹션 헤더 */}
-        {section.id !== 'default' && (
+        {/* 섹션 헤더 - 모든 섹션에 대해 표시 */}
+        {(
           <div className="flex items-center gap-1 px-1 py-1 group">
             <button
               onClick={() => toggleSection(section.id)}
@@ -763,7 +1409,7 @@ export function TodoListWidget({
             variant="ghost"
             onClick={() => {
               setIsAdding(true);
-              setAddingSectionId('default');
+              setAddingSectionId(sections[0]?.id || 'urgent');
             }}
             className="h-6 px-2"
           >
@@ -778,15 +1424,15 @@ export function TodoListWidget({
         <div className="flex flex-col h-full">
           <ScrollArea className="flex-1">
             <div className="space-y-2 px-3">
-              {/* 기본 섹션 작업 추가 - 상단에 한 번만 표시 */}
-              {isAdding && addingSectionId === 'default' && sections[0]?.id === 'default' && (
+              {/* 첫 번째 섹션 작업 추가 - 상단에 한 번만 표시 */}
+              {isAdding && addingSectionId && addingSectionId === sections[0]?.id && (
           <div className="flex gap-1 p-1 bg-gray-50 dark:bg-gray-900/50 rounded mb-2">
             <Input
               ref={inputRef}
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleAddTask('default');
+                if (e.key === 'Enter') handleAddTask(addingSectionId || sections[0]?.id || 'urgent');
                 if (e.key === 'Escape') {
                   setIsAdding(false);
                   setAddingSectionId(null);
@@ -817,7 +1463,7 @@ export function TodoListWidget({
             
             <Button
               size="sm"
-              onClick={() => handleAddTask('default')}
+              onClick={() => handleAddTask(addingSectionId || sections[0]?.id || 'urgent')}
               className="h-7 px-2 text-xs"
             >
               추가
