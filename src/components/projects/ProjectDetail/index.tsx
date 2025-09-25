@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import ProjectProgress from '@/components/ui/project-progress';
 import { getProjectPageText, getProjectStatusText, getSettlementMethodText, getPaymentStatusText } from '@/config/brand';
 import ProjectDocumentGeneratorModal from '@/components/projects/DocumentGeneratorModal';
@@ -19,12 +21,44 @@ import {
   type GeneratedDocumentPayload,
   type ProjectDocumentCategory
 } from '@/lib/document-generator/templates';
+import {
+  getProjectDocuments,
+  addProjectDocument,
+  updateProjectDocument,
+  deleteProjectDocument,
+  deleteProjectDocumentsByType
+} from '@/lib/mock/documents';
 import type {
   DocumentInfo,
   DocumentStatus,
   ProjectDocumentStatus,
-  ProjectTableRow
+  ProjectTableRow,
+  ProjectStatus,
+  SettlementMethod,
+  PaymentStatus
 } from '@/lib/types/project-table.types';
+
+// 편집 관련 타입
+interface EditableProjectData {
+  name: string;
+  client: string;
+  status: ProjectStatus;
+  dueDate: string;
+  progress: number;
+  projectContent?: string;
+  totalAmount?: number;
+  settlementMethod?: SettlementMethod;
+  paymentStatus?: PaymentStatus;
+}
+
+interface ProjectEditState {
+  isEditing: boolean;
+  editingData: EditableProjectData;
+  originalData: ProjectTableRow | null;
+  errors: Record<string, string>;
+  isLoading: boolean;
+  isDirty: boolean;
+}
 import {
   CalendarIcon,
   FileTextIcon,
@@ -37,7 +71,8 @@ import {
   FilePlus2Icon,
   PlusIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 
 interface ProjectDetailProps {
@@ -51,6 +86,11 @@ interface ProjectDetailProps {
   onNavigateNext?: () => void;
   canNavigatePrevious?: boolean;
   canNavigateNext?: boolean;
+  // 편집 관련 props
+  editState?: ProjectEditState;
+  onUpdateField?: (field: keyof EditableProjectData, value: string | number) => void;
+  onSaveEdit?: () => void;
+  onCancelEdit?: () => void;
 }
 
 type DocumentTabValue = 'contract' | 'invoice' | 'report' | 'estimate' | 'others';
@@ -112,18 +152,32 @@ export default function ProjectDetail({
   onNavigatePrevious,
   onNavigateNext,
   canNavigatePrevious = false,
-  canNavigateNext = false
+  canNavigateNext = false,
+  // 편집 관련 props
+  editState,
+  onUpdateField,
+  onSaveEdit,
+  onCancelEdit
 }: ProjectDetailProps) {
   const lang = 'ko'; // TODO: 나중에 언어 설정과 연동
   const { toast } = useToast();
+
+  // 편집 모드 확인
+  const isEditing = editState?.isEditing ?? false;
+  const isLoading = editState?.isLoading ?? false;
+  const isDirty = editState?.isDirty ?? false;
 
   // Tab state management for nested structure
   const [mainTab, setMainTab] = useState('overview');
   const [documentSubTab, setDocumentSubTab] = useState<DocumentTabValue>('contract');
   const [taxSubTab, setTaxSubTab] = useState('taxInvoice');
-  const [documents, setDocuments] = useState<DocumentInfo[]>(() =>
-    (project.documents ?? []).map((doc) => ({ ...doc }))
-  );
+  const [documents, setDocuments] = useState<DocumentInfo[]>(() => {
+    // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
+    const storedDocuments = getProjectDocuments(project.id);
+    return storedDocuments.length > 0
+      ? storedDocuments
+      : (project.documents ?? []).map((doc) => ({ ...doc }));
+  });
 
   // Project detail states
   const [settlementMethod, setSettlementMethod] = useState(project.settlementMethod || 'not_set');
@@ -148,11 +202,17 @@ export default function ProjectDetail({
     targetType: 'contract'
   });
   const [previewDocument, setPreviewDocument] = useState<DocumentInfo | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isDocumentEditing, setIsDocumentEditing] = useState(false);
   const [editingContent, setEditingContent] = useState('');
 
   useEffect(() => {
-    setDocuments((project.documents ?? []).map((doc) => ({ ...doc })));
+    // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
+    const storedDocuments = getProjectDocuments(project.id);
+    const documentsToUse = storedDocuments.length > 0
+      ? storedDocuments
+      : (project.documents ?? []).map((doc) => ({ ...doc }));
+
+    setDocuments(documentsToUse);
   }, [project.id, project.documents]);
 
   const templateAvailability = useMemo(() => ({
@@ -356,7 +416,7 @@ export default function ProjectDetail({
 
   const openDocumentDialog = (doc: DocumentInfo, editing: boolean) => {
     setPreviewDocument(doc);
-    setIsEditing(editing);
+    setIsDocumentEditing(editing);
     setEditingContent(doc.content ?? '');
   };
 
@@ -372,7 +432,8 @@ export default function ProjectDetail({
     const { mode, targetDoc, targetType } = deleteDialogState;
 
     if (mode === 'single' && targetDoc) {
-      setDocuments((prev) => prev.filter((doc) => doc.id !== targetDoc.id));
+      const updatedDocs = deleteProjectDocument(project.id, targetDoc.id);
+      setDocuments(updatedDocs);
       toast({
         title: '문서를 삭제했습니다',
         description: `${targetDoc.name} 문서를 제거했습니다.`
@@ -385,7 +446,8 @@ export default function ProjectDetail({
           description: '현재 탭에는 삭제할 문서가 존재하지 않습니다.'
         });
       } else {
-        setDocuments((prev) => prev.filter((doc) => doc.type !== targetType));
+        const updatedDocs = deleteProjectDocumentsByType(project.id, targetType);
+        setDocuments(updatedDocs);
         toast({
           title: '문서를 삭제했습니다',
           description: '선택한 카테고리의 문서를 제거했습니다.'
@@ -406,6 +468,75 @@ export default function ProjectDetail({
       return;
     }
     setDeleteDialogState({ open: true, mode: 'bulk', targetType: type });
+  };
+
+  // 계약서에서 금액 자동 추출 함수
+  const extractAmountFromContract = () => {
+    const contractDocs = documents.filter(doc => doc.type === 'contract');
+
+    if (contractDocs.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "계약서를 찾을 수 없습니다",
+        description: "계약서 문서가 없어 금액을 추출할 수 없습니다."
+      });
+      return;
+    }
+
+    // 금액 추출을 위한 정규표현식 패턴들
+    const amountPatterns = [
+      // 총 계약 금액: ₩1,234,567원 또는 총 계약 금액: 1,234,567원
+      /총\s*계약\s*금액[:\s]*[₩]?([0-9,]+)원?/gi,
+      // 총 금액: ₩1,234,567원 또는 총 금액: 1,234,567원
+      /총\s*금액[:\s]*[₩]?([0-9,]+)원?/gi,
+      // 금액: ₩1,234,567원 또는 금액: 1,234,567원
+      /[^총]\s*금액[:\s]*[₩]?([0-9,]+)원?/gi,
+      // 보수: ₩1,234,567원 또는 보수: 1,234,567원
+      /보수[:\s]*[₩]?([0-9,]+)원?/gi,
+      // 대금: ₩1,234,567원 또는 대금: 1,234,567원
+      /대금[:\s]*[₩]?([0-9,]+)원?/gi,
+      // 강사료: ₩1,234,567원 또는 강사료: 1,234,567원
+      /강사료[:\s]*[₩]?([0-9,]+)원?/gi
+    ];
+
+    let extractedAmount: number | null = null;
+    let foundInDocument = '';
+
+    // 각 계약서 문서에서 금액 패턴을 찾기
+    for (const doc of contractDocs) {
+      if (!doc.content) continue;
+
+      for (const pattern of amountPatterns) {
+        const match = pattern.exec(doc.content);
+        if (match && match[1]) {
+          // 숫자에서 쉼표 제거하고 숫자로 변환
+          const numericAmount = parseInt(match[1].replace(/,/g, ''), 10);
+          if (!isNaN(numericAmount) && numericAmount > 0) {
+            extractedAmount = numericAmount;
+            foundInDocument = doc.name;
+            break;
+          }
+        }
+      }
+
+      if (extractedAmount) break;
+    }
+
+    if (extractedAmount) {
+      // 추출된 금액을 totalAmount 필드에 설정
+      onUpdateField?.('totalAmount', extractedAmount);
+
+      toast({
+        title: "금액을 성공적으로 추출했습니다",
+        description: `${foundInDocument}에서 ₩${extractedAmount.toLocaleString('ko-KR')}을 찾아 설정했습니다.`
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "금액을 찾을 수 없습니다",
+        description: "계약서에서 인식 가능한 금액 형식을 찾을 수 없습니다."
+      });
+    }
   };
 
   const renderDocumentSection = (
@@ -447,7 +578,7 @@ export default function ProjectDetail({
                 보기
               </Button>
               <Button size="sm" variant="ghost" onClick={() => handleEditDocument(doc)}>
-                편집
+                {getProjectPageText.edit('ko')}
               </Button>
               <Button
                 size="sm"
@@ -491,7 +622,8 @@ export default function ProjectDetail({
       source: 'generated'
     };
 
-    setDocuments((prev) => [...prev, newDocument]);
+    const updatedDocs = addProjectDocument(project.id, newDocument);
+    setDocuments(updatedDocs);
     setGeneratorState((prev) => ({ ...prev, open: false }));
     setMainTab('documentManagement');
     setDocumentSubTab(targetSubTab);
@@ -524,10 +656,6 @@ export default function ProjectDetail({
               <span>{getProjectPageText.projectNo(lang)}: {project.no}</span>
               <span>•</span>
               <span>{getProjectPageText.client(lang)}: {project.client}</span>
-              <span>•</span>
-              <Badge variant={statusVariantMap[project.status]}>
-                {getProjectStatusText(project.status, lang)}
-              </Badge>
             </div>
           </div>
           <div className="flex gap-2">
@@ -561,11 +689,44 @@ export default function ProjectDetail({
                 {getProjectPageText.newProject(lang)}
               </Button>
             )}
-            {onEdit && (
-              <Button variant="outline" onClick={onEdit} className="gap-2" size={mode === 'compact' ? 'sm' : 'default'}>
-                <Edit3Icon className="h-4 w-4" />
-                {getProjectPageText.edit(lang)}
-              </Button>
+            {/* 편집 관련 버튼 */}
+            {isEditing ? (
+              // 편집 모드: 저장/취소 버튼
+              <>
+                <Button
+                  variant="default"
+                  onClick={onSaveEdit}
+                  disabled={!isDirty || isLoading}
+                  className="gap-2"
+                  size={mode === 'compact' ? 'sm' : 'default'}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {getProjectPageText.saving('ko')}
+                    </>
+                  ) : (
+                    getProjectPageText.save('ko')
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onCancelEdit}
+                  disabled={isLoading}
+                  className="gap-2"
+                  size={mode === 'compact' ? 'sm' : 'default'}
+                >
+                  {getProjectPageText.cancel('ko')}
+                </Button>
+              </>
+            ) : (
+              // 일반 모드: 편집 버튼
+              onEdit && (
+                <Button variant="outline" onClick={onEdit} className="gap-2" size={mode === 'compact' ? 'sm' : 'default'}>
+                  <Edit3Icon className="h-4 w-4" />
+                  {getProjectPageText.edit(lang)}
+                </Button>
+              )
             )}
             {onDelete && (
               <Button variant="secondary" onClick={onDelete} className="gap-2" size={mode === 'compact' ? 'sm' : 'default'}>
@@ -615,51 +776,119 @@ export default function ProjectDetail({
                   <div className="space-y-4">
                     {/* 프로젝트명 */}
                     <div>
-                      <span className="text-sm text-muted-foreground block mb-1">
+                      <Label className="text-sm text-muted-foreground">
                         {getProjectPageText.fieldProjectName(lang)}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {project.name}
-                      </span>
+                      </Label>
+                      {isEditing ? (
+                        <Input
+                          value={editState?.editingData.name || ''}
+                          onChange={(e) => onUpdateField?.('name', e.target.value)}
+                          className={editState?.errors.name ? 'border-destructive' : ''}
+                        />
+                      ) : (
+                        <span className="text-sm font-medium block">
+                          {project.name}
+                        </span>
+                      )}
+                      {isEditing && editState?.errors.name && (
+                        <p className="text-xs text-destructive mt-1">{editState.errors.name}</p>
+                      )}
                     </div>
 
                     {/* 클라이언트 */}
                     <div>
-                      <span className="text-sm text-muted-foreground block mb-1">
+                      <Label className="text-sm text-muted-foreground">
                         {getProjectPageText.client(lang)}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {project.client}
-                      </span>
+                      </Label>
+                      {isEditing ? (
+                        <Input
+                          value={editState?.editingData.client || ''}
+                          onChange={(e) => onUpdateField?.('client', e.target.value)}
+                          className={editState?.errors.client ? 'border-destructive' : ''}
+                        />
+                      ) : (
+                        <span className="text-sm font-medium block">
+                          {project.client}
+                        </span>
+                      )}
+                      {isEditing && editState?.errors.client && (
+                        <p className="text-xs text-destructive mt-1">{editState.errors.client}</p>
+                      )}
+                    </div>
+
+                    {/* 총 계약금액 */}
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
+                        {getProjectPageText.fieldTotalAmount(lang)}
+                      </Label>
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <Input
+                              type="number"
+                              value={editState?.editingData.totalAmount || ''}
+                              onChange={(e) => onUpdateField?.('totalAmount', e.target.value ? Number(e.target.value) : 0)}
+                              className={editState?.errors.totalAmount ? 'border-destructive' : ''}
+                              placeholder="예: 50000000"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => extractAmountFromContract()}
+                              disabled={!documents.some(doc => doc.type === 'contract')}
+                              className="whitespace-nowrap"
+                            >
+                              계약서에서 가져오기
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium block">
+                          {project.totalAmount
+                            ? `₩${project.totalAmount.toLocaleString('ko-KR')}`
+                            : getProjectPageText.placeholderNotSet(lang)
+                          }
+                        </span>
+                      )}
+                      {isEditing && editState?.errors.totalAmount && (
+                        <p className="text-xs text-destructive mt-1">{editState.errors.totalAmount}</p>
+                      )}
                     </div>
 
                     {/* 정산방식 */}
                     <div>
-                      <span className="text-sm text-muted-foreground block mb-1">
+                      <Label className="text-sm text-muted-foreground">
                         {getProjectPageText.fieldSettlementMethod(lang)}
-                      </span>
-                      <Select
-                        value={settlementMethod}
-                        onValueChange={(value) => setSettlementMethod(value as any)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="not_set">
-                            {getSettlementMethodText.not_set(lang)}
-                          </SelectItem>
-                          <SelectItem value="advance_final">
-                            {getSettlementMethodText.advance_final(lang)}
-                          </SelectItem>
-                          <SelectItem value="advance_interim_final">
-                            {getSettlementMethodText.advance_interim_final(lang)}
-                          </SelectItem>
-                          <SelectItem value="post_payment">
-                            {getSettlementMethodText.post_payment(lang)}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      </Label>
+                      {isEditing ? (
+                        <Select
+                          value={editState?.editingData.settlementMethod || 'not_set'}
+                          onValueChange={(value) => onUpdateField?.('settlementMethod', value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="not_set">
+                              {getSettlementMethodText.not_set(lang)}
+                            </SelectItem>
+                            <SelectItem value="advance_final">
+                              {getSettlementMethodText.advance_final(lang)}
+                            </SelectItem>
+                            <SelectItem value="advance_interim_final">
+                              {getSettlementMethodText.advance_interim_final(lang)}
+                            </SelectItem>
+                            <SelectItem value="post_payment">
+                              {getSettlementMethodText.post_payment(lang)}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-sm font-medium block">
+                          {getSettlementMethodText[settlementMethod](lang)}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -676,16 +905,18 @@ export default function ProjectDetail({
                       </span>
                     </div>
 
-                    {/* 마감일 */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground flex items-center gap-2">
-                        <ClockIcon className="h-4 w-4" />
-                        {getProjectPageText.dueDate(lang)}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {new Date(project.dueDate).toLocaleDateString('ko-KR')}
-                      </span>
-                    </div>
+                    {/* 마감일 - 편집 상태가 아닐 때만 우측에 표시 */}
+                    {!isEditing && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                          <ClockIcon className="h-4 w-4" />
+                          {getProjectPageText.dueDate(lang)}
+                        </span>
+                        <span className="text-sm font-medium">
+                          {new Date(project.dueDate).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    )}
 
                     {/* 수정일 */}
                     <div className="flex items-center justify-between">
@@ -705,47 +936,155 @@ export default function ProjectDetail({
                   {/* 작업 진행률 */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">
+                      <Label className="text-sm text-muted-foreground">
                         {getProjectPageText.taskProgress(lang)}
-                      </span>
-                      <span className="text-sm font-medium">{project.progress}%</span>
+                      </Label>
+                      {isEditing ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={editState?.editingData.progress || 0}
+                            onChange={(e) => onUpdateField?.('progress', parseInt(e.target.value) || 0)}
+                            className={`w-20 ${editState?.errors.progress ? 'border-destructive' : ''}`}
+                          />
+                          <span className="text-sm text-muted-foreground">%</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium">{project.progress}%</span>
+                      )}
                     </div>
-                    <ProjectProgress value={project.progress || 0} size="sm" />
+                    {isEditing && editState?.errors.progress && (
+                      <p className="text-xs text-destructive mb-2">{editState.errors.progress}</p>
+                    )}
+                    <ProjectProgress value={isEditing ? (editState?.editingData.progress || 0) : (project.progress || 0)} size="sm" />
                   </div>
+
+                  {/* 마감일 - 편집 상태일 때만 하단에 표시 */}
+                  {isEditing && (
+                    <div>
+                      <Label className="text-sm text-muted-foreground flex items-center gap-2">
+                        <ClockIcon className="h-4 w-4" />
+                        {getProjectPageText.dueDate(lang)}
+                      </Label>
+                      <Input
+                        type="date"
+                        value={editState?.editingData.dueDate?.split('T')[0] || ''}
+                        onChange={(e) => onUpdateField?.('dueDate', new Date(e.target.value).toISOString())}
+                        className={editState?.errors.dueDate ? 'border-destructive' : ''}
+                      />
+                      {editState?.errors.dueDate && (
+                        <p className="text-xs text-destructive mt-1">{editState.errors.dueDate}</p>
+                      )}
+                    </div>
+                  )}
 
                   {/* 현재 단계와 수금상태 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* 현재 단계 */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
                         {getProjectPageText.currentStage(lang)}
-                      </span>
-                      <Badge variant={statusVariantMap[project.status]}>
-                        {getProjectStatusText(project.status, lang)}
-                      </Badge>
+                      </Label>
+                      {isEditing ? (
+                        <Select
+                          value={editState?.editingData.status || 'planning'}
+                          onValueChange={(value) => onUpdateField?.('status', value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="planning">
+                              {getProjectStatusText('planning', lang)}
+                            </SelectItem>
+                            <SelectItem value="in_progress">
+                              {getProjectStatusText('in_progress', lang)}
+                            </SelectItem>
+                            <SelectItem value="review">
+                              {getProjectStatusText('review', lang)}
+                            </SelectItem>
+                            <SelectItem value="completed">
+                              {getProjectStatusText('completed', lang)}
+                            </SelectItem>
+                            <SelectItem value="on_hold">
+                              {getProjectStatusText('on_hold', lang)}
+                            </SelectItem>
+                            <SelectItem value="cancelled">
+                              {getProjectStatusText('cancelled', lang)}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="mt-1">
+                          <Badge variant={statusVariantMap[project.status]}>
+                            {getProjectStatusText(project.status, lang)}
+                          </Badge>
+                        </div>
+                      )}
                     </div>
 
                     {/* 수금상태 */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">
                         {getProjectPageText.paymentStatus(lang)}
-                      </span>
-                      <Badge variant={paymentStatus === 'not_started' ? 'secondary' : 'default'} className="text-xs">
-                        {getPaymentStatusText[paymentStatus](lang)}
-                      </Badge>
+                      </Label>
+                      {isEditing ? (
+                        <Select
+                          value={editState?.editingData.paymentStatus || 'not_started'}
+                          onValueChange={(value) => onUpdateField?.('paymentStatus', value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="not_started">
+                              {getPaymentStatusText.not_started(lang)}
+                            </SelectItem>
+                            <SelectItem value="advance_completed">
+                              {getPaymentStatusText.advance_completed(lang)}
+                            </SelectItem>
+                            <SelectItem value="interim_completed">
+                              {getPaymentStatusText.interim_completed(lang)}
+                            </SelectItem>
+                            <SelectItem value="final_completed">
+                              {getPaymentStatusText.final_completed(lang)}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="mt-1">
+                          <Badge variant={paymentStatus === 'not_started' ? 'secondary' : 'default'} className="text-xs">
+                            {getPaymentStatusText[paymentStatus](lang)}
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* 프로젝트 내용 */}
                   <div>
-                    <span className="text-sm text-muted-foreground block mb-2">
+                    <Label className="text-sm text-muted-foreground">
                       {getProjectPageText.fieldProjectContent(lang)}
-                    </span>
-                    <div className="min-h-[60px] p-3 border rounded-md bg-muted/30">
-                      <span className="text-sm text-muted-foreground">
-                        {project.projectContent || getProjectPageText.placeholderNoContent(lang)}
-                      </span>
-                    </div>
+                    </Label>
+                    {isEditing ? (
+                      <Textarea
+                        value={editState?.editingData.projectContent || ''}
+                        onChange={(e) => onUpdateField?.('projectContent', e.target.value)}
+                        placeholder={getProjectPageText.placeholderNoContent(lang)}
+                        className={`min-h-[80px] ${editState?.errors.projectContent ? 'border-destructive' : ''}`}
+                      />
+                    ) : (
+                      <div className="min-h-[60px] p-3 border rounded-md bg-muted/30">
+                        <span className="text-sm text-muted-foreground">
+                          {project.projectContent || getProjectPageText.placeholderNoContent(lang)}
+                        </span>
+                      </div>
+                    )}
+                    {isEditing && editState?.errors.projectContent && (
+                      <p className="text-xs text-destructive mt-1">{editState.errors.projectContent}</p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -1023,21 +1362,21 @@ export default function ProjectDetail({
         onOpenChange={(open) => {
           if (!open) {
             setPreviewDocument(null);
-            setIsEditing(false);
+            setIsDocumentEditing(false);
             setEditingContent('');
           }
         }}
       >
         <DialogContent className="max-w-3xl border-2 border-primary">
           <DialogHeader>
-            <DialogTitle>{previewDocument?.name ?? (isEditing ? '문서 편집' : '문서 미리보기')}</DialogTitle>
+            <DialogTitle>{previewDocument?.name ?? (isDocumentEditing ? getProjectPageText.documentEdit('ko') : getProjectPageText.documentPreview('ko'))}</DialogTitle>
             <DialogDescription>
-              {isEditing
-                ? '내용을 수정한 뒤 저장하면 목록과 개요 카드에 즉시 반영됩니다.'
-                : '생성된 문서를 확인하세요.'}
+              {isDocumentEditing
+                ? getProjectPageText.documentEditDescription('ko')
+                : getProjectPageText.documentPreviewDescription('ko')}
             </DialogDescription>
           </DialogHeader>
-          {isEditing ? (
+          {isDocumentEditing ? (
             <div className="space-y-4">
               <Textarea
                 value={editingContent}
@@ -1049,11 +1388,11 @@ export default function ProjectDetail({
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setIsEditing(false);
+                    setIsDocumentEditing(false);
                     setEditingContent('');
                   }}
                 >
-                  취소
+                  {getProjectPageText.cancel('ko')}
                 </Button>
                 <Button
                   onClick={() => {
@@ -1066,18 +1405,21 @@ export default function ProjectDetail({
                       createdAt: new Date().toISOString(),
                       status: 'draft'
                     };
-                    setDocuments((prev) =>
-                      prev.map((doc) => (doc.id === previewDocument.id ? updatedDocument : doc))
-                    );
+                    const updatedDocs = updateProjectDocument(project.id, previewDocument.id, {
+                      content: editingContent,
+                      createdAt: new Date().toISOString(),
+                      status: 'draft'
+                    });
+                    setDocuments(updatedDocs);
                     setPreviewDocument(updatedDocument);
-                    setIsEditing(false);
+                    setIsDocumentEditing(false);
                     toast({
                       title: '문서를 업데이트했습니다',
                       description: '수정한 내용이 저장되고 문서 현황에 반영되었습니다.'
                     });
                   }}
                 >
-                  저장
+                  {getProjectPageText.save('ko')}
                 </Button>
               </div>
             </div>

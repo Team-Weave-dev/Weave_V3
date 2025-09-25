@@ -557,7 +557,7 @@ export const uiText = {
         projectStatus: { ko: "프로젝트 상태", en: "Project Status" },
         taskProgress: { ko: "작업 진행률", en: "Task Progress" },
         paymentStatus: { ko: "수금상태", en: "Payment Status" },
-        currentStage: { ko: "현재 단계:", en: "Current Stage:" },
+        currentStage: { ko: "현재 단계", en: "Current Stage" },
         hasContract: { ko: "계약서 있음", en: "Has Contract" },
         hasBilling: { ko: "청구서 있음", en: "Has Billing" },
         hasDocuments: { ko: "문서 있음", en: "Has Documents" },
@@ -682,7 +682,17 @@ export const uiText = {
         actions: {
           edit: { ko: "편집", en: "Edit" },
           save: { ko: "저장", en: "Save" },
-          cancel: { ko: "취소", en: "Cancel" }
+          saving: { ko: "저장 중...", en: "Saving..." },
+          cancel: { ko: "취소", en: "Cancel" },
+          cancelEdit: { ko: "편집 취소", en: "Cancel Edit" },
+          confirmCancelTitle: { ko: "편집 취소", en: "Cancel Edit" },
+          confirmCancelMessage: { ko: "변경사항이 저장되지 않습니다. 편집을 취소하시겠습니까?", en: "Changes will not be saved. Are you sure you want to cancel editing?" },
+          confirmCancelButton: { ko: "편집 취소", en: "Cancel Edit" },
+          continueEditing: { ko: "계속 편집", en: "Continue Editing" },
+          documentEdit: { ko: "문서 편집", en: "Document Edit" },
+          documentPreview: { ko: "문서 미리보기", en: "Document Preview" },
+          documentEditDescription: { ko: "내용을 수정한 뒤 저장하면 목록과 개요 카드에 즉시 반영됩니다.", en: "Changes will be immediately reflected in the list and overview cards after saving." },
+          documentPreviewDescription: { ko: "생성된 문서를 확인하세요.", en: "Check the generated document." }
         },
         // 정산방식 옵션
         settlementMethods: {
@@ -1441,6 +1451,18 @@ export const getProjectPageText = {
 
   // Actions
   edit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.edit[lang],
+  save: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.save[lang],
+  saving: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.saving[lang],
+  cancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.cancel[lang],
+  cancelEdit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.cancelEdit[lang],
+  confirmCancelTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.confirmCancelTitle[lang],
+  confirmCancelMessage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.confirmCancelMessage[lang],
+  confirmCancelButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.confirmCancelButton[lang],
+  continueEditing: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.continueEditing[lang],
+  documentEdit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.documentEdit[lang],
+  documentPreview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.documentPreview[lang],
+  documentEditDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.documentEditDescription[lang],
+  documentPreviewDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.actions.documentPreviewDescription[lang],
   close: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.actions.close[lang],
 
   // 프로젝트 자료 현황

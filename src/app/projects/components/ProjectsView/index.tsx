@@ -214,6 +214,8 @@ export default function ProjectsView() {
           loading={loading}
           showColumnSettings={true}
           onProjectsChange={refreshProjectData}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
         />
       ) : (
         <DetailView
@@ -222,6 +224,8 @@ export default function ProjectsView() {
           loading={loading}
           showColumnSettings={false}
           onProjectsChange={refreshProjectData}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
         />
       )}
 

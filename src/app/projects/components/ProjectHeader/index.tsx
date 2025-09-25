@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
+import { ViewMode } from '@/components/ui/view-mode-switch';
 import Typography from '@/components/ui/typography';
 import { Button } from '@/components/ui/button';
 import { Briefcase, Plus, Play, Eye, CheckCircle } from 'lucide-react';
-import { getProjectPageText, getViewModeText } from '@/config/brand';
+import { getProjectPageText } from '@/config/brand';
 
 interface ProjectHeaderProps {
   viewMode: ViewMode;
@@ -47,19 +47,10 @@ export default function ProjectHeader({
             <Briefcase className="w-6 h-6 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-4 mb-1">
+            <div className="mb-1">
               <Typography variant="h2" className="text-2xl text-foreground">
                 {getProjectPageText.headerTitle('ko')}
               </Typography>
-              <SimpleViewModeSwitch
-                mode={viewMode}
-                onModeChange={onViewModeChange}
-                labels={{
-                  list: getViewModeText.listView('ko'),
-                  detail: getViewModeText.detailView('ko')
-                }}
-                ariaLabel={getViewModeText.title('ko')}
-              />
             </div>
             <Typography variant="body1" className="text-muted-foreground">
               {getProjectPageText.headerDescription('ko')}

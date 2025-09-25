@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
 import { useProjectTable } from '@/lib/hooks/useProjectTable';
 import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.types';
-import { getProjectPageText } from '@/config/brand';
+import { getProjectPageText, getViewModeText } from '@/config/brand';
 import { layout, defaults } from '@/config/constants';
 import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
@@ -19,6 +20,8 @@ interface ListViewProps {
   loading?: boolean;
   showColumnSettings?: boolean; // 컬럼 설정 버튼 표시 여부
   onProjectsChange?: () => void; // 프로젝트 데이터 변경 시 호출될 콜백
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 /**
@@ -39,7 +42,9 @@ export default function ListView({
   onProjectClick,
   loading = false,
   showColumnSettings = true, // 기본값은 true (ListView에서는 표시)
-  onProjectsChange
+  onProjectsChange,
+  viewMode,
+  onViewModeChange
 }: ListViewProps) {
   const [selectedProjectIndex, setSelectedProjectIndex] = useState(-1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -128,10 +133,19 @@ export default function ListView({
       {/* Filter Bar */}
       <div className="mb-6 p-4 bg-background rounded-lg border">
         <div className="flex items-center gap-4">
+          <SimpleViewModeSwitch
+            mode={viewMode}
+            onModeChange={onViewModeChange}
+            labels={{
+              list: getViewModeText.listView('ko'),
+              detail: getViewModeText.detailView('ko')
+            }}
+            ariaLabel={getViewModeText.title('ko')}
+          />
           <Input
             type="text"
             placeholder={getProjectPageText.searchPlaceholder('ko')}
-            className="flex-1"
+            className="flex-1 min-w-64"
             value={config.filters.searchQuery}
             onChange={(e) => updateConfig({
               ...config,
@@ -140,7 +154,7 @@ export default function ListView({
             })}
           />
 
-          <div className={`flex items-center ${layout.page.header.actions}`}>
+          <div className={`flex items-center ${layout.page.header.actions} flex-shrink-0`}>
             {/* 삭제 버튼 */}
             {!loading && tableData.length > 0 && (
               <Button

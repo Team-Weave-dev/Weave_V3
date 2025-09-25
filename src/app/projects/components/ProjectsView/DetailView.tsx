@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Typography from '@/components/ui/typography';
 import ProjectDetail from '@/components/projects/ProjectDetail';
-import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.types';
+import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
 import { getProjectPageText, getProjectStatusText, getPaymentStatusText } from '@/config/brand';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
@@ -14,9 +14,34 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, ChevronDown, ChevronUp, RotateCcw, AlertCircleIcon } from 'lucide-react';
+import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
+import { getViewModeText } from '@/config/brand';
 import { layout } from '@/config/constants';
-import { removeCustomProject } from '@/lib/mock/projects';
+import { removeCustomProject, updateCustomProject } from '@/lib/mock/projects';
 import { useToast } from '@/hooks/use-toast';
+
+// 편집 가능한 프로젝트 데이터 인터페이스
+interface EditableProjectData {
+  name: string;
+  client: string;
+  status: ProjectStatus;
+  dueDate: string;
+  progress: number;
+  projectContent?: string;
+  totalAmount?: number;
+  settlementMethod?: SettlementMethod;
+  paymentStatus?: PaymentStatus;
+}
+
+// 편집 상태 인터페이스
+interface ProjectEditState {
+  isEditing: boolean;
+  editingData: EditableProjectData;
+  originalData: ProjectTableRow | null;
+  errors: Record<string, string>;
+  isLoading: boolean;
+  isDirty: boolean;
+}
 
 interface DetailViewProps {
   projects: ProjectTableRow[];
@@ -24,6 +49,8 @@ interface DetailViewProps {
   loading?: boolean;
   showColumnSettings?: boolean; // 컬럼 설정 버튼 표시 여부
   onProjectsChange?: () => void; // 프로젝트 목록 변경 시 호출되는 콜백
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 /**
@@ -43,7 +70,9 @@ export default function DetailView({
   selectedProjectId: initialSelectedId,
   loading = false,
   showColumnSettings = false, // 기본값은 false (DetailView에서는 숨김)
-  onProjectsChange
+  onProjectsChange,
+  viewMode,
+  onViewModeChange
 }: DetailViewProps) {
   const { toast } = useToast();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
@@ -62,7 +91,28 @@ export default function DetailView({
 
   // 삭제 모달 상태
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const lang = 'ko';
+
+  // 편집 모드 상태
+  const [editState, setEditState] = useState<ProjectEditState>({
+    isEditing: false,
+    editingData: {
+      name: '',
+      client: '',
+      status: 'planning',
+      dueDate: '',
+      progress: 0,
+      projectContent: '',
+      totalAmount: undefined,
+      settlementMethod: undefined,
+      paymentStatus: undefined
+    },
+    originalData: null,
+    errors: {},
+    isLoading: false,
+    isDirty: false
+  });
 
   // 필터링된 프로젝트 목록
   const filteredProjects = useMemo(() => {
@@ -195,10 +245,179 @@ export default function DetailView({
     setCurrentPage(1);
   };
 
+  // 편집 상태 초기화
+  const resetEditState = () => {
+    setEditState({
+      isEditing: false,
+      editingData: {
+        name: '',
+        client: '',
+        status: 'planning',
+        dueDate: '',
+        progress: 0,
+        projectContent: '',
+        totalAmount: undefined,
+        settlementMethod: undefined,
+        paymentStatus: undefined
+      },
+      originalData: null,
+      errors: {},
+      isLoading: false,
+      isDirty: false
+    });
+    setShowCancelConfirm(false);
+  };
+
+  // 편집 모드 시작
+  const enterEditMode = (project: ProjectTableRow) => {
+    console.log('📝 편집 모드 시작:', project.name);
+    setEditState({
+      isEditing: true,
+      editingData: {
+        name: project.name,
+        client: project.client,
+        status: project.status,
+        dueDate: project.dueDate,
+        progress: project.progress,
+        projectContent: project.projectContent || '',
+        totalAmount: project.totalAmount,
+        settlementMethod: project.settlementMethod,
+        paymentStatus: project.paymentStatus
+      },
+      originalData: project,
+      errors: {},
+      isLoading: false,
+      isDirty: false
+    });
+  };
+
+  // 편집 필드 업데이트
+  const updateField = (field: keyof EditableProjectData, value: string | number) => {
+    setEditState(prev => {
+      const newData = {
+        ...prev.editingData,
+        [field]: value
+      };
+
+      // isDirty 체크 - 원본 데이터와 비교
+      const isDirty = prev.originalData ?
+        JSON.stringify(newData) !== JSON.stringify({
+          name: prev.originalData.name,
+          client: prev.originalData.client,
+          status: prev.originalData.status,
+          dueDate: prev.originalData.dueDate,
+          progress: prev.originalData.progress,
+          projectContent: prev.originalData.projectContent || '',
+          totalAmount: prev.originalData.totalAmount,
+          settlementMethod: prev.originalData.settlementMethod,
+          paymentStatus: prev.originalData.paymentStatus
+        }) : false;
+
+      return {
+        ...prev,
+        editingData: newData,
+        isDirty
+      };
+    });
+  };
+
+  // 폼 검증
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // 필수 필드 검증
+    if (!editState.editingData.name.trim()) {
+      newErrors.name = '프로젝트명은 필수입니다';
+    }
+
+    if (!editState.editingData.client.trim()) {
+      newErrors.client = '클라이언트명은 필수입니다';
+    }
+
+    // 진행률 검증
+    const progress = Number(editState.editingData.progress);
+    if (isNaN(progress) || progress < 0 || progress > 100) {
+      newErrors.progress = '진행률은 0-100% 사이여야 합니다';
+    }
+
+    // 금액 검증
+    if (editState.editingData.totalAmount !== undefined && editState.editingData.totalAmount < 0) {
+      newErrors.totalAmount = '금액은 0 이상이어야 합니다';
+    }
+
+    // 마감일 검증
+    const dueDate = new Date(editState.editingData.dueDate);
+    if (isNaN(dueDate.getTime())) {
+      newErrors.dueDate = '유효한 날짜를 입력해주세요';
+    }
+
+    setEditState(prev => ({ ...prev, errors: newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // 편집 취소
+  const cancelEdit = () => {
+    if (editState.isDirty) {
+      setShowCancelConfirm(true);
+    } else {
+      resetEditState();
+    }
+  };
+
+  // 편집 저장
+  const saveEdit = async () => {
+    const currentProject = selectedProject;
+    if (!currentProject || !validateForm()) return;
+
+    console.log('💾 편집 내용 저장 시작:', editState.editingData);
+    setEditState(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      const success = updateCustomProject(currentProject.no, editState.editingData);
+
+      if (success) {
+        console.log('✅ 프로젝트 편집 성공:', {
+          id: currentProject.id,
+          no: currentProject.no,
+          changes: editState.editingData
+        });
+
+        toast({
+          title: "프로젝트 수정 완료",
+          description: "프로젝트 정보가 성공적으로 업데이트되었습니다.",
+        });
+
+        resetEditState();
+        // 부모 컴포넌트에 변경사항 알림
+        if (onProjectsChange) {
+          onProjectsChange();
+        }
+      } else {
+        throw new Error('프로젝트 업데이트 실패');
+      }
+    } catch (error) {
+      console.error('❌ 프로젝트 편집 중 오류 발생:', error);
+
+      toast({
+        title: "수정 실패",
+        description: "프로젝트 수정 중 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      });
+    } finally {
+      setEditState(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  // 취소 확인 처리
+  const handleCancelConfirm = () => {
+    resetEditState();
+  };
+
   const handleEditProject = (projectId?: string) => {
-    // TODO: Implement edit functionality
-    const projectToEdit = projectId || selectedProjectId;
-    console.log('Edit project:', projectToEdit);
+    const projectToEdit = projectId ? projects.find(p => p.id === projectId) : selectedProject;
+    if (!projectToEdit) return;
+
+    enterEditMode(projectToEdit);
   };
 
   const handleDeleteProject = (projectId?: string) => {
@@ -309,10 +528,19 @@ export default function DetailView({
       {/* Filter Bar */}
       <div className="mb-6 p-4 bg-background rounded-lg border">
         <div className="flex items-center gap-4">
+          <SimpleViewModeSwitch
+            mode={viewMode}
+            onModeChange={onViewModeChange}
+            labels={{
+              list: getViewModeText.listView('ko'),
+              detail: getViewModeText.detailView('ko')
+            }}
+            ariaLabel={getViewModeText.title('ko')}
+          />
           <Input
             type="text"
             placeholder={getProjectPageText.searchPlaceholder('ko')}
-            className="flex-1"
+            className="flex-1 min-w-64"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -320,7 +548,7 @@ export default function DetailView({
             }}
           />
 
-          <div className={`flex items-center ${layout.page.header.actions}`}>
+          <div className={`flex items-center ${layout.page.header.actions} flex-shrink-0`}>
             {/* 필터 버튼 */}
             <Button
               variant="secondary"
@@ -517,7 +745,11 @@ export default function DetailView({
           <ProjectDetail
             project={selectedProject}
             mode="compact"
+            editState={editState}
             onEdit={() => handleEditProject(selectedProject.id)}
+            onUpdateField={updateField}
+            onSaveEdit={saveEdit}
+            onCancelEdit={cancelEdit}
             onDelete={() => handleDeleteProject(selectedProject.id)}
             onNavigatePrevious={handleNavigatePrevious}
             onNavigateNext={handleNavigateNext}
@@ -546,6 +778,19 @@ export default function DetailView({
         borderClassName="border-2 border-primary"
         onOpenChange={setIsDeleteModalOpen}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* 편집 취소 확인 다이얼로그 */}
+      <DeleteDialog
+        open={showCancelConfirm}
+        title={getProjectPageText.confirmCancelTitle(lang)}
+        description={getProjectPageText.confirmCancelMessage(lang)}
+        confirmLabel={getProjectPageText.confirmCancelButton(lang)}
+        cancelLabel={getProjectPageText.continueEditing(lang)}
+        icon={<AlertCircleIcon className="h-8 w-8 text-destructive" />}
+        borderClassName="border-2 border-primary"
+        onOpenChange={setShowCancelConfirm}
+        onConfirm={handleCancelConfirm}
       />
     </>
   );
