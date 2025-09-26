@@ -8,9 +8,11 @@ import { layout, typography } from '@/config/constants'
 import { getDashboardText } from '@/config/brand'
 import { Button } from '@/components/ui/button'
 import Typography from '@/components/ui/typography'
-import { Settings, Save, Plus, Layers, Grid3x3, LayoutDashboard } from 'lucide-react'
+import { Settings, Save, Plus, Layers, Grid3x3, LayoutDashboard, PanelRightOpen } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useImprovedDashboardStore, selectIsEditMode } from '@/lib/stores/useImprovedDashboardStore'
 import { WidgetSelectorModal } from '@/components/dashboard/WidgetSelectorModal'
+import { WidgetSidebar } from '@/components/dashboard/WidgetSidebar'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults'
 
@@ -20,14 +22,52 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [isCompact, setIsCompact] = useState(true)
   const [widgetModalOpen, setWidgetModalOpen] = useState(false)
+  const [widgetSidebarOpen, setWidgetSidebarOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   
-  // 초기 위젯 설정 (9x8 그리드 기준)
+  // 초기 위젯 설정 (9x9 그리드 기준)
   const initialWidgets = [
-    { id: 'widget_calendar_1', type: 'calendar' as const, title: '캘린더' },
-    { id: 'widget_project_1', type: 'projectSummary' as const, title: '프로젝트 현황' },
-    { id: 'widget_kpi_1', type: 'kpiMetrics' as const, title: '핵심 성과 지표' },
-    { id: 'widget_tax_1', type: 'taxDeadline' as const, title: '세무 일정' },
-    { id: 'widget_todo_1', type: 'todoList' as const, title: '할 일 목록' },
+    {
+      id: 'calendar_widget_1',
+      type: 'calendar' as const,
+      title: '캘린더',
+      position: { x: 0, y: 0, w: 5, h: 4 },
+      minW: 2,
+      minH: 2,
+    },
+    {
+      id: 'project_summary_widget_1',
+      type: 'projectSummary' as const,
+      title: '프로젝트 현황',
+      position: { x: 5, y: 0, w: 4, h: 4 },
+      minW: 2,
+      minH: 2,
+    },
+    {
+      id: 'kpi_metrics_widget_1',
+      type: 'kpiMetrics' as const,
+      title: '핵심 성과 지표',
+      position: { x: 0, y: 4, w: 5, h: 2 },
+      minW: 2,
+      minH: 2,
+    },
+    {
+      id: 'tax_deadline_widget_1',
+      type: 'taxDeadline' as const,
+      title: '세무 일정',
+      position: { x: 0, y: 6, w: 5, h: 2 },
+      minW: 2,
+      minH: 2,
+    },
+    {
+      id: 'todo_list_widget_1',
+      type: 'todoList' as const,
+      title: '할 일 목록',
+      position: { x: 5, y: 4, w: 4, h: 4 },
+      minW: 2,
+      minH: 2,
+    },
   ]
   
   const isEditMode = useImprovedDashboardStore(selectIsEditMode)
@@ -39,7 +79,9 @@ export default function DashboardPage() {
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
   
   const handleAddWidget = () => {
-    setWidgetModalOpen(true)
+    // 사이드바 방식으로 변경
+    setWidgetSidebarOpen(true)
+    setWidgetModalOpen(false)
   }
 
   const handleSelectWidget = (type: ImprovedWidget['type']) => {
@@ -77,6 +119,22 @@ export default function DashboardPage() {
     
     addWidget(newWidget)
   }
+
+  // 화면 크기 감지 및 반응형 처리
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const width = window.innerWidth
+      setIsMobile(width < 1024)
+      // 작은 화면에서 사이드바가 열려있고 확장된 상태면 자동으로 축소
+      if (width < 768 && widgetSidebarOpen && !isCollapsed) {
+        setIsCollapsed(true)
+      }
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [widgetSidebarOpen, isCollapsed])
 
   useEffect(() => {
     const checkUser = async () => {
@@ -118,9 +176,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      {/* 헤더 */}
-      <div className="mb-6">
+    <div className="min-h-screen bg-background relative">
+      {/* 메인 콘텐츠 영역 - 데스크톱에서만 사이드바가 열리면 옆으로 밀림 */}
+      <div className={cn(
+        "transition-all duration-300 ease-in-out",
+        // 모바일에서는 사이드바가 오버레이 방식으로 동작
+        !isMobile && widgetSidebarOpen && !isCollapsed ? "lg:mr-80" : 
+        !isMobile && widgetSidebarOpen && isCollapsed ? "lg:mr-16" : 
+        "mr-0"
+      )}>
+        <div className="container mx-auto p-6">
+        {/* 헤더 */}
+        <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
@@ -149,7 +216,7 @@ export default function DashboardPage() {
             // 편집 모드 툴바
             <>
               <Button size="sm" variant="outline" onClick={handleAddWidget}>
-                <Plus className="h-4 w-4 mr-2" />
+                <PanelRightOpen className="h-4 w-4 mr-2" />
                 {getDashboardText.addWidget('ko')}
               </Button>
               <Button
@@ -172,7 +239,10 @@ export default function DashboardPage() {
               <Button 
                 size="sm"
                 variant="default"
-                onClick={exitEditMode}
+                onClick={() => {
+                  exitEditMode()
+                  setWidgetSidebarOpen(false)  // 사이드바 닫기
+                }}
               >
                 <Save className="h-4 w-4 mr-2" />
                 {getDashboardText.complete('ko')}
@@ -183,63 +253,37 @@ export default function DashboardPage() {
         </div>
       </div>
       
-      {/* 위젯 선택 모달 */}
+      {/* 대시보드 위젯 */}
+      <ImprovedDashboard 
+        isCompactControlled={isCompact} 
+        hideToolbar 
+        initialWidgets={initialWidgets}
+      />
+      </div>
+      </div>
+      
+      {/* 모바일에서 오버레이 백드롭 */}
+      {isMobile && widgetSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setWidgetSidebarOpen(false)}
+        />
+      )}
+      
+      {/* 위젯 사이드바 (새로운 방식) */}
+      <WidgetSidebar
+        isOpen={widgetSidebarOpen}
+        onClose={() => setWidgetSidebarOpen(false)}
+        onCollapseChange={setIsCollapsed}
+        className={isMobile ? "shadow-2xl" : ""}
+      />
+      
+      {/* 위젯 선택 모달 (기존 방식 - 백업용) */}
       <WidgetSelectorModal
         open={widgetModalOpen}
         onOpenChange={setWidgetModalOpen}
         onSelectWidget={handleSelectWidget}
         existingWidgets={widgets}
-      />
-      
-      {/* 대시보드 위젯 */}
-      <ImprovedDashboard 
-        isCompactControlled={isCompact} 
-        hideToolbar 
-        initialWidgets={[
-          {
-            id: 'calendar_widget_1',
-            type: 'calendar' as const,
-            title: '캘린더',
-            position: { x: 0, y: 0, w: 5, h: 4 },
-            minW: 2,
-            minH: 2,
-            // data를 제거하거나 undefined로 설정하면 컴포넌트 내부 목데이터 사용
-          },
-          {
-            id: 'project_summary_widget_1',
-            type: 'projectSummary' as const,
-            title: '프로젝트 현황',
-            position: { x: 5, y: 0, w: 4, h: 4 },
-            minW: 2,
-            minH: 2,
-            // data를 제거하거나 undefined로 설정하면 컴포넌트 내부 목데이터 사용
-          },
-          {
-            id: 'kpi_metrics_widget_1',
-            type: 'kpiMetrics' as const,
-            title: '핵심 성과 지표',
-            position: { x: 0, y: 4, w: 5, h: 2 },
-            minW: 2,
-            minH: 2,
-          },
-          {
-            id: 'tax_deadline_widget_1',
-            type: 'taxDeadline' as const,
-            title: '세무 일정',
-            position: { x: 0, y: 6, w: 5, h: 2 },
-            minW: 2,
-            minH: 2,
-          },
-          {
-            id: 'todo_list_widget_1',
-            type: 'todoList' as const,
-            title: '할 일 목록',
-            position: { x: 5, y: 4, w: 4, h: 4 },
-            minW: 2,
-            minH: 2,
-            // data를 제거하거나 undefined로 설정하면 컴포넌트 내부 목데이터 사용
-          },
-        ]}
       />
     </div>
   )

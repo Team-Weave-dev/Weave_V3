@@ -894,6 +894,113 @@ export function ImprovedDashboard({
     
     addWidget(newWidget);
   }, [findSpaceForWidget, addWidget]);
+
+  // 드래그 오버 핸들러 (사이드바에서 대시보드로)
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    
+    // 위젯 타입이 있는지 확인 (사이드바에서 드래그 중)
+    if (e.dataTransfer.types.includes('widgetType')) {
+      e.dataTransfer.dropEffect = 'copy';
+      
+      // 드롭 위치 미리보기 (선택사항)
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // 그리드 좌표로 변환
+        const gridX = Math.floor(x / (cellSize.width + config.gap));
+        const gridY = Math.floor(y / (cellSize.height + config.gap));
+        
+        // TODO: 드롭 위치 미리보기 UI 추가 가능
+      }
+    }
+  }, [cellSize, config.gap]);
+
+  // 드롭 핸들러 (사이드바에서 대시보드로)
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    
+    const widgetType = e.dataTransfer.getData('widgetType') as ImprovedWidget['type'];
+    if (!widgetType) return;
+    
+    // 위젯 타입별 기본 크기 가져오기
+    const defaultSize = getDefaultWidgetSize(widgetType);
+    
+    // 드롭 위치 계산
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // 그리드 좌표로 변환
+      const gridX = Math.floor(x / (cellSize.width + config.gap));
+      const gridY = Math.floor(y / (cellSize.height + config.gap));
+      
+      // 드롭 위치에서 시작하여 빈 공간 찾기
+      let position: GridPosition | null = null;
+      
+      // 먼저 드롭 위치에 배치 시도
+      const dropPosition = {
+        x: Math.max(0, Math.min(config.cols - defaultSize.width, gridX)),
+        y: Math.max(0, gridY),
+        w: defaultSize.width,
+        h: defaultSize.height
+      };
+      
+      // 충돌 검사
+      const hasCollision = widgets.some(w => 
+        !(dropPosition.x + dropPosition.w <= w.position.x ||
+          dropPosition.x >= w.position.x + w.position.w ||
+          dropPosition.y + dropPosition.h <= w.position.y ||
+          dropPosition.y >= w.position.y + w.position.h)
+      );
+      
+      if (!hasCollision) {
+        position = dropPosition;
+      } else {
+        // 충돌이 있으면 가장 가까운 빈 공간 찾기
+        position = findSpaceForWidget(defaultSize.width, defaultSize.height);
+      }
+      
+      if (!position) {
+        alert('위젯을 추가할 공간이 없습니다.');
+        return;
+      }
+      
+      // 위젯 타입별 제목 설정
+      const widgetTitles: Record<ImprovedWidget['type'], string> = {
+        calendar: '캘린더',
+        todoList: '할 일 목록',
+        projectSummary: '프로젝트 현황',
+        kpiMetrics: '핵심 성과 지표',
+        taxDeadline: '세무 일정',
+        revenueChart: '매출 차트',
+        taxCalculator: '세금 계산기',
+        recentActivity: '최근 활동',
+        custom: '새 위젯'
+      };
+      
+      // 새 위젯 생성
+      const newWidget: ImprovedWidget = {
+        id: `widget_${widgetType}_${Date.now()}`,
+        type: widgetType,
+        title: widgetTitles[widgetType],
+        position,
+        minW: defaultSize.minWidth || 2,
+        minH: defaultSize.minHeight || 2,
+        maxW: defaultSize.maxWidth,
+        maxH: defaultSize.maxHeight,
+      };
+      
+      // 위젯 추가
+      addWidget(newWidget);
+      
+      // 콜백 호출 - onWidgetAdd가 없으므로 제거
+      // callbacks?.onWidgetAdd?.(newWidget);
+    }
+  }, [widgets, cellSize, config.cols, config.gap, findSpaceForWidget, addWidget, callbacks]);
   
   // 위젯 렌더링
   const renderWidget = useCallback((widget: ImprovedWidget) => {
@@ -1038,10 +1145,12 @@ export function ImprovedDashboard({
         </div>
       )}
       
-      {/* 그리드 컨테이너 */}
+      {/* 그리드 컨테이너 - 드롭 존으로 사용 */}
       <div 
         ref={containerRef}
         className="relative"
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         style={{ 
           // maxRows(9) * (rowHeight(120) + gap(16)) = 9 * 136 = 1224px
           minHeight: `${(config.maxRows || 9) * (config.rowHeight + config.gap)}px`,
@@ -1119,14 +1228,45 @@ export function ImprovedDashboard({
                   )}
                   onClick={(e) => !isEditMode && callbacks?.onWidgetClick?.(widget, e.nativeEvent)}
                 >
-                  {/* 편집 모드 드래그 핸들 - 모든 위젯에 동일하게 적용 */}
+                  {/* 편집 모드 드래그 핸들 - 이동과 제거 분리 */}
                   {isEditMode && !widget.static && widget.isDraggable !== false && (
-                    <div 
-                      className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-gray-100/50 to-transparent dark:from-gray-800/50 cursor-move z-10"
-                      onMouseDown={(e) => handleDragStart(e, widget)}
-                    >
-                      <div className="flex items-center justify-center h-full">
+                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-gray-100/50 to-transparent dark:from-gray-800/50 z-10 flex items-center justify-between px-2">
+                      {/* 이동 핸들 (왼쪽) */}
+                      <div 
+                        className="flex-1 h-full cursor-move flex items-center justify-center"
+                        onMouseDown={(e) => handleDragStart(e, widget)}
+                      >
                         <Grip className="h-4 w-4 text-gray-400" />
+                      </div>
+                      
+                      {/* 제거 핸들 (오른쪽) - HTML5 드래그 */}
+                      <div
+                        className="h-6 w-6 cursor-grab hover:bg-red-100 rounded flex items-center justify-center transition-colors"
+                        draggable
+                        onDragStart={(e) => {
+                          e.stopPropagation(); // 이동 핸들과 충돌 방지
+                          // HTML5 드래그 시작 (사이드바로 제거용)
+                          e.dataTransfer.effectAllowed = 'move';
+                          e.dataTransfer.setData('widgetId', widget.id);
+                          e.dataTransfer.setData('widgetType', widget.type);
+                          
+                          // 드래그 이미지 설정
+                          const dragImage = document.createElement('div');
+                          dragImage.className = 'p-3 rounded-lg shadow-lg bg-white border-2 border-dashed border-red-400';
+                          dragImage.innerHTML = `<div class="flex items-center gap-2"><span>🗑️ ${widget.title}</span></div>`;
+                          dragImage.style.position = 'fixed';
+                          dragImage.style.top = '-1000px';
+                          dragImage.style.left = '-1000px';
+                          document.body.appendChild(dragImage);
+                          e.dataTransfer.setDragImage(dragImage, 50, 20);
+                          setTimeout(() => document.body.removeChild(dragImage), 0);
+                        }}
+                        onDragEnd={() => {
+                          // 드래그 종료 시 정리
+                        }}
+                        title="사이드바로 드래그하여 제거"
+                      >
+                        <span className="text-xs">🗑️</span>
                       </div>
                     </div>
                   )}
