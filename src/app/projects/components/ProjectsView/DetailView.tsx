@@ -5,6 +5,7 @@ import Typography from '@/components/ui/typography';
 import ProjectDetail from '@/components/projects/ProjectDetail';
 import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
 import { getProjectPageText, getProjectStatusText, getPaymentStatusText } from '@/config/brand';
+import ProjectInfoRenderer from '@/components/projects/shared/ProjectInfoRenderer';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { DeleteDialog } from '@/components/ui/dialogDelete';
@@ -679,46 +680,20 @@ export default function DetailView({
                   <div
                     key={project.id}
                     onClick={() => handleProjectClick(project.id)}
-                    className={`p-3 rounded-md border cursor-pointer transition-all ${
+                    className={`rounded-md border cursor-pointer transition-all ${
                       selectedProject?.id === project.id
                         ? 'bg-primary/10 border-primary'
                         : 'hover:bg-accent'
                     }`}
                   >
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium truncate">
-                            {project.name}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">
-                            {project.no} • {project.client}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={project.paymentProgress === 'not_started' ? 'secondary' : 'default'} className="text-xs">
-                            {getPaymentStatusText[project.paymentProgress || 'not_started']('ko')}
-                          </Badge>
-                          <Badge variant={getStatusVariant(project.status)}>
-                            {getProjectStatusText(project.status, 'ko')}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-muted-foreground">진행률</span>
-                            <span className="font-medium">{project.progress || 0}%</span>
-                          </div>
-                          <ProjectProgress value={project.progress || 0} size="sm" />
-                        </div>
-                      </div>
-
-                      <div className="text-xs text-muted-foreground">
-                        마감일: {new Date(project.dueDate).toLocaleDateString('ko-KR')}
-                      </div>
-                    </div>
+                    <ProjectInfoRenderer
+                      project={project}
+                      mode="card"
+                      fields={['name', 'status', 'paymentStatus', 'progress', 'meta']}
+                      layout="vertical"
+                      onProjectClick={() => handleProjectClick(project.id)}
+                      lang="ko"
+                    />
                   </div>
                 ))}
           </CardContent>
