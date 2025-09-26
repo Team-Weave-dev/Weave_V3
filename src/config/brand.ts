@@ -1831,6 +1831,23 @@ export const getWidgetText = {
     unit: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '만원' : '10K KRW',
     total: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '총 매출' : 'Total Revenue',
     avgGrowth: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '평균 성장률' : 'Avg Growth Rate'
+  },
+  recentActivity: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최근 활동' : 'Recent Activity',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최근 작업 및 변경사항을 확인하세요' : 'Check recent work and changes',
+    noActivity: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최근 활동이 없습니다' : 'No recent activity',
+    filterAll: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전체' : 'All',
+    filterCreate: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '생성' : 'Create',
+    filterUpdate: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '수정' : 'Update',
+    filterComplete: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료' : 'Complete',
+    filterDelete: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '삭제' : 'Delete',
+    filterComment: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '댓글' : 'Comment',
+    filterDocument: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '문서' : 'Document',
+    userAll: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '모든 사용자' : 'All Users',
+    timeJustNow: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '방금 전' : 'Just now',
+    timeMinutes: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '분 전' : 'min ago',
+    timeHours: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '시간 전' : 'hrs ago',
+    timeDays: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일 전' : 'days ago'
   }
 }
 

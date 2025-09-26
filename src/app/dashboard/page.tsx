@@ -60,6 +60,7 @@ export default function DashboardPage() {
       taxDeadline: '세무 일정',
       revenueChart: '매출 차트',
       taxCalculator: '세금 계산기',
+      recentActivity: '최근 활동',
       custom: '새 위젯'
     }
 
