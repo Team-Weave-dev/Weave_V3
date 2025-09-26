@@ -325,14 +325,14 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-2">
-        <div className="flex flex-col h-full px-3">
+      <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-1">
+        <div className="flex flex-col h-full px-2">
           {!showHistoryPanel ? (
             <>
               {/* 입력 영역 */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* 세금 종류 선택 */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="tax-type">세금 종류</Label>
                   <Select value={taxType} onValueChange={(value) => setTaxType(value as TaxType)}>
                     <SelectTrigger id="tax-type">
@@ -362,7 +362,7 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
                 </div>
 
                 {/* 계산 모드 선택 */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="calc-mode">계산 방식</Label>
                   <Select value={calculationMode} onValueChange={(value) => setCalculationMode(value as CalculationMode)}>
                     <SelectTrigger id="calc-mode">
@@ -380,7 +380,7 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
                 </div>
 
                 {/* 금액 입력 */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="amount">
                     {calculationMode === CalculationMode.FROM_SUPPLY 
                       ? getWidgetText.taxCalculator.supplyAmount(lang)
@@ -421,7 +421,7 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
 
               {/* 계산 결과 */}
               {currentResult && (
-                <div ref={resultRef} className="mt-6 p-4 bg-muted/50 rounded-lg space-y-3">
+                <div ref={resultRef} className="mt-4 p-3 bg-muted/50 rounded-lg space-y-2.5">
                   <div className="flex items-center justify-between">
                     <h4 className="font-semibold text-sm">계산 결과</h4>
                     <Button
@@ -435,8 +435,8 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
                     </Button>
                   </div>
                   
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center py-1">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center py-0.5">
                       <span className="text-sm text-muted-foreground">
                         {getWidgetText.taxCalculator.supplyAmount(lang)}
                       </span>
@@ -445,7 +445,7 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
                       </span>
                     </div>
                     
-                    <div className="flex justify-between items-center py-1">
+                    <div className="flex justify-between items-center py-0.5">
                       <span className="text-sm text-muted-foreground">
                         {getWidgetText.taxCalculator.taxAmount(lang)}
                       </span>
@@ -454,7 +454,7 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
                       </span>
                     </div>
                     
-                    <div className="flex justify-between items-center py-1 pt-2 border-t">
+                    <div className="flex justify-between items-center py-0.5 pt-1.5 border-t">
                       <span className="text-sm font-medium">
                         {getWidgetText.taxCalculator.totalAmount(lang)}
                       </span>
@@ -464,7 +464,7 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
                     </div>
                     
                     {currentResult.netAmount !== undefined && (
-                      <div className="flex justify-between items-center py-1 pt-2 border-t">
+                      <div className="flex justify-between items-center py-0.5 pt-1.5 border-t">
                         <span className="text-sm font-medium">
                           {getWidgetText.taxCalculator.netAmount(lang)}
                         </span>
@@ -476,7 +476,7 @@ ${currentResult.netAmount ? `실수령액: ${TaxCalculator.formatNumber(currentR
                   </div>
 
                   {/* 세율 정보 */}
-                  <div className="flex items-center gap-2 pt-2">
+                  <div className="flex items-center gap-2 pt-1">
                     <Info className="h-3 w-3 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
                       {getTaxTypeLabel(currentResult.taxType)} · 세율 {currentResult.taxRate}%
