@@ -258,3 +258,36 @@ export interface TaxCalculatorWidgetProps {
   onCalculate?: (calculation: TaxCalculation) => void;
   lang?: 'ko' | 'en';
 }
+
+// 최근 활동 위젯 인터페이스
+export type ActivityType = 'create' | 'update' | 'delete' | 'complete' | 'comment' | 'document';
+
+export interface ActivityUser {
+  id: string;
+  name: string;
+  initials: string;
+  avatar?: string;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: ActivityType;
+  user: ActivityUser;
+  action: string;                    // 활동 설명 (예: "프로젝트 생성", "문서 업로드")
+  target: string;                    // 대상 (예: "프로젝트 A", "계약서.pdf")
+  timestamp: Date;                   // 활동 시간
+  description?: string;              // 추가 설명
+  metadata?: Record<string, any>;    // 추가 메타데이터
+}
+
+export interface RecentActivityWidgetProps {
+  id?: string;
+  title?: string;
+  activities?: ActivityItem[];
+  maxItems?: number;                 // 표시할 최대 항목 수 (기본: 10)
+  showFilter?: boolean;              // 필터 표시 여부
+  filterByUser?: string;             // 특정 사용자 필터
+  filterByType?: ActivityType;       // 특정 활동 타입 필터
+  onActivityClick?: (activity: ActivityItem) => void;
+  lang?: 'ko' | 'en';
+}

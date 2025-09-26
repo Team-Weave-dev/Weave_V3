@@ -18,7 +18,8 @@ import {
   Briefcase,
   Check,
   BarChart3,
-  Calculator
+  Calculator,
+  Activity
 } from 'lucide-react'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDashboardText } from '@/config/brand'
@@ -94,6 +95,13 @@ export function WidgetSelectorModal({
       description: '부가세, 원천세를 간편하게 계산',
       icon: Calculator,
       available: true
+    },
+    {
+      type: 'recentActivity',
+      title: '최근 활동',
+      description: '최근 작업 및 변경사항 확인',
+      icon: Activity,
+      available: true
     }
   ]
 
@@ -127,36 +135,29 @@ export function WidgetSelectorModal({
                 disabled={!option.available}
                 className={cn(
                   "relative p-4 rounded-lg border-2 text-left transition-all",
-                  "hover:border-primary hover:bg-accent/50",
-                  "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                  !option.available && "opacity-50 cursor-not-allowed",
-                  "group"
+                  "hover:border-primary hover:shadow-md",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                  isAdded 
+                    ? "border-primary/50 bg-primary/5" 
+                    : "border-border bg-background"
                 )}
               >
-                {/* 이미 추가된 위젯 표시 */}
+                {/* 이미 추가됨 표시 */}
                 {isAdded && (
                   <div className="absolute top-2 right-2">
-                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary">
-                      <Check className="w-3 h-3" />
-                    </div>
+                    <Check className="h-4 w-4 text-primary" />
                   </div>
                 )}
-
+                
                 <div className="flex items-start gap-3">
-                  <div className={cn(
-                    "p-2 rounded-md",
-                    "bg-primary/10 text-primary",
-                    "group-hover:bg-primary group-hover:text-primary-foreground",
-                    "transition-colors"
-                  )}>
-                    <Icon className="w-5 h-5" />
+                  <div className="p-2 rounded-lg bg-muted">
+                    <Icon className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm mb-1">
+                    <h3 className="font-semibold text-foreground mb-1">
                       {option.title}
                     </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       {option.description}
                     </p>
                   </div>
@@ -166,9 +167,12 @@ export function WidgetSelectorModal({
           })}
         </div>
 
-        <div className="flex justify-end mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {getDashboardText.cancel('ko')}
+        <div className="flex justify-end pt-4">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+          >
+            취소
           </Button>
         </div>
       </DialogContent>

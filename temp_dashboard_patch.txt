@@ -1,0 +1,6 @@
+import { TaxDeadlineWidget } from '@/components/ui/widgets/TaxDeadlineWidget';
+import { TaxCalculatorWidget } from '@/components/ui/widgets/TaxCalculatorWidget';
+import { KPIWidget } from '@/components/ui/widgets/KPIWidget';
+import { RevenueChartWidget } from '@/components/ui/widgets/RevenueChartWidget';
+import { RecentActivityWidget } from '@/components/ui/widgets/RecentActivityWidget';
+import { useResponsiveCols } from '@/components/ui/use-responsive-cols';

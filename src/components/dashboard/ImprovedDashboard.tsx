@@ -39,6 +39,7 @@ import { TaxDeadlineWidget } from '@/components/ui/widgets/TaxDeadlineWidget';
 import { TaxCalculatorWidget } from '@/components/ui/widgets/TaxCalculatorWidget';
 import { KPIWidget } from '@/components/ui/widgets/KPIWidget';
 import { RevenueChartWidget } from '@/components/ui/widgets/RevenueChartWidget';
+import { RecentActivityWidget } from '@/components/ui/widgets/RecentActivityWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults';
 
@@ -473,8 +474,13 @@ export function ImprovedDashboard({
           w: 2,
           h: 2
         }, // 세금 계산기 (기본 2x2)
+        recentActivity: {
+          x: 3, y: 8,
+          w: 3,
+          h: 2
+        }, // 최근 활동 (중앙 하단, 3x2)
         custom: { 
-          x: 3, y: 8, 
+          x: 6, y: 8, 
           w: 2, 
           h: 2 
         }, // 커스텀 (예비 공간, 2x2)
@@ -940,6 +946,14 @@ export function ImprovedDashboard({
           data={widget.data}
           periodType={widget.data?.periodType || 'monthly'}
           chartView={widget.data?.chartView || 'bar'}
+        />;
+      case 'recentActivity':
+        return <RecentActivityWidget
+          title={widget.title}
+          activities={widget.data}
+          lang="ko"
+          maxItems={10}
+          showFilter={true}
         />;
       default:
         return (
