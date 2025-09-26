@@ -18,7 +18,7 @@ export interface WidgetSize {
 
 export interface Widget {
   id: string;
-  type: 'stats' | 'chart' | 'quickActions' | 'progress' | 'list' | 'custom' | 'projectSummary' | 'todoList';
+  type: 'stats' | 'chart' | 'quickActions' | 'progress' | 'list' | 'custom' | 'projectSummary' | 'todoList' | 'weather';
   title: string;
   position: WidgetPosition;
   size: WidgetSize;
@@ -290,4 +290,58 @@ export interface RecentActivityWidgetProps {
   filterByType?: ActivityType;       // 특정 활동 타입 필터
   onActivityClick?: (activity: ActivityItem) => void;
   lang?: 'ko' | 'en';
+}
+
+// 날씨 위젯 인터페이스
+export type WeatherCondition = 
+  | 'clear'        // 맑음
+  | 'partly-cloudy'// 부분 흐림
+  | 'cloudy'       // 흐림
+  | 'rain'         // 비
+  | 'snow'         // 눈
+  | 'storm'        // 폭풍
+  | 'fog'          // 안개
+  | 'windy';       // 바람
+
+export interface WeatherData {
+  current: {
+    location: string;
+    temperature: number;
+    condition: WeatherCondition;
+    feelsLike?: number;
+    humidity?: number;
+    windSpeed?: number;
+    windDirection?: string;
+    pressure?: number;
+    uvIndex?: number;
+    visibility?: number;
+  };
+  forecast: Array<{
+    date: Date;
+    dayOfWeek: string;
+    high: number;
+    low: number;
+    condition: WeatherCondition;
+    precipitation?: number;
+    humidity?: number;
+  }>;
+  lastUpdated: Date;
+}
+
+export interface WeatherWidgetProps {
+  id?: string;
+  title?: string;
+  location?: string;                   // 위치 (기본: 현재 위치)
+  units?: 'celsius' | 'fahrenheit';    // 온도 단위 (기본: celsius)
+  showForecast?: boolean;              // 5일 예보 표시 여부
+  maxForecastDays?: number;            // 최대 예보 일수 (기본: 5)
+  updateInterval?: number;             // 업데이트 주기 (분, 기본: 30)
+  useRealData?: boolean;               // 실제 API 사용 여부
+  onLocationChange?: (location: string) => void;
+  onRefresh?: () => void;
+  lang?: 'ko' | 'en';
+  gridSize?: {                        // 위젯 그리드 크기
+    w: number;
+    h: number;
+  };
 }

@@ -4,11 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ImprovedDashboard } from '@/components/dashboard/ImprovedDashboard'
-import { layout, typography } from '@/config/constants'
 import { getDashboardText } from '@/config/brand'
 import { Button } from '@/components/ui/button'
 import Typography from '@/components/ui/typography'
-import { Settings, Save, Plus, Layers, Grid3x3, LayoutDashboard, PanelRightOpen } from 'lucide-react'
+import { Settings, Save, Layers, Grid3x3, LayoutDashboard, PanelRightOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useImprovedDashboardStore, selectIsEditMode } from '@/lib/stores/useImprovedDashboardStore'
 import { WidgetSelectorModal } from '@/components/dashboard/WidgetSelectorModal'
@@ -18,7 +17,6 @@ import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isCompact, setIsCompact] = useState(true)
   const [widgetModalOpen, setWidgetModalOpen] = useState(false)
@@ -77,6 +75,23 @@ export default function DashboardPage() {
   const compactWidgets = useImprovedDashboardStore(state => state.compactWidgets)
   const findSpaceForWidget = useImprovedDashboardStore(state => state.findSpaceForWidget)
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
+
+  // ESC 키로 편집 모드와 사이드바 동시에 닫기
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isEditMode) {
+          exitEditMode()
+        }
+        if (widgetSidebarOpen) {
+          setWidgetSidebarOpen(false)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isEditMode, widgetSidebarOpen, exitEditMode])
   
   const handleAddWidget = () => {
     // 사이드바 방식으로 변경
@@ -103,6 +118,7 @@ export default function DashboardPage() {
       revenueChart: '매출 차트',
       taxCalculator: '세금 계산기',
       recentActivity: '최근 활동',
+      weather: '날씨',
       custom: '새 위젯'
     }
 
@@ -141,8 +157,6 @@ export default function DashboardPage() {
       // 테스트 사용자 체크
       const testUser = localStorage.getItem('testUser')
       if (testUser) {
-        const userData = JSON.parse(testUser)
-        setUser(userData)
         setLoading(false)
         return
       }
@@ -154,10 +168,8 @@ export default function DashboardPage() {
         
         if (!user) {
           router.push('/login')
-        } else {
-          setUser(user)
         }
-      } catch (err) {
+      } catch {
         // Supabase 설정 오류 시 로그인 페이지로
         router.push('/login')
       }

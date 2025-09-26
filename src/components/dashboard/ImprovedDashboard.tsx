@@ -40,6 +40,7 @@ import { TaxCalculatorWidget } from '@/components/ui/widgets/TaxCalculatorWidget
 import { KPIWidget } from '@/components/ui/widgets/KPIWidget';
 import { RevenueChartWidget } from '@/components/ui/widgets/RevenueChartWidget';
 import { RecentActivityWidget } from '@/components/ui/widgets/RecentActivityWidget';
+import WeatherWidget from '@/components/ui/widgets/WeatherWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults';
 
@@ -479,6 +480,11 @@ export function ImprovedDashboard({
           w: 3,
           h: 2
         }, // 최근 활동 (중앙 하단, 3x2)
+        weather: {
+          x: 0, y: 0,
+          w: 2,
+          h: 1
+        }, // 날씨 (기본 2x1)
         custom: { 
           x: 6, y: 8, 
           w: 2, 
@@ -628,6 +634,21 @@ export function ImprovedDashboard({
           minH: getDefaultWidgetSize('todoList').minHeight || 2,
           maxW: getDefaultWidgetSize('todoList').maxWidth || 4,
         },
+        {
+          id: 'widget_weather_1',
+          type: 'weather',
+          title: '날씨 정보',
+          position: { 
+            x: 0, y: 2, 
+            w: getDefaultWidgetSize('weather').width,
+            h: getDefaultWidgetSize('weather').height
+          },
+          data: { location: '서울' },
+          minW: getDefaultWidgetSize('weather').minWidth || 2,
+          minH: getDefaultWidgetSize('weather').minHeight || 1,
+          maxW: getDefaultWidgetSize('weather').maxWidth || 4,
+          maxH: getDefaultWidgetSize('weather').maxHeight || 3,
+        },
       ];
       testWidgets.forEach((w) => addWidget(w));
     }
@@ -675,17 +696,8 @@ export function ImprovedDashboard({
     return () => window.removeEventListener('resize', calculateGrid);
   }, [config.cols, config.gap, config.rowHeight]);
   
-  // ESC 키로 편집 모드 종료
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isEditMode) {
-        exitEditMode();
-      }
-    };
-    
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isEditMode, exitEditMode]);
+  // ESC 키 처리는 대시보드 페이지에서 통합 관리
+  // (편집 모드와 사이드바를 동시에 닫기 위해)
   
   // Compact 레이아웃 적용
   useEffect(() => {
@@ -979,6 +991,7 @@ export function ImprovedDashboard({
         revenueChart: '매출 차트',
         taxCalculator: '세금 계산기',
         recentActivity: '최근 활동',
+        weather: '날씨 정보',
         custom: '새 위젯'
       };
       
@@ -1061,6 +1074,18 @@ export function ImprovedDashboard({
           lang="ko"
           maxItems={10}
           showFilter={true}
+        />;
+      case 'weather':
+        return <WeatherWidget
+          title={widget.title}
+          location={widget.data?.location || '서울'}
+          units="celsius"
+          showForecast={true}
+          maxForecastDays={5}
+          updateInterval={30}
+          useRealData={false}
+          lang="ko"
+          gridSize={{ w: widget.position.w, h: widget.position.h }}
         />;
       default:
         return (

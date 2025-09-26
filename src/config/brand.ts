@@ -1848,6 +1848,56 @@ export const getWidgetText = {
     timeMinutes: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '분 전' : 'min ago',
     timeHours: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '시간 전' : 'hrs ago',
     timeDays: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일 전' : 'days ago'
+  },
+  weather: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '날씨 정보' : 'Weather Info',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '현재 위치 날씨 및 5일 예보' : 'Current weather and 5-day forecast',
+    currentLocation: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '현재 위치' : 'Current Location',
+    temperature: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '온도' : 'Temperature',
+    feelsLike: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '체감' : 'Feels Like',
+    humidity: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '습도' : 'Humidity',
+    windSpeed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '풍속' : 'Wind Speed',
+    pressure: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '기압' : 'Pressure',
+    uvIndex: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '자외선' : 'UV Index',
+    visibility: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '가시거리' : 'Visibility',
+    precipitation: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '강수확률' : 'Precipitation',
+    forecast: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '5일 예보' : '5-Day Forecast',
+    todayForecast: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘' : 'Today',
+    high: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최고' : 'High',
+    low: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최저' : 'Low',
+    lastUpdated: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '마지막 업데이트' : 'Last Updated',
+    refresh: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새로고침' : 'Refresh',
+    changeLocation: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위치 변경' : 'Change Location',
+    loading: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '날씨 정보를 불러오는 중...' : 'Loading weather...',
+    error: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '날씨 정보를 불러올 수 없습니다' : 'Failed to load weather',
+    conditions: {
+      clear: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '맑음' : 'Clear',
+      partlyCloudy: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '구름 조금' : 'Partly Cloudy',
+      cloudy: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '흐림' : 'Cloudy',
+      rain: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '비' : 'Rain',
+      snow: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '눈' : 'Snow',
+      storm: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '폭풍' : 'Storm',
+      fog: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '안개' : 'Fog',
+      windy: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '강풍' : 'Windy'
+    },
+    units: {
+      celsius: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '°C' : '°C',
+      fahrenheit: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '°F' : '°F',
+      kmPerHour: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'km/h' : 'km/h',
+      meterPerSec: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'm/s' : 'm/s',
+      percent: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '%' : '%',
+      hPa: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'hPa' : 'hPa',
+      km: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'km' : 'km'
+    },
+    weekdays: {
+      sunday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일' : 'Sun',
+      monday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월' : 'Mon',
+      tuesday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '화' : 'Tue',
+      wednesday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '수' : 'Wed',
+      thursday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '목' : 'Thu',
+      friday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '금' : 'Fri',
+      saturday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '토' : 'Sat'
+    }
   }
 }
 

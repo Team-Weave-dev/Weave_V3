@@ -301,6 +301,36 @@ export const cssVariables = {
   }
 } as const
 
+// 위젯 색상 시스템 - 날씨 위젯 색상 추가
+export const colors = {
+  // 시맨틱 색상
+  widget: {
+    // 날씨 위젯 전용 그라데이션
+    weather: {
+      clear: 'from-blue-400/90 to-blue-600/90',
+      partlyCloudy: 'from-blue-300/90 to-gray-400/90',
+      cloudy: 'from-gray-400/90 to-gray-600/90',
+      rain: 'from-gray-500/90 to-blue-700/90',
+      snow: 'from-blue-200/90 to-gray-300/90',
+      storm: 'from-gray-600/90 to-gray-900/90',
+      fog: 'from-gray-300/90 to-gray-500/90',
+      windy: 'from-blue-400/90 to-gray-500/90'
+    },
+    // 카드 헤더 색상
+    header: {
+      background: 'bg-muted/50',
+      border: 'border-border',
+      text: 'text-foreground'
+    },
+    // 컨텐츠 영역
+    content: {
+      background: 'bg-background',
+      text: 'text-foreground',
+      muted: 'text-muted-foreground'
+    }
+  }
+} as const
+
 // 플레이스홀더 아이콘 가이드라인
 export const placeholderIcons = {
   button: {

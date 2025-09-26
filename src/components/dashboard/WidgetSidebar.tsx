@@ -13,6 +13,7 @@ import {
   Clock,
   Calculator,
   Activity,
+  Cloud,
   X,
   GripVertical,
   Plus,
@@ -96,6 +97,15 @@ const widgetConfigs = [
     dragColor: 'bg-gray-100',
     description: '최근 업무 내역',
     defaultSize: { w: 4, h: 3 }
+  },
+  {
+    type: 'weather' as const,
+    title: '날씨',
+    icon: Cloud,
+    color: 'bg-sky-50 text-sky-600 border-sky-200',
+    dragColor: 'bg-sky-100',
+    description: '현재 날씨와 예보',
+    defaultSize: { w: 2, h: 1 }
   }
 ]
 
@@ -113,6 +123,9 @@ export function WidgetSidebar({ isOpen, onClose, onCollapseChange, className }: 
   const [hoveredWidget, setHoveredWidget] = useState<string | null>(null)
   const [isDragOverRemoveZone, setIsDragOverRemoveZone] = useState(false)
   const dragImageRef = useRef<HTMLDivElement>(null)
+
+  // ESC 키 처리는 대시보드 페이지에서 통합 관리
+  // (편집 모드와 사이드바를 동시에 닫기 위해)
 
   // Collapse 상태 변경 시 부모 컴포넌트에 알림
   useEffect(() => {
