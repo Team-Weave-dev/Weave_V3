@@ -16,7 +16,8 @@ import {
   Receipt,
   TrendingUp,
   Briefcase,
-  Check
+  Check,
+  BarChart3
 } from 'lucide-react'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDashboardText } from '@/config/brand'
@@ -77,6 +78,13 @@ export function WidgetSelectorModal({
       title: '세무 일정',
       description: '세무 신고 및 납부 일정',
       icon: Receipt,
+      available: true
+    },
+    {
+      type: 'revenueChart',
+      title: '매출 차트',
+      description: '월별/분기별 수익을 차트로 표시',
+      icon: BarChart3,
       available: true
     }
   ]

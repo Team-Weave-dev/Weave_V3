@@ -1793,6 +1793,25 @@ export const getWidgetText = {
       percent: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '%' : '%',
       days: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일' : 'days'
     }
+  },
+  revenueChart: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '매출 차트' : 'Revenue Chart',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월별/분기별 수익을 차트로 표시' : 'Display monthly/quarterly revenue in charts',
+    monthly: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월별' : 'Monthly',
+    quarterly: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '분기별' : 'Quarterly',
+    yearly: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '연간' : 'Yearly',
+    revenue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '매출' : 'Revenue',
+    profit: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '이익' : 'Profit',
+    expenses: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지출' : 'Expenses',
+    growth: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '성장률' : 'Growth Rate',
+    compare: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '비교' : 'Compare',
+    previousYear: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전년 동기' : 'Previous Year',
+    target: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '목표' : 'Target',
+    actual: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '실제' : 'Actual',
+    noData: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '데이터가 없습니다' : 'No data available',
+    unit: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '만원' : '10K KRW',
+    total: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '총 매출' : 'Total Revenue',
+    avgGrowth: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '평균 성장률' : 'Avg Growth Rate'
   }
 }
 

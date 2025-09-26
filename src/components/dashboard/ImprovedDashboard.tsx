@@ -37,6 +37,7 @@ import { TodoListWidget } from '@/components/ui/widgets/TodoListWidget';
 import { CalendarWidget } from '@/components/ui/widgets/CalendarWidget';
 import { TaxDeadlineWidget } from '@/components/ui/widgets/TaxDeadlineWidget';
 import { KPIWidget } from '@/components/ui/widgets/KPIWidget';
+import { RevenueChartWidget } from '@/components/ui/widgets/RevenueChartWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults';
 
@@ -461,8 +462,13 @@ export function ImprovedDashboard({
           w: 4, 
           h: 4 
         }, // 할 일 목록 (오른쪽 하단, 4x4)
+        revenueChart: {
+          x: 0, y: 8,
+          w: 3,
+          h: 2
+        }, // 매출 차트 (왼쪽 최하단, 3x2)
         custom: { 
-          x: 0, y: 8, 
+          x: 3, y: 8, 
           w: 2, 
           h: 2 
         }, // 커스텀 (예비 공간, 2x2)
@@ -913,6 +919,14 @@ export function ImprovedDashboard({
           maxItems={5}
           highlightDays={7}
           lang="ko"
+        />;
+      case 'revenueChart':
+        return <RevenueChartWidget
+          title={widget.title}
+          lang="ko"
+          data={widget.data}
+          periodType={widget.data?.periodType || 'monthly'}
+          chartView={widget.data?.chartView || 'bar'}
         />;
       default:
         return (

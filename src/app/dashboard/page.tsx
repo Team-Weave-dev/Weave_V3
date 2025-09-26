@@ -58,6 +58,7 @@ export default function DashboardPage() {
       projectSummary: '프로젝트 현황',
       kpiMetrics: '핵심 성과 지표',
       taxDeadline: '세무 일정',
+      revenueChart: '매출 차트',
       custom: '새 위젯'
     }
 

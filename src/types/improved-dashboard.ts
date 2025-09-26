@@ -11,7 +11,7 @@ import { GridPosition } from '@/lib/dashboard/grid-utils';
 export interface ImprovedWidget {
   // 핵심 속성
   id: string;
-  type: 'projectSummary' | 'todoList' | 'calendar' | 'taxDeadline' | 'kpiMetrics' | 'custom';
+  type: 'projectSummary' | 'todoList' | 'calendar' | 'taxDeadline' | 'kpiMetrics' | 'revenueChart' | 'custom';
   position: GridPosition; // x, y, w, h로 단순화
   
   // 컨텐츠 속성
