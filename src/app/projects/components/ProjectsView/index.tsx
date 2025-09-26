@@ -101,13 +101,35 @@ export default function ProjectsView() {
     setIsCreateModalOpen(true);
   }, []);
 
+  // WEAVE_num 프로젝트 번호에서 다음 사용 가능한 번호를 찾는 헬퍼 함수
+  const getNextProjectNumber = useCallback((existingProjects: ProjectTableRow[]): string => {
+    // 기존 프로젝트들의 WEAVE_xxx 번호에서 xxx 부분을 추출하여 숫자로 변환
+    const existingNumbers = existingProjects
+      .map(p => p.no)
+      .filter(no => no.startsWith('WEAVE_'))
+      .map(no => {
+        const match = no.match(/^WEAVE_(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(num => !isNaN(num));
+
+    console.log('📊 기존 WEAVE 번호들:', existingNumbers);
+
+    // 최대값 찾기 (없으면 0)
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    const nextNumber = maxNumber + 1;
+
+    console.log('🔢 다음 프로젝트 번호:', `WEAVE_${String(nextNumber).padStart(3, '0')}`);
+    return `WEAVE_${String(nextNumber).padStart(3, '0')}`;
+  }, []);
+
   const handleProjectCreate = useCallback(async (newProject: Omit<ProjectTableRow, 'id' | 'no' | 'modifiedDate'>) => {
     console.log('🚀 ProjectsView: handleProjectCreate 호출됨!', newProject);
     try {
       // 새 프로젝트 ID 및 번호 생성
       const timestamp = Date.now();
       const projectId = `project-${timestamp}`;
-      const projectNo = `WEAVE_${String(rawProjectData.length + 1).padStart(3, '0')}`;
+      const projectNo = getNextProjectNumber(rawProjectData);
 
       const projectWithId: ProjectTableRow = {
         ...newProject,
@@ -152,7 +174,7 @@ export default function ProjectsView() {
     } catch (error) {
       console.error('❌ 프로젝트 생성 실패:', error);
     }
-  }, [rawProjectData, viewMode, searchParams, pathname, router, updateData]);
+  }, [rawProjectData, viewMode, searchParams, pathname, router, updateData, getNextProjectNumber]);
 
   const stats = useMemo(() => {
     if (loading || rawProjectData.length === 0) {
