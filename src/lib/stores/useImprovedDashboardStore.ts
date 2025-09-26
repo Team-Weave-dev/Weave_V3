@@ -463,7 +463,7 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
                 const pushRight = currentPos.x + currentPos.w;
                 
                 // 그리드 경계 체크
-                const canPushDown = pushDown + targetPos.h <= (state.config.maxRows || 20);
+                const canPushDown = pushDown + targetPos.h <= (state.config.maxRows || 9);
                 const canPushRight = pushRight + targetPos.w <= state.config.cols;
                 
                 if (canPushDown && (!canPushRight || overlapY < overlapX)) {

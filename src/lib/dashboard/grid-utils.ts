@@ -116,7 +116,7 @@ export function isWithinBounds(
   position: GridPosition,
   config: GridConfig
 ): boolean {
-  const { cols, maxRows = 50 } = config;
+  const { cols, maxRows = 9 } = config;
   
   // 최소값 체크
   if (position.x < 0 || position.y < 0) return false;
@@ -138,7 +138,7 @@ export function constrainToBounds(
   position: GridPosition,
   config: GridConfig
 ): GridPosition {
-  const { cols, maxRows = 50 } = config;
+  const { cols, maxRows = 9 } = config;
   
   // 너비/높이 최소값 보장
   const w = Math.max(1, position.w);
@@ -168,7 +168,7 @@ export function findEmptySpace(
   items: GridPosition[],
   config: GridConfig
 ): GridPosition | null {
-  const { cols, maxRows = 50 } = config;
+  const { cols, maxRows = 9 } = config;
   
   // 그리드를 순회하며 빈 공간 찾기
   for (let y = 0; y <= maxRows - height; y++) {
