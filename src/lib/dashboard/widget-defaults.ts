@@ -3,7 +3,7 @@
  * 대시보드 위젯들의 기본 크기를 정의합니다.
  */
 
-export type WidgetType = 'calendar' | 'projectSummary' | 'kpiMetrics' | 'taxDeadline' | 'todoList' | 'revenueChart' | 'custom';
+export type WidgetType = 'calendar' | 'projectSummary' | 'kpiMetrics' | 'taxDeadline' | 'taxCalculator' | 'todoList' | 'revenueChart' | 'custom';
 
 export interface WidgetDefaultSize {
   width: number;
@@ -67,6 +67,14 @@ export const WIDGET_DEFAULT_SIZES: Record<WidgetType, WidgetDefaultSize> = {
     maxWidth: 5,
     maxHeight: 4
   },
+  taxCalculator: {
+    width: 2,
+    height: 2,
+    minWidth: 2,
+    minHeight: 2,
+    maxWidth: 5,
+    maxHeight: 5
+  },
   custom: {
     width: 2,
     height: 2,
@@ -97,6 +105,7 @@ export function getRecommendedPosition(type: WidgetType, _existingWidgets?: any[
     taxDeadline: { x: 6, y: 0 },    // KPI 우측
     todoList: { x: 7, y: 0 },       // 맨 우측
     revenueChart: { x: 0, y: 2 },   // 좌측 중간
+    taxCalculator: { x: 3, y: 2 },  // 중앙
     custom: { x: 0, y: 0 }          // 기본 위치
   };
 

@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Briefcase,
   Check,
-  BarChart3
+  BarChart3,
+  Calculator
 } from 'lucide-react'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDashboardText } from '@/config/brand'
@@ -85,6 +86,13 @@ export function WidgetSelectorModal({
       title: '매출 차트',
       description: '월별/분기별 수익을 차트로 표시',
       icon: BarChart3,
+      available: true
+    },
+    {
+      type: 'taxCalculator',
+      title: '세금 계산기',
+      description: '부가세, 원천세를 간편하게 계산',
+      icon: Calculator,
       available: true
     }
   ]

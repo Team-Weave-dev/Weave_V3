@@ -36,6 +36,7 @@ import { ProjectSummaryWidget } from '@/components/ui/widgets/ProjectSummaryWidg
 import { TodoListWidget } from '@/components/ui/widgets/TodoListWidget';
 import { CalendarWidget } from '@/components/ui/widgets/CalendarWidget';
 import { TaxDeadlineWidget } from '@/components/ui/widgets/TaxDeadlineWidget';
+import { TaxCalculatorWidget } from '@/components/ui/widgets/TaxCalculatorWidget';
 import { KPIWidget } from '@/components/ui/widgets/KPIWidget';
 import { RevenueChartWidget } from '@/components/ui/widgets/RevenueChartWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
@@ -467,6 +468,11 @@ export function ImprovedDashboard({
           w: 3,
           h: 2
         }, // 매출 차트 (왼쪽 최하단, 3x2)
+        taxCalculator: {
+          x: 0, y: 0,
+          w: 2,
+          h: 2
+        }, // 세금 계산기 (기본 2x2)
         custom: { 
           x: 3, y: 8, 
           w: 2, 
@@ -919,6 +925,13 @@ export function ImprovedDashboard({
           maxItems={5}
           highlightDays={7}
           lang="ko"
+        />;
+      case 'taxCalculator':
+        return <TaxCalculatorWidget
+          title={widget.title}
+          lang="ko"
+          showHistory={true}
+          maxHistoryItems={5}
         />;
       case 'revenueChart':
         return <RevenueChartWidget

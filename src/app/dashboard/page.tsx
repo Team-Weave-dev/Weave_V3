@@ -59,6 +59,7 @@ export default function DashboardPage() {
       kpiMetrics: '핵심 성과 지표',
       taxDeadline: '세무 일정',
       revenueChart: '매출 차트',
+      taxCalculator: '세금 계산기',
       custom: '새 위젯'
     }
 

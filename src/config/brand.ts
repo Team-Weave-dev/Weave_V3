@@ -1739,6 +1739,25 @@ export const getWidgetText = {
     overdue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '미납' : 'Overdue',
     completed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료' : 'Completed'
   },
+  taxCalculator: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세금 계산기' : 'Tax Calculator',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '부가세, 원천세를 간편하게 계산하세요' : 'Easily calculate VAT and withholding tax',
+    supplyAmount: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '공급가액' : 'Supply Amount',
+    taxAmount: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세금액' : 'Tax Amount',
+    totalAmount: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '총액' : 'Total Amount',
+    netAmount: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '실수령액' : 'Net Amount',
+    vat: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '부가세 (10%)' : 'VAT (10%)',
+    withholding33: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '원천세 (3.3%)' : 'Withholding (3.3%)',
+    withholding88: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '원천세 (8.8%)' : 'Withholding (8.8%)',
+    fromSupply: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '공급가액 기준' : 'From Supply',
+    fromTotal: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '총액 기준' : 'From Total',
+    calculate: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '계산' : 'Calculate',
+    reset: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '초기화' : 'Reset',
+    history: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '계산 기록' : 'History',
+    placeholder: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '금액을 입력하세요' : 'Enter amount',
+    copyResult: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '결과 복사' : 'Copy Result',
+    clearHistory: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '기록 삭제' : 'Clear History'
+  },
   projectSummary: {
     title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 요약' : 'Project Summary',
     active: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 중' : 'Active',

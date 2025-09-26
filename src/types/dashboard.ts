@@ -207,3 +207,54 @@ export interface TaxDeadlineWidgetProps {
   onMonthChange?: (month: number) => void;
   lang?: 'ko' | 'en';
 }
+
+// 세금 계산기 위젯 타입
+export enum TaxType {
+  VAT = 'VAT',                         // 부가세 10%
+  WITHHOLDING_3_3 = 'WITHHOLDING_3_3', // 원천세 3.3% (프리랜서)
+  WITHHOLDING_8_8 = 'WITHHOLDING_8_8', // 원천세 8.8% (강사료 등)
+  CUSTOM = 'CUSTOM'                     // 사용자 정의 세율
+}
+
+export enum CalculationMode {
+  FROM_SUPPLY = 'FROM_SUPPLY',         // 공급가액 기준 (세금 별도)
+  FROM_TOTAL = 'FROM_TOTAL'            // 총액 기준 (세금 포함)
+}
+
+export interface TaxCalculation {
+  id: string;
+  timestamp: Date;
+  
+  // 입력 정보
+  inputAmount: number;                 // 입력 금액
+  taxType: TaxType;                    // 세금 종류
+  taxRate: number;                     // 세율 (%)
+  calculationMode: CalculationMode;    // 계산 모드
+  
+  // 계산 결과
+  supplyAmount: number;                // 공급가액
+  taxAmount: number;                   // 세금액
+  totalAmount: number;                 // 총액 (공급가액 + 세금)
+  
+  // 원천세의 경우 실수령액
+  netAmount?: number;                  // 실수령액 (공급가액 - 세금)
+  
+  // 부가세 + 원천세 복합 계산
+  vatAmount?: number;                  // 부가세액
+  withholdingAmount?: number;          // 원천세액
+  
+  // 메모 및 태그
+  memo?: string;                       // 메모
+  tags?: string[];                     // 태그 (프로젝트, 클라이언트 등)
+}
+
+export interface TaxCalculatorWidgetProps {
+  id?: string;
+  title?: string;
+  defaultTaxType?: TaxType;
+  calculationMode?: CalculationMode;
+  showHistory?: boolean;
+  maxHistoryItems?: number;
+  onCalculate?: (calculation: TaxCalculation) => void;
+  lang?: 'ko' | 'en';
+}
