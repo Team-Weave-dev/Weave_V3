@@ -207,6 +207,31 @@ export default function ProjectsView() {
     loadData();
   }, []);
 
+  // 페이지 포커스 시 데이터 새로고침 (localStorage 변경 감지)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('📱 페이지 포커스 감지 - 프로젝트 데이터 새로고침');
+        refreshProjectData();
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('🔄 윈도우 포커스 감지 - 프로젝트 데이터 새로고침');
+      refreshProjectData();
+    };
+
+    // 페이지 visibility 변경 감지 (탭 전환 등)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // 윈도우 포커스 감지 (다른 앱에서 돌아올 때)
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refreshProjectData]);
+
   // Clean Slate: 복잡한 병합 로직 제거됨
 
   if (!isInitialized) {

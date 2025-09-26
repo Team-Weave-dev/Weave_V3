@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import ProjectProgress from '@/components/ui/project-progress';
 import { getProjectPageText, getProjectStatusText, getSettlementMethodText, getPaymentStatusText } from '@/config/brand';
 import ProjectDocumentGeneratorModal from '@/components/projects/DocumentGeneratorModal';
+import { PaymentStatus as PaymentStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/PaymentStatus';
+import { ProjectStatus as ProjectStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
 import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -181,7 +183,6 @@ export default function ProjectDetail({
 
   // Project detail states
   const [settlementMethod, setSettlementMethod] = useState(project.settlementMethod || 'not_set');
-  const [paymentStatus, setPaymentStatus] = useState(project.paymentStatus || 'not_started');
   const [generatorState, setGeneratorState] = useState<{
     open: boolean;
     category: ProjectDocumentCategory;
@@ -1018,9 +1019,11 @@ export default function ProjectDetail({
                         </Select>
                       ) : (
                         <div className="mt-1">
-                          <Badge variant={statusVariantMap[project.status]}>
-                            {getProjectStatusText(project.status, lang)}
-                          </Badge>
+                          <ProjectStatusComponent
+                            project={project}
+                            mode="detail"
+                            lang={lang}
+                          />
                         </div>
                       )}
                     </div>
@@ -1055,9 +1058,11 @@ export default function ProjectDetail({
                         </Select>
                       ) : (
                         <div className="mt-1">
-                          <Badge variant={paymentStatus === 'not_started' ? 'secondary' : 'default'} className="text-xs">
-                            {getPaymentStatusText[paymentStatus](lang)}
-                          </Badge>
+                          <PaymentStatusComponent
+                            project={project}
+                            mode="detail"
+                            lang={lang}
+                          />
                         </div>
                       )}
                     </div>
