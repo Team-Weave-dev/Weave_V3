@@ -1,4 +1,4 @@
-import type { TodoPriority, DateGroup } from '../types';
+import type { TodoPriority, DateGroup, TodoListOptions } from '../types';
 import { addDays, startOfDay, endOfDay } from '../utils/date';
 import { getWidgetText } from '@/config/brand';
 
@@ -14,12 +14,19 @@ export const priorityColors: Record<TodoPriority, { badge: string; icon: string 
 export const STORAGE_KEY = 'weave_dashboard_todos';
 export const SECTIONS_KEY = 'weave_dashboard_todo_sections';
 export const VIEW_MODE_KEY = 'weave_dashboard_todo_view_mode';
+export const OPTIONS_KEY = 'weave_dashboard_todo_options';
 
 // 기본 우선순위
 export const DEFAULT_PRIORITY: TodoPriority = 'p3';
 
 // 기본 크기
 export const DEFAULT_SIZE = { w: 4, h: 4 };
+
+// 기본 옵션 설정
+export const DEFAULT_OPTIONS: TodoListOptions = {
+  dateFormat: 'dday',
+  subtaskDisplay: 'expanded'
+};
 
 // 날짜 그룹 생성 함수
 export const getDateGroups = (): DateGroup[] => {

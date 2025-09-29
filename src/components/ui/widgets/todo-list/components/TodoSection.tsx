@@ -26,7 +26,7 @@ interface TodoSectionProps {
   onUpdateSection?: (sectionId: string, name: string) => void;
   onDeleteSection?: (sectionId: string) => void;
   onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, sectionId: string) => void;
+  onDrop: (e: React.DragEvent) => void;
   onDragStart?: (e: React.DragEvent, section: TodoSectionType) => void;
   onDragEnd?: () => void;
   children?: React.ReactNode;
@@ -139,7 +139,7 @@ export function TodoSection({
       {isExpanded && (
         <div
           onDragOver={onDragOver}
-          onDrop={(e) => onDrop(e, section.id)}
+          onDrop={onDrop}
           className={cn(
             "min-h-[40px] relative transition-all",
             taskCount === 0 && "bg-gray-50 dark:bg-gray-900/30 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4"

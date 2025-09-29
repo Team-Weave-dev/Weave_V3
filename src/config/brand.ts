@@ -1773,14 +1773,24 @@ export const getWidgetText = {
     title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '할 일 목록' : 'Todo List',
     description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘의 작업을 관리하세요' : 'Manage your tasks today',
     addTask: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업 추가' : 'Add Task',
+    addTaskPrompt: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업을 추가하려면 + 버튼을 클릭하세요' : 'Click + button to add task',
+    newTask: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 작업' : 'New Task',
     placeholder: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새로운 작업을 입력하세요' : 'Enter new task',
+    newSection: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 섹션 추가' : 'Add new section',
     completed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료됨' : 'Completed',
     pending: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '대기 중' : 'Pending',
     noTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '할 일이 없습니다' : 'No tasks',
+    noCompletedTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료된 작업이 없습니다' : 'No completed tasks',
     priority: {
       high: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '높음' : 'High',
       medium: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '보통' : 'Medium',
       low: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '낮음' : 'Low'
+    },
+    priorities: {
+      p1: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '긴급' : 'Urgent',
+      p2: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '높음' : 'High',
+      p3: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '보통' : 'Medium',
+      p4: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '낮음' : 'Low'
     },
     viewMode: {
       section: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '섹션' : 'Section',
@@ -1810,6 +1820,23 @@ export const getWidgetText = {
     dueDateSettings: {
       title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '마감일 설정' : 'Set Due Date',
       clear: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지우기' : 'Clear'
+    },
+    emptySection: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업을 추가하려면 클릭하세요' : 'Click to add tasks',
+    options: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '할 일 목록 설정' : 'Todo List Settings',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '표시 방식을 원하는대로 조정하세요' : 'Adjust display settings as you prefer',
+      dateFormat: {
+        label: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '마감일 표기 형식' : 'Due Date Format',
+        dday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? 'D-day 형식' : 'D-day Format',
+        date: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '날짜 형식' : 'Date Format'
+      },
+      subtaskDisplay: {
+        label: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '하위 태스크 표시' : 'Subtask Display',
+        expanded: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '모두 펼치기' : 'Expand All',
+        collapsed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '모두 접기' : 'Collapse All'
+      },
+      save: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '저장' : 'Save',
+      cancel: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '취소' : 'Cancel'
     }
   },
   chart: {

@@ -1,15 +1,15 @@
 import { getWidgetText } from '@/config/brand';
-import type { DateGroup } from '../types';
+import type { DateGroup, DateFormatType } from '../types';
 
 // 날짜 관련 유틸리티 함수
-export const startOfDay = (date: Date): Date => {
-  const d = new Date(date);
+export const startOfDay = (date: Date | string): Date => {
+  const d = date instanceof Date ? new Date(date) : new Date(date);
   d.setHours(0, 0, 0, 0);
   return d;
 };
 
-export const endOfDay = (date: Date): Date => {
-  const d = new Date(date);
+export const endOfDay = (date: Date | string): Date => {
+  const d = date instanceof Date ? new Date(date) : new Date(date);
   d.setHours(23, 59, 59, 999);
   return d;
 };
@@ -26,36 +26,72 @@ export const isSameDay = (date1: Date, date2: Date): boolean => {
          date1.getDate() === date2.getDate();
 };
 
-export const formatDateBadge = (dueDate?: Date, isCompleted: boolean = false): { text: string; variant: "status-soft-error" | "status-soft-warning" | "status-soft-info" | "outline" } => {
+export const formatDateBadge = (
+  dueDate?: Date, 
+  isCompleted: boolean = false,
+  dateFormat: DateFormatType = 'dday'
+): { text: string; variant: "status-soft-error" | "status-soft-warning" | "status-soft-info" | "outline" } => {
   if (!dueDate) {
     return { text: '미정', variant: 'outline' };
   }
   
-  // 완료된 태스크는 실제 날짜를 표시
+  // 날짜를 Date 객체로 변환 (문자열로 저장되었을 수 있음)
+  const dateObj = dueDate instanceof Date ? dueDate : new Date(dueDate);
+  
+  // 유효하지 않은 날짜 처리
+  if (isNaN(dateObj.getTime())) {
+    return { text: '미정', variant: 'outline' };
+  }
+  
+  // 날짜 형식으로 표시하는 헬퍼 함수
+  const formatDate = (date: Date) => {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${month}/${day}`;
+  };
+  
+  // 완료된 태스크는 항상 실제 날짜를 표시
   if (isCompleted) {
-    const month = dueDate.getMonth() + 1;
-    const day = dueDate.getDate();
-    return { text: `${month}/${day}`, variant: 'outline' };
+    return { text: formatDate(dateObj), variant: 'outline' };
   }
   
   const today = startOfDay(new Date());
-  const due = startOfDay(dueDate);
+  const due = startOfDay(dateObj);
   const diffTime = due.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
-  if (diffDays < 0) {
-    return { text: `D+${Math.abs(diffDays)}`, variant: 'status-soft-error' };
-  } else if (diffDays === 0) {
-    return { text: getWidgetText.todoList.dateBadges.today('ko'), variant: 'status-soft-error' };
-  } else if (diffDays === 1) {
-    return { text: getWidgetText.todoList.dateBadges.tomorrow('ko'), variant: 'status-soft-warning' };
-  } else if (diffDays <= 3) {
-    return { text: `D-${diffDays}`, variant: 'status-soft-warning' };
-  } else if (diffDays <= 7) {
-    return { text: `D-${diffDays}`, variant: 'status-soft-info' };
+  // 날짜 형식 옵션에 따라 텍스트 결정
+  let text: string;
+  if (dateFormat === 'date') {
+    text = formatDate(dateObj);
   } else {
-    return { text: `D-${diffDays}`, variant: 'outline' };
+    // D-day 형식
+    if (diffDays < 0) {
+      text = `D+${Math.abs(diffDays)}`;
+    } else if (diffDays === 0) {
+      text = getWidgetText.todoList.dateBadges.today('ko');
+    } else if (diffDays === 1) {
+      text = getWidgetText.todoList.dateBadges.tomorrow('ko');
+    } else {
+      text = `D-${diffDays}`;
+    }
   }
+  
+  // 변형(색상) 결정
+  let variant: "status-soft-error" | "status-soft-warning" | "status-soft-info" | "outline";
+  if (diffDays < 0) {
+    variant = 'status-soft-error';
+  } else if (diffDays <= 1) {
+    variant = 'status-soft-error';
+  } else if (diffDays <= 3) {
+    variant = 'status-soft-warning';
+  } else if (diffDays <= 7) {
+    variant = 'status-soft-info';
+  } else {
+    variant = 'outline';
+  }
+  
+  return { text, variant };
 };
 
 export const getDateGroups = (): DateGroup[] => {

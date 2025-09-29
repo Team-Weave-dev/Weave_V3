@@ -19,19 +19,21 @@ import {
   List,
   Calendar as CalendarIcon,
   Clock,
-  FolderPlus
+  FolderPlus,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getWidgetText } from '@/config/brand';
 import { typography } from '@/config/constants';
 // TodoListWidgetProps는 로컬 타입에서 import
-import type { TodoListWidgetProps, TodoTask, TodoSection, TodoPriority } from './todo-list/types';
+import type { TodoListWidgetProps, TodoTask, TodoSection, TodoPriority, TodoListOptions } from './todo-list/types';
 
 // 리팩토링된 컴포넌트들 import
 import { TodoTask as TodoTaskComponent } from './todo-list/components/TodoTask';
 import { TodoSection as TodoSectionComponent } from './todo-list/components/TodoSection';
 import { TodoDateGroup } from './todo-list/components/TodoDateGroup';
 import { AddTaskInput } from './todo-list/components/AddTaskInput';
+import { TodoOptionsModal } from './todo-list/components/TodoOptionsModal';
 
 // 리팩토링된 훅들 import
 import { useTodoState } from './todo-list/hooks/useTodoState';
@@ -43,6 +45,8 @@ import {
   STORAGE_KEY, 
   SECTIONS_KEY, 
   VIEW_MODE_KEY,
+  OPTIONS_KEY,
+  DEFAULT_OPTIONS,
   getDateGroups
 } from './todo-list/constants';
 
@@ -122,9 +126,50 @@ export function TodoListWidget({
   const [selectedDueDate, setSelectedDueDate] = useState<Date | undefined>(undefined);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // 옵션 설정 상태
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [options, setOptions] = useState<TodoListOptions>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(OPTIONS_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return DEFAULT_OPTIONS;
+        }
+      }
+    }
+    return DEFAULT_OPTIONS;
+  });
 
   // 날짜 그룹 관련
   const [dateGroupsState, setDateGroupsState] = useState(getDateGroups());
+  
+  // 옵션 저장 함수
+  const handleSaveOptions = useCallback((newOptions: TodoListOptions) => {
+    setOptions(newOptions);
+    localStorage.setItem(OPTIONS_KEY, JSON.stringify(newOptions));
+    
+    // 하위 태스크 표시 설정에 따라 모든 태스크 상태 업데이트
+    if (newOptions.subtaskDisplay === 'expanded') {
+      const allTaskIds = new Set<string>();
+      const collectTaskIds = (tasks: TodoTask[]) => {
+        tasks.forEach(task => {
+          if (task.children && task.children.length > 0) {
+            allTaskIds.add(task.id);
+          }
+          if (task.children) {
+            collectTaskIds(task.children);
+          }
+        });
+      };
+      collectTaskIds(localTasks);
+      setExpandedTasks(allTaskIds);
+    } else if (newOptions.subtaskDisplay === 'collapsed') {
+      setExpandedTasks(new Set());
+    }
+  }, [localTasks]);
 
   // 섹션별로 작업 가져오기
   const getTasksBySection = useCallback((sectionId: string) => {
@@ -269,6 +314,7 @@ export function TodoListWidget({
                       depth={task.depth || 0}
                       isExpanded={expandedTasks.has(task.id)}
                       isDragging={draggedTask?.id === task.id}
+                      dateFormat={options.dateFormat}
                       onToggleComplete={() => handleToggleTask(task.id)}
                       onToggleExpand={() => toggleExpanded(task.id)}
                       onDelete={() => handleDeleteTask(task.id)}
@@ -278,7 +324,7 @@ export function TodoListWidget({
                       onAddSubtask={(parentId, title, priority, dueDate) => handleAddTask(title, task.sectionId || 'default', parentId, priority, dueDate)}
                       onDragStart={(e) => handleDragStart(e, task)}
                       onDragEnd={handleDragEnd}
-                      onDrop={(e) => handleDrop(e, task.sectionId || 'default')}
+                      onDrop={(e) => handleDrop(e, task.sectionId || sections[0]?.id || 'default')}
                     />
                   ))}
                   {/* 날짜 그룹 내 작업 추가 입력 */}
@@ -326,6 +372,7 @@ export function TodoListWidget({
                   depth={task.depth || 0}
                   isExpanded={expandedTasks.has(task.id)}
                   isDragging={draggedTask?.id === task.id}
+                  dateFormat={options.dateFormat}
                   onToggleComplete={() => handleToggleTask(task.id)}
                   onToggleExpand={() => toggleExpanded(task.id)}
                   onDelete={() => handleDeleteTask(task.id)}
@@ -335,7 +382,7 @@ export function TodoListWidget({
                   onAddSubtask={(parentId, title, priority, dueDate) => handleAddTask(title, task.sectionId || 'default', parentId, priority, dueDate)}
                   onDragStart={(e) => handleDragStart(e, task)}
                   onDragEnd={handleDragEnd}
-                  onDrop={(e) => handleDrop(e, task.sectionId || 'default')}
+                  onDrop={(e) => handleDrop(e, task.sectionId || sections[0]?.id || 'default')}
                 />
               ))
             ) : (
@@ -374,8 +421,8 @@ export function TodoListWidget({
                   
                   {/* 섹션 추가 입력 (해당 위치에) */}
                   {isAddingSection && addingSectionId === `before-${section.id}` && (
-                    <div className="flex gap-1 p-1 bg-gray-50 dark:bg-gray-900/50 rounded mb-3 mt-3">
-                      <FolderPlus className="h-4 w-4 text-muted-foreground mt-1.5" />
+                    <div className="flex gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-900/50 rounded mb-3 mt-3">
+                      <FolderPlus className="h-4 w-4 text-muted-foreground mt-1.5 flex-shrink-0" />
                       <Input
                         value={newSectionTitle}
                         onChange={(e) => setNewSectionTitle(e.target.value)}
@@ -406,7 +453,7 @@ export function TodoListWidget({
                             setAddingSectionId(null);
                           }
                         }}
-                        className="h-7 px-2 text-xs"
+                        className="h-7 px-2 text-xs flex-shrink-0"
                       >
                         추가
                       </Button>
@@ -418,7 +465,7 @@ export function TodoListWidget({
                           setAddingSectionId(null);
                           setNewSectionTitle('');
                         }}
-                        className="h-7 px-2 text-xs"
+                        className="h-7 px-2 text-xs flex-shrink-0"
                       >
                         취소
                       </Button>
@@ -443,6 +490,7 @@ export function TodoListWidget({
                         depth={task.depth || 0}
                         isExpanded={expandedTasks.has(task.id)}
                         isDragging={draggedTask?.id === task.id}
+                        dateFormat={options.dateFormat}
                         onToggleComplete={() => handleToggleTask(task.id)}
                         onToggleExpand={() => toggleExpanded(task.id)}
                         onDelete={() => handleDeleteTask(task.id)}
@@ -452,7 +500,7 @@ export function TodoListWidget({
                         onAddSubtask={(parentId, title, priority, dueDate) => handleAddTask(title, section.id, parentId, priority, dueDate)}
                         onDragStart={(e) => handleDragStart(e, task)}
                         onDragEnd={handleDragEnd}
-                        onDrop={(e) => handleDrop(e, task.sectionId || 'default')}
+                        onDrop={(e) => handleDrop(e, section.id)}
                         showAddSubtask={true}
                       />
                       {task.children && task.children.length > 0 && expandedTasks.has(task.id) && (
@@ -464,6 +512,7 @@ export function TodoListWidget({
                               depth={(child.depth || 0) + 1}
                               isExpanded={expandedTasks.has(child.id)}
                               isDragging={draggedTask?.id === child.id}
+                              dateFormat={options.dateFormat}
                               onToggleComplete={() => handleToggleTask(child.id)}
                               onToggleExpand={() => toggleExpanded(child.id)}
                               onDelete={() => handleDeleteTask(child.id)}
@@ -473,7 +522,7 @@ export function TodoListWidget({
                               onAddSubtask={(parentId, title, priority, dueDate) => handleAddTask(title, section.id, parentId, priority, dueDate)}
                               onDragStart={(e) => handleDragStart(e, child)}
                               onDragEnd={handleDragEnd}
-                              onDrop={(e) => handleDrop(e, task.sectionId || 'default')}
+                              onDrop={(e) => handleDrop(e, section.id)}
                               showAddSubtask={false}
                             />
                           ))}
@@ -533,8 +582,8 @@ export function TodoListWidget({
             
             {/* 마지막 위치 섹션 추가 입력 */}
             {isAddingSection && addingSectionId === 'bottom' && (
-              <div className="flex gap-1 p-1 bg-gray-50 dark:bg-gray-900/50 rounded mt-6">
-                <FolderPlus className="h-4 w-4 text-muted-foreground mt-1.5" />
+              <div className="flex gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-900/50 rounded mt-6">
+                <FolderPlus className="h-4 w-4 text-muted-foreground mt-1.5 flex-shrink-0" />
                 <Input
                   value={newSectionTitle}
                   onChange={(e) => setNewSectionTitle(e.target.value)}
@@ -592,30 +641,42 @@ export function TodoListWidget({
     <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex-1">
             <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
             <CardDescription className={typography.text.description}>
               {getWidgetText.todoList.description('ko')}
             </CardDescription>
           </div>
           
-          {/* 뷰 모드 탭 */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
-            <TabsList className="grid grid-cols-3 h-8">
-              <TabsTrigger value="section" className="text-xs">
-                <List className="h-3 w-3 mr-1" />
-                섹션
-              </TabsTrigger>
-              <TabsTrigger value="date" className="text-xs">
-                <CalendarIcon className="h-3 w-3 mr-1" />
-                날짜
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="text-xs">
-                <Clock className="h-3 w-3 mr-1" />
-                완료
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-2">
+            {/* 뷰 모드 탭 */}
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
+              <TabsList className="grid grid-cols-3 h-8">
+                <TabsTrigger value="section" className="text-xs">
+                  <List className="h-3 w-3 mr-1" />
+                  섹션
+                </TabsTrigger>
+                <TabsTrigger value="date" className="text-xs">
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  날짜
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="text-xs">
+                  <Clock className="h-3 w-3 mr-1" />
+                  완료
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            {/* 옵션 버튼 */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setIsOptionsOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       
@@ -627,6 +688,13 @@ export function TodoListWidget({
           </div>
         </ScrollArea>
       </CardContent>
+      {/* 옵션 모달 */}
+      <TodoOptionsModal
+        isOpen={isOptionsOpen}
+        onClose={() => setIsOptionsOpen(false)}
+        options={options}
+        onSave={handleSaveOptions}
+      />
     </Card>
   );
 }

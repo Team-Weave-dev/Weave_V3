@@ -277,17 +277,55 @@ export function useTodoState(props?: {
   const handleDrop = useCallback((e: React.DragEvent, targetSectionId: string) => {
     e.preventDefault();
     
-    if (draggedTask && draggedTask.sectionId !== targetSectionId) {
-      setLocalTasks(prev => prev.map(task =>
-        task.id === draggedTask.id
-          ? { ...task, sectionId: targetSectionId }
-          : task
-      ));
+    if (!draggedTask) {
+      setDraggedTask(null);
+      setDragOverSection(null);
+      return;
+    }
+    
+    // 날짜 뷰에서 드롭한 경우 'date-' 접두사 제거
+    let actualSectionId = targetSectionId;
+    if (targetSectionId.startsWith('date-')) {
+      // 날짜 뷰에서는 첫 번째 섹션으로 이동하거나 'default' 섹션으로 이동
+      actualSectionId = sections[0]?.id || 'default';
+    }
+    
+    // 드래그한 작업을 새로운 섹션으로 이동
+    if (draggedTask.sectionId !== actualSectionId) {
+      setLocalTasks(prev => {
+        // 먼저 하위 작업들도 함께 이동
+        const moveTaskWithChildren = (tasks: TodoTask[]): TodoTask[] => {
+          return tasks.map(task => {
+            if (task.id === draggedTask.id) {
+              return { ...task, sectionId: actualSectionId };
+            }
+            // 부모가 이동하는 경우 자식들도 함께 이동
+            if (task.parentId === draggedTask.id) {
+              return { ...task, sectionId: actualSectionId };
+            }
+            // 자식 작업들 확인
+            if (task.children && task.children.length > 0) {
+              return {
+                ...task,
+                children: task.children.map(child => {
+                  if (child.id === draggedTask.id || child.parentId === draggedTask.id) {
+                    return { ...child, sectionId: actualSectionId };
+                  }
+                  return child;
+                })
+              };
+            }
+            return task;
+          });
+        };
+        
+        return moveTaskWithChildren(prev);
+      });
     }
     
     setDraggedTask(null);
     setDragOverSection(null);
-  }, [draggedTask, setLocalTasks]);
+  }, [draggedTask, sections, setLocalTasks]);
 
   // Date groups for date view
   const dateGroups = useMemo(() => {

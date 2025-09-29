@@ -49,3 +49,15 @@ export interface TodoListWidgetProps {
   onTaskUpdate?: (taskId: string, updates: Partial<TodoTask>) => void;
   defaultSize?: { w: number; h: number };
 }
+
+// 날짜 표기 형식
+export type DateFormatType = 'dday' | 'date';
+
+// 하위 태스크 표시 설정
+export type SubtaskDisplayMode = 'expanded' | 'collapsed';
+
+// 옵션 설정 인터페이스
+export interface TodoListOptions {
+  dateFormat: DateFormatType;
+  subtaskDisplay: SubtaskDisplayMode;
+}

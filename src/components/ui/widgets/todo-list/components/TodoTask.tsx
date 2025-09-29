@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getWidgetText } from '@/config/brand';
-import type { TodoTask as TodoTaskType, TodoPriority } from '../types';
+import type { TodoTask as TodoTaskType, TodoPriority, DateFormatType } from '../types';
 import { priorityColors, DEFAULT_PRIORITY } from '../constants';
 import { formatDateBadge, quickDateOptions } from '../utils/date';
 import { AddTaskInput } from './AddTaskInput';
@@ -28,6 +28,7 @@ interface TodoTaskProps {
   depth?: number;
   isExpanded?: boolean;
   isDragging?: boolean;
+  dateFormat?: DateFormatType;
   onToggleComplete: (taskId: string) => void;
   onToggleExpand: (taskId: string) => void;
   onDelete: (taskId: string) => void;
@@ -47,6 +48,7 @@ export function TodoTask({
   depth = 0,
   isExpanded = false,
   isDragging = false,
+  dateFormat = 'dday',
   onToggleComplete,
   onToggleExpand,
   onDelete,
@@ -70,7 +72,7 @@ export function TodoTask({
   const [editValue, setEditValue] = useState(task.title);
 
   const hasSubtasks = task.children && task.children.length > 0;
-  const dateBadge = task.dueDate ? formatDateBadge(task.dueDate, task.completed) : null;
+  const dateBadge = task.dueDate ? formatDateBadge(task.dueDate, task.completed, dateFormat) : null;
 
   const handleAddSubtask = (title: string, priority?: TodoPriority, dueDate?: Date) => {
     if (title.trim()) {
