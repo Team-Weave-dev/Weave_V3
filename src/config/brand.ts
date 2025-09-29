@@ -637,6 +637,80 @@ export const uiText = {
           paymentStatus: {
             label: { ko: "수금상태 *", en: "Payment Status *" },
             placeholder: { ko: "수금상태를 선택하세요", en: "Select payment status" }
+          },
+          documentGeneration: {
+            label: { ko: "문서 생성", en: "Document Generation" },
+            description: { ko: "생성할 문서 유형을 선택하세요", en: "Select document types to generate" },
+            categories: {
+              contract: { ko: "계약서", en: "Contract" },
+              invoice: { ko: "청구서", en: "Invoice" },
+              estimate: { ko: "견적서", en: "Estimate" },
+              report: { ko: "보고서", en: "Report" },
+              others: { ko: "기타 문서", en: "Other Documents" }
+            },
+            categoryDescriptions: {
+              contract: { ko: "표준, 서비스, 소프트웨어 등 다양한 계약서 템플릿", en: "Various contract templates including standard, service, and software" },
+              invoice: { ko: "세금계산서 및 청구서 템플릿", en: "Tax invoice and billing templates" },
+              estimate: { ko: "견적서 및 제안서 템플릿", en: "Quote and proposal templates" },
+              report: { ko: "진행보고서 및 회고보고서 템플릿", en: "Progress and retrospective report templates" },
+              others: { ko: "회의록, NDA 등 기타 문서 템플릿", en: "Meeting minutes, NDA and other document templates" }
+            },
+            buttons: {
+              openGenerator: { ko: "문서 생성기 열기", en: "Open Document Generator" },
+              generateDocument: { ko: "문서 생성", en: "Generate Document" }
+            },
+            optional: { ko: "문서 생성은 선택사항입니다. 프로젝트 생성 후에도 추가할 수 있습니다.", en: "Document generation is optional. You can add documents after creating the project." },
+            generatorModal: {
+              title: { ko: "문서 생성기", en: "Document Generator" },
+              subtitle: { ko: "템플릿을 선택하고 문서를 생성하세요", en: "Select a template and generate documents" },
+              categorySelect: {
+                label: { ko: "문서 카테고리", en: "Document Category" },
+                placeholder: { ko: "카테고리를 선택하세요", en: "Select a category" }
+              },
+              templateSelect: {
+                label: { ko: "템플릿", en: "Template" },
+                placeholder: { ko: "템플릿을 선택하세요", en: "Select a template" }
+              },
+              preview: {
+                title: { ko: "미리보기", en: "Preview" },
+                noTemplate: { ko: "템플릿을 선택하면 미리보기가 표시됩니다", en: "Select a template to see preview" },
+                editMode: { ko: "편집 모드", en: "Edit Mode" },
+                previewMode: { ko: "미리보기 모드", en: "Preview Mode" },
+                editButton: { ko: "편집", en: "Edit" },
+                previewButton: { ko: "미리보기", en: "Preview" },
+                saveButton: { ko: "저장", en: "Save" },
+                cancelButton: { ko: "취소", en: "Cancel" },
+                editDescription: { ko: "내용을 수정하고 저장하세요", en: "Edit content and save changes" },
+                unsavedChanges: { ko: "저장되지 않은 변경사항이 있습니다", en: "You have unsaved changes" },
+                confirmCancel: { ko: "변경사항이 손실됩니다. 정말 취소하시겠습니까?", en: "Changes will be lost. Are you sure you want to cancel?" }
+              },
+              buttons: {
+                generate: { ko: "생성", en: "Generate" },
+                cancel: { ko: "취소", en: "Cancel" },
+                close: { ko: "닫기", en: "Close" }
+              },
+              validation: {
+                generateDisabled: { ko: "문서를 생성하려면 프로젝트명과 클라이언트를 먼저 입력하세요.", en: "Please enter project name and client to generate documents." },
+                missingProjectName: { ko: "프로젝트명이 필요합니다", en: "Project name is required" },
+                missingClient: { ko: "클라이언트명이 필요합니다", en: "Client name is required" },
+                missingBoth: { ko: "프로젝트명과 클라이언트명이 필요합니다", en: "Project name and client name are required" }
+              }
+            },
+            generatedList: {
+              title: { ko: "생성된 문서", en: "Generated Documents" },
+              empty: { ko: "생성된 문서가 없습니다", en: "No documents generated" },
+              count: { ko: "개 문서", en: "documents" },
+              actions: {
+                view: { ko: "미리보기", en: "Preview" },
+                edit: { ko: "편집", en: "Edit" },
+                delete: { ko: "삭제", en: "Delete" },
+                viewTooltip: { ko: "문서 미리보기", en: "Preview document" },
+                editTooltip: { ko: "문서 편집", en: "Edit document" },
+                deleteTooltip: { ko: "문서 삭제", en: "Delete document" },
+                ariaPreview: { ko: "문서 미리보기 버튼", en: "Preview document button" },
+                ariaDelete: { ko: "문서 삭제 버튼", en: "Delete document button" }
+              }
+            }
           }
         },
         buttons: {

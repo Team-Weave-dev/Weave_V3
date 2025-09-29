@@ -46,12 +46,28 @@ interface QuoteTemplate {
   template: string;
 }
 
+export interface GeneratedDocument {
+  id: string;
+  title: string;
+  content: string;
+  templateId: string;
+  category: ProjectDocumentCategory;
+  createdAt: Date;
+}
+
 export interface GeneratedDocumentPayload {
   name: string;
   content: string;
   templateId: string;
   category: ProjectDocumentCategory;
   source: 'quote-template' | 'custom';
+}
+
+export interface DocumentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: ProjectDocumentCategory;
 }
 
 export interface ProjectDocumentTemplate {
@@ -537,4 +553,86 @@ const projectDocumentTemplates: Record<ProjectDocumentCategory, ProjectDocumentT
 
 export function getTemplatesForCategory(category: ProjectDocumentCategory): ProjectDocumentTemplate[] {
   return projectDocumentTemplates[category] || [];
+}
+
+export function getTemplatesByCategory(category: ProjectDocumentCategory): DocumentTemplate[] {
+  const templates = projectDocumentTemplates[category] || [];
+  return templates.map(t => ({
+    id: t.id,
+    name: t.title,
+    description: t.description,
+    category: t.category
+  }));
+}
+
+export function getAllTemplates(): DocumentTemplate[] {
+  const allCategories: ProjectDocumentCategory[] = ['contract', 'invoice', 'estimate', 'report', 'others'];
+  return allCategories.flatMap(category => getTemplatesByCategory(category));
+}
+
+export interface ProjectCreateFormData {
+  name: string;
+  client: string;
+  totalAmount?: number;
+  dueDate?: Date;
+  projectContent?: string;
+}
+
+export function generateDocumentFromTemplate(
+  template: DocumentTemplate,
+  projectData: ProjectCreateFormData
+): GeneratedDocument {
+  const projectTemplate = projectDocumentTemplates[template.category]?.find(t => t.id === template.id);
+
+  if (!projectTemplate) {
+    throw new Error(`Template not found: ${template.id}`);
+  }
+
+  // ProjectTableRow 형태로 변환
+  const mockProject: import('@/lib/types/project-table.types').ProjectTableRow = {
+    id: 'temp-' + Date.now(),
+    no: 'TEMP001',
+    name: projectData.name,
+    client: projectData.client,
+    registrationDate: new Date().toISOString(),
+    dueDate: projectData.dueDate?.toISOString() || new Date().toISOString(),
+    modifiedDate: new Date().toISOString(),
+    status: 'planning',
+    progress: 0,
+    paymentProgress: 'not_started',
+    contract: {
+      totalAmount: projectData.totalAmount || 0,
+      content: projectData.projectContent || '',
+      contractorInfo: {
+        name: projectData.client,
+        position: '담당자'
+      },
+      reportInfo: {
+        type: '표준'
+      },
+      estimateInfo: {
+        type: '표준'
+      },
+      documentIssue: {
+        taxInvoice: '발행일 기준 14일 이내 지급',
+        receipt: '미설정',
+        cashReceipt: '미설정',
+        businessReceipt: '미설정'
+      },
+      other: {
+        date: new Date().toISOString()
+      }
+    }
+  };
+
+  const payload = projectTemplate.build({ project: mockProject });
+
+  return {
+    id: 'doc-' + Date.now(),
+    title: payload.name,
+    content: payload.content,
+    templateId: payload.templateId,
+    category: payload.category,
+    createdAt: new Date()
+  };
 }
