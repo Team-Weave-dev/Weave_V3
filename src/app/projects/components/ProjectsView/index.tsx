@@ -11,6 +11,9 @@ import type { ProjectTableRow } from '@/lib/types/project-table.types';
 import { useProjectTable } from '@/lib/hooks/useProjectTable';
 import { getButtonText } from '@/config/brand';
 import { fetchMockProjects, addCustomProject } from '@/lib/mock/projects';
+import { addProjectDocument } from '@/lib/mock/documents';
+import type { DocumentInfo } from '@/lib/types/project-table.types';
+import type { GeneratedDocument, ProjectDocumentCategory } from '@/lib/document-generator/templates';
 
 export default function ProjectsView() {
   const router = useRouter();
@@ -133,6 +136,29 @@ export default function ProjectsView() {
     setIsCreateModalOpen(true);
   }, []);
 
+  // GeneratedDocument를 DocumentInfo로 변환하는 헬퍼 함수
+  const convertGeneratedDocumentToDocumentInfo = useCallback((doc: GeneratedDocument): DocumentInfo => {
+    // category를 type으로 매핑 (others → etc)
+    const typeMapping: Record<ProjectDocumentCategory, DocumentInfo['type']> = {
+      'contract': 'contract',
+      'invoice': 'invoice',
+      'report': 'report',
+      'estimate': 'estimate',
+      'others': 'etc'
+    }
+
+    return {
+      id: doc.id,
+      type: typeMapping[doc.category],
+      name: doc.title,
+      createdAt: doc.createdAt.toISOString(),
+      status: 'draft', // 새로 생성된 문서는 초안 상태
+      content: doc.content,
+      templateId: doc.templateId,
+      source: 'generated' // 템플릿에서 생성됨
+    }
+  }, [])
+
   // WEAVE_num 프로젝트 번호에서 다음 사용 가능한 번호를 찾는 헬퍼 함수
   const getNextProjectNumber = useCallback((existingProjects: ProjectTableRow[]): string => {
     // 기존 프로젝트들의 WEAVE_xxx 번호에서 xxx 부분을 추출하여 숫자로 변환
@@ -180,6 +206,17 @@ export default function ProjectsView() {
       };
 
       console.log('💾 생성된 프로젝트:', projectWithId);
+
+      // 생성된 문서들이 있으면 로컬스토리지에 저장
+      if (newProject.generatedDocuments && newProject.generatedDocuments.length > 0) {
+        console.log('📄 생성된 문서들을 로컬스토리지에 저장:', newProject.generatedDocuments);
+        newProject.generatedDocuments.forEach(generatedDoc => {
+          const documentInfo = convertGeneratedDocumentToDocumentInfo(generatedDoc);
+          console.log('💾 문서 저장:', documentInfo);
+          addProjectDocument(projectNo, documentInfo);
+        });
+        console.log('✅ 모든 생성 문서가 로컬스토리지에 저장 완료');
+      }
 
       // localStorage에 새 프로젝트 저장
       addCustomProject(projectWithId);

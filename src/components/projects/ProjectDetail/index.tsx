@@ -242,15 +242,31 @@ export default function ProjectDetail({
       refreshDocuments();
     };
 
+    // 🚀 강제 새로고침 이벤트 핸들러 (프로젝트 생성 모달에서 발생)
+    const handleForceRefresh = (event: any) => {
+      const { projectNo, timestamp, documentCount } = event.detail || {};
+      console.log('🔔 [FORCE REFRESH EVENT] 강제 문서 새로고침 이벤트 받음:', { projectNo, timestamp, documentCount });
+
+      // 현재 프로젝트와 일치하는 경우에만 새로고침
+      if (projectNo === project.no) {
+        console.log(`🎯 현재 프로젝트(${project.no})와 일치 - 문서 새로고침 실행`);
+        refreshDocuments();
+      }
+    };
+
     // storage 이벤트 리스너 (다른 탭에서의 변경 감지)
     window.addEventListener('storage', handleStorageChange);
 
     // 커스텀 이벤트 리스너 (같은 탭 내 변경 감지)
     window.addEventListener('weave-documents-changed', handleCustomRefresh);
 
+    // 강제 새로고침 이벤트 리스너 (프로젝트 생성 모달에서 페이지 이동 시)
+    window.addEventListener('weave-force-documents-refresh', handleForceRefresh);
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('weave-documents-changed', handleCustomRefresh);
+      window.removeEventListener('weave-force-documents-refresh', handleForceRefresh);
     };
   }, [refreshDocuments]);
 
