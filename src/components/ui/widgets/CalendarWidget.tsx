@@ -1,30 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,766 +14,50 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  CalendarDays,
-  CalendarIcon,
+import {
   ChevronLeft,
   ChevronRight,
-  Clock,
-  MapPin,
-  Users,
-  Video,
-  AlertCircle,
-  CheckCircle2,
   Plus,
-  MoreHorizontal,
   Search,
   Settings,
   Grid3x3,
-  List,
+  CalendarDays,
   Calendar as CalendarIconOutline,
-  X,
-  Edit,
-  Trash2
+  List,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { CalendarWidgetProps, CalendarEvent } from '@/types/dashboard';
-import { format, isSameDay, startOfDay, isToday, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, startOfMonth, endOfMonth, addDays, getDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { getWidgetText } from '@/config/brand';
 import { typography } from '@/config/constants';
-import { 
-  loadCalendarEvents, 
-  addCalendarEvent, 
-  updateCalendarEvent, 
-  deleteCalendarEvent 
-} from '@/lib/mock/calendar-events';
 
-// 이벤트 타입별 색상 및 아이콘 매핑 (구글 캘린더 스타일)
-const eventTypeConfig = {
-  meeting: { 
-    color: 'bg-blue-500',
-    lightColor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-    badgeVariant: 'status-soft-info' as const,
-    icon: Users,
-    label: '회의'
-  },
-  task: { 
-    color: 'bg-green-500',
-    lightColor: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-    badgeVariant: 'status-soft-success' as const,
-    icon: CheckCircle2,
-    label: '작업'
-  },
-  reminder: { 
-    color: 'bg-yellow-500',
-    lightColor: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-    badgeVariant: 'status-soft-warning' as const,
-    icon: AlertCircle,
-    label: '알림'
-  },
-  deadline: { 
-    color: 'bg-red-500',
-    lightColor: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
-    badgeVariant: 'status-soft-error' as const,
-    icon: Clock,
-    label: '마감'
-  },
-  holiday: { 
-    color: 'bg-purple-500',
-    lightColor: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
-    badgeVariant: 'status-soft-completed' as const,
-    icon: CalendarDays,
-    label: '휴일'
-  },
-  other: { 
-    color: 'bg-gray-500',
-    lightColor: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400',
-    badgeVariant: 'status-soft-planning' as const,
-    icon: CalendarIcon,
-    label: '기타'
-  }
+// Import refactored components
+import {
+  MonthView,
+  WeekView,
+  DayView,
+  AgendaView,
+  EventDetailModal,
+  EventForm,
+  CalendarSettingsModal,
+  useCalendarEvents,
+  useCalendarSettings,
+  viewModes,
+  type ViewMode,
+} from './calendar';
+
+// View mode icons mapping
+const viewModeIcons = {
+  Grid3x3,
+  CalendarDays,
+  CalendarIconOutline,
+  List,
 };
 
-// 뷰 모드 설정
-const viewModes = [
-  { value: 'month', label: '월', icon: Grid3x3 },
-  { value: 'week', label: '주', icon: CalendarDays },
-  { value: 'day', label: '일', icon: CalendarIconOutline },
-  { value: 'agenda', label: '일정', icon: List }
-];
-
-// 미니 이벤트 컴포넌트 (구글 캘린더 스타일 - 반응형)
-const MiniEvent = ({ event, onClick, displayMode = 'bar' }: { 
-  event: CalendarEvent; 
-  onClick?: () => void;
-  displayMode?: 'dot' | 'compact' | 'bar' | 'full';
-}) => {
-  const config = eventTypeConfig[event.type || 'other'];
-  
-  // 점 표시 모드 (아주 작은 높이)
-  if (displayMode === 'dot') {
-    return (
-      <div 
-        className="inline-flex items-center"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick?.();
-        }}
-        title={`${event.startTime || ''} ${event.title}`}
-      >
-        <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", config.color)} />
-      </div>
-    );
-  }
-  
-  // 컴팩트 모드 (작은 높이)
-  if (displayMode === 'compact') {
-    return (
-      <div
-        className={cn(
-          "text-[9px] leading-none px-0.5 py-[1px] rounded-sm truncate cursor-pointer hover:opacity-80 transition-opacity",
-          config.color,
-          "text-white"
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick?.();
-        }}
-        title={`${event.startTime || ''} ${event.title}`}
-      >
-        <span className="truncate">{event.title}</span>
-      </div>
-    );
-  }
-  
-  // 바 모드 (중간 높이 - 기본값)
-  if (displayMode === 'bar') {
-    return (
-      <div
-        className={cn(
-          "text-[10px] px-0.5 py-[1px] rounded-sm truncate cursor-pointer hover:opacity-80 transition-opacity",
-          config.color,
-          "text-white"
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick?.();
-        }}
-        title={`${event.startTime || ''} ${event.title}`}
-      >
-        {event.startTime && !event.allDay && (
-          <span className="font-medium">{event.startTime.slice(0,5)} </span>
-        )}
-        <span className="truncate">{event.title}</span>
-      </div>
-    );
-  }
-  
-  // 풀 모드 (큰 높이)
-  return (
-    <div
-      className={cn(
-        "text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity",
-        config.color,
-        "text-white"
-      )}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick?.();
-      }}
-      title={`${event.startTime || ''} ${event.title}`}
-    >
-      {event.startTime && !event.allDay && (
-        <span className="font-medium">{event.startTime} </span>
-      )}
-      <span>{event.title}</span>
-    </div>
-  );
-};
-
-// 일정 상세 모달 컴포넌트
-const EventDetailModal = ({ 
-  event, 
-  isOpen, 
-  onClose,
-  onEdit,
-  onDelete 
-}: { 
-  event: CalendarEvent | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onEdit?: (event: CalendarEvent) => void;
-  onDelete?: (event: CalendarEvent) => void;
-}) => {
-  if (!event) return null;
-  
-  const config = eventTypeConfig[event.type || 'other'];
-  const Icon = config.icon;
-  
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn("p-2 rounded-lg", config.lightColor)}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-lg">{event.title}</DialogTitle>
-                <Badge variant={config.badgeVariant} className="mt-1 text-xs">
-                  {config.label}
-                </Badge>
-              </div>
-            </div>
-            <div className="flex gap-1">
-              {onEdit && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onEdit(event)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              )}
-              {onDelete && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(event)}
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          {/* 날짜 및 시간 */}
-          <div className="flex items-start gap-3">
-            <CalendarIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium">
-                {format(new Date(event.date), 'yyyy년 M월 d일 EEEE', { locale: ko })}
-              </p>
-              {event.allDay ? (
-                <p className="text-sm text-muted-foreground">종일</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {event.startTime}
-                  {event.endTime && ` - ${event.endTime}`}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          {/* 장소 */}
-          {event.location && (
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm">{event.location}</p>
-              </div>
-            </div>
-          )}
-          
-          {/* 설명 */}
-          {event.description && (
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm">{event.description}</p>
-              </div>
-            </div>
-          )}
-          
-          {/* 반복 설정 */}
-          {event.recurring && (
-            <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {event.recurring === 'daily' && '매일 반복'}
-                  {event.recurring === 'weekly' && '매주 반복'}
-                  {event.recurring === 'monthly' && '매월 반복'}
-                  {event.recurring === 'yearly' && '매년 반복'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            닫기
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-// 주간 뷰 컴포넌트
-const WeekView = ({ 
-  currentDate, 
-  events, 
-  onDateSelect,
-  onEventClick,
-  containerHeight
-}: { 
-  currentDate: Date;
-  events: CalendarEvent[];
-  onDateSelect?: (date: Date) => void;
-  onEventClick?: (event: CalendarEvent) => void;
-  containerHeight: number;
-}) => {
-  const weekStart = startOfWeek(currentDate, { locale: ko });
-  const weekEnd = endOfWeek(currentDate, { locale: ko });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
-  
-  // 시간대 생성 (0시 ~ 23시)
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-  
-  // 동적 높이 계산
-  const headerHeight = 60;
-  const scrollAreaHeight = Math.max(300, containerHeight - headerHeight);
-  
-  return (
-    <div className="flex flex-col h-full">
-      {/* 요일 헤더 */}
-      <div className="grid grid-cols-8 border-b flex-shrink-0" style={{ height: `${headerHeight}px` }}>
-        <div className="text-xs p-2 text-muted-foreground">시간</div>
-        {weekDays.map((day) => (
-          <div
-            key={day.toISOString()}
-            className={cn(
-              "text-center p-2 border-l cursor-pointer hover:bg-accent",
-              isToday(day) && "bg-primary/10"
-            )}
-            onClick={() => onDateSelect?.(day)}
-          >
-            <div className="text-xs text-muted-foreground">
-              {format(day, 'EEE', { locale: ko })}
-            </div>
-            <div className={cn(
-              "text-sm font-medium",
-              isToday(day) && "text-primary"
-            )}>
-              {format(day, 'd')}
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {/* 시간대별 그리드 */}
-      <ScrollArea className="flex-1" style={{ height: `${scrollAreaHeight}px` }}>
-        <div className="min-h-[600px]">
-          {hours.map((hour) => (
-            <div key={hour} className="grid grid-cols-8 border-b h-12">
-              <div className="text-xs p-1 text-muted-foreground">
-                {`${hour.toString().padStart(2, '0')}:00`}
-              </div>
-              {weekDays.map((day) => {
-                const dayEvents = events.filter(event => {
-                  if (!isSameDay(new Date(event.date), day)) return false;
-                  if (event.allDay) return false;
-                  if (!event.startTime) return false;
-                  const eventHour = parseInt(event.startTime.split(':')[0]);
-                  return eventHour === hour;
-                });
-                
-                return (
-                  <div
-                    key={`${day.toISOString()}-${hour}`}
-                    className="border-l p-0.5 hover:bg-accent/50 cursor-pointer"
-                    onClick={() => onDateSelect?.(day)}
-                  >
-                    {dayEvents.map((event) => (
-                      <MiniEvent
-                        key={event.id}
-                        event={event}
-                        onClick={() => onEventClick?.(event)}
-                      />
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
-    </div>
-  );
-};
-
-// 월간 뷰 컴포넌트 (구글 캘린더 스타일)
-const MonthView = ({ 
-  currentDate, 
-  events, 
-  onDateSelect,
-  onEventClick,
-  selectedDate,
-  containerHeight,
-  containerWidth,
-  gridSize,
-  defaultSize = { w: 5, h: 4 }
-}: { 
-  currentDate: Date;
-  events: CalendarEvent[];
-  onDateSelect?: (date: Date) => void;
-  onEventClick?: (event: CalendarEvent) => void;
-  selectedDate?: Date;
-  containerHeight: number;
-  containerWidth?: number;
-  gridSize?: { w: number; h: number };
-  defaultSize?: { w: number; h: number };
-}) => {
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart, { locale: ko });
-  const calendarEnd = endOfWeek(monthEnd, { locale: ko });
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-  
-  // 그리드 크기가 없으면 기본값 사용
-  const effectiveGridSize = gridSize || defaultSize;
-  
-  // 요일 배열
-  const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-  
-  // 주 단위로 날짜 그룹핑
-  const weeks = [];
-  for (let i = 0; i < calendarDays.length; i += 7) {
-    weeks.push(calendarDays.slice(i, i + 7));
-  }
-  
-  
-  // 동적 높이 계산 - 반응형 (더 정밀한 계산)
-  const headerHeight = 24; // 헤더 높이 축소
-  const weekCount = weeks.length;
-  const borderHeight = weekCount + 1; // 각 행의 border 1px + 헤더 border
-  const availableHeight = Math.max(200, containerHeight - headerHeight - borderHeight - 8); // 최소 높이 보장
-  const cellHeight = Math.max(24, Math.floor(availableHeight / weekCount));
-  
-  // 개선된 반응형 표시 모드 결정 - 점 모드 제거, 최소 2열 지원
-  const getDisplayMode = () => {
-    // 1. 컨테이너 실제 너비 기반 우선 판단
-    const actualWidth = containerWidth || (containerHeight * (effectiveGridSize.w || 4) / (effectiveGridSize.h || 3));
-    const estimatedCellWidth = actualWidth / 7; // 7일 기준
-    
-    // 2. 그리드 크기와 픽셀 크기를 종합적으로 고려
-    if (effectiveGridSize) {
-      // 작은 그리드 (2열) - 최소 크기
-      if (effectiveGridSize.w === 2) {
-        // 높이에 따라 compact 또는 bar 모드
-        if (cellHeight < 55 || effectiveGridSize.h <= 2) return 'compact';
-        if (cellHeight < 70 || estimatedCellWidth < 70) return 'bar';
-        return 'full';
-      }
-      
-      // 중간 그리드 (3열)
-      if (effectiveGridSize.w === 3) {
-        // 셀 높이에 따라 세밀하게 조정
-        if (cellHeight < 50 || effectiveGridSize.h <= 2) return 'compact';
-        if (cellHeight < 75) return 'bar';
-        return 'full';
-      }
-      
-      // 큰 그리드 (4열 이상)
-      if (effectiveGridSize.w >= 4) {
-        // 충분한 공간이 있을 때만 full 모드
-        if (cellHeight < 55) return 'compact';
-        if (cellHeight < 70) return 'bar';
-        return 'full';
-      }
-    }
-    
-    // 3. 그리드 정보가 없을 때 순수 높이 기반 (폴백) - 점 모드 제외
-    if (cellHeight < 55) return 'compact';
-    if (cellHeight < 75) return 'bar';
-    return 'full';
-  };
-  
-  const displayMode = getDisplayMode();
-  
-  // 디버깅용 (개발 환경에서만)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Calendar responsive debug:', {
-      gridSize: effectiveGridSize,
-      cellHeight,
-      containerWidth,
-      containerHeight,
-      displayMode,
-      actualWidth: containerWidth || (containerHeight * (effectiveGridSize.w || 4) / (effectiveGridSize.h || 3))
-    });
-  }
-  
-  return (
-    <div className="flex flex-col h-full">
-      {/* 요일 헤더 - 컴팩트 */}
-      <div className="grid grid-cols-7 border-b flex-shrink-0" style={{ height: `${headerHeight}px` }}>
-        {weekDays.map((day, index) => (
-          <div
-            key={day}
-            className={cn(
-              "flex items-center justify-center text-[10px] font-medium text-muted-foreground",
-              index === 0 && "text-red-500",
-              index === 6 && "text-blue-500"
-            )}
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-      
-      {/* 날짜 그리드 - 정확한 높이 할당 */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} className="grid grid-cols-7 border-b last:border-0 flex-1">
-            {week.map((day) => {
-              const dayEvents = events.filter(event => 
-                isSameDay(new Date(event.date), day)
-              );
-              const isSelected = selectedDate && isSameDay(day, selectedDate);
-              const isCurrentMonth = isSameMonth(day, currentDate);
-              const dayOfWeek = getDay(day);
-              
-              // 높이에 따른 최대 표시 이벤트 수 및 표시 방법 조정
-              const maxEventsToShow = 
-                displayMode === 'compact' ? 2 :    // 컴팩트: 2개까지
-                displayMode === 'bar' ? 3 :        // 바 모드: 3개까지
-                4;                                  // 풀 모드: 4개까지
-              
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={cn(
-                    "border-r last:border-0 cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden flex flex-col p-1",
-                    !isCurrentMonth && "bg-muted/30",
-                    isToday(day) && "bg-primary/10",
-                    isSelected && "ring-2 ring-primary"
-                  )}
-                  style={{ minHeight: `${cellHeight}px`, maxHeight: `${cellHeight}px` }}
-                  onClick={() => onDateSelect?.(day)}
-                >
-                  <div className={cn(
-                    displayMode === 'compact' ? "text-[10px] leading-none mb-0.5" : 
-                    displayMode === 'bar' ? "text-[11px] mb-0.5" :
-                    "text-sm mb-1",
-                    "font-medium flex-shrink-0",
-                    !isCurrentMonth && "text-muted-foreground",
-                    isToday(day) && "text-primary font-bold",
-                    dayOfWeek === 0 && "text-red-500",
-                    dayOfWeek === 6 && "text-blue-500"
-                  )}>
-                    {format(day, 'd')}
-                  </div>
-                  
-                  {/* 이벤트 목록 - 높이별 레이아웃 */}
-                  <div className={cn(
-                    "flex-1 overflow-hidden",
-                    displayMode === 'compact' ? "space-y-[1px]" :
-                    "space-y-0.5"
-                  )}>
-                    {dayEvents.slice(0, maxEventsToShow).map((event) => (
-                      <MiniEvent
-                        key={event.id}
-                        event={event}
-                        onClick={() => onEventClick?.(event)}
-                        displayMode={displayMode}
-                      />
-                    ))}
-                    {dayEvents.length > maxEventsToShow && (
-                      <div className={cn(
-                        displayMode === 'compact' ? "text-[9px]" : "text-[10px]",
-                        "text-muted-foreground px-0.5"
-                      )}>
-                        +{dayEvents.length - maxEventsToShow}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// 일간 뷰 컴포넌트
-const DayView = ({ 
-  currentDate, 
-  events, 
-  onEventClick,
-  containerHeight
-}: { 
-  currentDate: Date;
-  events: CalendarEvent[];
-  onEventClick?: (event: CalendarEvent) => void;
-  containerHeight: number;
-}) => {
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-  const dayEvents = events.filter(event => 
-    isSameDay(new Date(event.date), currentDate)
-  );
-  
-  // 동적 높이 계산
-  const headerHeight = 60;
-  const scrollAreaHeight = Math.max(300, containerHeight - headerHeight);
-  
-  return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b flex-shrink-0" style={{ height: `${headerHeight}px` }}>
-        <h3 className="text-lg font-semibold">
-          {format(currentDate, 'yyyy년 M월 d일 EEEE', { locale: ko })}
-        </h3>
-      </div>
-      
-      <ScrollArea className="flex-1" style={{ height: `${scrollAreaHeight}px` }}>
-        <div className="min-h-[800px]">
-          {/* 종일 이벤트 */}
-          {dayEvents.filter(e => e.allDay).length > 0 && (
-            <div className="p-2 border-b bg-muted/50">
-              <div className="text-xs text-muted-foreground mb-1">종일</div>
-              <div className="space-y-1">
-                {dayEvents.filter(e => e.allDay).map((event) => (
-                  <MiniEvent
-                    key={event.id}
-                    event={event}
-                    onClick={() => onEventClick?.(event)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* 시간대별 이벤트 */}
-          {hours.map((hour) => {
-            const hourEvents = dayEvents.filter(event => {
-              if (event.allDay) return false;
-              if (!event.startTime) return false;
-              const eventHour = parseInt(event.startTime.split(':')[0]);
-              return eventHour === hour;
-            });
-            
-            return (
-              <div key={hour} className="flex border-b min-h-[60px]">
-                <div className="w-16 p-2 text-xs text-muted-foreground">
-                  {`${hour.toString().padStart(2, '0')}:00`}
-                </div>
-                <div className="flex-1 p-1 border-l">
-                  {hourEvents.map((event) => (
-                    <MiniEvent
-                      key={event.id}
-                      event={event}
-                      onClick={() => onEventClick?.(event)}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </ScrollArea>
-    </div>
-  );
-};
-
-// 일정 목록 뷰 (Agenda)
-const AgendaView = ({ 
-  events, 
-  onEventClick,
-  containerHeight
-}: { 
-  events: CalendarEvent[];
-  onEventClick?: (event: CalendarEvent) => void;
-  containerHeight: number;
-}) => {
-  // 날짜별로 이벤트 그룹핑
-  const groupedEvents = events.reduce((acc, event) => {
-    const dateKey = format(new Date(event.date), 'yyyy-MM-dd');
-    if (!acc[dateKey]) {
-      acc[dateKey] = [];
-    }
-    acc[dateKey].push(event);
-    return acc;
-  }, {} as Record<string, CalendarEvent[]>);
-  
-  // 날짜 정렬
-  const sortedDates = Object.keys(groupedEvents).sort();
-  
-  return (
-    <ScrollArea className="h-full" style={{ height: `${containerHeight}px` }}>
-      <div className="p-4 space-y-4">
-        {sortedDates.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            일정이 없습니다
-          </div>
-        ) : (
-          sortedDates.map((dateKey) => {
-            const date = new Date(dateKey);
-            const dateEvents = groupedEvents[dateKey];
-            
-            return (
-              <div key={dateKey}>
-                <div className="sticky top-0 bg-background pb-2">
-                  <h3 className="text-sm font-semibold text-muted-foreground">
-                    {format(date, 'M월 d일 EEEE', { locale: ko })}
-                    {isToday(date) && (
-                      <Badge variant="status-soft-info" className="ml-2 text-xs">오늘</Badge>
-                    )}
-                  </h3>
-                </div>
-                <div className="space-y-2">
-                  {dateEvents.map((event) => {
-                    const config = eventTypeConfig[event.type || 'other'];
-                    const Icon = config.icon;
-                    
-                    return (
-                      <div
-                        key={event.id}
-                        className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-                        onClick={() => onEventClick?.(event)}
-                      >
-                        <div className={cn("p-2 rounded", config.lightColor)}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm">{event.title}</h4>
-                          {event.startTime && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {event.allDay ? '종일' : event.startTime}
-                              {event.endTime && ` - ${event.endTime}`}
-                            </p>
-                          )}
-                          {event.description && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {event.description}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant={config.badgeVariant} className="text-xs">
-                          {config.label}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-    </ScrollArea>
-  );
-};
-
+/**
+ * CalendarWidget Component - Refactored Version
+ * 리팩토링된 캘린더 위젯 - 컴포넌트 분리 및 성능 최적화
+ */
 export function CalendarWidget({
   title,
   selectedDate: initialDate,
@@ -808,64 +73,52 @@ export function CalendarWidget({
   gridSize,
   defaultSize = { w: 5, h: 4 }
 }: CalendarWidgetProps & { gridSize?: { w: number; h: number }; defaultSize?: { w: number; h: number } }) {
-  // 그리드 크기가 없으면 기본값 사용
-  const effectiveGridSize = gridSize || defaultSize;
-  const displayTitle = title || getWidgetText.calendar.title('ko');
+  // States
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate || new Date());
-  const [currentView, setCurrentView] = useState(view);
+  const [currentView, setCurrentView] = useState<ViewMode>(view);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [showEventPopover, setShowEventPopover] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  
+  // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   
-  // 새 일정 폼 상태
-  const [newEventTitle, setNewEventTitle] = useState('');
-  const [newEventDate, setNewEventDate] = useState('');
-  const [newEventLocation, setNewEventLocation] = useState('');
-  const [newEventDescription, setNewEventDescription] = useState('');
-  const [newEventAllDay, setNewEventAllDay] = useState(true);
-  const [newEventStartTime, setNewEventStartTime] = useState('');
-  const [newEventEndTime, setNewEventEndTime] = useState('');
-  const [newEventType, setNewEventType] = useState<'meeting' | 'task' | 'reminder' | 'deadline' | 'holiday' | 'other'>('meeting');
-  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  // Custom hooks
+  const {
+    events,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+  } = useCalendarEvents(propEvents);
   
-  // 로컴스토리지에서 이벤트 로드 및 상태 관리
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const {
+    settings,
+    saveSettings,
+  } = useCalendarSettings();
   
-  // 컴포넌트 마운트 시 로컴스토리지에서 이벤트 로드
-  useEffect(() => {
-    // propEvents가 제공되면 사용, 아니면 로컴스토리지에서 로드
-    if (propEvents && propEvents.length > 0) {
-      setEvents(propEvents);
-    } else {
-      const loadedEvents = loadCalendarEvents();
-      setEvents(loadedEvents);
-    }
-  }, [propEvents]);
+  // Effective values
+  const effectiveGridSize = gridSize || defaultSize;
+  const displayTitle = title || getWidgetText.calendar.title('ko');
 
-  // 개선된 컨테이너 크기 감지 및 반응형 처리
+  // Container size detection with optimization
   useEffect(() => {
     const updateSize = () => {
-      // 전체 카드 컨테이너와 콘텐츠 영역 모두 확인
       if (containerRef.current && contentRef.current) {
-        // 전체 카드 크기
         const cardRect = containerRef.current.getBoundingClientRect();
-        // 콘텐츠 영역 크기
         const contentRect = contentRef.current.getBoundingClientRect();
         
-        // 네비게이션 바 높이 계산
         const navBar = contentRef.current.querySelector('.calendar-nav');
         const navHeight = navBar ? navBar.getBoundingClientRect().height : 32;
         
-        // 패딩 계산 (CardContent의 px-1 pb-2 = 4px + 8px)
-        const horizontalPadding = 8; // px-1 * 2
-        const verticalPadding = 12; // pb-2 + mb-2
+        const horizontalPadding = 8;
+        const verticalPadding = 12;
         
-        // 실제 사용 가능한 크기 계산
         const availableWidth = contentRect.width - horizontalPadding;
         const availableHeight = Math.max(100, contentRect.height - navHeight - verticalPadding);
         
@@ -876,16 +129,13 @@ export function CalendarWidget({
       }
     };
 
-    // 초기 실행 및 지연 실행 (DOM 렌더링 완료 보장)
     updateSize();
     const timeoutId = setTimeout(updateSize, 100);
     
-    // ResizeObserver로 크기 변화 감지
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(updateSize);
     });
     
-    // 전체 카드와 콘텐츠 영역 모두 관찰
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
@@ -899,7 +149,7 @@ export function CalendarWidget({
     };
   }, [currentView]);
 
-  // 검색된 이벤트 필터링
+  // Filtered events with memoization
   const filteredEvents = useMemo(() => {
     if (!searchQuery) return events;
     return events.filter(event => 
@@ -908,26 +158,23 @@ export function CalendarWidget({
     );
   }, [events, searchQuery]);
 
-  // 날짜 선택 핸들러
+  // Event handlers
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
     onDateSelect?.(date);
   };
 
-  // 뷰 변경 핸들러
   const handleViewChange = (newView: string) => {
-    setCurrentView(newView as 'month' | 'week' | 'day' | 'agenda');
-    onViewChange?.(newView as 'month' | 'week' | 'day' | 'agenda');
+    setCurrentView(newView as ViewMode);
+    onViewChange?.(newView as ViewMode);
   };
 
-  // 이벤트 클릭 핸들러
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setShowEventDetail(true);
     onEventClick?.(event);
   };
 
-  // 이전/다음 네비게이션
   const handlePrev = () => {
     const newDate = new Date(currentDate);
     switch (currentView) {
@@ -960,14 +207,47 @@ export function CalendarWidget({
     setCurrentDate(newDate);
   };
 
-  // 오늘 날짜로 이동
   const handleToday = () => {
     const today = new Date();
     setSelectedDate(today);
     setCurrentDate(today);
   };
 
-  // 현재 뷰의 타이틀 생성
+  const handleEventSave = (eventData: Partial<CalendarEvent>) => {
+    if (editingEvent) {
+      // Update existing event
+      const updatedEvent = { ...editingEvent, ...eventData } as CalendarEvent;
+      updateEvent(updatedEvent);
+    } else {
+      // Create new event
+      const newEvent = {
+        id: `event-${Date.now()}`,
+        ...eventData,
+      } as CalendarEvent;
+      addEvent(newEvent);
+      onEventAdd?.(newEvent.date, newEvent);
+    }
+    
+    setShowEventPopover(false);
+    setEditingEvent(null);
+  };
+
+  const handleEventEdit = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    setShowEventDetail(false);
+    setSelectedEvent(null);
+    setShowEventPopover(true);
+  };
+
+  const handleEventDelete = (event: CalendarEvent) => {
+    if (window.confirm('이 일정을 삭제하시겠습니까?')) {
+      deleteEvent(event.id);
+      setShowEventDetail(false);
+      setSelectedEvent(null);
+    }
+  };
+
+  // View title generation
   const getViewTitle = () => {
     switch (currentView) {
       case 'month':
@@ -1001,7 +281,7 @@ export function CalendarWidget({
               </CardDescription>
             </div>
             <div className="flex items-center gap-1">
-              {/* 검색 */}
+              {/* Search */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -1018,7 +298,7 @@ export function CalendarWidget({
                 </PopoverContent>
               </Popover>
               
-              {/* 뷰 모드 선택 */}
+              {/* View mode selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 px-2">
@@ -1030,7 +310,7 @@ export function CalendarWidget({
                   <DropdownMenuLabel>보기 모드</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {viewModes.map((mode) => {
-                    const Icon = mode.icon;
+                    const Icon = viewModeIcons[mode.icon as keyof typeof viewModeIcons];
                     return (
                       <DropdownMenuItem
                         key={mode.value}
@@ -1045,8 +325,13 @@ export function CalendarWidget({
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              {/* 설정 */}
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              {/* Settings - Now Active! */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0"
+                onClick={() => setShowSettingsModal(true)}
+              >
                 <Settings className="h-4 w-4" />
               </Button>
             </div>
@@ -1054,7 +339,7 @@ export function CalendarWidget({
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden px-1 pb-2" ref={contentRef}>
           <div className="flex flex-col h-full">
-            {/* 네비게이션 바 */}
+            {/* Navigation bar */}
             <div className="calendar-nav mb-2 px-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
@@ -1089,25 +374,16 @@ export function CalendarWidget({
                   </span>
                 </div>
                 
-                {/* 일정 추가 버튼 */}
-                <Popover open={showEventPopover} onOpenChange={(open) => {
-                  setShowEventPopover(open);
-                  if (open && !editingEvent) {
-                    // 폼 초기화 (현재 선택된 날짜로 설정) - 편집 모드가 아닐 때만
-                    setNewEventTitle('');
-                    setNewEventDate(selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
-                    setNewEventLocation('');
-                    setNewEventDescription('');
-                    setNewEventAllDay(true);
-                    setNewEventStartTime('09:00');
-                    setNewEventEndTime('10:00');
-                    setNewEventType('meeting');
-                  }
-                  if (!open) {
-                    // 팝오버를 닫을 때 편집 모드 초기화
-                    setEditingEvent(null);
-                  }
-                }}>
+                {/* Add event button */}
+                <Popover 
+                  open={showEventPopover} 
+                  onOpenChange={(open) => {
+                    setShowEventPopover(open);
+                    if (!open) {
+                      setEditingEvent(null);
+                    }
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button size="sm" className="h-7 px-2">
                       <Plus className="h-3 w-3 mr-1" />
@@ -1115,203 +391,21 @@ export function CalendarWidget({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-96" align="end">
-                    <div className="space-y-4">
-                      <h4 className="font-medium text-sm">
-                        {editingEvent ? '일정 수정' : '새 일정 만들기'}
-                      </h4>
-                      
-                      {/* 제목 */}
-                      <div className="space-y-2">
-                        <Label htmlFor="event-title" className="text-xs">제목</Label>
-                        <Input 
-                          id="event-title"
-                          placeholder="일정 제목" 
-                          className="h-8"
-                          value={newEventTitle}
-                          onChange={(e) => setNewEventTitle(e.target.value)}
-                        />
-                      </div>
-
-                      {/* 일정 타입 */}
-                      <div className="space-y-2">
-                        <Label htmlFor="event-type" className="text-xs">유형</Label>
-                        <Select value={newEventType} onValueChange={(value) => setNewEventType(value as any)}>
-                          <SelectTrigger id="event-type" className="h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="meeting">회의</SelectItem>
-                            <SelectItem value="task">작업</SelectItem>
-                            <SelectItem value="reminder">알림</SelectItem>
-                            <SelectItem value="deadline">마감</SelectItem>
-                            <SelectItem value="holiday">휴일</SelectItem>
-                            <SelectItem value="other">기타</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 날짜 */}
-                      <div className="space-y-2">
-                        <Label htmlFor="event-date" className="text-xs">날짜</Label>
-                        <Input 
-                          id="event-date"
-                          type="date" 
-                          className="h-8"
-                          value={newEventDate}
-                          onChange={(e) => setNewEventDate(e.target.value)}
-                        />
-                      </div>
-
-                      {/* 종일 일정 토글 */}
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="all-day" className="text-xs">종일 일정</Label>
-                        <Switch
-                          id="all-day"
-                          checked={newEventAllDay}
-                          onCheckedChange={setNewEventAllDay}
-                        />
-                      </div>
-
-                      {/* 시간 선택 (종일 아닐 때만) */}
-                      {!newEventAllDay && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="start-time" className="text-xs">시작 시간</Label>
-                            <Input
-                              id="start-time"
-                              type="time"
-                              className="h-8"
-                              value={newEventStartTime}
-                              onChange={(e) => setNewEventStartTime(e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="end-time" className="text-xs">종료 시간</Label>
-                            <Input
-                              id="end-time"
-                              type="time"
-                              className="h-8"
-                              value={newEventEndTime}
-                              onChange={(e) => setNewEventEndTime(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 장소 */}
-                      <div className="space-y-2">
-                        <Label htmlFor="event-location" className="text-xs">
-                          <MapPin className="inline h-3 w-3 mr-1" />
-                          장소
-                        </Label>
-                        <Input 
-                          id="event-location"
-                          placeholder="장소 입력 (선택사항)" 
-                          className="h-8"
-                          value={newEventLocation}
-                          onChange={(e) => setNewEventLocation(e.target.value)}
-                        />
-                      </div>
-
-                      {/* 설명 */}
-                      <div className="space-y-2">
-                        <Label htmlFor="event-description" className="text-xs">설명</Label>
-                        <Textarea 
-                          id="event-description"
-                          placeholder="설명 입력 (선택사항)"
-                          className="min-h-[60px] text-sm resize-none"
-                          value={newEventDescription}
-                          onChange={(e) => setNewEventDescription(e.target.value)}
-                        />
-                      </div>
-
-                      {/* 버튼들 */}
-                      <div className="flex justify-end gap-2 pt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setShowEventPopover(false);
-                            setEditingEvent(null);
-                            // 폼 초기화
-                            setNewEventTitle('');
-                            setNewEventDate('');
-                            setNewEventLocation('');
-                            setNewEventDescription('');
-                            setNewEventAllDay(true);
-                            setNewEventStartTime('');
-                            setNewEventEndTime('');
-                            setNewEventType('meeting');
-                          }}
-                        >
-                          취소
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            if (editingEvent) {
-                              // 편집 모드: 기존 이벤트 업데이트
-                              const updatedEvent: CalendarEvent = {
-                                ...editingEvent,
-                                title: newEventTitle || '제목 없음',
-                                date: new Date(newEventDate || format(new Date(), 'yyyy-MM-dd')),
-                                type: newEventType,
-                                allDay: newEventAllDay,
-                                startTime: !newEventAllDay ? newEventStartTime : undefined,
-                                endTime: !newEventAllDay ? newEventEndTime : undefined,
-                                location: newEventLocation || undefined,
-                                description: newEventDescription || undefined,
-                              };
-                              
-                              // 로컴스토리지에 업데이트
-                              const updatedEvents = updateCalendarEvent(updatedEvent);
-                              setEvents(updatedEvents);
-                            } else {
-                              // 추가 모드: 새 이벤트 생성
-                              const newEvent: CalendarEvent = {
-                                id: `event-${Date.now()}`,
-                                title: newEventTitle || '제목 없음',
-                                date: new Date(newEventDate || format(new Date(), 'yyyy-MM-dd')),
-                                type: newEventType,
-                                allDay: newEventAllDay,
-                                startTime: !newEventAllDay ? newEventStartTime : undefined,
-                                endTime: !newEventAllDay ? newEventEndTime : undefined,
-                                location: newEventLocation || undefined,
-                                description: newEventDescription || undefined,
-                              };
-                              
-                              // 로컴스토리지에 추가
-                              const updatedEvents = addCalendarEvent(newEvent);
-                              setEvents(updatedEvents);
-                              
-                              // 콜백이 있으면 호출
-                              onEventAdd?.(new Date(newEventDate || format(new Date(), 'yyyy-MM-dd')), newEvent);
-                            }
-                            
-                            // 폼 초기화 및 닫기
-                            setShowEventPopover(false);
-                            setEditingEvent(null);
-                            setNewEventTitle('');
-                            setNewEventDate('');
-                            setNewEventLocation('');
-                            setNewEventDescription('');
-                            setNewEventAllDay(true);
-                            setNewEventStartTime('');
-                            setNewEventEndTime('');
-                            setNewEventType('meeting');
-                          }}
-                          disabled={!newEventTitle}
-                        >
-                          {editingEvent ? '수정' : '저장'}
-                        </Button>
-                      </div>
-                    </div>
+                    <EventForm
+                      event={editingEvent}
+                      selectedDate={selectedDate}
+                      onSave={handleEventSave}
+                      onCancel={() => {
+                        setShowEventPopover(false);
+                        setEditingEvent(null);
+                      }}
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
             </div>
             
-            {/* 뷰별 콘텐츠 렌더링 */}
+            {/* View content */}
             <div className="flex-1 overflow-hidden">
               {currentView === 'month' && (
                 <MonthView
@@ -1357,7 +451,7 @@ export function CalendarWidget({
         </CardContent>
       </Card>
       
-      {/* 일정 상세 모달 */}
+      {/* Event Detail Modal */}
       <EventDetailModal
         event={selectedEvent}
         isOpen={showEventDetail}
@@ -1365,33 +459,16 @@ export function CalendarWidget({
           setShowEventDetail(false);
           setSelectedEvent(null);
         }}
-        onEdit={(event) => {
-          // 편집할 이벤트 정보를 폼에 설정
-          setEditingEvent(event);
-          setNewEventTitle(event.title);
-          setNewEventDate(format(new Date(event.date), 'yyyy-MM-dd'));
-          setNewEventLocation(event.location || '');
-          setNewEventDescription(event.description || '');
-          setNewEventAllDay(event.allDay || false);
-          setNewEventStartTime(event.startTime || '');
-          setNewEventEndTime(event.endTime || '');
-          setNewEventType(event.type || 'meeting');
-          
-          // 모달 닫고 편집 팝오버 열기
-          setShowEventDetail(false);
-          setSelectedEvent(null);
-          setShowEventPopover(true);
-        }}
-        onDelete={(event) => {
-          // 삭제 확인 후 처리
-          if (window.confirm('이 일정을 삭제하시겠습니까?')) {
-            // 로컴스토리지에서 삭제
-            const updatedEvents = deleteCalendarEvent(event.id);
-            setEvents(updatedEvents);
-            setShowEventDetail(false);
-            setSelectedEvent(null);
-          }
-        }}
+        onEdit={handleEventEdit}
+        onDelete={handleEventDelete}
+      />
+      
+      {/* Settings Modal - New! */}
+      <CalendarSettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        settings={settings}
+        onSave={saveSettings}
       />
     </>
   );

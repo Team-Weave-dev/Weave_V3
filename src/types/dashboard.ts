@@ -142,6 +142,7 @@ export interface CalendarEvent {
   color?: string;
   recurring?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   type?: 'meeting' | 'task' | 'reminder' | 'deadline' | 'holiday' | 'other';
+  googleEventId?: string; // Google Calendar integration ID
 }
 
 export interface CalendarWidgetProps {
