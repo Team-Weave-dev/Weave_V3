@@ -120,6 +120,7 @@ export interface CalendarViewProps {
   events: CalendarEvent[];
   onDateSelect?: (date: Date) => void;
   onEventClick?: (event: CalendarEvent) => void;
+  onDateDoubleClick?: (date: Date, time?: string) => void;
   containerHeight: number;
   containerWidth?: number;
   selectedDate?: Date;

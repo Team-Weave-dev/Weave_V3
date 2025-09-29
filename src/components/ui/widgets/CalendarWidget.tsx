@@ -247,6 +247,28 @@ export function CalendarWidget({
     }
   };
 
+  // Handle double click to add event
+  const handleDateDoubleClick = (date: Date, time?: string) => {
+    setSelectedDate(date);
+    // Clear editing event to create new one with the selected date
+    setEditingEvent(null);
+    // Open the popover which will use selectedDate
+    setShowEventPopover(true);
+    
+    // If time is specified, we need to pre-populate it
+    if (time) {
+      const prefilledEvent: CalendarEvent = {
+        id: '',
+        title: '',
+        date: date,
+        startTime: time,
+        endTime: `${(parseInt(time.split(':')[0]) + 1).toString().padStart(2, '0')}:00`,
+        allDay: false,
+      };
+      setEditingEvent(prefilledEvent);
+    }
+  };
+
   // View title generation
   const getViewTitle = () => {
     switch (currentView) {
@@ -413,6 +435,7 @@ export function CalendarWidget({
                   events={filteredEvents}
                   onDateSelect={handleDateSelect}
                   onEventClick={handleEventClick}
+                  onDateDoubleClick={handleDateDoubleClick}
                   selectedDate={selectedDate}
                   containerHeight={containerSize.height}
                   containerWidth={containerSize.width}
@@ -426,6 +449,7 @@ export function CalendarWidget({
                   events={filteredEvents}
                   onDateSelect={handleDateSelect}
                   onEventClick={handleEventClick}
+                  onDateDoubleClick={handleDateDoubleClick}
                   containerHeight={containerSize.height}
                 />
               )}
@@ -435,6 +459,7 @@ export function CalendarWidget({
                   currentDate={currentDate}
                   events={filteredEvents}
                   onEventClick={handleEventClick}
+                  onDateDoubleClick={handleDateDoubleClick}
                   containerHeight={containerSize.height}
                 />
               )}

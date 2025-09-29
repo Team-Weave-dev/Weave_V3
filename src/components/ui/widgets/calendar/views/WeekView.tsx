@@ -24,6 +24,7 @@ const WeekView = React.memo(({
   events, 
   onDateSelect,
   onEventClick,
+  onDateDoubleClick,
   containerHeight
 }: CalendarViewProps) => {
   const weekStart = startOfWeek(currentDate, { locale: ko });
@@ -50,6 +51,7 @@ const WeekView = React.memo(({
               isToday(day) && "bg-primary/10"
             )}
             onClick={() => onDateSelect?.(day)}
+            onDoubleClick={() => onDateDoubleClick?.(day)}
           >
             <div className="text-xs text-muted-foreground">
               {format(day, 'EEE', { locale: ko })}
@@ -86,6 +88,7 @@ const WeekView = React.memo(({
                     key={`${day.toISOString()}-${hour}`}
                     className="border-l p-0.5 hover:bg-accent/50 cursor-pointer"
                     onClick={() => onDateSelect?.(day)}
+                    onDoubleClick={() => onDateDoubleClick?.(day, `${hour.toString().padStart(2, '0')}:00`)}
                   >
                     {dayEvents.map((event) => (
                       <MiniEvent

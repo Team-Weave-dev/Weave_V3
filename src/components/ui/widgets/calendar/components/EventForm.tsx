@@ -34,31 +34,46 @@ const EventForm = React.memo(({
   onSave,
   onCancel,
 }: EventFormProps) => {
-  const [formData, setFormData] = useState({
-    title: '',
-    date: format(selectedDate || new Date(), 'yyyy-MM-dd'),
-    location: '',
-    description: '',
-    allDay: true,
-    startTime: '09:00',
-    endTime: '10:00',
-    type: 'meeting' as CalendarEvent['type'],
+  const [formData, setFormData] = useState(() => {
+    // Initialize with event data if provided, otherwise use defaults
+    if (event) {
+      return {
+        title: event.title || '',
+        date: event.date ? format(new Date(event.date), 'yyyy-MM-dd') : format(selectedDate || new Date(), 'yyyy-MM-dd'),
+        location: event.location || '',
+        description: event.description || '',
+        allDay: event.allDay !== undefined ? event.allDay : true,
+        startTime: event.startTime || '09:00',
+        endTime: event.endTime || '10:00',
+        type: (event.type || 'meeting') as CalendarEvent['type'],
+      };
+    }
+    return {
+      title: '',
+      date: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+      location: '',
+      description: '',
+      allDay: true,
+      startTime: '09:00',
+      endTime: '10:00',
+      type: 'meeting' as CalendarEvent['type'],
+    };
   });
 
   useEffect(() => {
     if (event) {
       setFormData({
-        title: event.title,
-        date: format(new Date(event.date), 'yyyy-MM-dd'),
+        title: event.title || '',
+        date: event.date ? format(new Date(event.date), 'yyyy-MM-dd') : format(selectedDate || new Date(), 'yyyy-MM-dd'),
         location: event.location || '',
         description: event.description || '',
-        allDay: event.allDay || false,
+        allDay: event.allDay !== undefined ? event.allDay : true,
         startTime: event.startTime || '09:00',
         endTime: event.endTime || '10:00',
         type: event.type || 'meeting',
       });
     }
-  }, [event]);
+  }, [event, selectedDate]);
 
   const handleSubmit = () => {
     const eventData: Partial<CalendarEvent> = {

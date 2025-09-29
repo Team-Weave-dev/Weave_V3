@@ -15,6 +15,7 @@ const DayView = React.memo(({
   currentDate, 
   events, 
   onEventClick,
+  onDateDoubleClick,
   containerHeight
 }: CalendarViewProps) => {
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -38,7 +39,7 @@ const DayView = React.memo(({
         <div className="min-h-[800px]">
           {/* 종일 이벤트 */}
           {dayEvents.filter(e => e.allDay).length > 0 && (
-            <div className="p-2 border-b bg-muted/50">
+            <div className="p-2 border-b bg-muted/50" onDoubleClick={() => onDateDoubleClick?.(currentDate)}>
               <div className="text-xs text-muted-foreground mb-1">종일</div>
               <div className="space-y-1">
                 {dayEvents.filter(e => e.allDay).map((event) => (
@@ -66,7 +67,10 @@ const DayView = React.memo(({
                 <div className="w-16 p-2 text-xs text-muted-foreground">
                   {`${hour.toString().padStart(2, '0')}:00`}
                 </div>
-                <div className="flex-1 p-1 border-l">
+                <div 
+                  className="flex-1 p-1 border-l cursor-pointer hover:bg-accent/20"
+                  onDoubleClick={() => onDateDoubleClick?.(currentDate, `${hour.toString().padStart(2, '0')}:00`)}
+                >
                   {hourEvents.map((event) => (
                     <MiniEvent
                       key={event.id}

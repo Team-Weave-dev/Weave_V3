@@ -32,6 +32,7 @@ const MonthView = React.memo(({
   events, 
   onDateSelect,
   onEventClick,
+  onDateDoubleClick,
   selectedDate,
   containerHeight,
   containerWidth,
@@ -151,6 +152,7 @@ const MonthView = React.memo(({
                   )}
                   style={{ minHeight: `${cellHeight}px`, maxHeight: `${cellHeight}px` }}
                   onClick={() => onDateSelect?.(day)}
+                  onDoubleClick={() => onDateDoubleClick?.(day)}
                 >
                   <div className={cn(
                     displayMode === 'compact' ? "text-[10px] leading-none mb-0.5" : 
