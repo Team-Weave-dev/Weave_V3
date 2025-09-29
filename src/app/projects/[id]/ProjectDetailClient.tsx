@@ -9,8 +9,28 @@ import { AlertCircleIcon } from 'lucide-react';
 import { getProjectPageText } from '@/config/brand';
 import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
 import { fetchMockProjects, fetchMockProject, removeCustomProject, addCustomProject, updateCustomProject } from '@/lib/mock/projects';
-import { saveGeneratedDocumentsToProject } from '@/lib/mock/documents';
+import { addProjectDocument } from '@/lib/mock/documents';
+import type { DocumentInfo } from '@/lib/types/project-table.types';
+import type { ProjectDocumentCategory } from '@/lib/document-generator/templates';
 import { useToast } from '@/hooks/use-toast';
+
+// 🔄 카테고리를 DocumentInfo 타입으로 매핑하는 헬퍼 함수 (ProjectDetail과 동일한 로직)
+const mapCategoryToDocumentType = (category: ProjectDocumentCategory): DocumentInfo['type'] => {
+  switch (category) {
+    case 'contract':
+      return 'contract';
+    case 'invoice':
+      return 'invoice';
+    case 'estimate':
+      return 'estimate';
+    case 'report':
+      return 'report';
+    case 'others':
+      return 'etc';
+    default:
+      return 'etc';
+  }
+};
 
 // 편집 가능한 프로젝트 데이터 인터페이스
 interface EditableProjectData {
@@ -99,12 +119,30 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
       // localStorage에 프로젝트 추가
       addCustomProject(projectWithId);
 
-      // 생성된 문서들이 있으면 documents 시스템에 저장
+      // 🎯 생성된 문서들을 개별 프로젝트와 동일한 방식으로 저장 (성공하는 플로우 적용)
       if (newProject.generatedDocuments && newProject.generatedDocuments.length > 0) {
         try {
-          // 문서 저장 키를 프로젝트 번호(no)로 통일
-          const savedDocuments = saveGeneratedDocumentsToProject(projectWithId.no, newProject.generatedDocuments);
-          console.log(`📄 프로젝트 ${projectWithId.no} (ID: ${projectWithId.id})에 ${savedDocuments.length}개의 문서를 저장했습니다.`);
+          console.log(`📄 프로젝트 ${projectWithId.no}에 ${newProject.generatedDocuments.length}개의 문서를 개별 저장 방식으로 저장 시작`);
+
+          // 각 문서를 개별적으로 저장 (ProjectDetail handleDocumentGenerated와 동일한 로직)
+          newProject.generatedDocuments.forEach((genDoc, index) => {
+            const newDocument: DocumentInfo = {
+              id: `${genDoc.templateId}-${Date.now()}-${index}`, // 고유성 보장을 위해 index 추가
+              type: mapCategoryToDocumentType(genDoc.category),
+              name: genDoc.title,
+              createdAt: new Date().toISOString(),
+              status: 'draft',
+              content: genDoc.content,
+              templateId: genDoc.templateId,
+              source: 'generated'
+            };
+
+            // 개별 문서 저장 (커스텀 이벤트 자동 발생)
+            addProjectDocument(projectWithId.no, newDocument);
+            console.log(`✅ 문서 저장 완료: ${newDocument.name} (${newDocument.type})`);
+          });
+
+          console.log(`🎉 프로젝트 ${projectWithId.no}에 ${newProject.generatedDocuments.length}개의 문서 저장 완료!`);
         } catch (error) {
           console.error('❌ 생성된 문서 저장 중 오류:', error);
         }
