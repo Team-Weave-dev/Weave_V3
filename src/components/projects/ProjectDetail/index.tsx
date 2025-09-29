@@ -180,7 +180,7 @@ export default function ProjectDetail({
   const [taxSubTab, setTaxSubTab] = useState('taxInvoice');
   const [documents, setDocuments] = useState<DocumentInfo[]>(() => {
     // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
-    const storedDocuments = getProjectDocuments(project.id);
+    const storedDocuments = getProjectDocuments(project.no);
     return storedDocuments.length > 0
       ? storedDocuments
       : (project.documents ?? []).map((doc) => ({ ...doc }));
@@ -213,13 +213,13 @@ export default function ProjectDetail({
 
   useEffect(() => {
     // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
-    const storedDocuments = getProjectDocuments(project.id);
+    const storedDocuments = getProjectDocuments(project.no);
     const documentsToUse = storedDocuments.length > 0
       ? storedDocuments
       : (project.documents ?? []).map((doc) => ({ ...doc }));
 
     setDocuments(documentsToUse);
-  }, [project.id, project.documents]);
+  }, [project.no, project.documents]);
 
   const templateAvailability = useMemo(() => ({
     contract: getTemplatesForCategory('contract').length,
@@ -438,7 +438,7 @@ export default function ProjectDetail({
     const { mode, targetDoc, targetType } = deleteDialogState;
 
     if (mode === 'single' && targetDoc) {
-      const updatedDocs = deleteProjectDocument(project.id, targetDoc.id);
+      const updatedDocs = deleteProjectDocument(project.no, targetDoc.id);
       setDocuments(updatedDocs);
       toast({
         title: '문서를 삭제했습니다',
@@ -452,7 +452,7 @@ export default function ProjectDetail({
           description: '현재 탭에는 삭제할 문서가 존재하지 않습니다.'
         });
       } else {
-        const updatedDocs = deleteProjectDocumentsByType(project.id, targetType);
+        const updatedDocs = deleteProjectDocumentsByType(project.no, targetType);
         setDocuments(updatedDocs);
         toast({
           title: '문서를 삭제했습니다',
@@ -628,7 +628,7 @@ export default function ProjectDetail({
       source: 'generated'
     };
 
-    const updatedDocs = addProjectDocument(project.id, newDocument);
+    const updatedDocs = addProjectDocument(project.no, newDocument);
     setDocuments(updatedDocs);
     setGeneratorState((prev) => ({ ...prev, open: false }));
     setMainTab('documentManagement');
@@ -1430,7 +1430,7 @@ export default function ProjectDetail({
                       createdAt: new Date().toISOString(),
                       status: 'draft'
                     };
-                    const updatedDocs = updateProjectDocument(project.id, previewDocument.id, {
+                    const updatedDocs = updateProjectDocument(project.no, previewDocument.id, {
                       content: editingContent,
                       createdAt: new Date().toISOString(),
                       status: 'draft'

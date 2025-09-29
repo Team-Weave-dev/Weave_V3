@@ -102,8 +102,9 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
       // 생성된 문서들이 있으면 documents 시스템에 저장
       if (newProject.generatedDocuments && newProject.generatedDocuments.length > 0) {
         try {
-          const savedDocuments = saveGeneratedDocumentsToProject(projectWithId.id, newProject.generatedDocuments);
-          console.log(`📄 프로젝트 ${projectWithId.id}에 ${savedDocuments.length}개의 문서를 저장했습니다.`);
+          // 문서 저장 키를 프로젝트 번호(no)로 통일
+          const savedDocuments = saveGeneratedDocumentsToProject(projectWithId.no, newProject.generatedDocuments);
+          console.log(`📄 프로젝트 ${projectWithId.no} (ID: ${projectWithId.id})에 ${savedDocuments.length}개의 문서를 저장했습니다.`);
         } catch (error) {
           console.error('❌ 생성된 문서 저장 중 오류:', error);
         }
