@@ -396,6 +396,26 @@ export function ImprovedDashboard({
   const editState = useImprovedDashboardStore(selectEditState);
   const isEditMode = useImprovedDashboardStore(selectIsEditMode);
   
+  // localStorage에서 데이터 로드 상태 확인
+  const [hasHydrated, setHasHydrated] = useState(false);
+  
+  useEffect(() => {
+    // persist 미들웨어가 데이터를 로드했는지 확인
+    const unsubscribe = (useImprovedDashboardStore as any).persist?.onFinishHydration?.(() => {
+      console.log('✅ 대시보드 localStorage 로드 완료');
+      setHasHydrated(true);
+    });
+    
+    // 이미 hydration이 완료됐을 수 있음
+    if ((useImprovedDashboardStore as any).persist?.hasHydrated?.()) {
+      setHasHydrated(true);
+    }
+    
+    return () => {
+      unsubscribe?.();
+    };
+  }, []);
+  
   // 스토어 액션
   const {
     setWidgets,
@@ -433,8 +453,14 @@ export function ImprovedDashboard({
   
   // 초기화
   useEffect(() => {
-    // 이미 위젯이 있으면 초기화하지 않음
-    if (widgets.length > 0) return;
+    // localStorage에서 데이터를 로드하지 않았으면 대기
+    if (!hasHydrated) return;
+    
+    // 이미 위젯이 있으면 초기화하지 않음 (localStorage에서 로드됨)
+    if (widgets.length > 0) {
+      console.log('📦 localStorage에서 위젯 복원됨:', widgets.length, '개');
+      return;
+    }
     
     if (initialWidgets.length > 0) {
       // 시작 레이아웃: 9x8 그리드 기준으로 위치 설정
@@ -652,7 +678,8 @@ export function ImprovedDashboard({
       ];
       testWidgets.forEach((w) => addWidget(w));
     }
-  }, []); // 빈 의존성 배열로 변경하여 최초 1회만 실행
+    console.log('🎯 대시보드 초기 위젯 설정 완료');
+  }, [hasHydrated]); // hasHydrated 상태에 따라 재실행
 
   // 중복 ID 위젯 정리 (개발/StrictMode에서 이중 마운트 대비)
   useEffect(() => {

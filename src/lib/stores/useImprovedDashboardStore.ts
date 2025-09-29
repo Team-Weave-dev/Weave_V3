@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { devtools } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { ImprovedWidget, DashboardConfig, DashboardEditState } from '@/types/improved-dashboard';
 import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout, checkCollision } from '@/lib/dashboard/grid-utils';
@@ -93,11 +94,12 @@ const initialEditState: DashboardEditState = {
   dragOverWidgetId: null,
 };
 
-// Zustand 스토어 생성
+// Zustand 스토어 생성 (localStorage 연동)
 export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
   subscribeWithSelector(
     devtools(
-      immer((set, get) => ({
+      persist(
+        immer((set, get) => ({
         // 초기 상태
         widgets: [],
         config: initialConfig,
@@ -748,6 +750,30 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
           }
         }),
       })),
+        {
+          name: 'weave-dashboard-layout', // localStorage 키 이름
+          version: 1, // 스토리지 버전 (마이그레이션용)
+          partialize: (state) => ({
+            // localStorage에 저장할 상태만 선택
+            widgets: state.widgets,
+            config: state.config,
+            // editState는 임시 상태이므로 저장하지 않음
+          }),
+          onRehydrateStorage: (state) => {
+            console.log('🔄 대시보드 레이아웃 복원 시작...');
+            return (state, error) => {
+              if (error) {
+                console.error('❌ 대시보드 레이아웃 복원 실패:', error);
+              } else if (state) {
+                console.log('✅ 대시보드 레이아웃 복원 완료:', {
+                  widgetCount: state.widgets.length,
+                  cols: state.config.cols
+                });
+              }
+            };
+          },
+        }
+      ),
       {
         name: 'improved-dashboard-store',
       }
