@@ -22,6 +22,7 @@ import type { ProjectTableRow, SettlementMethod, PaymentStatus } from '@/lib/typ
 import type { ProjectDocumentCategory, GeneratedDocument } from '@/lib/document-generator/templates'
 import { Badge } from '@/components/ui/badge'
 import DocumentGeneratorModal from './DocumentGeneratorModal'
+import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog'
 
 interface ProjectCreateModalProps {
   isOpen: boolean
@@ -46,6 +47,11 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
   const [isLoading, setIsLoading] = useState(false)
   const [generatedDocuments, setGeneratedDocuments] = useState<GeneratedDocument[]>([])
   const [showDocumentGenerator, setShowDocumentGenerator] = useState(false)
+  const [deleteDialogState, setDeleteDialogState] = useState<{
+    open: boolean;
+    documentId: string | null;
+    documentTitle: string | null;
+  }>({ open: false, documentId: null, documentTitle: null })
 
   const { control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<ProjectCreateFormData>({
     defaultValues: {
@@ -154,8 +160,23 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
     setGeneratedDocuments(prev => [...prev, document])
   }
 
-  const handleDocumentDeleted = (documentId: string) => {
-    setGeneratedDocuments(prev => prev.filter(doc => doc.id !== documentId))
+  const handleDocumentDeleteRequest = (document: GeneratedDocument) => {
+    setDeleteDialogState({
+      open: true,
+      documentId: document.id,
+      documentTitle: document.title
+    })
+  }
+
+  const handleDeleteConfirm = () => {
+    if (deleteDialogState.documentId) {
+      setGeneratedDocuments(prev => prev.filter(doc => doc.id !== deleteDialogState.documentId))
+    }
+    setDeleteDialogState({ open: false, documentId: null, documentTitle: null })
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogState({ open: false, documentId: null, documentTitle: null })
   }
 
   // 문서 미리보기 핸들러
@@ -165,6 +186,24 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
     console.log('문서 미리보기:', document.title)
     // 임시로 alert 사용 (실제로는 더 나은 UI 구현)
     alert(`문서 미리보기: ${document.title}\n\n${document.content.substring(0, 500)}...`)
+  }
+
+  // 총금액 필드 UX 개선 핸들러
+  const handleTotalAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // 값이 0이면 빈 문자열로 변경하여 입력하기 쉽게 만듦
+    if (e.target.value === '0') {
+      e.target.value = ''
+    }
+  }
+
+  const handleTotalAmountBlur = (e: React.FocusEvent<HTMLInputElement>, onChange: (value: number) => void) => {
+    // 빈 값이면 0으로 복원
+    if (e.target.value === '' || e.target.value === '0') {
+      e.target.value = '0'
+      onChange(0)
+    } else {
+      onChange(Number(e.target.value))
+    }
   }
 
   // 현재 폼 데이터 가져오기 (문서 생성기에 전달용)
@@ -296,6 +335,8 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
                     placeholder="총 프로젝트 금액을 입력하세요"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
+                    onFocus={handleTotalAmountFocus}
+                    onBlur={(e) => handleTotalAmountBlur(e, field.onChange)}
                   />
                 )}
               />
@@ -525,7 +566,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDocumentDeleted(doc.id)}
+                            onClick={() => handleDocumentDeleteRequest(doc)}
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                             title={uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatedList.actions.deleteTooltip.ko}
                             aria-label={uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatedList.actions.ariaDelete.ko}
@@ -589,7 +630,16 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
         projectData={getCurrentProjectData()}
         generatedDocuments={generatedDocuments}
         onDocumentGenerated={handleDocumentGenerated}
-        onDocumentDeleted={handleDocumentDeleted}
+        onDocumentDeleted={(documentId) => setGeneratedDocuments(prev => prev.filter(doc => doc.id !== documentId))}
+      />
+
+      {/* 문서 삭제 확인 모달 */}
+      <DocumentDeleteDialog
+        open={deleteDialogState.open}
+        mode="single"
+        targetName={deleteDialogState.documentTitle || undefined}
+        onOpenChange={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
       />
     </Dialog>
   )

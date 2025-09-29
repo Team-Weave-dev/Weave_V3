@@ -14,6 +14,7 @@ import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw, GripVertic
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ProjectStatus as ProjectStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
 import { PaymentStatus } from '@/components/projects/shared/ProjectInfoRenderer/PaymentStatus';
+import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog';
 
 interface ListViewProps {
   projects: ProjectTableRow[];
@@ -101,6 +102,7 @@ export default function ListView({
   const [selectedProjectIndex, setSelectedProjectIndex] = useState(-1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isColumnSettingsOpen, setIsColumnSettingsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Stats for display - props로 받은 projects 데이터 사용
   const stats = useMemo(() => {
@@ -140,6 +142,18 @@ export default function ListView({
   // Handle row click
   const handleRowClick = (project: ProjectTableRow) => {
     onProjectClick(project.no);
+  };
+
+  // Handle delete request - show confirmation modal
+  const handleDeleteRequest = () => {
+    if (selectedItems.length === 0) return;
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle delete confirmation - execute actual deletion
+  const handleDeleteConfirm = () => {
+    handleDeleteSelected();
+    setDeleteDialogOpen(false);
   };
 
   // 컬럼 드래그 앤 드롭 핸들러
@@ -276,7 +290,7 @@ export default function ListView({
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={handleDeleteSelected}
+                onClick={handleDeleteRequest}
                 className="ml-auto"
               >
                 {getProjectPageText.deleteSelected('ko')} ({selectedItems.length})
@@ -484,6 +498,14 @@ export default function ListView({
         customCellRenderer={customCellRenderer}
       />
 
+      {/* Delete Confirmation Dialog */}
+      <DocumentDeleteDialog
+        open={deleteDialogOpen}
+        mode={selectedItems.length === 1 ? 'single' : 'bulk'}
+        targetName={selectedItems.length === 1 ? paginatedData.find(p => p.id === selectedItems[0])?.name : undefined}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+      />
     </>
   );
 }
