@@ -117,6 +117,7 @@ export interface TodoTask {
   isExpanded?: boolean;
   createdAt: Date;
   completedAt?: Date;
+  dueDate?: Date;
 }
 
 export interface TodoListWidgetProps {
