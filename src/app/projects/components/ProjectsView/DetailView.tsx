@@ -1,15 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Typography from '@/components/ui/typography';
 import ProjectDetail from '@/components/projects/ProjectDetail';
 import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
-import { getProjectPageText, getProjectStatusText, getPaymentStatusText } from '@/config/brand';
-import ProjectInfoRenderer from '@/components/projects/shared/ProjectInfoRenderer';
+import { getProjectPageText } from '@/config/brand';
+import ProjectCardCustom from '@/components/projects/shared/ProjectCardCustom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { DeleteDialog } from '@/components/ui/dialogDelete';
-import ProjectProgress from '@/components/ui/project-progress';
 import Pagination from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -207,16 +204,6 @@ export default function DetailView({
     setCurrentPage(page);
   };
 
-  const statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
-    completed: 'status-soft-completed',
-    in_progress: 'status-soft-inprogress',
-    review: 'status-soft-review',
-    planning: 'status-soft-planning',
-    on_hold: 'status-soft-onhold',
-    cancelled: 'status-soft-cancelled'
-  } as const;
-
-  const getStatusVariant = (status: ProjectTableRow['status']) => statusVariantMap[status] || 'secondary';
 
   useEffect(() => {
     // Auto-select first project if none selected
@@ -677,24 +664,13 @@ export default function DetailView({
           </CardHeader>
           <CardContent className="space-y-2">
                 {paginatedProjects.map(project => (
-                  <div
+                  <ProjectCardCustom
                     key={project.id}
+                    project={project}
+                    isSelected={selectedProject?.id === project.id}
                     onClick={() => handleProjectClick(project.id)}
-                    className={`rounded-md border cursor-pointer transition-all ${
-                      selectedProject?.id === project.id
-                        ? 'bg-primary/10 border-primary'
-                        : 'hover:bg-accent'
-                    }`}
-                  >
-                    <ProjectInfoRenderer
-                      project={project}
-                      mode="card"
-                      fields={['name', 'status', 'paymentStatus', 'progress', 'meta']}
-                      layout="vertical"
-                      onProjectClick={() => handleProjectClick(project.id)}
-                      lang="ko"
-                    />
-                  </div>
+                    lang="ko"
+                  />
                 ))}
           </CardContent>
 
