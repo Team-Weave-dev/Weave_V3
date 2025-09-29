@@ -10,6 +10,7 @@ import type {
 } from '@/lib/types/project-table.types';
 import { getProjectStatusText, getPaymentStatusText } from '@/config/brand';
 import { cn } from '@/lib/utils';
+import { Building2, CreditCardIcon, ClockIcon, FileTextIcon } from 'lucide-react';
 
 interface ProjectCardCustomProps {
   project: ProjectTableRow;
@@ -23,7 +24,8 @@ interface ProjectCardCustomProps {
  * 커스텀 프로젝트 카드 컴포넌트
  *
  * 새로운 레이아웃:
- * - 첫 줄: 프로젝트명(번호) + 우측 정렬된 수금상태, 현재단계
+ * - 프로젝트 번호 (회색 텍스트)
+ * - 프로젝트명 + 우측 정렬된 수금상태, 현재단계
  * - 클라이언트
  * - 총 금액
  * - 진행률
@@ -88,14 +90,12 @@ export function ProjectCardCustom({
         className
       )}
     >
-      {/* 첫 번째 줄: 프로젝트명(번호) + 우측 상태들 */}
+      {/* 프로젝트명 + 우측 상태들 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex-1 min-w-0">
-          <h4 className="text-base font-semibold truncate">
+          <h4 className="text-base font-semibold truncate flex items-center gap-2">
+            <FileTextIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             {project.name}
-            <span className="text-sm text-muted-foreground ml-1">
-              ({project.no})
-            </span>
           </h4>
         </div>
         <div className="flex items-center gap-2 ml-3">
@@ -117,7 +117,7 @@ export function ProjectCardCustom({
       {/* 클라이언트 */}
       <div className="mb-2">
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">클라이언트:</span>
+          <Building2 className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">{project.client || '-'}</span>
         </div>
       </div>
@@ -125,15 +125,14 @@ export function ProjectCardCustom({
       {/* 총 금액 */}
       <div className="mb-2">
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">총 금액:</span>
+          <CreditCardIcon className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">{formatAmount(project.totalAmount)}</span>
         </div>
       </div>
 
       {/* 진행률 */}
       <div className="mb-2">
-        <div className="flex items-center space-x-2 mb-1">
-          <span className="text-sm text-muted-foreground">진행률:</span>
+        <div className="flex items-center justify-between mb-1">
           <span className="text-sm font-medium">{project.progress}%</span>
         </div>
         <ProjectProgress
@@ -145,7 +144,7 @@ export function ProjectCardCustom({
       {/* 마감일 */}
       <div>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">마감일:</span>
+          <ClockIcon className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">{formatDate(project.dueDate)}</span>
         </div>
       </div>

@@ -672,7 +672,8 @@ export const uiText = {
           advance: { ko: "선급", en: "Advance" },
           projectContent: { ko: "프로젝트 내용", en: "Project Content" },
           paymentStatus: { ko: "수금상태", en: "Payment Status" },
-          client: { ko: "클라이언트", en: "Client" }
+          client: { ko: "클라이언트", en: "Client" },
+          projectNo: { ko: "프로젝트 번호", en: "Project Number" }
         },
         placeholders: {
           notSet: { ko: "미설정", en: "Not Set" },
@@ -1486,6 +1487,7 @@ export const getProjectPageText = {
   projectDetailsTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.title[lang],
   fieldTotalAmount: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.totalAmount[lang],
   fieldProjectName: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.projectName[lang],
+  fieldProjectNo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.projectNo[lang],
   fieldSettlementMethod: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.settlementMethod[lang],
   fieldAdvance: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.advance[lang],
   fieldProjectContent: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.projectContent[lang],
