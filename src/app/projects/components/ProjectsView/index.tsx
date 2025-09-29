@@ -44,7 +44,39 @@ export default function ProjectsView() {
     }
   }, []);
 
-  const { data: sortedProjectData, updateData } = useProjectTable(rawProjectData, refreshProjectData);
+  // useProjectTable 훅으로부터 모든 필요한 값들 가져오기
+  const {
+    data: sortedProjectData,
+    updateData,
+    // 테이블 설정
+    config,
+    updateConfig,
+    resetColumnConfig,
+    resetFilters,
+    updatePageSize,
+    // 페이지네이션
+    paginatedData,
+    filteredCount,
+    totalCount,
+    totalPages,
+    updatePage,
+    canGoToPreviousPage,
+    canGoToNextPage,
+    goToFirstPage,
+    goToPreviousPage,
+    goToNextPage,
+    goToLastPage,
+    // 삭제 모드
+    isDeleteMode,
+    selectedItems,
+    toggleDeleteMode,
+    handleItemSelect,
+    handleSelectAll,
+    handleDeselectAll,
+    handleDeleteSelected,
+    // 기타
+    availableClients
+  } = useProjectTable(rawProjectData, refreshProjectData);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -263,6 +295,31 @@ export default function ProjectsView() {
           onProjectsChange={refreshProjectData}
           viewMode={viewMode}
           onViewModeChange={handleViewModeChange}
+          // useProjectTable 상태를 ListView에 전달
+          config={config}
+          updateConfig={updateConfig}
+          resetColumnConfig={resetColumnConfig}
+          resetFilters={resetFilters}
+          updatePageSize={updatePageSize}
+          paginatedData={paginatedData}
+          filteredCount={filteredCount}
+          totalCount={totalCount}
+          totalPages={totalPages}
+          updatePage={updatePage}
+          canGoToPreviousPage={canGoToPreviousPage}
+          canGoToNextPage={canGoToNextPage}
+          goToFirstPage={goToFirstPage}
+          goToPreviousPage={goToPreviousPage}
+          goToNextPage={goToNextPage}
+          goToLastPage={goToLastPage}
+          isDeleteMode={isDeleteMode}
+          selectedItems={selectedItems}
+          toggleDeleteMode={toggleDeleteMode}
+          handleItemSelect={handleItemSelect}
+          handleSelectAll={handleSelectAll}
+          handleDeselectAll={handleDeselectAll}
+          handleDeleteSelected={handleDeleteSelected}
+          availableClients={availableClients}
         />
       ) : (
         <DetailView
