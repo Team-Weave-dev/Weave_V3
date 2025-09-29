@@ -98,7 +98,7 @@ const CenteredHero = React.forwardRef<HTMLDivElement, CenteredHeroProps>(
               {badge}
             </Badge>
           )}
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
             {title}
           </h1>
           {subtitle && (
