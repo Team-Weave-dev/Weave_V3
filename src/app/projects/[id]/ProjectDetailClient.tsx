@@ -9,6 +9,7 @@ import { AlertCircleIcon } from 'lucide-react';
 import { getProjectPageText } from '@/config/brand';
 import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
 import { fetchMockProjects, fetchMockProject, removeCustomProject, addCustomProject, updateCustomProject } from '@/lib/mock/projects';
+import { saveGeneratedDocumentsToProject } from '@/lib/mock/documents';
 import { useToast } from '@/hooks/use-toast';
 
 // 편집 가능한 프로젝트 데이터 인터페이스
@@ -98,10 +99,21 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
       // localStorage에 프로젝트 추가
       addCustomProject(projectWithId);
 
+      // 생성된 문서들이 있으면 documents 시스템에 저장
+      if (newProject.generatedDocuments && newProject.generatedDocuments.length > 0) {
+        try {
+          const savedDocuments = saveGeneratedDocumentsToProject(projectWithId.id, newProject.generatedDocuments);
+          console.log(`📄 프로젝트 ${projectWithId.id}에 ${savedDocuments.length}개의 문서를 저장했습니다.`);
+        } catch (error) {
+          console.error('❌ 생성된 문서 저장 중 오류:', error);
+        }
+      }
+
       console.log('✅ 새 프로젝트 생성 성공:', {
         id: projectWithId.id,
         no: projectWithId.no,
-        name: projectWithId.name
+        name: projectWithId.name,
+        documentsCount: newProject.generatedDocuments?.length || 0
       });
 
       // 성공 토스트 표시

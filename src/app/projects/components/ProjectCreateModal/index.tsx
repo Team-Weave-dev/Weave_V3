@@ -118,7 +118,8 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
         hasContract: false,
         hasBilling: false,
         hasDocuments: generatedDocuments.length > 0,
-        generateDocuments: [...new Set(generatedDocuments.map(doc => doc.category))]
+        generateDocuments: [...new Set(generatedDocuments.map(doc => doc.category))],
+        generatedDocuments: generatedDocuments.length > 0 ? [...generatedDocuments] : undefined
       }
 
       console.log('🔥 ProjectCreateModal: onProjectCreate 콜백 호출!', newProject);

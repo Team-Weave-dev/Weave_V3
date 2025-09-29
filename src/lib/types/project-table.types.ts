@@ -34,6 +34,7 @@ export interface ProjectTableRow {
   hasDocuments?: boolean;
   // 문서 생성 관련
   generateDocuments?: import('@/lib/document-generator/templates').ProjectDocumentCategory[];
+  generatedDocuments?: import('@/lib/document-generator/templates').GeneratedDocument[];
   // 세부정보용 추가 필드 (필요시 지연 로딩)
   contract?: ContractInfo;
   estimate?: EstimateInfo;    // 견적서 정보 추가

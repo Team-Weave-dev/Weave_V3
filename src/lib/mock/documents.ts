@@ -1,4 +1,5 @@
 import type { DocumentInfo } from '../types/project-table.types';
+import type { GeneratedDocument } from '../document-generator/templates';
 
 const PROJECT_DOCUMENTS_KEY = 'weave_project_documents';
 
@@ -65,6 +66,42 @@ export function deleteProjectDocumentsByType(projectId: string, documentType: Do
   const updatedDocs = existingDocs.filter(doc => doc.type !== documentType);
   saveProjectDocuments(projectId, updatedDocs);
   return updatedDocs;
+}
+
+// GeneratedDocument를 DocumentInfo로 변환하는 헬퍼 함수
+export function convertGeneratedDocumentToDocumentInfo(generatedDoc: GeneratedDocument): DocumentInfo {
+  // category 매핑: 'others' -> 'etc'
+  const typeMapping: Record<string, DocumentInfo['type']> = {
+    contract: 'contract',
+    invoice: 'invoice',
+    report: 'report',
+    estimate: 'estimate',
+    others: 'etc'
+  };
+
+  return {
+    id: generatedDoc.id,
+    type: typeMapping[generatedDoc.category] || 'etc',
+    name: generatedDoc.title,
+    createdAt: generatedDoc.createdAt.toISOString(),
+    status: 'draft', // 새로 생성된 문서는 초안 상태
+    content: generatedDoc.content,
+    templateId: generatedDoc.templateId,
+    source: 'generated'
+  };
+}
+
+// 프로젝트 생성 시 생성된 문서들을 documents 시스템에 저장
+export function saveGeneratedDocumentsToProject(projectId: string, generatedDocuments: GeneratedDocument[]): DocumentInfo[] {
+  // GeneratedDocument를 DocumentInfo로 변환
+  const documentInfos = generatedDocuments.map(convertGeneratedDocumentToDocumentInfo);
+
+  // 프로젝트에 문서들 저장
+  saveProjectDocuments(projectId, documentInfos);
+
+  console.log(`✅ 프로젝트 ${projectId}에 ${documentInfos.length}개의 생성된 문서를 저장했습니다.`, documentInfos.map(d => d.name));
+
+  return documentInfos;
 }
 
 // 프로젝트의 모든 문서 삭제
