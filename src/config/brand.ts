@@ -1654,8 +1654,8 @@ export const getTaxManagementText = {
       description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프리랜서와 1인 기업을 위한 종합소득세 신고 대행 서비스' : 'Comprehensive income tax filing service for freelancers and solo entrepreneurs'
     },
     corporateTax: {
-      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '법인세 신고' : 'Corporate Tax Filing',
-      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '법인 사업자를 위한 법인세 신고 및 관리 서비스' : 'Corporate tax filing and management service for business entities'
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '원천세 신고' : 'Corporate Tax Filing',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '3.3%, 8.8% 소득신고를 위한 원천세 신고 및 관리 서비스' : 'Corporate tax filing and management service for business entities'
     },
     vat: {
       title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '부가가치세 신고' : 'VAT Filing',
@@ -1781,6 +1781,35 @@ export const getWidgetText = {
       high: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '높음' : 'High',
       medium: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '보통' : 'Medium',
       low: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '낮음' : 'Low'
+    },
+    viewMode: {
+      section: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '섹션' : 'Section',
+      date: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '날짜' : 'Date'
+    },
+    dateGroups: {
+      overdue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지연됨' : 'Overdue',
+      today: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘' : 'Today',
+      tomorrow: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '내일' : 'Tomorrow',
+      thisWeek: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '이번 주' : 'This Week',
+      nextWeek: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '다음 주' : 'Next Week',
+      noDate: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '날짜 미정' : 'No Date'
+    },
+    dateBadges: {
+      daysAgo: (days: number, lang: 'ko' | 'en' = defaultLanguage) => 
+        lang === 'ko' ? `${days}일 전` : `${days}d ago`,
+      daysOverdue: (days: number, lang: 'ko' | 'en' = defaultLanguage) => 
+        lang === 'ko' ? `D+${days}` : `D+${days}`,
+      daysLeft: (days: number, lang: 'ko' | 'en' = defaultLanguage) => 
+        lang === 'ko' ? `D-${days}` : `D-${days}`,
+      daysLater: (days: number, lang: 'ko' | 'en' = defaultLanguage) => 
+        lang === 'ko' ? `${days}일 후` : `${days}d later`,
+      today: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘' : 'Today',
+      tomorrow: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '내일' : 'Tomorrow',
+      yesterday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '어제' : 'Yesterday'
+    },
+    dueDateSettings: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '마감일 설정' : 'Set Due Date',
+      clear: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지우기' : 'Clear'
     }
   },
   chart: {
