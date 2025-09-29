@@ -83,26 +83,26 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
          date1.getDate() === date2.getDate();
 };
 
-const formatDateBadge = (dueDate?: Date): { text: string; variant: "status-soft-error" | "status-soft-warning" | "status-soft-info" | "outline" } => {
+const formatDateBadge = (dueDate?: Date): { text: string; variant: "date-soft-error" | "date-soft-warning" | "date-soft-info" | "outline" } => {
   if (!dueDate) {
     return { text: '미정', variant: 'outline' };
   }
-  
+
   const today = startOfDay(new Date());
   const due = startOfDay(dueDate);
   const diffTime = due.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
+
   if (diffDays < 0) {
-    return { text: `D+${Math.abs(diffDays)}`, variant: 'status-soft-error' };
+    return { text: `D+${Math.abs(diffDays)}`, variant: 'date-soft-error' };
   } else if (diffDays === 0) {
-    return { text: getWidgetText.todoList.dateBadges.today('ko'), variant: 'status-soft-error' };
+    return { text: getWidgetText.todoList.dateBadges.today('ko'), variant: 'date-soft-error' };
   } else if (diffDays === 1) {
-    return { text: getWidgetText.todoList.dateBadges.tomorrow('ko'), variant: 'status-soft-warning' };
+    return { text: getWidgetText.todoList.dateBadges.tomorrow('ko'), variant: 'date-soft-warning' };
   } else if (diffDays <= 3) {
-    return { text: `D-${diffDays}`, variant: 'status-soft-warning' };
+    return { text: `D-${diffDays}`, variant: 'date-soft-warning' };
   } else if (diffDays <= 7) {
-    return { text: `D-${diffDays}`, variant: 'status-soft-info' };
+    return { text: `D-${diffDays}`, variant: 'date-soft-info' };
   } else {
     return { text: `D-${diffDays}`, variant: 'outline' };
   }
