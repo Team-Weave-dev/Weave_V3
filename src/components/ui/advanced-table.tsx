@@ -39,6 +39,8 @@ export interface AdvancedTableProps {
   onItemSelect?: (itemId: string) => void;
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
+  // 커스텀 셀 렌더러
+  customCellRenderer?: (value: any, column: ProjectTableColumn, row: ProjectTableRow) => React.ReactNode;
 }
 
 export function AdvancedTable({
@@ -52,7 +54,8 @@ export function AdvancedTable({
   selectedItems = [],
   onItemSelect,
   onSelectAll,
-  onDeselectAll
+  onDeselectAll,
+  customCellRenderer
 }: AdvancedTableProps) {
   // StrictMode와 호환을 위한 클라이언트 사이드 렌더링 상태
   const [isClient, setIsClient] = useState(false);
@@ -268,7 +271,15 @@ export function AdvancedTable({
     cancelled: 'status-soft-cancelled'
   }
 
-  const formatCellValue = (value: any, column: ProjectTableColumn) => {
+  const formatCellValue = (value: any, column: ProjectTableColumn, row: ProjectTableRow) => {
+    // 커스텀 렌더러가 있으면 우선 사용
+    if (customCellRenderer) {
+      const customResult = customCellRenderer(value, column, row);
+      if (customResult !== undefined) {
+        return customResult;
+      }
+    }
+
     switch (column.type) {
       case 'date':
         return value ? new Date(value).toLocaleDateString('ko-KR') : '-';
@@ -609,7 +620,7 @@ export function AdvancedTable({
                         transform: 'translateZ(0)', // 하드웨어 가속
                       }}
                     >
-                      {formatCellValue(row[column.key], column)}
+                      {formatCellValue(row[column.key], column, row)}
                     </TableCell>
                   ))}
                 </TableRow>

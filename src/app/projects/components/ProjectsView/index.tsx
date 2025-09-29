@@ -101,13 +101,35 @@ export default function ProjectsView() {
     setIsCreateModalOpen(true);
   }, []);
 
+  // WEAVE_num 프로젝트 번호에서 다음 사용 가능한 번호를 찾는 헬퍼 함수
+  const getNextProjectNumber = useCallback((existingProjects: ProjectTableRow[]): string => {
+    // 기존 프로젝트들의 WEAVE_xxx 번호에서 xxx 부분을 추출하여 숫자로 변환
+    const existingNumbers = existingProjects
+      .map(p => p.no)
+      .filter(no => no.startsWith('WEAVE_'))
+      .map(no => {
+        const match = no.match(/^WEAVE_(\d+)$/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(num => !isNaN(num));
+
+    console.log('📊 기존 WEAVE 번호들:', existingNumbers);
+
+    // 최대값 찾기 (없으면 0)
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    const nextNumber = maxNumber + 1;
+
+    console.log('🔢 다음 프로젝트 번호:', `WEAVE_${String(nextNumber).padStart(3, '0')}`);
+    return `WEAVE_${String(nextNumber).padStart(3, '0')}`;
+  }, []);
+
   const handleProjectCreate = useCallback(async (newProject: Omit<ProjectTableRow, 'id' | 'no' | 'modifiedDate'>) => {
     console.log('🚀 ProjectsView: handleProjectCreate 호출됨!', newProject);
     try {
       // 새 프로젝트 ID 및 번호 생성
       const timestamp = Date.now();
       const projectId = `project-${timestamp}`;
-      const projectNo = `WEAVE_${String(rawProjectData.length + 1).padStart(3, '0')}`;
+      const projectNo = getNextProjectNumber(rawProjectData);
 
       const projectWithId: ProjectTableRow = {
         ...newProject,
@@ -152,7 +174,7 @@ export default function ProjectsView() {
     } catch (error) {
       console.error('❌ 프로젝트 생성 실패:', error);
     }
-  }, [rawProjectData, viewMode, searchParams, pathname, router, updateData]);
+  }, [rawProjectData, viewMode, searchParams, pathname, router, updateData, getNextProjectNumber]);
 
   const stats = useMemo(() => {
     if (loading || rawProjectData.length === 0) {
@@ -184,6 +206,31 @@ export default function ProjectsView() {
 
     loadData();
   }, []);
+
+  // 페이지 포커스 시 데이터 새로고침 (localStorage 변경 감지)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('📱 페이지 포커스 감지 - 프로젝트 데이터 새로고침');
+        refreshProjectData();
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('🔄 윈도우 포커스 감지 - 프로젝트 데이터 새로고침');
+      refreshProjectData();
+    };
+
+    // 페이지 visibility 변경 감지 (탭 전환 등)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // 윈도우 포커스 감지 (다른 앱에서 돌아올 때)
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refreshProjectData]);
 
   // Clean Slate: 복잡한 병합 로직 제거됨
 

@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
 import { useProjectTable } from '@/lib/hooks/useProjectTable';
-import type { ProjectTableRow, ProjectStatus } from '@/lib/types/project-table.types';
+import type { ProjectTableRow, ProjectStatus, ProjectTableColumn } from '@/lib/types/project-table.types';
 import { getProjectPageText, getViewModeText } from '@/config/brand';
 import { layout, defaults } from '@/config/constants';
 import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { ProjectStatus as ProjectStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
+import { PaymentStatus } from '@/components/projects/shared/ProjectInfoRenderer/PaymentStatus';
 
 interface ListViewProps {
   projects: ProjectTableRow[];
@@ -90,6 +92,31 @@ export default function ListView({
       avgProgress: Math.round(tableData.reduce((acc, p) => acc + p.progress, 0) / tableData.length || 0)
     };
   }, [tableData, loading]);
+
+  // 공통 컴포넌트를 사용하는 커스텀 셀 렌더러
+  const customCellRenderer = (value: any, column: ProjectTableColumn, row: ProjectTableRow) => {
+    switch (column.type) {
+      case 'status':
+        return (
+          <ProjectStatusComponent
+            project={row}
+            mode="table"
+            lang="ko"
+          />
+        );
+      case 'payment_progress':
+        return (
+          <PaymentStatus
+            project={row}
+            mode="table"
+            lang="ko"
+          />
+        );
+      default:
+        // 다른 타입은 기본 렌더링 사용
+        return undefined;
+    }
+  };
 
   // Handle row click
   const handleRowClick = (project: ProjectTableRow) => {
@@ -435,6 +462,7 @@ export default function ListView({
         onItemSelect={handleItemSelect}
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
+        customCellRenderer={customCellRenderer}
       />
 
     </>
