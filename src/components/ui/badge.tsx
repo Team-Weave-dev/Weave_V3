@@ -21,16 +21,18 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         outline: "text-foreground",
-        'status-soft-success': "bg-green-100 text-green-700 border border-green-200",
-        'status-soft-warning': "bg-yellow-100 text-yellow-700 border border-yellow-200",
-        'status-soft-error': "bg-red-100 text-red-700 border border-red-200",
-        'status-soft-info': "bg-blue-100 text-blue-700 border border-blue-200",
-        'status-soft-planning': "bg-gray-100 text-gray-700 border border-gray-200",
-        'status-soft-inprogress': "bg-blue-100 text-blue-700 border border-blue-200",
-        'status-soft-review': "bg-yellow-100 text-yellow-700 border border-yellow-200",
-        'status-soft-completed': "bg-green-100 text-green-700 border border-green-200",
-        'status-soft-onhold': "bg-orange-100 text-orange-700 border border-orange-200",
-        'status-soft-cancelled': "bg-red-100 text-red-700 border border-red-200",
+        // CSS 변수를 활용한 소프트 상태 색상
+        'status-soft-success': "bg-success/20 text-success border border-success/30",
+        'status-soft-warning': "bg-warning/20 text-warning border border-warning/30",
+        'status-soft-error': "bg-error/20 text-error border border-error/30",
+        'status-soft-info': "bg-info/20 text-info border border-info/30",
+        // CSS 변수를 활용한 프로젝트 상태 색상
+        'status-soft-planning': "bg-project-planning/20 text-project-planning-foreground border border-project-planning/30",
+        'status-soft-inprogress': "bg-project-inprogress/20 text-project-inprogress-foreground border border-project-inprogress/30",
+        'status-soft-review': "bg-project-review/20 text-project-review-foreground border border-project-review/30",
+        'status-soft-completed': "bg-project-complete/20 text-project-complete-foreground border border-project-complete/30",
+        'status-soft-onhold': "bg-project-onhold/20 text-project-onhold-foreground border border-project-onhold/30",
+        'status-soft-cancelled': "bg-project-cancelled/20 text-project-cancelled-foreground border border-project-cancelled/30",
       },
     },
     defaultVariants: {

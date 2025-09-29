@@ -98,7 +98,7 @@ const CenteredHero = React.forwardRef<HTMLDivElement, CenteredHeroProps>(
               {badge}
             </Badge>
           )}
-          <h1 className="text-4xl md:text-7xl font-bold tracking-tight mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
             {title}
           </h1>
           {subtitle && (
@@ -107,7 +107,7 @@ const CenteredHero = React.forwardRef<HTMLDivElement, CenteredHeroProps>(
             </h2>
           )}
           {description && (
-            <p className="text-lg text-muted-foreground mb-10 max-w-3xl mx-auto">
+            <p className="text-sm text-muted-foreground mb-10 max-w-3xl mx-auto">
               {description}
             </p>
           )}
