@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -211,15 +211,58 @@ export default function ProjectDetail({
   const [isDocumentEditing, setIsDocumentEditing] = useState(false);
   const [editingContent, setEditingContent] = useState('');
 
-  useEffect(() => {
-    // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
+  // 🔄 문서 상태를 새로고침하는 함수 (localStorage 변경 감지용)
+  const refreshDocuments = useCallback(() => {
     const storedDocuments = getProjectDocuments(project.no);
     const documentsToUse = storedDocuments.length > 0
       ? storedDocuments
       : (project.documents ?? []).map((doc) => ({ ...doc }));
 
     setDocuments(documentsToUse);
+    console.log(`🔄 [PROJECT DETAIL] 프로젝트 ${project.no} 문서 상태 새로고침: ${documentsToUse.length}개`);
   }, [project.no, project.documents]);
+
+  useEffect(() => {
+    // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
+    refreshDocuments();
+  }, [refreshDocuments]);
+
+  // 🎯 localStorage 변경 감지 및 실시간 동기화
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      // Weave 프로젝트 문서 키 변경 감지
+      if (event.key === 'weave_project_documents' && event.newValue !== event.oldValue) {
+        console.log('🔔 [STORAGE EVENT] localStorage 문서 데이터 변경 감지');
+        refreshDocuments();
+      }
+    };
+
+    const handleCustomRefresh = () => {
+      console.log('🔔 [CUSTOM EVENT] 문서 새로고침 요청 받음');
+      refreshDocuments();
+    };
+
+    // storage 이벤트 리스너 (다른 탭에서의 변경 감지)
+    window.addEventListener('storage', handleStorageChange);
+
+    // 커스텀 이벤트 리스너 (같은 탭 내 변경 감지)
+    window.addEventListener('weave-documents-changed', handleCustomRefresh);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('weave-documents-changed', handleCustomRefresh);
+    };
+  }, [refreshDocuments]);
+
+  // 🚑 캐시 문제 해결을 위한 강제 새로고침 (개발 모드에서 전역 함수로 노출)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      (window as any).refreshProjectDocuments = () => {
+        console.log('🚑 [MANUAL REFRESH] 수동 문서 새로고침 실행');
+        refreshDocuments();
+      };
+    }
+  }, [refreshDocuments]);
 
   const templateAvailability = useMemo(() => ({
     contract: getTemplatesForCategory('contract').length,
