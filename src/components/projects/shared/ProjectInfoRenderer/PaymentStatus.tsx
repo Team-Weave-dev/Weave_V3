@@ -65,8 +65,16 @@ export function PaymentStatus({
     );
   }
 
+  // 상태별 배지 색상 매핑 (ProjectCardCustom과 동일한 규칙)
+  const paymentVariantMap: Record<PaymentStatusType, BadgeProps['variant']> = {
+    not_started: 'secondary',
+    advance_completed: 'status-soft-inprogress',
+    interim_completed: 'status-soft-warning',
+    final_completed: 'status-soft-completed'
+  };
+
   // 읽기 전용 모드일 때 Badge 컴포넌트 표시
-  const badgeVariant: BadgeProps['variant'] = paymentStatus === 'not_started' ? 'secondary' : 'default';
+  const badgeVariant: BadgeProps['variant'] = paymentVariantMap[paymentStatus];
 
   return (
     <Badge

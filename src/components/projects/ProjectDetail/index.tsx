@@ -74,7 +74,12 @@ import {
   PlusIcon,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  Building2,
+  Hash,
+  Calculator,
+  BarChart3,
+  Flag
 } from 'lucide-react';
 
 interface ProjectDetailProps {
@@ -650,13 +655,13 @@ export default function ProjectDetail({
       <div className="mb-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h1 className={mode === 'full' ? 'text-2xl font-semibold mb-2' : 'text-lg font-semibold mb-2'}>
+            <h1 className={mode === 'full' ? 'text-2xl font-semibold mb-2 flex items-center gap-2' : 'text-lg font-semibold mb-2 flex items-center gap-2'}>
+              <FileTextIcon className="h-5 w-5" />
               {project.name}
             </h1>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{getProjectPageText.projectNo(lang)}: {project.no}</span>
-              <span>•</span>
-              <span>{getProjectPageText.client(lang)}: {project.client}</span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Building2 className="h-4 w-4" />
+              <span>{project.client}</span>
             </div>
           </div>
           <div className="flex gap-2">
@@ -777,7 +782,8 @@ export default function ProjectDetail({
                   <div className="space-y-4">
                     {/* 프로젝트명 */}
                     <div>
-                      <Label className="text-sm text-muted-foreground">
+                      <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2 mb-1">
+                        <FileTextIcon className="h-4 w-4" />
                         {getProjectPageText.fieldProjectName(lang)}
                       </Label>
                       {isEditing ? (
@@ -787,7 +793,7 @@ export default function ProjectDetail({
                           className={editState?.errors.name ? 'border-destructive' : ''}
                         />
                       ) : (
-                        <span className="text-sm font-medium block">
+                        <span className="text-sm block">
                           {project.name}
                         </span>
                       )}
@@ -798,7 +804,8 @@ export default function ProjectDetail({
 
                     {/* 클라이언트 */}
                     <div>
-                      <Label className="text-sm text-muted-foreground">
+                      <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2 mb-1">
+                        <Building2 className="h-4 w-4" />
                         {getProjectPageText.client(lang)}
                       </Label>
                       {isEditing ? (
@@ -808,7 +815,7 @@ export default function ProjectDetail({
                           className={editState?.errors.client ? 'border-destructive' : ''}
                         />
                       ) : (
-                        <span className="text-sm font-medium block">
+                        <span className="text-sm block">
                           {project.client}
                         </span>
                       )}
@@ -817,9 +824,21 @@ export default function ProjectDetail({
                       )}
                     </div>
 
+                    {/* 프로젝트 번호 */}
+                    <div>
+                      <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2 mb-1">
+                        <Hash className="h-4 w-4" />
+                        {getProjectPageText.fieldProjectNo(lang)}
+                      </Label>
+                      <span className="text-sm block">
+                        {project.no}
+                      </span>
+                    </div>
+
                     {/* 총 계약금액 */}
                     <div>
-                      <Label className="text-sm text-muted-foreground">
+                      <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2 mb-1">
+                        <CreditCardIcon className="h-4 w-4" />
                         {getProjectPageText.fieldTotalAmount(lang)}
                       </Label>
                       {isEditing ? (
@@ -845,7 +864,7 @@ export default function ProjectDetail({
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm font-medium block">
+                        <span className="text-sm block">
                           {project.totalAmount
                             ? `₩${project.totalAmount.toLocaleString('ko-KR')}`
                             : getProjectPageText.placeholderNotSet(lang)
@@ -859,7 +878,8 @@ export default function ProjectDetail({
 
                     {/* 정산방식 */}
                     <div>
-                      <Label className="text-sm text-muted-foreground">
+                      <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2 mb-1">
+                        <Calculator className="h-4 w-4" />
                         {getProjectPageText.fieldSettlementMethod(lang)}
                       </Label>
                       {isEditing ? (
@@ -886,7 +906,7 @@ export default function ProjectDetail({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <span className="text-sm font-medium block">
+                        <span className="text-sm block">
                           {getSettlementMethodText[settlementMethod](lang)}
                         </span>
                       )}
@@ -897,11 +917,11 @@ export default function ProjectDetail({
                   <div className="space-y-4">
                     {/* 등록일 */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4" />
                         {getProjectPageText.registered(lang)}
                       </span>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm">
                         {new Date(project.registrationDate).toLocaleDateString('ko-KR')}
                       </span>
                     </div>
@@ -909,11 +929,11 @@ export default function ProjectDetail({
                     {/* 마감일 - 편집 상태가 아닐 때만 우측에 표시 */}
                     {!isEditing && (
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
                           <ClockIcon className="h-4 w-4" />
                           {getProjectPageText.dueDate(lang)}
                         </span>
-                        <span className="text-sm font-medium">
+                        <span className="text-sm">
                           {new Date(project.dueDate).toLocaleDateString('ko-KR')}
                         </span>
                       </div>
@@ -921,11 +941,11 @@ export default function ProjectDetail({
 
                     {/* 수정일 */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground flex items-center gap-2">
-                        <CheckCircleIcon className="h-4 w-4" />
+                      <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                        <Edit3Icon className="h-4 w-4" />
                         {getProjectPageText.modified(lang)}
                       </span>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm">
                         {new Date(project.modifiedDate).toLocaleDateString('ko-KR')}
                       </span>
                     </div>
@@ -937,7 +957,7 @@ export default function ProjectDetail({
                   {/* 작업 진행률 */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm text-muted-foreground">
+                      <Label className="text-sm text-muted-foreground font-medium">
                         {getProjectPageText.taskProgress(lang)}
                       </Label>
                       {isEditing ? (
@@ -985,7 +1005,7 @@ export default function ProjectDetail({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* 현재 단계 */}
                     <div>
-                      <Label className="text-sm text-muted-foreground">
+                      <Label className="text-sm text-muted-foreground font-medium">
                         {getProjectPageText.currentStage(lang)}
                       </Label>
                       {isEditing ? (
@@ -1030,7 +1050,7 @@ export default function ProjectDetail({
 
                     {/* 수금상태 */}
                     <div>
-                      <Label className="text-sm text-muted-foreground">
+                      <Label className="text-sm text-muted-foreground font-medium">
                         {getProjectPageText.paymentStatus(lang)}
                       </Label>
                       {isEditing ? (
@@ -1070,7 +1090,7 @@ export default function ProjectDetail({
 
                   {/* 프로젝트 내용 */}
                   <div>
-                    <Label className="text-sm text-muted-foreground">
+                    <Label className="text-sm text-muted-foreground font-medium">
                       {getProjectPageText.fieldProjectContent(lang)}
                     </Label>
                     {isEditing ? (
