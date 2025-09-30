@@ -88,7 +88,7 @@ export default function ProjectDocumentGeneratorModal({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl border-2 border-primary">
         <DialogHeader className="space-y-2">
           <DialogTitle>{categoryLabelMap[category]} 템플릿 선택</DialogTitle>
           <DialogDescription>
@@ -149,7 +149,7 @@ export default function ProjectDocumentGeneratorModal({
         }
       }}
     >
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl border-2 border-primary">
         <DialogHeader>
           <DialogTitle>{previewPayload?.name ?? '문서 미리보기'}</DialogTitle>
           <DialogDescription>
