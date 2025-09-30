@@ -1060,7 +1060,7 @@ export function ImprovedDashboard({
       case 'calendar':
         return <CalendarWidget
           title={widget.title}
-          events={widget.data} // undefined일 경우 자체적으로 로컴스토리지에서 로드
+          events={widget.data} // undefined일 경우 자체적으로 로컬스토리지에서 로드
           showToday={true}
           gridSize={{ w: widget.position.w, h: widget.position.h }}
         />;

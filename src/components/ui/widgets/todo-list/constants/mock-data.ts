@@ -1,10 +1,15 @@
 import type { TodoTask, TodoSection, TodoPriority } from '../types';
 import { addDays } from '../utils/date';
 
-// 초기 목데이터 생성 함수
+// 초기 목데이터 생성 함수 (Phase 5 테스트를 위해 임시로 비활성화)
 export const generateInitialData = (): { tasks: TodoTask[], sections: TodoSection[] } => {
-  console.log('generateInitialData called');
-  
+  console.log('generateInitialData called - Phase 5: 빈 상태 테스트');
+
+  // Phase 5 E2E 테스트: 빈 상태 테스트를 위해 빈 배열 반환
+  return { tasks: [], sections: [] };
+
+  // 원본 목데이터 (테스트 후 복원 필요)
+  /*
   const sections: TodoSection[] = [
     { id: 'default', name: '📌 미분류', order: 0, isExpanded: true },
     { id: 'urgent', name: '🔥 긴급', order: 1, isExpanded: true },
@@ -579,6 +584,7 @@ export const generateInitialData = (): { tasks: TodoTask[], sections: TodoSectio
   console.log('generateInitialData - tasks created:', tasks.length, 'tasks');
   console.log('generateInitialData - sections created:', sections.length, 'sections');
   console.log('generateInitialData - full tasks:', tasks);
-  
+
   return { tasks, sections };
+  */
 };
