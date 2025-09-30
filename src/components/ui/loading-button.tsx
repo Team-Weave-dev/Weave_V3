@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { getButtonText } from "@/config/brand"
+import { getButtonText, getLoadingText } from "@/config/brand"
 import { defaults } from "@/config/constants"
 
 const loadingButtonVariants = cva("", {
@@ -44,7 +44,7 @@ const LoadingButton = React.forwardRef<HTMLButtonElement, LoadingButtonProps>(
     ...props
   }, ref) => {
     // 기본 로딩 텍스트는 중앙화 시스템에서 가져옴
-    const defaultLoadingText = getButtonText.loading()
+    const defaultLoadingText = getLoadingText.pleaseWait()
     const displayText = loadingText || defaultLoadingText
 
     // 로딩 중이거나 disabled일 때 버튼 비활성화

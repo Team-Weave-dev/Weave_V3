@@ -541,95 +541,52 @@ export function AdvancedTable({
             </TableHeader>
           )}
           <TableBody>
-            {loading ? (
-              // 로딩 스켈레톤 행들
-              Array.from({ length: 8 }, (_, index) => (
-                <TableRow key={`loading-${index}`}>
-                  {visibleColumns.map((column) => (
-                    <TableCell
-                      key={`loading-${column.id}-${index}`}
-                      data-column-id={column.id}
-                      data-column-key={column.key}
-                      className={`transition-all duration-200 ${draggedColumnId === column.id
-                          ? 'opacity-40 bg-primary/10 border-x-2 border-dashed border-primary'
-                          : ''
-                        }`}
-                      style={{
-                        width: getColumnWidth(column),
-                        minWidth: getColumnWidth(column),
-                        maxWidth: getColumnWidth(column),
-                        willChange: resizingColumnId === column.id ? 'width' : 'auto',
-                        transform: 'translateZ(0)', // 하드웨어 가속
-                      }}
-                    >
-                      <div className="animate-pulse">
-                        {(column.type === 'progress' || column.type === 'payment_progress') ? (
-                          <div className="w-full max-w-[100px] min-w-[80px]">
-                            <div className="h-2 md:h-2.5 bg-gray-200 rounded-full mb-1"></div>
-                            <div className="text-center">
-                              <div className="h-2 bg-gray-200 rounded w-6 mx-auto"></div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="h-4 bg-gray-200 rounded" style={{
-                            width: column.type === 'status' ? '60px' :
-                              column.type === 'date' ? '80px' :
-                                column.type === 'currency' ? '90px' : '120px'
-                          }}></div>
-                        )}
-                      </div>
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              data.map((row, index) => (
-                <TableRow
-                  key={row.id}
-                  onClick={() => !isDeleteMode && onRowClick?.(row)}
-                  className={`${isDeleteMode ? "" : "cursor-pointer"} ${selectedProjectIndex === index ? "bg-primary/10 border-l-4 border-primary" : ""
-                    }`}
-                >
-                  {/* 삭제 모드일 때 체크박스 */}
-                  {isDeleteMode && (
-                    <TableCell
-                      className="w-12 px-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Checkbox
-                        checked={selectedItems.includes(row.id)}
-                        onCheckedChange={() => onItemSelect?.(row.id)}
-                        aria-label={`${row.name} 선택`}
-                      />
-                    </TableCell>
-                  )}
-                  {visibleColumns.map((column) => (
-                    <TableCell
-                      key={column.id}
-                      data-column-id={column.id}
-                      data-column-key={column.key}
-                      className={`transition-all duration-200 ${draggedColumnId === column.id
-                          ? 'opacity-40 bg-primary/10 border-x-2 border-dashed border-primary'
-                          : ''
-                        }`}
-                      style={{
-                        width: getColumnWidth(column),
-                        minWidth: getColumnWidth(column),
-                        maxWidth: getColumnWidth(column),
-                        willChange: resizingColumnId === column.id ? 'width' : 'auto',
-                        transform: 'translateZ(0)', // 하드웨어 가속
-                      }}
-                    >
-                      {formatCellValue(row[column.key], column, row)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
+            {data.map((row, index) => (
+              <TableRow
+                key={row.id}
+                onClick={() => !isDeleteMode && onRowClick?.(row)}
+                className={`${isDeleteMode ? "" : "cursor-pointer"} ${selectedProjectIndex === index ? "bg-primary/10 border-l-4 border-primary" : ""
+                  }`}
+              >
+                {/* 삭제 모드일 때 체크박스 */}
+                {isDeleteMode && (
+                  <TableCell
+                    className="w-12 px-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={selectedItems.includes(row.id)}
+                      onCheckedChange={() => onItemSelect?.(row.id)}
+                      aria-label={`${row.name} 선택`}
+                    />
+                  </TableCell>
+                )}
+                {visibleColumns.map((column) => (
+                  <TableCell
+                    key={column.id}
+                    data-column-id={column.id}
+                    data-column-key={column.key}
+                    className={`transition-all duration-200 ${draggedColumnId === column.id
+                        ? 'opacity-40 bg-primary/10 border-x-2 border-dashed border-primary'
+                        : ''
+                      }`}
+                    style={{
+                      width: getColumnWidth(column),
+                      minWidth: getColumnWidth(column),
+                      maxWidth: getColumnWidth(column),
+                      willChange: resizingColumnId === column.id ? 'width' : 'auto',
+                      transform: 'translateZ(0)', // 하드웨어 가속
+                    }}
+                  >
+                    {formatCellValue(row[column.key], column, row)}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
 
-        {!loading && data.length === 0 && (
+        {data.length === 0 && (
           <div className="text-center py-12">
             <Typography variant="body1" color="secondary">
               검색 결과가 없습니다.
@@ -639,7 +596,7 @@ export function AdvancedTable({
       </Card>
 
       {/* 페이지네이션 */}
-      {!loading && data.length > 0 && (
+      {data.length > 0 && (
         <Pagination
           currentPage={config.pagination.page}
           totalPages={Math.ceil(config.pagination.total / config.pagination.pageSize)}

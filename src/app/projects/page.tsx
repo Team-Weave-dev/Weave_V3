@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
 import ProjectsView from './components/ProjectsView';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { getLoadingText } from '@/config/brand';
 
 /**
  * Projects page - Main routing entry point
@@ -10,7 +12,11 @@ import ProjectsView from './components/ProjectsView';
  */
 export default function ProjectsPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto p-6">Loading...</div>}>
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner text={getLoadingText.data('ko')} />
+      </div>
+    }>
       <ProjectsView />
     </Suspense>
   );

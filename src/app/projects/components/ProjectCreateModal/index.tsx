@@ -17,7 +17,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
-import { uiText, getSettlementMethodText, getPaymentStatusText } from '@/config/brand'
+import { uiText, getSettlementMethodText, getPaymentStatusText, getLoadingText } from '@/config/brand'
 import type { ProjectTableRow, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types'
 import type { ProjectDocumentCategory, GeneratedDocument } from '@/lib/document-generator/templates'
 import { Badge } from '@/components/ui/badge'
@@ -611,7 +611,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
             {isLoading ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-foreground" />
-                {uiText.buttons.loading.ko}
+                {getLoadingText.pleaseWait('ko')}
               </>
             ) : (
               <>

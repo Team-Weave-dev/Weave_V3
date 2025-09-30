@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ProjectDetail from '@/components/projects/ProjectDetail';
 import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
-import { getProjectPageText } from '@/config/brand';
+import { getProjectPageText, getLoadingText } from '@/config/brand';
 import ProjectCardCustom from '@/components/projects/shared/ProjectCardCustom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DeleteDialog } from '@/components/ui/dialogDelete';
@@ -17,6 +17,7 @@ import { getViewModeText } from '@/config/brand';
 import { layout } from '@/config/constants';
 import { removeCustomProject, updateCustomProject } from '@/lib/mock/projects';
 import { useToast } from '@/hooks/use-toast';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 // 편집 가능한 프로젝트 데이터 인터페이스
 interface EditableProjectData {
@@ -483,30 +484,11 @@ export default function DetailView({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left panel skeleton */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <div className="h-6 bg-muted rounded w-1/2 animate-pulse"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="p-3 border rounded animate-pulse">
-                    <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-muted rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right panel skeleton */}
-        <div className="lg:col-span-2">
-          <div className="h-96 bg-muted rounded animate-pulse"></div>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner
+          size="md"
+          text={getLoadingText.data('ko')}
+        />
       </div>
     );
   }

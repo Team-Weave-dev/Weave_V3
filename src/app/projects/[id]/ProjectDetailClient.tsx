@@ -6,7 +6,8 @@ import ProjectDetail from '@/components/projects/ProjectDetail';
 import { DeleteDialog } from '@/components/ui/dialogDelete';
 import ProjectCreateModal from '@/app/projects/components/ProjectCreateModal';
 import { AlertCircleIcon } from 'lucide-react';
-import { getProjectPageText } from '@/config/brand';
+import { getProjectPageText, getLoadingText } from '@/config/brand';
+import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner';
 import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
 import { fetchMockProjects, fetchMockProject, removeCustomProject, addCustomProject, updateCustomProject } from '@/lib/mock/projects';
 import { addProjectDocument, getProjectDocuments } from '@/lib/mock/documents';
@@ -575,22 +576,7 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
 
   // 로딩 상태
   if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse">
-          <div className="mb-6">
-            <div className="h-8 bg-muted rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="h-32 bg-muted rounded"></div>
-            <div className="h-32 bg-muted rounded"></div>
-          </div>
-          <div className="h-10 bg-muted rounded mb-4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    );
+    return <FullPageLoadingSpinner text={getLoadingText.content('ko')} />;
   }
 
   // 에러 상태

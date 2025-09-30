@@ -69,10 +69,6 @@ export const uiText = {
       ko: "컴포넌트 보기",
       en: "View Components"
     },
-    loading: {
-      ko: "로딩 중...",
-      en: "Loading..."
-    },
     submit: {
       ko: "제출",
       en: "Submit"
@@ -1141,7 +1137,6 @@ export const getText = (path: string, lang: 'ko' | 'en' = defaultLanguage) => {
 // 버튼 텍스트 헬퍼들
 export const getButtonText = {
   viewComponents: (lang: 'ko' | 'en' = defaultLanguage) => uiText.buttons.viewComponents[lang],
-  loading: (lang: 'ko' | 'en' = defaultLanguage) => uiText.buttons.loading[lang],
   submit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.buttons.submit[lang],
   save: (lang: 'ko' | 'en' = defaultLanguage) => uiText.buttons.save[lang],
   cancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.buttons.cancel[lang],
@@ -2047,4 +2042,22 @@ export const getPaymentStatusText = {
   advance_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.advance_completed[lang],
   interim_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.interim_completed[lang],
   final_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.final_completed[lang]
+}
+
+// 로딩 헬퍼 함수
+export const getLoadingText = {
+  // 기본 로딩 메시지
+  page: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '페이지를 불러오는 중...' : 'Loading page...',
+  content: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '콘텐츠를 불러오는 중...' : 'Loading content...',
+  data: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '데이터를 불러오는 중...' : 'Loading data...',
+  component: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '컴포넌트를 불러오는 중...' : 'Loading component...',
+  pleaseWait: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '잠시만 기다려주세요...' : 'Please wait...',
+
+  // 접근성 레이블
+  aria: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '로딩 중' : 'Loading',
+
+  // 프로젝트 관련 로딩 (중앙화된 텍스트 참조)
+  contract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.contractLoading[lang],
+  billing: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.billingLoading[lang],
+  documents: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.documentsLoading[lang],
 }

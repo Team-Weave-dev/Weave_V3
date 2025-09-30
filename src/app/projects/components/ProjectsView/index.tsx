@@ -9,11 +9,13 @@ import DetailView from './DetailView';
 import ProjectCreateModal from '../ProjectCreateModal';
 import type { ProjectTableRow } from '@/lib/types/project-table.types';
 import { useProjectTable } from '@/lib/hooks/useProjectTable';
-import { getButtonText } from '@/config/brand';
+import { getButtonText, getLoadingText } from '@/config/brand';
+import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner';
 import { fetchMockProjects, addCustomProject } from '@/lib/mock/projects';
 import { addProjectDocument } from '@/lib/mock/documents';
 import type { DocumentInfo } from '@/lib/types/project-table.types';
 import type { GeneratedDocument, ProjectDocumentCategory } from '@/lib/document-generator/templates';
+import { withMinimumDuration } from '@/lib/utils';
 
 export default function ProjectsView() {
   const router = useRouter();
@@ -28,14 +30,21 @@ export default function ProjectsView() {
   const [rawProjectData, setRawProjectData] = useState<ProjectTableRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // 프로젝트 데이터 새로고침 함수
   const refreshProjectData = useCallback(async () => {
     console.log('🔄 ProjectsView: 프로젝트 데이터 새로고침 시작');
     setLoading(true);
 
+    // 다음 렌더링 사이클까지 대기 (loading UI가 실제로 표시되도록)
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    }));
+
     try {
-      const data = await fetchMockProjects();
+      // 최소 300ms 로딩 시간 보장하여 UI 깜빡임 방지
+      const data = await withMinimumDuration(fetchMockProjects(), 300);
       setRawProjectData(data);
       console.log('✅ ProjectsView: 프로젝트 데이터 새로고침 완료', data.length, '개 프로젝트');
 
@@ -111,7 +120,14 @@ export default function ProjectsView() {
     }
   }, [isInitialized, viewMode, selectedProjectId, sortedProjectData, loading, pathname, router, searchParams]);
 
-  const handleViewModeChange = useCallback((newMode: ViewMode) => {
+  const handleViewModeChange = useCallback(async (newMode: ViewMode) => {
+    // 전환 애니메이션 시작
+    setIsTransitioning(true);
+
+    // 150ms 페이드아웃 대기
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    // 뷰 모드 변경
     setViewMode(newMode);
     localStorage.setItem('preferredViewMode', newMode);
 
@@ -125,6 +141,10 @@ export default function ProjectsView() {
     }
 
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
+    // 페이드인 대기 후 전환 종료
+    await new Promise(resolve => setTimeout(resolve, 50));
+    setIsTransitioning(false);
   }, [pathname, router, searchParams, sortedProjectData]);
 
   const handleProjectSelect = useCallback((projectNo: string) => {
@@ -267,8 +287,8 @@ export default function ProjectsView() {
     const loadData = async () => {
       setLoading(true);
 
-      // 중앙화된 mock 데이터 사용
-      const data = await fetchMockProjects();
+      // 중앙화된 mock 데이터 사용 + 최소 로딩 시간 보장
+      const data = await withMinimumDuration(fetchMockProjects(), 300);
       setRawProjectData(data);
       setLoading(false);
     };
@@ -303,14 +323,9 @@ export default function ProjectsView() {
 
   // Clean Slate: 복잡한 병합 로직 제거됨
 
-  if (!isInitialized) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground">{getButtonText.loading('ko')}</div>
-        </div>
-      </div>
-    );
+  // 초기화 중이거나 로딩 중일 때 전체 페이지 스피너 표시
+  if (!isInitialized || loading) {
+    return <FullPageLoadingSpinner text={getLoadingText.data('ko')} />;
   }
 
   return (
@@ -320,55 +335,63 @@ export default function ProjectsView() {
         onViewModeChange={handleViewModeChange}
         onCreateProject={handleCreateProject}
         stats={stats}
-        loading={loading}
+        loading={false}
       />
 
-      {viewMode === 'list' ? (
-        <ListView
-          projects={sortedProjectData}
-          onProjectClick={handleProjectSelect}
-          loading={loading}
-          showColumnSettings={true}
-          onProjectsChange={refreshProjectData}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-          // useProjectTable 상태를 ListView에 전달
-          config={config}
-          updateConfig={updateConfig}
-          resetColumnConfig={resetColumnConfig}
-          resetFilters={resetFilters}
-          updatePageSize={updatePageSize}
-          paginatedData={paginatedData}
-          filteredCount={filteredCount}
-          totalCount={totalCount}
-          totalPages={totalPages}
-          updatePage={updatePage}
-          canGoToPreviousPage={canGoToPreviousPage}
-          canGoToNextPage={canGoToNextPage}
-          goToFirstPage={goToFirstPage}
-          goToPreviousPage={goToPreviousPage}
-          goToNextPage={goToNextPage}
-          goToLastPage={goToLastPage}
-          isDeleteMode={isDeleteMode}
-          selectedItems={selectedItems}
-          toggleDeleteMode={toggleDeleteMode}
-          handleItemSelect={handleItemSelect}
-          handleSelectAll={handleSelectAll}
-          handleDeselectAll={handleDeselectAll}
-          handleDeleteSelected={handleDeleteSelected}
-          availableClients={availableClients}
-        />
-      ) : (
-        <DetailView
-          projects={sortedProjectData}
-          selectedProjectId={selectedProjectId}
-          loading={loading}
-          showColumnSettings={false}
-          onProjectsChange={refreshProjectData}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
-        />
-      )}
+      <div
+        className="transition-all duration-200 ease-in-out"
+        style={{
+          opacity: isTransitioning ? 0.5 : 1,
+          transform: isTransitioning ? 'translateY(4px)' : 'translateY(0)'
+        }}
+      >
+        {viewMode === 'list' ? (
+          <ListView
+            projects={sortedProjectData}
+            onProjectClick={handleProjectSelect}
+            loading={false}
+            showColumnSettings={true}
+            onProjectsChange={refreshProjectData}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            // useProjectTable 상태를 ListView에 전달
+            config={config}
+            updateConfig={updateConfig}
+            resetColumnConfig={resetColumnConfig}
+            resetFilters={resetFilters}
+            updatePageSize={updatePageSize}
+            paginatedData={paginatedData}
+            filteredCount={filteredCount}
+            totalCount={totalCount}
+            totalPages={totalPages}
+            updatePage={updatePage}
+            canGoToPreviousPage={canGoToPreviousPage}
+            canGoToNextPage={canGoToNextPage}
+            goToFirstPage={goToFirstPage}
+            goToPreviousPage={goToPreviousPage}
+            goToNextPage={goToNextPage}
+            goToLastPage={goToLastPage}
+            isDeleteMode={isDeleteMode}
+            selectedItems={selectedItems}
+            toggleDeleteMode={toggleDeleteMode}
+            handleItemSelect={handleItemSelect}
+            handleSelectAll={handleSelectAll}
+            handleDeselectAll={handleDeselectAll}
+            handleDeleteSelected={handleDeleteSelected}
+            availableClients={availableClients}
+          />
+        ) : (
+          <DetailView
+            projects={sortedProjectData}
+            selectedProjectId={selectedProjectId}
+            loading={false}
+            showColumnSettings={false}
+            onProjectsChange={refreshProjectData}
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+          />
+        )}
+      </div>
 
       {/* 프로젝트 생성 모달 */}
       <ProjectCreateModal
