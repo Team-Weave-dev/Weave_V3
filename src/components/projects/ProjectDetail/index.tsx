@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -180,7 +180,7 @@ export default function ProjectDetail({
   const [taxSubTab, setTaxSubTab] = useState('taxInvoice');
   const [documents, setDocuments] = useState<DocumentInfo[]>(() => {
     // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
-    const storedDocuments = getProjectDocuments(project.id);
+    const storedDocuments = getProjectDocuments(project.no);
     return storedDocuments.length > 0
       ? storedDocuments
       : (project.documents ?? []).map((doc) => ({ ...doc }));
@@ -211,15 +211,74 @@ export default function ProjectDetail({
   const [isDocumentEditing, setIsDocumentEditing] = useState(false);
   const [editingContent, setEditingContent] = useState('');
 
-  useEffect(() => {
-    // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
-    const storedDocuments = getProjectDocuments(project.id);
+  // 🔄 문서 상태를 새로고침하는 함수 (localStorage 변경 감지용)
+  const refreshDocuments = useCallback(() => {
+    const storedDocuments = getProjectDocuments(project.no);
     const documentsToUse = storedDocuments.length > 0
       ? storedDocuments
       : (project.documents ?? []).map((doc) => ({ ...doc }));
 
     setDocuments(documentsToUse);
-  }, [project.id, project.documents]);
+    console.log(`🔄 [PROJECT DETAIL] 프로젝트 ${project.no} 문서 상태 새로고침: ${documentsToUse.length}개`);
+  }, [project.no, project.documents]);
+
+  useEffect(() => {
+    // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
+    refreshDocuments();
+  }, [refreshDocuments]);
+
+  // 🎯 localStorage 변경 감지 및 실시간 동기화
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      // Weave 프로젝트 문서 키 변경 감지
+      if (event.key === 'weave_project_documents' && event.newValue !== event.oldValue) {
+        console.log('🔔 [STORAGE EVENT] localStorage 문서 데이터 변경 감지');
+        refreshDocuments();
+      }
+    };
+
+    const handleCustomRefresh = () => {
+      console.log('🔔 [CUSTOM EVENT] 문서 새로고침 요청 받음');
+      refreshDocuments();
+    };
+
+    // 🚀 강제 새로고침 이벤트 핸들러 (프로젝트 생성 모달에서 발생)
+    const handleForceRefresh = (event: any) => {
+      const { projectNo, timestamp, documentCount } = event.detail || {};
+      console.log('🔔 [FORCE REFRESH EVENT] 강제 문서 새로고침 이벤트 받음:', { projectNo, timestamp, documentCount });
+
+      // 현재 프로젝트와 일치하는 경우에만 새로고침
+      if (projectNo === project.no) {
+        console.log(`🎯 현재 프로젝트(${project.no})와 일치 - 문서 새로고침 실행`);
+        refreshDocuments();
+      }
+    };
+
+    // storage 이벤트 리스너 (다른 탭에서의 변경 감지)
+    window.addEventListener('storage', handleStorageChange);
+
+    // 커스텀 이벤트 리스너 (같은 탭 내 변경 감지)
+    window.addEventListener('weave-documents-changed', handleCustomRefresh);
+
+    // 강제 새로고침 이벤트 리스너 (프로젝트 생성 모달에서 페이지 이동 시)
+    window.addEventListener('weave-force-documents-refresh', handleForceRefresh);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('weave-documents-changed', handleCustomRefresh);
+      window.removeEventListener('weave-force-documents-refresh', handleForceRefresh);
+    };
+  }, [refreshDocuments]);
+
+  // 🚑 캐시 문제 해결을 위한 강제 새로고침 (개발 모드에서 전역 함수로 노출)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      (window as any).refreshProjectDocuments = () => {
+        console.log('🚑 [MANUAL REFRESH] 수동 문서 새로고침 실행');
+        refreshDocuments();
+      };
+    }
+  }, [refreshDocuments]);
 
   const templateAvailability = useMemo(() => ({
     contract: getTemplatesForCategory('contract').length,
@@ -438,7 +497,7 @@ export default function ProjectDetail({
     const { mode, targetDoc, targetType } = deleteDialogState;
 
     if (mode === 'single' && targetDoc) {
-      const updatedDocs = deleteProjectDocument(project.id, targetDoc.id);
+      const updatedDocs = deleteProjectDocument(project.no, targetDoc.id);
       setDocuments(updatedDocs);
       toast({
         title: '문서를 삭제했습니다',
@@ -452,7 +511,7 @@ export default function ProjectDetail({
           description: '현재 탭에는 삭제할 문서가 존재하지 않습니다.'
         });
       } else {
-        const updatedDocs = deleteProjectDocumentsByType(project.id, targetType);
+        const updatedDocs = deleteProjectDocumentsByType(project.no, targetType);
         setDocuments(updatedDocs);
         toast({
           title: '문서를 삭제했습니다',
@@ -628,7 +687,7 @@ export default function ProjectDetail({
       source: 'generated'
     };
 
-    const updatedDocs = addProjectDocument(project.id, newDocument);
+    const updatedDocs = addProjectDocument(project.no, newDocument);
     setDocuments(updatedDocs);
     setGeneratorState((prev) => ({ ...prev, open: false }));
     setMainTab('documentManagement');
@@ -1430,7 +1489,7 @@ export default function ProjectDetail({
                       createdAt: new Date().toISOString(),
                       status: 'draft'
                     };
-                    const updatedDocs = updateProjectDocument(project.id, previewDocument.id, {
+                    const updatedDocs = updateProjectDocument(project.no, previewDocument.id, {
                       content: editingContent,
                       createdAt: new Date().toISOString(),
                       status: 'draft'

@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
-import { useProjectTable } from '@/lib/hooks/useProjectTable';
-import type { ProjectTableRow, ProjectStatus, ProjectTableColumn } from '@/lib/types/project-table.types';
+import type { ProjectTableRow, ProjectStatus, ProjectTableColumn, ProjectTableConfig } from '@/lib/types/project-table.types';
 import { getProjectPageText, getViewModeText } from '@/config/brand';
 import { layout, defaults } from '@/config/constants';
 import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ProjectStatus as ProjectStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
 import { PaymentStatus } from '@/components/projects/shared/ProjectInfoRenderer/PaymentStatus';
+import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog';
 
 interface ListViewProps {
   projects: ProjectTableRow[];
@@ -24,6 +24,32 @@ interface ListViewProps {
   onProjectsChange?: () => void; // 프로젝트 데이터 변경 시 호출될 콜백
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+
+  // useProjectTable에서 전달받는 props들
+  config: ProjectTableConfig;
+  updateConfig: (config: ProjectTableConfig) => void;
+  resetColumnConfig: () => void;
+  resetFilters: () => void;
+  updatePageSize: (size: number) => void;
+  paginatedData: ProjectTableRow[];
+  filteredCount: number;
+  totalCount: number;
+  totalPages: number;
+  updatePage: (page: number) => void;
+  canGoToPreviousPage: boolean;
+  canGoToNextPage: boolean;
+  goToFirstPage: () => void;
+  goToPreviousPage: () => void;
+  goToNextPage: () => void;
+  goToLastPage: () => void;
+  isDeleteMode: boolean;
+  selectedItems: string[];
+  toggleDeleteMode: () => void;
+  handleItemSelect: (id: string) => void;
+  handleSelectAll: () => void;
+  handleDeselectAll: () => void;
+  handleDeleteSelected: () => void;
+  availableClients: string[];
 }
 
 /**
@@ -46,52 +72,47 @@ export default function ListView({
   showColumnSettings = true, // 기본값은 true (ListView에서는 표시)
   onProjectsChange,
   viewMode,
-  onViewModeChange
+  onViewModeChange,
+  // useProjectTable에서 전달받은 props들
+  config,
+  updateConfig,
+  resetColumnConfig,
+  resetFilters,
+  updatePageSize,
+  paginatedData,
+  filteredCount,
+  totalCount,
+  totalPages,
+  updatePage,
+  canGoToPreviousPage,
+  canGoToNextPage,
+  goToFirstPage,
+  goToPreviousPage,
+  goToNextPage,
+  goToLastPage,
+  isDeleteMode,
+  selectedItems,
+  toggleDeleteMode,
+  handleItemSelect,
+  handleSelectAll,
+  handleDeselectAll,
+  handleDeleteSelected,
+  availableClients
 }: ListViewProps) {
   const [selectedProjectIndex, setSelectedProjectIndex] = useState(-1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isColumnSettingsOpen, setIsColumnSettingsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Use the project table hook for state management
-  const {
-    data: tableData,
-    paginatedData,
-    filteredCount,
-    totalCount,
-    config,
-    updateConfig,
-    resetColumnConfig,
-    resetFilters,
-    updatePageSize,
-    availableClients,
-    // Pagination
-    totalPages,
-    updatePage,
-    canGoToPreviousPage,
-    canGoToNextPage,
-    goToFirstPage,
-    goToPreviousPage,
-    goToNextPage,
-    goToLastPage,
-    // Delete mode
-    isDeleteMode,
-    selectedItems,
-    toggleDeleteMode,
-    handleItemSelect,
-    handleSelectAll,
-    handleDeselectAll,
-    handleDeleteSelected
-  } = useProjectTable(projects, onProjectsChange);
-
-  // Stats for display
+  // Stats for display - props로 받은 projects 데이터 사용
   const stats = useMemo(() => {
     if (loading) return { inProgress: 0, completed: 0, avgProgress: 0 };
     return {
-      inProgress: tableData.filter(p => p.status === 'in_progress').length,
-      completed: tableData.filter(p => p.status === 'completed').length,
-      avgProgress: Math.round(tableData.reduce((acc, p) => acc + p.progress, 0) / tableData.length || 0)
+      inProgress: projects.filter(p => p.status === 'in_progress').length,
+      completed: projects.filter(p => p.status === 'completed').length,
+      avgProgress: Math.round(projects.reduce((acc, p) => acc + p.progress, 0) / projects.length || 0)
     };
-  }, [tableData, loading]);
+  }, [projects, loading]);
 
   // 공통 컴포넌트를 사용하는 커스텀 셀 렌더러
   const customCellRenderer = (value: any, column: ProjectTableColumn, row: ProjectTableRow) => {
@@ -121,6 +142,18 @@ export default function ListView({
   // Handle row click
   const handleRowClick = (project: ProjectTableRow) => {
     onProjectClick(project.no);
+  };
+
+  // Handle delete request - show confirmation modal
+  const handleDeleteRequest = () => {
+    if (selectedItems.length === 0) return;
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle delete confirmation - execute actual deletion
+  const handleDeleteConfirm = () => {
+    handleDeleteSelected();
+    setDeleteDialogOpen(false);
   };
 
   // 컬럼 드래그 앤 드롭 핸들러
@@ -183,7 +216,7 @@ export default function ListView({
 
           <div className={`flex items-center ${layout.page.header.actions} flex-shrink-0`}>
             {/* 삭제 버튼 */}
-            {!loading && tableData.length > 0 && (
+            {!loading && paginatedData.length > 0 && (
               <Button
                 variant="secondary"
                 size="sm"
@@ -257,7 +290,7 @@ export default function ListView({
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={handleDeleteSelected}
+                onClick={handleDeleteRequest}
                 className="ml-auto"
               >
                 {getProjectPageText.deleteSelected('ko')} ({selectedItems.length})
@@ -465,6 +498,14 @@ export default function ListView({
         customCellRenderer={customCellRenderer}
       />
 
+      {/* Delete Confirmation Dialog */}
+      <DocumentDeleteDialog
+        open={deleteDialogOpen}
+        mode={selectedItems.length === 1 ? 'single' : 'bulk'}
+        targetName={selectedItems.length === 1 ? paginatedData.find(p => p.id === selectedItems[0])?.name : undefined}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+      />
     </>
   );
 }

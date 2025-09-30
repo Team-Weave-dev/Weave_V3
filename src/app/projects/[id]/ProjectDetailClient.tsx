@@ -9,7 +9,28 @@ import { AlertCircleIcon } from 'lucide-react';
 import { getProjectPageText } from '@/config/brand';
 import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
 import { fetchMockProjects, fetchMockProject, removeCustomProject, addCustomProject, updateCustomProject } from '@/lib/mock/projects';
+import { addProjectDocument, getProjectDocuments } from '@/lib/mock/documents';
+import type { DocumentInfo } from '@/lib/types/project-table.types';
+import type { ProjectDocumentCategory } from '@/lib/document-generator/templates';
 import { useToast } from '@/hooks/use-toast';
+
+// 🔄 카테고리를 DocumentInfo 타입으로 매핑하는 헬퍼 함수 (ProjectDetail과 동일한 로직)
+const mapCategoryToDocumentType = (category: ProjectDocumentCategory): DocumentInfo['type'] => {
+  switch (category) {
+    case 'contract':
+      return 'contract';
+    case 'invoice':
+      return 'invoice';
+    case 'estimate':
+      return 'estimate';
+    case 'report':
+      return 'report';
+    case 'others':
+      return 'etc';
+    default:
+      return 'etc';
+  }
+};
 
 // 편집 가능한 프로젝트 데이터 인터페이스
 interface EditableProjectData {
@@ -84,7 +105,7 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
     setIsCreateModalOpen(true);
   };
 
-  const handleProjectCreate = useCallback((newProject: Omit<ProjectTableRow, 'id' | 'no' | 'modifiedDate'>) => {
+  const handleProjectCreate = useCallback(async (newProject: Omit<ProjectTableRow, 'id' | 'no' | 'modifiedDate'>) => {
     try {
       // 새 프로젝트 ID와 번호 생성
       const timestamp = Date.now();
@@ -98,10 +119,70 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
       // localStorage에 프로젝트 추가
       addCustomProject(projectWithId);
 
+      // 🎯 생성된 문서들을 개별 프로젝트와 동일한 방식으로 저장 (성공하는 플로우 적용)
+      if (newProject.generatedDocuments && newProject.generatedDocuments.length > 0) {
+        try {
+          console.log(`📄 프로젝트 ${projectWithId.no}에 ${newProject.generatedDocuments.length}개의 문서를 개별 저장 방식으로 저장 시작`);
+
+          // 🔄 각 문서를 개별적으로 저장하고 검증까지 완료
+          for (const [index, genDoc] of newProject.generatedDocuments.entries()) {
+            const newDocument: DocumentInfo = {
+              id: `${genDoc.templateId}-${Date.now()}-${index}`, // 고유성 보장을 위해 index 추가
+              type: mapCategoryToDocumentType(genDoc.category),
+              name: genDoc.title,
+              createdAt: new Date().toISOString(),
+              status: 'draft',
+              content: genDoc.content,
+              templateId: genDoc.templateId,
+              source: 'generated'
+            };
+
+            // 개별 문서 저장 (커스텀 이벤트 자동 발생)
+            addProjectDocument(projectWithId.no, newDocument);
+
+            // 🚀 실제 저장 검증: localStorage에서 문서가 실제로 저장되었는지 확인
+            let verificationAttempts = 0;
+            const maxAttempts = 10;
+
+            while (verificationAttempts < maxAttempts) {
+              const storedDocs = getProjectDocuments(projectWithId.no);
+              const isDocumentSaved = storedDocs.some(doc => doc.id === newDocument.id);
+
+              if (isDocumentSaved) {
+                console.log(`✅ 문서 저장 및 검증 완료 (${verificationAttempts + 1}회 시도): ${newDocument.name} (${newDocument.type})`);
+                break;
+              }
+
+              verificationAttempts++;
+              console.log(`⏳ 문서 저장 검증 중... (${verificationAttempts}/${maxAttempts}): ${newDocument.name}`);
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            if (verificationAttempts >= maxAttempts) {
+              console.error(`❌ 문서 저장 검증 실패: ${newDocument.name}`);
+              throw new Error(`문서 저장 실패: ${newDocument.name}`);
+            }
+          }
+
+          // 🔍 최종 검증: 모든 문서가 실제로 저장되었는지 확인
+          const finalStoredDocs = getProjectDocuments(projectWithId.no);
+          console.log(`🔍 최종 검증: localStorage에 ${finalStoredDocs.length}개 문서 저장됨 (예상: ${newProject.generatedDocuments.length}개)`);
+
+          if (finalStoredDocs.length !== newProject.generatedDocuments.length) {
+            throw new Error(`문서 개수 불일치: 저장됨 ${finalStoredDocs.length}개, 예상 ${newProject.generatedDocuments.length}개`);
+          }
+
+          console.log(`🎉 프로젝트 ${projectWithId.no}에 ${newProject.generatedDocuments.length}개의 문서 저장 및 검증 완료!`);
+        } catch (error) {
+          console.error('❌ 생성된 문서 저장 중 오류:', error);
+        }
+      }
+
       console.log('✅ 새 프로젝트 생성 성공:', {
         id: projectWithId.id,
         no: projectWithId.no,
-        name: projectWithId.name
+        name: projectWithId.name,
+        documentsCount: newProject.generatedDocuments?.length || 0
       });
 
       // 성공 토스트 표시
@@ -110,9 +191,40 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
         description: `${projectWithId.name} 프로젝트가 성공적으로 생성되었습니다.`,
       });
 
-      // 모달 닫기 및 새 프로젝트로 이동
+      // ⏱️ localStorage 저장 완료 확인 후 페이지 이동 (브라우저 캐싱 문제 해결)
       setIsCreateModalOpen(false);
-      router.push(`/projects/${projectWithId.no}`);
+
+      // 🔍 페이지 이동 전 최종 상태 확인 및 추가 동기화 시간
+      console.log('🔄 페이지 이동 전 최종 상태 확인...');
+      const finalVerificationDocs = getProjectDocuments(projectWithId.no);
+      console.log(`📊 최종 확인: 프로젝트 ${projectWithId.no}에 ${finalVerificationDocs.length}개 문서 저장 확인`);
+
+      // 더 안전한 동기화 대기 시간 (localStorage 완전 동기화)
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 🚀 페이지 이동 시작 (검증 완료 후)
+      console.log('🚀 페이지 이동 시작 (문서 저장 검증 완료):', `/projects/${projectWithId.no}`);
+
+      // 방법 1: 타임스탬프를 추가하여 캐시 무효화
+      const refreshTimestamp = Date.now();
+      const urlWithCacheBuster = `/projects/${projectWithId.no}?refresh=${refreshTimestamp}`;
+
+      // 방법 2: replace 사용하여 히스토리 스택 정리
+      router.replace(urlWithCacheBuster);
+
+      // 방법 3: 추가 안전장치 - 페이지 로드 후 localStorage 상태 체크를 위한 이벤트 발생
+      if (typeof window !== 'undefined') {
+        // 새 페이지에서 문서 새로고침을 강제하는 커스텀 이벤트 발생
+        const refreshEvent = new CustomEvent('weave-force-documents-refresh', {
+          detail: {
+            projectNo: projectWithId.no,
+            timestamp: refreshTimestamp,
+            documentCount: newProject.generatedDocuments?.length || 0
+          }
+        });
+        window.dispatchEvent(refreshEvent);
+        console.log('🔔 [FORCE REFRESH EVENT] 강제 문서 새로고침 이벤트 발생');
+      }
     } catch (error) {
       console.error('❌ 프로젝트 생성 중 오류 발생:', error);
 
