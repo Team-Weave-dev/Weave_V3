@@ -1199,14 +1199,8 @@ export function ImprovedDashboard({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => {
-                // 세로 무한 확장 모드에서는 수동 정렬도 비활성화
-                if (config.maxRows !== undefined) {
-                  compactWidgets('vertical');
-                }
-              }}
-              disabled={config.maxRows === undefined}
-              title={config.maxRows === undefined ? '무한 확장 모드에서는 자동 정렬을 사용할 수 없습니다' : ''}
+              onClick={() => compactWidgets('vertical')}
+              title="위젯들을 상단으로 정렬합니다"
             >
               <Grid3x3 className="h-4 w-4 mr-2" />
               {getDashboardText.manualAlign('ko')}

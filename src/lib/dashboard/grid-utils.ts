@@ -205,72 +205,115 @@ export function findEmptySpace(
 }
 
 /**
- * 컴팩트 레이아웃 생성 (빈 줄 제거, 위젯 순서 유지)
- * 사용자가 배치한 위젯들의 상대적 순서는 유지하면서 빈 공간만 제거
+ * 컴팩트 레이아웃 생성 (충돌 해결 + 빈 공간 제거)
+ * 겹쳐있는 위젯들을 분리하고, 모든 위젯을 상단으로 정렬
  */
 export function compactLayout(
   items: GridPosition[],
   config: GridConfig,
   compactType: 'vertical' | 'horizontal' = 'vertical'
 ): GridPosition[] {
-  // 원본 순서 유지 (정렬하지 않음)
-  const itemsWithIndex = items.map((item, index) => ({ item, originalIndex: index }));
-  
+  console.log('🔧 compactLayout 시작:', { itemCount: items.length, compactType });
+
+  if (items.length === 0) return [];
+
   if (compactType === 'vertical') {
-    // 빈 줄 제거 로직
-    // 1. 각 Y 레벨에 위젯이 있는지 확인
-    const occupiedRows = new Set<number>();
-    items.forEach(item => {
-      for (let y = item.y; y < item.y + item.h; y++) {
-        occupiedRows.add(y);
+    // 세로 방향 정렬: 위젯들을 상단부터 차곡차곡 쌓기
+    // 1. 위젯들을 y → x 순서로 정렬 (상단 좌측부터)
+    const sortedItems = [...items].sort((a, b) => {
+      if (a.y !== b.y) return a.y - b.y;
+      return a.x - b.x;
+    });
+
+    console.log('📊 정렬된 위젯 순서:', sortedItems.map(item => ({ y: item.y, x: item.x })));
+
+    // 2. 각 위젯을 충돌 없이 배치
+    const result: GridPosition[] = [];
+
+    sortedItems.forEach((item, index) => {
+      // 첫 번째 위젯은 y=0부터 시작
+      if (result.length === 0) {
+        result.push({ ...item, y: 0 });
+        console.log(`  ✓ 위젯 ${index}: y=0 (첫 번째 위젯)`);
+        return;
+      }
+
+      // 기존 위젯들과 충돌하지 않는 최상단 위치 찾기
+      let targetY = 0;
+      let foundPosition = false;
+
+      while (!foundPosition) {
+        const testPosition: GridPosition = { ...item, y: targetY };
+
+        // 모든 기존 위젯들과 충돌 검사
+        const hasCollision = result.some(existingItem =>
+          checkCollision(testPosition, existingItem)
+        );
+
+        if (!hasCollision) {
+          // 충돌 없음 - 이 위치에 배치
+          result.push(testPosition);
+          console.log(`  ✓ 위젯 ${index}: y=${targetY} (충돌 없음)`);
+          foundPosition = true;
+        } else {
+          // 충돌 있음 - 한 칸 아래로
+          targetY++;
+          if (targetY > 100) {
+            // 무한 루프 방지
+            console.error(`  ✗ 위젯 ${index}: 배치 실패 (무한 루프)`);
+            result.push({ ...item, y: targetY });
+            foundPosition = true;
+          }
+        }
       }
     });
-    
-    // 2. 빈 줄 계산 (연속된 빈 줄들)
-    const sortedOccupiedRows = Array.from(occupiedRows).sort((a, b) => a - b);
-    const rowMapping = new Map<number, number>();
-    let compactedY = 0;
-    
-    for (let y = 0; y <= Math.max(...sortedOccupiedRows, 0); y++) {
-      if (occupiedRows.has(y)) {
-        rowMapping.set(y, compactedY);
-        compactedY++;
-      }
-    }
-    
-    // 3. 위젯들을 빈 줄 제거 후 위치로 이동 (순서 유지)
-    return items.map(item => ({
-      ...item,
-      y: rowMapping.get(item.y) ?? item.y
-    }));
-    
+
+    console.log('✅ compactLayout 완료:', result.map(r => ({ y: r.y, x: r.x, h: r.h })));
+
+    // 원본 순서로 복원 (items 배열의 인덱스 순서 유지)
+    const resultMap = new Map(sortedItems.map((item, i) => [item, result[i]]));
+    return items.map(item => resultMap.get(item)!);
+
   } else {
-    // horizontal 압축: 빈 열 제거
-    // 1. 각 X 레벨에 위젯이 있는지 확인
-    const occupiedCols = new Set<number>();
-    items.forEach(item => {
-      for (let x = item.x; x < item.x + item.w; x++) {
-        occupiedCols.add(x);
+    // 가로 방향 정렬: 위젯들을 좌측부터 차곡차곡 배치
+    const sortedItems = [...items].sort((a, b) => {
+      if (a.x !== b.x) return a.x - b.x;
+      return a.y - b.y;
+    });
+
+    const result: GridPosition[] = [];
+
+    sortedItems.forEach((item) => {
+      if (result.length === 0) {
+        result.push({ ...item, x: 0 });
+        return;
+      }
+
+      let targetX = 0;
+      let foundPosition = false;
+
+      while (!foundPosition) {
+        const testPosition: GridPosition = { ...item, x: targetX };
+
+        const hasCollision = result.some(existingItem =>
+          checkCollision(testPosition, existingItem)
+        );
+
+        if (!hasCollision) {
+          result.push(testPosition);
+          foundPosition = true;
+        } else {
+          targetX++;
+          if (targetX > 100) {
+            result.push({ ...item, x: targetX });
+            foundPosition = true;
+          }
+        }
       }
     });
-    
-    // 2. 빈 열 계산
-    const sortedOccupiedCols = Array.from(occupiedCols).sort((a, b) => a - b);
-    const colMapping = new Map<number, number>();
-    let compactedX = 0;
-    
-    for (let x = 0; x <= Math.max(...sortedOccupiedCols, 0); x++) {
-      if (occupiedCols.has(x)) {
-        colMapping.set(x, compactedX);
-        compactedX++;
-      }
-    }
-    
-    // 3. 위젯들을 빈 열 제거 후 위치로 이동 (순서 유지)
-    return items.map(item => ({
-      ...item,
-      x: colMapping.get(item.x) ?? item.x
-    }));
+
+    const resultMap = new Map(sortedItems.map((item, i) => [item, result[i]]));
+    return items.map(item => resultMap.get(item)!);
   }
 }
 

@@ -595,15 +595,41 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
         
         // 레이아웃 액션
         compactWidgets: (compactType = 'vertical') => set((state) => {
+          console.log('🎯 compactWidgets 호출:', { compactType, widgetCount: state.widgets.length });
+
           if (!compactType) return;
-          
+
+          // 정렬 전 Y 값을 명확하게 출력 (배열이 접히지 않도록)
+          const beforeY = state.widgets.map(w => w.position.y);
+          console.log('📍 정렬 전 Y 값 배열:', beforeY);
+          console.log('📍 정렬 전 위젯 상세:');
+          state.widgets.forEach(w => {
+            console.log(`  - ${w.type} (id: ${w.id.substring(0, 8)}): y=${w.position.y}, h=${w.position.h}, 점유 행=[${w.position.y} ~ ${w.position.y + w.position.h - 1}]`);
+          });
+
           const positions = state.widgets.map(w => w.position);
           const compacted = compactLayout(positions, state.config, compactType);
-          
+
           state.widgets = state.widgets.map((widget, index) => ({
             ...widget,
             position: compacted[index],
           }));
+
+          // 정렬 후 Y 값을 명확하게 출력
+          const afterY = state.widgets.map(w => w.position.y);
+          console.log('📍 정렬 후 Y 값 배열:', afterY);
+          console.log('📍 정렬 후 위젯 상세:');
+          state.widgets.forEach(w => {
+            console.log(`  - ${w.type} (id: ${w.id.substring(0, 8)}): y=${w.position.y}, h=${w.position.h}, 점유 행=[${w.position.y} ~ ${w.position.y + w.position.h - 1}]`);
+          });
+
+          // 변화가 있었는지 확인
+          const hasChanges = beforeY.some((y, i) => y !== afterY[i]);
+          console.log('✨ 정렬 결과:', hasChanges ? '✅ 위젯이 이동했습니다!' : '⚠️ 위젯이 이미 정렬되어 있습니다 (이동 없음)');
+
+          if (!hasChanges) {
+            console.log('💡 힌트: 위젯들이 이미 y=0부터 연속적으로 배치되어 있어서 정렬할 필요가 없습니다.');
+          }
         }),
         
         findSpaceForWidget: (width, height) => {
