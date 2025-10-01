@@ -38,36 +38,76 @@ const WeekView = React.memo(({
   const headerHeight = 60;
   const scrollAreaHeight = Math.max(300, containerHeight - headerHeight);
   
+  // 종일 이벤트 필터링
+  const allDayEvents = events.filter(event => event.allDay);
+  const hasAllDayEvents = allDayEvents.length > 0;
+
+  // 종일 이벤트가 있을 경우 헤더 높이 조정
+  const adjustedHeaderHeight = hasAllDayEvents ? headerHeight + 60 : headerHeight;
+  const adjustedScrollHeight = Math.max(300, containerHeight - adjustedHeaderHeight);
+
   return (
     <div className="flex flex-col h-full">
       {/* 요일 헤더 */}
-      <div className="grid grid-cols-8 border-b flex-shrink-0" style={{ height: `${headerHeight}px` }}>
-        <div className="text-xs p-2 text-muted-foreground">시간</div>
-        {weekDays.map((day) => (
-          <div
-            key={day.toISOString()}
-            className={cn(
-              "text-center p-2 border-l cursor-pointer hover:bg-accent",
-              isToday(day) && "bg-primary/10"
-            )}
-            onClick={() => onDateSelect?.(day)}
-            onDoubleClick={() => onDateDoubleClick?.(day)}
-          >
-            <div className="text-xs text-muted-foreground">
-              {format(day, 'EEE', { locale: ko })}
+      <div className="flex-shrink-0" style={{ height: `${adjustedHeaderHeight}px` }}>
+        <div className="grid grid-cols-8 border-b">
+          <div className="text-xs p-2 text-muted-foreground">시간</div>
+          {weekDays.map((day) => (
+            <div
+              key={day.toISOString()}
+              className={cn(
+                "text-center p-2 border-l cursor-pointer hover:bg-accent",
+                isToday(day) && "bg-primary/10"
+              )}
+              onClick={() => onDateSelect?.(day)}
+              onDoubleClick={() => onDateDoubleClick?.(day)}
+            >
+              <div className="text-xs text-muted-foreground">
+                {format(day, 'EEE', { locale: ko })}
+              </div>
+              <div className={cn(
+                "text-sm font-medium",
+                isToday(day) && "text-primary"
+              )}>
+                {format(day, 'd')}
+              </div>
             </div>
-            <div className={cn(
-              "text-sm font-medium",
-              isToday(day) && "text-primary"
-            )}>
-              {format(day, 'd')}
-            </div>
+          ))}
+        </div>
+
+        {/* 종일 이벤트 영역 */}
+        {hasAllDayEvents && (
+          <div className="grid grid-cols-8 border-b bg-muted/30">
+            <div className="text-xs p-2 text-muted-foreground">종일</div>
+            {weekDays.map((day) => {
+              const dayAllDayEvents = allDayEvents.filter(event =>
+                isSameDay(new Date(event.date), day)
+              );
+
+              return (
+                <div
+                  key={`allday-${day.toISOString()}`}
+                  className="border-l p-1 min-h-[52px]"
+                  onDoubleClick={() => onDateDoubleClick?.(day)}
+                >
+                  <div className="space-y-0.5">
+                    {dayAllDayEvents.map((event) => (
+                      <MiniEvent
+                        key={event.id}
+                        event={event}
+                        onClick={() => onEventClick?.(event)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        )}
       </div>
-      
+
       {/* 시간대별 그리드 */}
-      <ScrollArea className="flex-1" style={{ height: `${scrollAreaHeight}px` }}>
+      <ScrollArea className="flex-1" style={{ height: `${adjustedScrollHeight}px` }}>
         <div className="min-h-[600px]">
           {hours.map((hour) => (
             <div key={hour} className="grid grid-cols-8 border-b h-12">

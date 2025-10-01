@@ -94,6 +94,14 @@ const EventForm = React.memo(({
     onSave(eventData);
   };
 
+  // 엔터키로 저장하는 핸들러
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey && formData.title) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   const handleReset = () => {
     setFormData({
       title: '',
@@ -108,20 +116,21 @@ const EventForm = React.memo(({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" onKeyDown={handleKeyDown}>
       <h4 className="font-medium text-sm">
         {event ? '일정 수정' : '새 일정 만들기'}
       </h4>
-      
+
       {/* 제목 */}
       <div className="space-y-2">
         <Label htmlFor="event-title" className="text-xs">제목</Label>
-        <Input 
+        <Input
           id="event-title"
-          placeholder="일정 제목" 
+          placeholder="일정 제목 (엔터로 저장)"
           className="h-8"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          autoFocus
         />
       </div>
 
@@ -212,12 +221,18 @@ const EventForm = React.memo(({
       {/* 설명 */}
       <div className="space-y-2">
         <Label htmlFor="event-description" className="text-xs">설명</Label>
-        <Textarea 
+        <Textarea
           id="event-description"
-          placeholder="설명 입력 (선택사항)"
+          placeholder="설명 입력 (선택사항, Shift+Enter로 줄바꿈)"
           className="min-h-[60px] text-sm resize-none"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onKeyDown={(e) => {
+            // Textarea에서는 Shift+Enter로 줄바꿈, Enter만 누르면 저장 방지
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.stopPropagation();
+            }
+          }}
         />
       </div>
 
