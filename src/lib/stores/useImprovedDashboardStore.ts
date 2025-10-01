@@ -9,7 +9,7 @@ import { devtools } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { ImprovedWidget, DashboardConfig, DashboardEditState } from '@/types/improved-dashboard';
-import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout, checkCollision } from '@/lib/dashboard/grid-utils';
+import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout, optimizeLayout, checkCollision } from '@/lib/dashboard/grid-utils';
 
 interface ImprovedDashboardStore {
   // 위젯 상태
@@ -37,6 +37,7 @@ interface ImprovedDashboardStore {
   
   // 레이아웃 액션
   compactWidgets: (compactType?: 'vertical' | 'horizontal') => void;
+  optimizeWidgetLayout: () => void;
   findSpaceForWidget: (width: number, height: number) => GridPosition | null;
   checkCollision: (widgetId: string, position: GridPosition) => boolean;
   
@@ -70,7 +71,7 @@ const initialConfig: DashboardConfig = {
   cols: 9,
   rowHeight: 120,
   gap: 16,
-  maxRows: 9,
+  // maxRows 제거 - 세로 무한 확장 허용
   isDraggable: true,
   isResizable: true,
   preventCollision: true,
@@ -465,7 +466,7 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
                 const pushRight = currentPos.x + currentPos.w;
                 
                 // 그리드 경계 체크
-                const canPushDown = pushDown + targetPos.h <= (state.config.maxRows || 9);
+                const canPushDown = true; // 세로 무한 확장 허용
                 const canPushRight = pushRight + targetPos.w <= state.config.cols;
                 
                 if (canPushDown && (!canPushRight || overlapY < overlapX)) {
@@ -595,15 +596,68 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
         
         // 레이아웃 액션
         compactWidgets: (compactType = 'vertical') => set((state) => {
+          console.log('🎯 compactWidgets 호출:', { compactType, widgetCount: state.widgets.length });
+
           if (!compactType) return;
-          
+
+          // 정렬 전 Y 값을 명확하게 출력 (배열이 접히지 않도록)
+          const beforeY = state.widgets.map(w => w.position.y);
+          console.log('📍 정렬 전 Y 값 배열:', beforeY);
+          console.log('📍 정렬 전 위젯 상세:');
+          state.widgets.forEach(w => {
+            console.log(`  - ${w.type} (id: ${w.id.substring(0, 8)}): y=${w.position.y}, h=${w.position.h}, 점유 행=[${w.position.y} ~ ${w.position.y + w.position.h - 1}]`);
+          });
+
           const positions = state.widgets.map(w => w.position);
           const compacted = compactLayout(positions, state.config, compactType);
-          
+
           state.widgets = state.widgets.map((widget, index) => ({
             ...widget,
             position: compacted[index],
           }));
+
+          // 정렬 후 Y 값을 명확하게 출력
+          const afterY = state.widgets.map(w => w.position.y);
+          console.log('📍 정렬 후 Y 값 배열:', afterY);
+          console.log('📍 정렬 후 위젯 상세:');
+          state.widgets.forEach(w => {
+            console.log(`  - ${w.type} (id: ${w.id.substring(0, 8)}): y=${w.position.y}, h=${w.position.h}, 점유 행=[${w.position.y} ~ ${w.position.y + w.position.h - 1}]`);
+          });
+
+          // 변화가 있었는지 확인
+          const hasChanges = beforeY.some((y, i) => y !== afterY[i]);
+          console.log('✨ 정렬 결과:', hasChanges ? '✅ 위젯이 이동했습니다!' : '⚠️ 위젯이 이미 정렬되어 있습니다 (이동 없음)');
+
+          if (!hasChanges) {
+            console.log('💡 힌트: 위젯들이 이미 y=0부터 연속적으로 배치되어 있어서 정렬할 필요가 없습니다.');
+          }
+        }),
+
+        // 위치 최적화 액션 (좌우 공간 활용)
+        optimizeWidgetLayout: () => set((state) => {
+          console.log('🎯 optimizeWidgetLayout 호출:', { widgetCount: state.widgets.length });
+
+          // 최적화 전 위치 출력
+          console.log('📍 최적화 전 위젯 상세:');
+          state.widgets.forEach(w => {
+            console.log(`  - ${w.type} (id: ${w.id.substring(0, 8)}): x=${w.position.x}, y=${w.position.y}, w=${w.position.w}, h=${w.position.h}`);
+          });
+
+          const positions = state.widgets.map(w => w.position);
+          const optimized = optimizeLayout(positions, state.config);
+
+          state.widgets = state.widgets.map((widget, index) => ({
+            ...widget,
+            position: optimized[index],
+          }));
+
+          // 최적화 후 위치 출력
+          console.log('📍 최적화 후 위젯 상세:');
+          state.widgets.forEach(w => {
+            console.log(`  - ${w.type} (id: ${w.id.substring(0, 8)}): x=${w.position.x}, y=${w.position.y}, w=${w.position.w}, h=${w.position.h}`);
+          });
+
+          console.log('✨ 위치 최적화 완료!');
         }),
         
         findSpaceForWidget: (width, height) => {
@@ -752,13 +806,25 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
       })),
         {
           name: 'weave-dashboard-layout', // localStorage 키 이름
-          version: 1, // 스토리지 버전 (마이그레이션용)
+          version: 2, // 스토리지 버전 (v2: maxRows 제거로 세로 무한 확장 지원)
           partialize: (state) => ({
             // localStorage에 저장할 상태만 선택
             widgets: state.widgets,
             config: state.config,
             // editState는 임시 상태이므로 저장하지 않음
           }),
+          migrate: (persistedState: any, version: number) => {
+            // 버전 1에서 2로 마이그레이션: maxRows 제거
+            if (version === 1) {
+              console.log('📦 대시보드 v1 → v2 마이그레이션: 세로 무한 확장 활성화');
+              if (persistedState?.config?.maxRows !== undefined) {
+                const { maxRows, ...configWithoutMaxRows } = persistedState.config;
+                persistedState.config = configWithoutMaxRows;
+                console.log('✅ maxRows 제거 완료 - 세로 무한 확장 모드 활성화');
+              }
+            }
+            return persistedState;
+          },
           onRehydrateStorage: (state) => {
             console.log('🔄 대시보드 레이아웃 복원 시작...');
             return (state, error) => {
@@ -767,7 +833,8 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
               } else if (state) {
                 console.log('✅ 대시보드 레이아웃 복원 완료:', {
                   widgetCount: state.widgets.length,
-                  cols: state.config.cols
+                  cols: state.config.cols,
+                  verticalExpansion: state.config.maxRows === undefined ? '무한' : state.config.maxRows
                 });
               }
             };

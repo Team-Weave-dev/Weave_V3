@@ -309,31 +309,29 @@ export function CalendarWidget({
   };
 
   const handleEventDelete = async (event: CalendarEvent) => {
-    if (window.confirm('이 일정을 삭제하시겠습니까?')) {
-      // Check if event is integrated (from other widgets) by ID pattern
-      const isIntegratedItem =
-        event.id.startsWith('todo-') ||
-        event.id.startsWith('tax-') ||
-        (event.id.startsWith('calendar-event-') && !events.some(e => e.id === event.id));
+    // Check if event is integrated (from other widgets) by ID pattern
+    const isIntegratedItem =
+      event.id.startsWith('todo-') ||
+      event.id.startsWith('tax-') ||
+      (event.id.startsWith('calendar-event-') && !events.some(e => e.id === event.id));
 
-      if (isIntegratedItem) {
-        try {
-          // Delete from source widget's localStorage
-          await integratedCalendarManager.deleteItem(event.id);
+    if (isIntegratedItem) {
+      try {
+        // Delete from source widget's localStorage
+        await integratedCalendarManager.deleteItem(event.id);
 
-          // Refresh integrated items
-          await refreshIntegratedItems();
-        } catch (error) {
-          console.error('Failed to delete integrated item:', error);
-        }
-      } else {
-        // Delete local calendar event
-        deleteEvent(event.id);
+        // Refresh integrated items
+        await refreshIntegratedItems();
+      } catch (error) {
+        console.error('Failed to delete integrated item:', error);
       }
-
-      setShowEventDetail(false);
-      setSelectedEvent(null);
+    } else {
+      // Delete local calendar event
+      deleteEvent(event.id);
     }
+
+    setShowEventDetail(false);
+    setSelectedEvent(null);
   };
 
   // Handle double click to add event

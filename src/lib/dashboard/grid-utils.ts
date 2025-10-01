@@ -116,18 +116,20 @@ export function isWithinBounds(
   position: GridPosition,
   config: GridConfig
 ): boolean {
-  const { cols, maxRows = 9 } = config;
-  
+  const { cols, maxRows = Infinity } = config;
+
   // 최소값 체크
   if (position.x < 0 || position.y < 0) return false;
-  
+
   // 너비/높이 최소값 체크
   if (position.w < 1 || position.h < 1) return false;
-  
-  // 최대값 체크
+
+  // X(가로) 최대값 체크
   if (position.x + position.w > cols) return false;
-  if (position.y + position.h > maxRows) return false;
-  
+
+  // Y(세로) 최대값 체크 - maxRows가 Infinity가 아닐 때만
+  if (maxRows !== Infinity && position.y + position.h > maxRows) return false;
+
   return true;
 }
 
@@ -138,24 +140,25 @@ export function constrainToBounds(
   position: GridPosition,
   config: GridConfig
 ): GridPosition {
-  const { cols, maxRows = 9 } = config;
-  
+  const { cols, maxRows = Infinity } = config;
+
   // 너비/높이 최소값 보장
   const w = Math.max(1, position.w);
   const h = Math.max(1, position.h);
-  
-  // X 위치 조정
+
+  // X 위치 조정 (가로만 제한)
   let x = Math.max(0, position.x);
   if (x + w > cols) {
     x = Math.max(0, cols - w);
   }
-  
-  // Y 위치 조정
+
+  // Y 위치 조정 (세로 무한 확장 지원)
   let y = Math.max(0, position.y);
-  if (y + h > maxRows) {
+  // maxRows가 Infinity가 아닐 때만 Y 위치 제한
+  if (maxRows !== Infinity && y + h > maxRows) {
     y = Math.max(0, maxRows - h);
   }
-  
+
   return { x, y, w, h };
 }
 
@@ -168,90 +171,149 @@ export function findEmptySpace(
   items: GridPosition[],
   config: GridConfig
 ): GridPosition | null {
-  const { cols, maxRows = 9 } = config;
-  
+  const { cols, maxRows = Infinity } = config;
+
+  // 기존 위젯들의 최대 Y 위치 계산
+  const maxY = items.length > 0
+    ? Math.max(...items.map(item => item.y + item.h))
+    : 0;
+
+  // 검색 범위 설정: maxRows가 Infinity면 maxY + 20까지, 아니면 maxRows까지
+  const searchLimit = maxRows === Infinity
+    ? maxY + 20
+    : Math.min(maxRows - height + 1, maxY + 20);
+
   // 그리드를 순회하며 빈 공간 찾기
-  for (let y = 0; y <= maxRows - height; y++) {
+  for (let y = 0; y < searchLimit; y++) {
     for (let x = 0; x <= cols - width; x++) {
       const testPosition: GridPosition = { x, y, w: width, h: height };
-      
+
       // 충돌 체크
       if (!checkCollisionWithItems(testPosition, items)) {
         return testPosition;
       }
     }
   }
-  
-  return null;
+
+  // 빈 공간이 없으면 기존 위젯들 아래에 배치
+  return {
+    x: 0,
+    y: maxY,
+    w: width,
+    h: height
+  };
 }
 
 /**
- * 컴팩트 레이아웃 생성 (빈 줄 제거, 위젯 순서 유지)
- * 사용자가 배치한 위젯들의 상대적 순서는 유지하면서 빈 공간만 제거
+ * 컴팩트 레이아웃 생성 (충돌 해결 + 빈 공간 제거)
+ * 겹쳐있는 위젯들을 분리하고, 모든 위젯을 상단으로 정렬
  */
 export function compactLayout(
   items: GridPosition[],
   config: GridConfig,
   compactType: 'vertical' | 'horizontal' = 'vertical'
 ): GridPosition[] {
-  // 원본 순서 유지 (정렬하지 않음)
-  const itemsWithIndex = items.map((item, index) => ({ item, originalIndex: index }));
-  
+  console.log('🔧 compactLayout 시작:', { itemCount: items.length, compactType });
+
+  if (items.length === 0) return [];
+
   if (compactType === 'vertical') {
-    // 빈 줄 제거 로직
-    // 1. 각 Y 레벨에 위젯이 있는지 확인
-    const occupiedRows = new Set<number>();
-    items.forEach(item => {
-      for (let y = item.y; y < item.y + item.h; y++) {
-        occupiedRows.add(y);
+    // 세로 방향 정렬: 위젯들을 상단부터 차곡차곡 쌓기
+    // 1. 위젯들을 y → x 순서로 정렬 (상단 좌측부터)
+    const sortedItems = [...items].sort((a, b) => {
+      if (a.y !== b.y) return a.y - b.y;
+      return a.x - b.x;
+    });
+
+    console.log('📊 정렬된 위젯 순서:', sortedItems.map(item => ({ y: item.y, x: item.x })));
+
+    // 2. 각 위젯을 충돌 없이 배치
+    const result: GridPosition[] = [];
+
+    sortedItems.forEach((item, index) => {
+      // 첫 번째 위젯은 y=0부터 시작
+      if (result.length === 0) {
+        result.push({ ...item, y: 0 });
+        console.log(`  ✓ 위젯 ${index}: y=0 (첫 번째 위젯)`);
+        return;
+      }
+
+      // 기존 위젯들과 충돌하지 않는 최상단 위치 찾기
+      let targetY = 0;
+      let foundPosition = false;
+
+      while (!foundPosition) {
+        const testPosition: GridPosition = { ...item, y: targetY };
+
+        // 모든 기존 위젯들과 충돌 검사
+        const hasCollision = result.some(existingItem =>
+          checkCollision(testPosition, existingItem)
+        );
+
+        if (!hasCollision) {
+          // 충돌 없음 - 이 위치에 배치
+          result.push(testPosition);
+          console.log(`  ✓ 위젯 ${index}: y=${targetY} (충돌 없음)`);
+          foundPosition = true;
+        } else {
+          // 충돌 있음 - 한 칸 아래로
+          targetY++;
+          if (targetY > 100) {
+            // 무한 루프 방지
+            console.error(`  ✗ 위젯 ${index}: 배치 실패 (무한 루프)`);
+            result.push({ ...item, y: targetY });
+            foundPosition = true;
+          }
+        }
       }
     });
-    
-    // 2. 빈 줄 계산 (연속된 빈 줄들)
-    const sortedOccupiedRows = Array.from(occupiedRows).sort((a, b) => a - b);
-    const rowMapping = new Map<number, number>();
-    let compactedY = 0;
-    
-    for (let y = 0; y <= Math.max(...sortedOccupiedRows, 0); y++) {
-      if (occupiedRows.has(y)) {
-        rowMapping.set(y, compactedY);
-        compactedY++;
-      }
-    }
-    
-    // 3. 위젯들을 빈 줄 제거 후 위치로 이동 (순서 유지)
-    return items.map(item => ({
-      ...item,
-      y: rowMapping.get(item.y) ?? item.y
-    }));
-    
+
+    console.log('✅ compactLayout 완료:', result.map(r => ({ y: r.y, x: r.x, h: r.h })));
+
+    // 원본 순서로 복원 (items 배열의 인덱스 순서 유지)
+    const resultMap = new Map(sortedItems.map((item, i) => [item, result[i]]));
+    return items.map(item => resultMap.get(item)!);
+
   } else {
-    // horizontal 압축: 빈 열 제거
-    // 1. 각 X 레벨에 위젯이 있는지 확인
-    const occupiedCols = new Set<number>();
-    items.forEach(item => {
-      for (let x = item.x; x < item.x + item.w; x++) {
-        occupiedCols.add(x);
+    // 가로 방향 정렬: 위젯들을 좌측부터 차곡차곡 배치
+    const sortedItems = [...items].sort((a, b) => {
+      if (a.x !== b.x) return a.x - b.x;
+      return a.y - b.y;
+    });
+
+    const result: GridPosition[] = [];
+
+    sortedItems.forEach((item) => {
+      if (result.length === 0) {
+        result.push({ ...item, x: 0 });
+        return;
+      }
+
+      let targetX = 0;
+      let foundPosition = false;
+
+      while (!foundPosition) {
+        const testPosition: GridPosition = { ...item, x: targetX };
+
+        const hasCollision = result.some(existingItem =>
+          checkCollision(testPosition, existingItem)
+        );
+
+        if (!hasCollision) {
+          result.push(testPosition);
+          foundPosition = true;
+        } else {
+          targetX++;
+          if (targetX > 100) {
+            result.push({ ...item, x: targetX });
+            foundPosition = true;
+          }
+        }
       }
     });
-    
-    // 2. 빈 열 계산
-    const sortedOccupiedCols = Array.from(occupiedCols).sort((a, b) => a - b);
-    const colMapping = new Map<number, number>();
-    let compactedX = 0;
-    
-    for (let x = 0; x <= Math.max(...sortedOccupiedCols, 0); x++) {
-      if (occupiedCols.has(x)) {
-        colMapping.set(x, compactedX);
-        compactedX++;
-      }
-    }
-    
-    // 3. 위젯들을 빈 열 제거 후 위치로 이동 (순서 유지)
-    return items.map(item => ({
-      ...item,
-      x: colMapping.get(item.x) ?? item.x
-    }));
+
+    const resultMap = new Map(sortedItems.map((item, i) => [item, result[i]]));
+    return items.map(item => resultMap.get(item)!);
   }
 }
 
@@ -373,6 +435,100 @@ export function canSwapWidgets(
 }
 
 /**
+ * 최적화된 레이아웃 생성 (좌우 공간 활용)
+ * 위젯들을 좌상단부터 채워나가며 빈 공간을 최소화
+ */
+export function optimizeLayout(
+  items: GridPosition[],
+  config: GridConfig
+): GridPosition[] {
+  console.log('🚀 optimizeLayout 시작:', { itemCount: items.length });
+
+  if (items.length === 0) return [];
+
+  const { cols } = config;
+
+  // 1. 위젯들을 크기 순으로 정렬 (큰 것부터 배치)
+  const sortedItems = [...items].sort((a, b) => {
+    const areaA = a.w * a.h;
+    const areaB = b.w * b.h;
+    if (areaA !== areaB) return areaB - areaA; // 큰 것부터
+    return a.y - b.y; // 같으면 y 위치 우선
+  });
+
+  console.log('📊 정렬된 위젯 (크기순):', sortedItems.map(item => ({ w: item.w, h: item.h, area: item.w * item.h })));
+
+  // 2. 각 위젯을 최적 위치에 배치
+  const result: GridPosition[] = [];
+
+  sortedItems.forEach((item, index) => {
+    // 첫 번째 위젯은 (0, 0)에 배치
+    if (result.length === 0) {
+      result.push({ ...item, x: 0, y: 0 });
+      console.log(`  ✓ 위젯 ${index}: (0, 0) - 첫 번째 위젯`);
+      return;
+    }
+
+    // 최적의 빈 공간 찾기
+    let bestPosition: GridPosition | null = null;
+    let minY = Infinity;
+    let minX = Infinity;
+
+    // 가능한 모든 위치를 탐색
+    for (let y = 0; y < 100; y++) { // 최대 탐색 범위
+      for (let x = 0; x <= cols - item.w; x++) {
+        const testPosition: GridPosition = { ...item, x, y };
+
+        // 그리드 경계 확인
+        if (!isWithinBounds(testPosition, config)) continue;
+
+        // 충돌 검사
+        const hasCollision = result.some(existingItem =>
+          checkCollision(testPosition, existingItem)
+        );
+
+        if (!hasCollision) {
+          // 더 위쪽이거나 같은 높이에서 더 왼쪽인 위치를 선택
+          if (y < minY || (y === minY && x < minX)) {
+            minY = y;
+            minX = x;
+            bestPosition = testPosition;
+          }
+
+          // 최상단 최좌측을 찾았으면 더 이상 탐색 불필요
+          if (y === 0 && x === 0) break;
+        }
+      }
+
+      // 현재 행에서 위치를 찾았으면 다음 행 탐색 불필요
+      if (bestPosition && bestPosition.y === y) break;
+    }
+
+    if (bestPosition) {
+      result.push(bestPosition);
+      console.log(`  ✓ 위젯 ${index}: (${bestPosition.x}, ${bestPosition.y}) - 최적 위치`);
+    } else {
+      // 빈 공간을 못 찾으면 findEmptySpace 사용
+      const fallbackPosition = findEmptySpace(item.w, item.h, result, config);
+      if (fallbackPosition) {
+        result.push({ ...item, ...fallbackPosition });
+        console.log(`  ⚠️ 위젯 ${index}: (${fallbackPosition.x}, ${fallbackPosition.y}) - fallback 위치`);
+      } else {
+        // 최악의 경우 원래 위치 유지
+        result.push(item);
+        console.error(`  ✗ 위젯 ${index}: 배치 실패, 원래 위치 유지`);
+      }
+    }
+  });
+
+  console.log('✅ optimizeLayout 완료:', result.map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h })));
+
+  // 원본 순서로 복원 (items 배열의 인덱스 순서 유지)
+  const resultMap = new Map(sortedItems.map((item, i) => [item, result[i]]));
+  return items.map(item => resultMap.get(item)!);
+}
+
+/**
  * CSS Transform 스타일 생성 (성능 최적화)
  */
 export function getTransformStyle(
@@ -384,7 +540,7 @@ export function getTransformStyle(
   skipTransition: boolean = false
 ): any {
   const pixels = gridToPixels(position, cellWidth, cellHeight, gap);
-  
+
   if (useCSSTransforms) {
     return {
       // Framer Motion 호환(x/y) + 일반 div 호환(transform) 병행

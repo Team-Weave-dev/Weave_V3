@@ -6,15 +6,16 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getDashboardText } from '@/config/brand';
-import { 
-  Settings, 
-  Save, 
+import {
+  Settings,
+  Save,
   X,
   Plus,
   Grip,
   Maximize2,
   Grid3x3,
-  Layers
+  Layers,
+  ArrowUp
 } from 'lucide-react';
 import { 
   useImprovedDashboardStore,
@@ -430,6 +431,7 @@ export function ImprovedDashboard({
     resizeWidgetSmart,
     swapWidgets,
     compactWidgets,
+    optimizeWidgetLayout,
     findSpaceForWidget,
     checkCollision,
     setColumns,
@@ -726,13 +728,15 @@ export function ImprovedDashboard({
   // ESC 키 처리는 대시보드 페이지에서 통합 관리
   // (편집 모드와 사이드바를 동시에 닫기 위해)
   
-  // Compact 레이아웃 적용
+  // Compact 레이아웃 적용 (세로 무한 확장 모드에서는 비활성화)
   useEffect(() => {
     const compact = isCompactControlled ?? isCompact;
-    if (compact && config.compactType) {
-      compactWidgets(config.compactType);
+    // maxRows가 정의되지 않았으면 무한 확장 모드이므로 자동 압축 비활성화
+    const shouldCompact = compact && config.compactType && config.maxRows !== undefined;
+    if (shouldCompact && config.compactType) {
+      compactWidgets(config.compactType as 'vertical' | 'horizontal');
     }
-  }, [isCompactControlled, isCompact, config.compactType, compactWidgets]);
+  }, [isCompactControlled, isCompact, config.compactType, config.maxRows, compactWidgets]);
   
   // 드래그 핸들러
   const handleDragStart = useCallback((e: React.MouseEvent, widget: ImprovedWidget) => {
@@ -823,16 +827,18 @@ export function ImprovedDashboard({
         callbacks?.onDragStop?.(widget, finalPosition, e);
       }
       
-      // 자동 정렬 옵션이 켜져 있으면 압축 실행
+      // 세로 무한 확장 모드에서는 자동 압축 비활성화
+      // (자동 압축이 위젯을 위로 밀어내는 것을 방지)
       const compact = isCompactControlled ?? isCompact;
-      if (compact && config.compactType) {
-        compactWidgets(config.compactType);
+      const shouldCompact = compact && config.compactType && config.maxRows !== undefined;
+      if (shouldCompact && config.compactType) {
+        compactWidgets(config.compactType as 'vertical' | 'horizontal');
       }
 
       stopDragging();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      
+
       callbacks?.onLayoutChange?.(widgets);
     };
     
@@ -893,16 +899,18 @@ export function ImprovedDashboard({
         callbacks?.onResizeStop?.(widget, finalPosition, e);
       }
       
-      // 자동 정렬 옵션이 켜져 있으면 압축 실행
+      // 세로 무한 확장 모드에서는 자동 압축 비활성화
+      // (자동 압축이 위젯을 위로 밀어내는 것을 방지)
       const compact = isCompactControlled ?? isCompact;
-      if (compact && config.compactType) {
-        compactWidgets(config.compactType);
+      const shouldCompact = compact && config.compactType && config.maxRows !== undefined;
+      if (shouldCompact && config.compactType) {
+        compactWidgets(config.compactType as 'vertical' | 'horizontal');
       }
 
       stopResizing();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      
+
       callbacks?.onLayoutChange?.(widgets);
     };
     
@@ -1158,6 +1166,20 @@ export function ImprovedDashboard({
   // 반응형 컬럼 규칙(components 라이브러리의 훅 사용)
   useResponsiveCols(containerRef as React.RefObject<HTMLElement>, { onChange: setColumns, initialCols: config.cols });
 
+  // 컨테이너 최소 높이 동적 계산 (세로 무한 확장 지원)
+  const containerMinHeight = useMemo(() => {
+    if (widgets.length === 0) {
+      // 위젯이 없을 때는 최소 3행 높이 제공
+      return 3 * (config.rowHeight + config.gap);
+    }
+
+    // 모든 위젯의 최대 Y + H 위치 계산
+    const maxY = Math.max(...widgets.map(w => w.position.y + w.position.h));
+
+    // 최대 위치 + 여유 공간 3행
+    return (maxY + 3) * (config.rowHeight + config.gap);
+  }, [widgets, config.rowHeight, config.gap]);
+
   return (
     <div className={cn("w-full", className)}>
       {/* 툴바 - hideToolbar가 false이고 편집 모드일 때만 표시 */}
@@ -1180,9 +1202,19 @@ export function ImprovedDashboard({
               size="sm"
               variant="outline"
               onClick={() => compactWidgets('vertical')}
+              title="위젯들을 상단으로 정렬합니다"
+            >
+              <ArrowUp className="h-4 w-4 mr-2" />
+              {getDashboardText.verticalAlign('ko')}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => optimizeWidgetLayout()}
+              title="빈 공간을 최소화하여 위젯을 최적 배치합니다"
             >
               <Grid3x3 className="h-4 w-4 mr-2" />
-              {getDashboardText.manualAlign('ko')}
+              {getDashboardText.optimizeLayout('ko')}
             </Button>
           </div>
           
@@ -1198,15 +1230,15 @@ export function ImprovedDashboard({
       )}
       
       {/* 그리드 컨테이너 - 드롭 존으로 사용 */}
-      <div 
+      <div
         ref={containerRef}
         className="relative"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        style={{ 
-          // maxRows(9) * (rowHeight(120) + gap(16)) = 9 * 136 = 1224px
-          minHeight: `${(config.maxRows || 9) * (config.rowHeight + config.gap)}px`,
-          background: isEditMode 
+        style={{
+          // 동적 최소 높이 - 위젯 배치에 따라 자동 확장
+          minHeight: `${containerMinHeight}px`,
+          background: isEditMode
             ? `repeating-linear-gradient(
                 0deg,
                 transparent,
@@ -1245,24 +1277,31 @@ export function ImprovedDashboard({
               style={getWidgetStyle(widget)}
             >
               <div className="relative h-full overflow-hidden">
-                {/* 편집 컨트롤 */}
+                {/* 편집 컨트롤 - 가장 먼저 렌더링하여 최상위 레이어 */}
                 {isEditMode && !widget.static && (
-                  <div className="absolute -inset-2 z-30 pointer-events-none">
+                  <div className="absolute -inset-2 z-50 pointer-events-none">
                     {/* 삭제 버튼 */}
                     <button
-                      className="absolute -top-2 -left-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg pointer-events-auto hover:bg-red-600 hover:scale-110 active:scale-90 transition-transform z-20"
-                      onClick={() => {
+                      data-delete-button
+                      className="absolute -top-2 -left-2 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg pointer-events-auto hover:bg-red-600 hover:scale-110 active:scale-90 transition-transform"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         removeWidget(widget.id);
                         callbacks?.onWidgetRemove?.(widget.id);
+                      }}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
                       }}
                     >
                       <X className="h-4 w-4" />
                     </button>
-                    
+
                     {/* 크기 조절 핸들 */}
                     {(widget.isResizable !== false) && (
                       <button
-                        className="absolute -bottom-2 -right-2 w-7 h-7 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg pointer-events-auto cursor-se-resize hover:bg-primary/90 hover:scale-110 transition-transform z-20"
+                        data-resize-handle
+                        className="absolute -bottom-2 -right-2 w-7 h-7 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg pointer-events-auto cursor-se-resize hover:bg-primary/90 hover:scale-110 transition-transform"
                         onMouseDown={(e) => handleResizeStart(e, widget)}
                       >
                         <Maximize2 className="h-3 w-3" />
@@ -1270,30 +1309,48 @@ export function ImprovedDashboard({
                     )}
                   </div>
                 )}
-                
+
                 {/* 위젯 콘텐츠 */}
                 <div
                   className={cn(
-                    "h-full transition-all duration-200",
+                    "h-full transition-all duration-200 relative",
                     isEditMode && !widget.static && "scale-95",
                     editState.draggedWidget?.id === widget.id && "opacity-80 cursor-grabbing"
                   )}
                   onClick={(e) => !isEditMode && callbacks?.onWidgetClick?.(widget, e.nativeEvent)}
                 >
-                  {/* 편집 모드 드래그 핸들 - 이동과 제거 분리 */}
+                  {/* 편집 모드일 때 위젯 전체 드래그 가능 오버레이 */}
                   {isEditMode && !widget.static && widget.isDraggable !== false && (
-                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-gray-100/50 to-transparent dark:from-gray-800/50 z-10 flex items-center justify-between px-2">
-                      {/* 이동 핸들 (왼쪽) */}
-                      <div 
-                        className="flex-1 h-full cursor-move flex items-center justify-center"
-                        onMouseDown={(e) => handleDragStart(e, widget)}
-                      >
+                    <div
+                      data-drag-handle
+                      className="absolute inset-0 z-20 cursor-move"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => {
+                        // 리사이즈 핸들이나 삭제 버튼이 아닌 경우에만 드래그 시작
+                        const target = e.target as HTMLElement;
+                        const isResizeHandle = target.closest('[data-resize-handle]');
+                        const isDeleteButton = target.closest('[data-delete-button]');
+                        const isRemoveHandle = target.closest('[data-remove-handle]');
+
+                        if (!isResizeHandle && !isDeleteButton && !isRemoveHandle) {
+                          handleDragStart(e, widget);
+                        }
+                      }}
+                    />
+                  )}
+
+                  {/* 편집 모드 상단 헤더 - 아이콘과 제거 핸들만 */}
+                  {isEditMode && !widget.static && widget.isDraggable !== false && (
+                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-gray-100/50 to-transparent dark:from-gray-800/50 z-30 flex items-center justify-between px-2 pointer-events-none">
+                      {/* 이동 아이콘 (시각적 힌트) */}
+                      <div className="flex-1 h-full flex items-center justify-center">
                         <Grip className="h-4 w-4 text-gray-400" />
                       </div>
-                      
+
                       {/* 제거 핸들 (오른쪽) - HTML5 드래그 */}
                       <div
-                        className="h-6 w-6 cursor-grab hover:bg-red-100 rounded flex items-center justify-center transition-colors"
+                        data-remove-handle
+                        className="h-6 w-6 cursor-grab hover:bg-red-100 rounded flex items-center justify-center transition-colors pointer-events-auto"
                         draggable
                         onDragStart={(e) => {
                           e.stopPropagation(); // 이동 핸들과 충돌 방지
@@ -1301,7 +1358,7 @@ export function ImprovedDashboard({
                           e.dataTransfer.effectAllowed = 'move';
                           e.dataTransfer.setData('widgetId', widget.id);
                           e.dataTransfer.setData('widgetType', widget.type);
-                          
+
                           // 드래그 이미지 설정
                           const dragImage = document.createElement('div');
                           dragImage.className = 'p-3 rounded-lg shadow-lg bg-white border-2 border-dashed border-red-400';

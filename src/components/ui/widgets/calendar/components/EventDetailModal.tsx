@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import {
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { DeleteDialog } from '@/components/ui/dialogDelete';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,15 +40,17 @@ const iconMap = {
  * EventDetailModal Component
  * 이벤트의 상세 정보를 표시하는 모달
  */
-const EventDetailModal = React.memo(({ 
-  event, 
-  isOpen, 
+const EventDetailModal = React.memo(({
+  event,
+  isOpen,
   onClose,
   onEdit,
-  onDelete 
+  onDelete
 }: EventDetailModalProps) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   if (!event) return null;
-  
+
   const config = eventTypeConfig[event.type || 'other'];
   const Icon = iconMap[config.icon as keyof typeof iconMap];
   
@@ -82,7 +85,7 @@ const EventDetailModal = React.memo(({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onDelete(event)}
+                  onClick={() => setShowDeleteDialog(true)}
                   className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -153,6 +156,23 @@ const EventDetailModal = React.memo(({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* 삭제 확인 다이얼로그 */}
+      {onDelete && (
+        <DeleteDialog
+          open={showDeleteDialog}
+          title="일정 삭제"
+          description="이 일정을 삭제하시겠습니까?"
+          confirmLabel="삭제"
+          cancelLabel="취소"
+          icon={<CalendarIcon className="h-6 w-6" />}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={() => {
+            onDelete(event);
+            setShowDeleteDialog(false);
+          }}
+        />
+      )}
     </Dialog>
   );
 });
