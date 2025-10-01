@@ -97,7 +97,7 @@ export class IntegratedCalendarManager {
     );
 
     this.unsubscribeStorageTodo = addStorageListener(
-      'weave_dashboard_todo_sections',
+      'weave_dashboard_todo_tasks',  // 수정: tasks 키로 변경 (실제 할 일 데이터)
       () => this.handleStorageChange('todo')
     );
   }

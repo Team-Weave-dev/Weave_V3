@@ -12,7 +12,7 @@ import { notifyCalendarDataChanged } from '../events';
 const STORAGE_KEYS = {
   CALENDAR_EVENTS: 'weave_calendar_events', // CalendarWidget이 실제로 사용하는 키
   TAX_DEADLINES: 'improved-dashboard-tax-deadlines',
-  TODO_TASKS: 'weave_dashboard_todo_sections', // TodoListWidget이 실제로 사용하는 키
+  TODO_TASKS: 'weave_dashboard_todo_tasks', // TodoListWidget이 실제로 사용하는 키 (tasks 저장)
 } as const;
 
 /**

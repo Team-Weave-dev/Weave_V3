@@ -11,9 +11,8 @@ export const priorityColors: Record<TodoPriority, { badge: string; icon: string 
 };
 
 // 로컬 스토리지 키
-// Note: STORAGE_KEY는 더 이상 사용하지 않음 - SECTIONS_KEY로 통합
-export const STORAGE_KEY = 'weave_dashboard_todo_sections';  // 통합된 저장소 키
-export const SECTIONS_KEY = 'weave_dashboard_todo_sections';  // 주 저장소 키 (sections 안에 tasks 포함)
+export const STORAGE_KEY = 'weave_dashboard_todo_tasks';     // 태스크 저장소 키
+export const SECTIONS_KEY = 'weave_dashboard_todo_sections';  // 섹션 저장소 키
 export const VIEW_MODE_KEY = 'weave_dashboard_todo_view_mode';
 export const OPTIONS_KEY = 'weave_dashboard_todo_options';
 

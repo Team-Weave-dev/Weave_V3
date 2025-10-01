@@ -284,6 +284,37 @@ export function TodoListWidget({
   const renderContent = () => {
     switch (viewMode) {
       case 'date':
+        // 날짜 뷰 빈 상태 체크
+        const hasAnyDateTasks = dateGroupsState.some(group =>
+          getTasksByDateGroup(group).length > 0
+        );
+
+        if (!hasAnyDateTasks) {
+          return (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <div className="rounded-full bg-primary/10 p-6 mb-4">
+                <CalendarIcon className="h-12 w-12 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                {getWidgetText.todoList.emptyState.title('ko')}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                {getWidgetText.todoList.emptyState.description('ko')}
+              </p>
+              <Button
+                onClick={() => {
+                  setViewMode('section');
+                  setTimeout(() => setAddingSectionId(sections[0]?.id || 'default'), 100);
+                }}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                {getWidgetText.todoList.addTask('ko')}
+              </Button>
+            </div>
+          );
+        }
+
         return (
           <div>
             {dateGroupsState.map(group => {
@@ -394,15 +425,59 @@ export function TodoListWidget({
                 />
               ))
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">{getWidgetText.todoList.noCompletedTasks('ko')}</p>
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <div className="rounded-full bg-primary/10 p-6 mb-4">
+                  <Clock className="h-12 w-12 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
+                  {getWidgetText.todoList.noCompletedTasks('ko')}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                  완료한 작업이 여기에 표시됩니다
+                </p>
               </div>
             )}
           </div>
         );
         
       default: // section view
+        // 섹션이 하나도 없을 때만 빈 상태 UI 표시
+        if (sections.length === 0) {
+          return (
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <div className="rounded-full bg-primary/10 p-6 mb-4">
+                <List className="h-12 w-12 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                {getWidgetText.todoList.emptyState.title('ko')}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-sm whitespace-pre-line">
+                {getWidgetText.todoList.emptyState.description('ko')}
+              </p>
+              <Button
+                onClick={() => {
+                  // 기본 섹션 생성하고 작업 추가 모드 활성화
+                  const defaultSection: TodoSection = {
+                    id: 'default',
+                    name: '📌 미구분',
+                    order: 0,
+                    isExpanded: true
+                  };
+                  handleAddSection(defaultSection.name);
+                  setTimeout(() => setAddingSectionId('default'), 100);
+                }}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                {getWidgetText.todoList.addTask('ko')}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-4 whitespace-pre-line leading-relaxed">
+                {getWidgetText.todoList.emptyState.actionHint('ko')}
+              </p>
+            </div>
+          );
+        }
+
         return (
           <div>
             {sections.map((section, sectionIndex) => {
@@ -657,6 +732,31 @@ export function TodoListWidget({
           </div>
           
           <div className="flex items-center gap-2">
+            {/* 할 일 추가 버튼 - 더 눈에 띄게 */}
+            <Button
+              variant="default"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => {
+                // 섹션이 없으면 기본 섹션 생성
+                if (sections.length === 0) {
+                  handleAddSection('📌 미구분');
+                  setTimeout(() => setAddingSectionId('default'), 100);
+                  if (viewMode !== 'section') {
+                    setViewMode('section');
+                  }
+                } else if (viewMode === 'date' || viewMode === 'completed') {
+                  setViewMode('section');
+                  setTimeout(() => setAddingSectionId(sections[0]?.id || 'default'), 100);
+                } else {
+                  setAddingSectionId(sections[0]?.id || 'default');
+                }
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">{getWidgetText.todoList.addTask('ko')}</span>
+            </Button>
+
             {/* 뷰 모드 탭 */}
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
               <TabsList className="grid grid-cols-3 h-8">
@@ -674,7 +774,7 @@ export function TodoListWidget({
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            
+
             {/* 옵션 버튼 */}
             <Button
               variant="ghost"

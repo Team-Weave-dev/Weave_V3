@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocalStorage } from './useLocalStorage';
 import { useDragAndDrop } from './useDragAndDrop';
@@ -183,8 +183,12 @@ export function useTodoState(props?: {
   }, [setLocalTasks, onTaskToggle]);
 
   const handleDeleteTask = useCallback((taskId: string) => {
+    // 자기 자신의 삭제 타임스탬프 기록 (리스너가 무시하도록)
+    const deleteTimestamp = Date.now();
+    lastDeleteTimestamp.current = deleteTimestamp;
+
     setLocalTasks(prev => {
-      const filtered = prev.filter(task => {
+      const filtered = prev.map(task => {
         if (task.id === taskId) {
           onTaskDelete?.(taskId);
 
@@ -193,17 +197,24 @@ export function useTodoState(props?: {
             source: 'todo',
             changeType: 'delete',
             itemId: taskId,
-            timestamp: Date.now(),
+            timestamp: deleteTimestamp,
           });
 
-          return false;
+          return null; // Mark for removal
         }
         // Keep task but filter children
         if (task.children?.length) {
-          task.children = task.children.filter(child => child.id !== taskId);
+          const filteredChildren = task.children.filter(child => child.id !== taskId);
+          if (filteredChildren.length !== task.children.length) {
+            // Child was removed, return new task object
+            return {
+              ...task,
+              children: filteredChildren
+            };
+          }
         }
-        return true;
-      });
+        return task;
+      }).filter((task): task is TodoTask => task !== null);
       return filtered;
     });
   }, [setLocalTasks, onTaskDelete]);
@@ -212,6 +223,21 @@ export function useTodoState(props?: {
     // Ensure localTasks is an array
     const tasks = Array.isArray(localTasks) ? localTasks : [];
 
+    // 섹션이 없으면 기본 섹션 자동 생성
+    let targetSectionId = sectionId;
+    if (sections.length === 0) {
+      const defaultSection: TodoSection = {
+        id: 'default',
+        name: '📌 미구분', // brand.ts의 defaultSection 텍스트와 동일
+        order: 0,
+        isExpanded: true
+      };
+      setSections([defaultSection]);
+      targetSectionId = 'default';
+    } else if (!targetSectionId) {
+      targetSectionId = sections[0]?.id || 'default';
+    }
+
     const newTask: TodoTask = {
       id: uuidv4(),
       title,
@@ -219,9 +245,9 @@ export function useTodoState(props?: {
       priority: priority || DEFAULT_PRIORITY,
       depth: parentId ? 1 : 0,
       children: [],
-      sectionId: sectionId || sections[0]?.id || 'default',
+      sectionId: targetSectionId,
       parentId,
-      order: tasks.filter(t => t.sectionId === sectionId && !t.parentId).length,
+      order: tasks.filter(t => t.sectionId === targetSectionId && !t.parentId).length,
       isExpanded: false,
       createdAt: new Date(),
       dueDate,
@@ -252,7 +278,7 @@ export function useTodoState(props?: {
       itemId: newTask.id,
       timestamp: Date.now(),
     });
-  }, [localTasks, sections, setLocalTasks, onTaskAdd]);
+  }, [localTasks, sections, setSections, setLocalTasks, onTaskAdd]);
 
   const handleUpdateTask = useCallback((taskId: string, updates: Partial<TodoTask>) => {
     setLocalTasks(prev => prev.map(task => {
@@ -338,11 +364,22 @@ export function useTodoState(props?: {
       return;
     }
     
+    // 섹션이 없으면 기본 섹션 자동 생성
+    if (sections.length === 0) {
+      const defaultSection: TodoSection = {
+        id: 'default',
+        name: '📌 미구분',
+        order: 0,
+        isExpanded: true
+      };
+      setSections([defaultSection]);
+    }
+
     // 날짜 뷰에서 드롭한 경우 'date-' 접두사 제거
     let actualSectionId = targetSectionId;
     if (targetSectionId.startsWith('date-')) {
       // 날짜 뷰에서는 첫 번째 섹션으로 이동하거나 'default' 섹션으로 이동
-      actualSectionId = sections[0]?.id || 'default';
+      actualSectionId = sections.length > 0 ? sections[0].id : 'default';
     }
     
     // 드래그한 작업을 새로운 섹션으로 이동
@@ -380,15 +417,24 @@ export function useTodoState(props?: {
     
     setDraggedTask(null);
     setDragOverSection(null);
-  }, [draggedTask, sections, setLocalTasks]);
+  }, [draggedTask, sections, setSections, setLocalTasks]);
 
   // 실시간 동기화: 다른 위젯(캘린더)에서의 변경사항 감지
+  // 타임스탬프를 사용하여 자기 자신의 이벤트와 외부 이벤트를 구분
+  const lastDeleteTimestamp = useRef<number>(0);
+
   useEffect(() => {
     const unsubscribe = addCalendarDataChangedListener((event) => {
-      const { source, changeType, itemId } = event.detail;
+      const { source, changeType, itemId, timestamp } = event.detail;
 
-      // 투두 소스의 삭제 이벤트만 처리
-      if (source === 'todo' && changeType === 'delete' && itemId) {
+      // 투두 소스의 이벤트만 처리
+      if (source === 'todo' && itemId) {
+        // 자기 자신이 방금 발생시킨 이벤트는 무시 (100ms 이내)
+        if (Math.abs(timestamp - lastDeleteTimestamp.current) < 100) {
+          return;
+        }
+
+        // 다른 위젯(캘린더)에서 발생한 변경사항만 처리
         // localStorage에서 최신 데이터 다시 로드
         try {
           const data = localStorage.getItem(STORAGE_KEY);

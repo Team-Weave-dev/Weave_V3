@@ -126,7 +126,11 @@ export function TodoSection({
           {/* 섹션 삭제 버튼 */}
           {onDeleteSection && (
             <button
-              onClick={() => onDeleteSection(section.id)}
+              onClick={() => {
+                if (window.confirm(getWidgetText.todoList.confirmDeleteSection('ko'))) {
+                  onDeleteSection(section.id);
+                }
+              }}
               className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-800 rounded"
             >
               <Trash2 className="h-3 w-3 text-red-500" />

@@ -1853,10 +1853,16 @@ export const getWidgetText = {
     newTask: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 작업' : 'New Task',
     placeholder: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새로운 작업을 입력하세요' : 'Enter new task',
     newSection: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 섹션 추가' : 'Add new section',
+    defaultSection: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '📌 미구분' : '📌 Uncategorized',
     completed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료됨' : 'Completed',
     pending: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '대기 중' : 'Pending',
     noTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '할 일이 없습니다' : 'No tasks',
     noCompletedTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료된 작업이 없습니다' : 'No completed tasks',
+    emptyState: {
+      title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '아직 할 일이 없어요' : 'No tasks yet',
+      description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새로운 할 일을 추가하여 업무를 시작하세요' : 'Add a new task to get started',
+      actionHint: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '상단의 + 버튼을 클릭하거나\n아래 버튼을 눌러 첫 할 일을 만들어보세요' : 'Click the + button above or\nthe button below to create your first task'
+    },
     priority: {
       high: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '높음' : 'High',
       medium: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '보통' : 'Medium',
@@ -1880,6 +1886,8 @@ export const getWidgetText = {
       nextWeek: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '다음 주' : 'Next Week',
       noDate: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '날짜 미정' : 'No Date'
     },
+    confirmDelete: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '이 할 일을 삭제하시겠습니까?' : 'Are you sure you want to delete this task?',
+    confirmDeleteSection: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '이 섹션과 포함된 모든 할 일을 삭제하시겠습니까?' : 'Are you sure you want to delete this section and all tasks in it?',
     dateBadges: {
       daysAgo: (days: number, lang: 'ko' | 'en' = defaultLanguage) => 
         lang === 'ko' ? `${days}일 전` : `${days}d ago`,

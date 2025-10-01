@@ -180,7 +180,11 @@ export function TodoTask({
         
         {/* 삭제 버튼 */}
         <button
-          onClick={() => onDelete(task.id)}
+          onClick={() => {
+            if (window.confirm(getWidgetText.todoList.confirmDelete('ko'))) {
+              onDelete(task.id);
+            }
+          }}
           className="p-0.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <Trash2 className="h-3 w-3 text-red-500" />
