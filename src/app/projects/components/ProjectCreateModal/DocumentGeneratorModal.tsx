@@ -217,10 +217,10 @@ export default function DocumentGeneratorModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden px-6 pb-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+        {/* 메인 콘텐츠 */}
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 px-6">
             {/* 왼쪽: 템플릿 선택 및 생성된 문서 목록 */}
-            <div className="flex flex-col gap-4 h-full overflow-y-auto">
+            <div className="flex flex-col gap-4 min-h-0 overflow-y-auto p-2 flex-1">
               {/* 템플릿 선택 섹션 */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">템플릿 선택</h3>
@@ -373,7 +373,7 @@ export default function DocumentGeneratorModal({
             </div>
 
             {/* 오른쪽: 미리보기/편집 */}
-            <div className="flex flex-col gap-4 h-full overflow-y-auto">
+            <div className="flex flex-col gap-4 min-h-0 flex-1">
               {/* 헤더와 토글 버튼 */}
               <div className="flex items-center justify-between flex-shrink-0">
                 <h3 className="text-lg font-medium">
@@ -435,7 +435,7 @@ export default function DocumentGeneratorModal({
               )}
 
               {/* 미리보기/편집 영역 */}
-              <div className={`rounded-lg flex-1 bg-muted/50 overflow-hidden ${isEditMode ? 'border-2 border-primary' : 'border'}`}>
+              <div className={`rounded-lg flex-1 min-h-0 bg-muted/50 ${isEditMode ? 'border-2 border-primary' : 'border'}`}>
                 {previewContent ? (
                   isEditMode ? (
                     // 편집 모드: Textarea
@@ -463,11 +463,10 @@ export default function DocumentGeneratorModal({
                 )}
               </div>
             </div>
-          </div>
         </div>
 
         {/* 하단 버튼 */}
-        <div className="flex-shrink-0 flex justify-end gap-2 pt-3 pb-4 px-6">
+        <div className="flex-shrink-0 flex justify-end gap-2 pt-3 pb-4 px-6 bg-background border-t shadow-sm relative z-10">
           <Button type="button" variant="outline" onClick={handleClose} className="gap-2">
             <X className="h-4 w-4" />
             {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.buttons.close.ko}
