@@ -217,10 +217,10 @@ export default function DocumentGeneratorModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden px-6">
+        <div className="flex-1 overflow-hidden px-6 pb-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
             {/* 왼쪽: 템플릿 선택 및 생성된 문서 목록 */}
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4 h-full overflow-y-auto">
               {/* 템플릿 선택 섹션 */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">템플릿 선택</h3>
@@ -312,10 +312,10 @@ export default function DocumentGeneratorModal({
                 )}
               </div>
 
-              <Separator />
+              <Separator className="flex-shrink-0" />
 
               {/* 생성된 문서 목록 */}
-              <div className="space-y-4 flex-1">
+              <div className="flex flex-col gap-4 flex-1 min-h-0">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">
                     {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatedList.title.ko}
@@ -373,7 +373,7 @@ export default function DocumentGeneratorModal({
             </div>
 
             {/* 오른쪽: 미리보기/편집 */}
-            <div className="flex flex-col gap-4 h-full">
+            <div className="flex flex-col gap-4 h-full overflow-y-auto">
               {/* 헤더와 토글 버튼 */}
               <div className="flex items-center justify-between flex-shrink-0">
                 <h3 className="text-lg font-medium">
