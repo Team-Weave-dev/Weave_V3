@@ -31,7 +31,106 @@ mock/
 ## 📊 projects.ts - 프로젝트 데이터 생성기
 
 ### 개요
-프로젝트 관리 시스템에서 사용할 **20개의 가짜 프로젝트 데이터**를 생성합니다. 각 프로젝트는 현실적인 진행률, 결제 상태, 일정 등을 포함하여 실제 프로젝트 관리 시나리오를 재현합니다.
+프로젝트 관리 시스템의 **데이터 영속성**을 담당합니다. **Clean Slate 접근법**을 사용하여 사용자가 생성한 프로젝트만 로컬스토리지에 저장하고, Mock 데이터는 생성하지 않습니다.
+
+### 💾 Clean Slate 시스템
+
+**핵심 개념**:
+- ❌ Mock 데이터 자동 생성 없음
+- ✅ 사용자 생성 프로젝트만 localStorage에 저장
+- ✅ 새로고침 후에도 데이터 유지
+- ✅ 빈 상태에서 시작하여 진짜 사용자 데이터만 관리
+
+**로컬스토리지 키**:
+```typescript
+const CUSTOM_PROJECTS_KEY = 'weave_custom_projects'
+```
+
+### 로컬스토리지 기반 함수들
+
+#### 프로젝트 CRUD 작업
+
+**1. 프로젝트 추가**:
+```typescript
+export function addCustomProject(project: ProjectTableRow): void
+```
+- 새 프로젝트를 배열 맨 앞에 삽입 (최신 순 정렬)
+- localStorage에 즉시 저장
+- 저장 후 검증 로직 포함
+
+**2. 프로젝트 업데이트**:
+```typescript
+export function updateCustomProject(idOrNo: string, updates: Partial<ProjectTableRow>): boolean
+```
+- ID 또는 프로젝트 번호로 찾아서 업데이트
+- `modifiedDate` 자동 갱신
+- 성공 여부 반환 (boolean)
+
+**3. 프로젝트 삭제**:
+```typescript
+export function removeCustomProject(idOrNo: string): boolean
+```
+- ID 또는 프로젝트 번호로 삭제
+- 삭제 성공 여부 반환
+
+**4. 전체 삭제**:
+```typescript
+export function clearCustomProjects(): void
+```
+- 모든 사용자 생성 프로젝트 삭제
+- localStorage 키 완전 제거
+
+#### 데이터 조회
+
+**비동기 데이터 페칭**:
+```typescript
+export async function fetchMockProjects(): Promise<ProjectTableRow[]>
+```
+- 300ms 네트워크 지연 시뮬레이션
+- localStorage에서 사용자 생성 프로젝트만 반환
+- 빈 배열일 수 있음 (Clean Slate)
+
+**동기 데이터 조회**:
+```typescript
+export function getMockProjectById(id: string): ProjectTableRow | null
+```
+- ID 또는 프로젝트 번호로 검색
+- localStorage에서 직접 조회
+
+### SSR 안전성
+
+**모든 localStorage 작업은 클라이언트 전용**:
+```typescript
+function getCustomProjects(): ProjectTableRow[] {
+  // SSR 환경에서는 빈 배열 반환
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const stored = localStorage.getItem(CUSTOM_PROJECTS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error reading custom projects from localStorage:', error);
+    return [];
+  }
+}
+```
+
+**특징**:
+- `typeof window === 'undefined'` 체크로 SSR 감지
+- try-catch로 안전한 에러 처리
+- 항상 안전한 폴백 값 반환 (빈 배열)
+
+### 기존 generateMockProjects() 함수
+
+**현재는 참조용으로만 유지**:
+```typescript
+export function generateMockProjects(): ProjectTableRow[]
+```
+- 시드 기반으로 일관된 20개의 Mock 데이터 생성
+- **Clean Slate 시스템에서는 사용하지 않음**
+- 테스트나 개발 참조용으로만 존재
 
 ### 핵심 함수들
 
@@ -410,6 +509,196 @@ export function generateMockProjects(count?: number): ProjectTableRow[] {
     // 기존 생성 로직...
   });
 }
+```
+
+## 📄 documents.ts - 프로젝트 문서 데이터 관리
+
+### 개요
+프로젝트별 문서 데이터를 **로컬스토리지에 영구 저장**하는 시스템입니다. 각 프로젝트는 독립적인 문서 목록을 가지며, 계약서/청구서/견적서/보고서 등 다양한 문서 유형을 지원합니다.
+
+### 💾 로컬스토리지 구조
+
+**로컬스토리지 키**:
+```typescript
+const PROJECT_DOCUMENTS_KEY = 'weave_project_documents'
+```
+
+**데이터 구조**:
+```typescript
+{
+  'project-1': [
+    {
+      id: 'doc-1',
+      name: '표준 용역 계약서',
+      type: 'contract',
+      status: 'complete',
+      savedAt: '2024-01-15T10:30:00Z',
+      content: '# 표준 용역 계약서\n\n...'
+    },
+    {
+      id: 'doc-2',
+      name: '프로젝트 견적서',
+      type: 'estimate',
+      status: 'complete',
+      savedAt: '2024-01-16T14:20:00Z',
+      content: '# 프로젝트 견적서\n\n...'
+    }
+  ],
+  'project-2': [ ... ]
+}
+```
+
+### 문서 CRUD 함수들
+
+#### 1. 문서 조회
+```typescript
+export function getProjectDocuments(projectId: string): DocumentInfo[]
+```
+- 특정 프로젝트의 모든 문서 반환
+- SSR 환경에서 빈 배열 반환
+- 에러 발생 시 빈 배열 반환 (안전한 폴백)
+
+#### 2. 문서 저장
+```typescript
+export function saveProjectDocuments(projectId: string, documents: DocumentInfo[]): void
+```
+- 프로젝트의 전체 문서 목록 저장
+- 기존 데이터 덮어쓰기
+- SSR 환경에서 안전하게 무시
+
+#### 3. 문서 추가
+```typescript
+export function addProjectDocument(projectId: string, document: DocumentInfo): void
+```
+- 새 문서를 프로젝트에 추가
+- 배열 맨 앞에 삽입 (최신 순)
+- 즉시 localStorage에 저장
+
+#### 4. 문서 삭제
+```typescript
+export function removeProjectDocument(projectId: string, documentId: string): void
+```
+- 특정 문서만 삭제
+- 나머지 문서는 유지
+
+#### 5. 프로젝트 문서 전체 삭제
+```typescript
+export function clearProjectDocuments(projectId: string): void
+```
+- 프로젝트의 모든 문서 삭제
+- localStorage에서 해당 프로젝트 키 제거
+
+### 🔧 디버깅 도구
+
+#### 1. 전체 상태 확인
+```typescript
+export function debugLocalStorageState(): void
+```
+- 모든 localStorage 키 출력
+- 프로젝트 문서 데이터 상세 분석
+- 콘솔에서 사용: `debugLocalStorageState()`
+
+**출력 예시**:
+```
+🔍 [DEBUG] === localStorage 상태 전체 점검 ===
+총 localStorage 키 개수: 3
+🗝️  weave_custom_projects: [...]
+🗝️  weave_project_documents: {"project-1":[...]}
+🗝️  preferredViewMode: "detail"
+```
+
+#### 2. 레거시 키 정리
+```typescript
+export function cleanupLegacyDocumentKeys(): void
+```
+- 이전 버전의 document 관련 키 제거
+- 데이터 중복 및 불일치 방지
+- 한 번만 실행하면 자동으로 정리
+
+#### 3. 전체 문서 초기화
+```typescript
+export function resetAllDocuments(): void
+```
+- **주의**: 모든 문서 데이터 삭제
+- 문서 관련 모든 localStorage 키 제거
+- 복구 불가능한 작업
+
+#### 4. 프로젝트 문서 상태 확인
+```typescript
+export function debugProjectDocuments(projectId: string): void
+```
+- 특정 프로젝트의 문서 상태 출력
+- 함수 반환값과 localStorage 직접 조회 비교
+- 데이터 불일치 감지
+
+**사용 예시**:
+```typescript
+// 브라우저 콘솔에서
+import { debugProjectDocuments } from '@/lib/mock/documents';
+debugProjectDocuments('project-1');
+```
+
+### SSR 안전성
+
+**모든 문서 작업은 클라이언트 전용**:
+```typescript
+export function getProjectDocuments(projectId: string): DocumentInfo[] {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const stored = localStorage.getItem(PROJECT_DOCUMENTS_KEY);
+    if (!stored) return [];
+
+    const allDocuments = JSON.parse(stored);
+    return allDocuments[projectId] || [];
+  } catch (error) {
+    console.error('Error reading project documents from localStorage:', error);
+    return [];
+  }
+}
+```
+
+**특징**:
+- `typeof window === 'undefined'` 체크
+- try-catch로 파싱 에러 방지
+- 항상 안전한 폴백 반환
+
+### 문서 타입 지원
+
+**지원되는 문서 유형**:
+```typescript
+type DocumentType =
+  | 'contract'    // 계약서
+  | 'invoice'     // 청구서
+  | 'estimate'    // 견적서
+  | 'report'      // 보고서
+  | 'other'       // 기타
+```
+
+**문서 상태**:
+```typescript
+type DocumentStatus =
+  | 'draft'       // 초안
+  | 'complete'    // 완료
+  | 'archived'    // 보관
+```
+
+### 데이터 흐름
+
+```
+사용자 액션 (문서 생성/수정/삭제)
+    ↓
+ProjectDocumentGeneratorModal 또는 DocumentManagement 탭
+    ↓
+addProjectDocument / removeProjectDocument
+    ↓
+localStorage.setItem('weave_project_documents', JSON.stringify(allDocuments))
+    ↓
+프로젝트 데이터 새로고침
+    ↓
+getProjectDocuments(projectId)
+    ↓
+UI 업데이트 (Overview 카드, Documents 탭)
 ```
 
 ## 📊 품질 메트릭
