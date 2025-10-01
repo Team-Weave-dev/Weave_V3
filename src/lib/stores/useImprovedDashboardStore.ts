@@ -9,7 +9,7 @@ import { devtools } from 'zustand/middleware';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { ImprovedWidget, DashboardConfig, DashboardEditState } from '@/types/improved-dashboard';
-import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout, checkCollision } from '@/lib/dashboard/grid-utils';
+import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout, optimizeLayout, checkCollision } from '@/lib/dashboard/grid-utils';
 
 interface ImprovedDashboardStore {
   // 위젯 상태
@@ -37,6 +37,7 @@ interface ImprovedDashboardStore {
   
   // 레이아웃 액션
   compactWidgets: (compactType?: 'vertical' | 'horizontal') => void;
+  optimizeWidgetLayout: () => void;
   findSpaceForWidget: (width: number, height: number) => GridPosition | null;
   checkCollision: (widgetId: string, position: GridPosition) => boolean;
   
@@ -630,6 +631,33 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
           if (!hasChanges) {
             console.log('💡 힌트: 위젯들이 이미 y=0부터 연속적으로 배치되어 있어서 정렬할 필요가 없습니다.');
           }
+        }),
+
+        // 위치 최적화 액션 (좌우 공간 활용)
+        optimizeWidgetLayout: () => set((state) => {
+          console.log('🎯 optimizeWidgetLayout 호출:', { widgetCount: state.widgets.length });
+
+          // 최적화 전 위치 출력
+          console.log('📍 최적화 전 위젯 상세:');
+          state.widgets.forEach(w => {
+            console.log(`  - ${w.type} (id: ${w.id.substring(0, 8)}): x=${w.position.x}, y=${w.position.y}, w=${w.position.w}, h=${w.position.h}`);
+          });
+
+          const positions = state.widgets.map(w => w.position);
+          const optimized = optimizeLayout(positions, state.config);
+
+          state.widgets = state.widgets.map((widget, index) => ({
+            ...widget,
+            position: optimized[index],
+          }));
+
+          // 최적화 후 위치 출력
+          console.log('📍 최적화 후 위젯 상세:');
+          state.widgets.forEach(w => {
+            console.log(`  - ${w.type} (id: ${w.id.substring(0, 8)}): x=${w.position.x}, y=${w.position.y}, w=${w.position.w}, h=${w.position.h}`);
+          });
+
+          console.log('✨ 위치 최적화 완료!');
         }),
         
         findSpaceForWidget: (width, height) => {

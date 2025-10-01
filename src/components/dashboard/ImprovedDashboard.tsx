@@ -6,15 +6,16 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getDashboardText } from '@/config/brand';
-import { 
-  Settings, 
-  Save, 
+import {
+  Settings,
+  Save,
   X,
   Plus,
   Grip,
   Maximize2,
   Grid3x3,
-  Layers
+  Layers,
+  ArrowUp
 } from 'lucide-react';
 import { 
   useImprovedDashboardStore,
@@ -430,6 +431,7 @@ export function ImprovedDashboard({
     resizeWidgetSmart,
     swapWidgets,
     compactWidgets,
+    optimizeWidgetLayout,
     findSpaceForWidget,
     checkCollision,
     setColumns,
@@ -1202,8 +1204,17 @@ export function ImprovedDashboard({
               onClick={() => compactWidgets('vertical')}
               title="위젯들을 상단으로 정렬합니다"
             >
+              <ArrowUp className="h-4 w-4 mr-2" />
+              {getDashboardText.verticalAlign('ko')}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => optimizeWidgetLayout()}
+              title="빈 공간을 최소화하여 위젯을 최적 배치합니다"
+            >
               <Grid3x3 className="h-4 w-4 mr-2" />
-              {getDashboardText.manualAlign('ko')}
+              {getDashboardText.optimizeLayout('ko')}
             </Button>
           </div>
           

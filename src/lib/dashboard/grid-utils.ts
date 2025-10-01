@@ -435,6 +435,100 @@ export function canSwapWidgets(
 }
 
 /**
+ * 최적화된 레이아웃 생성 (좌우 공간 활용)
+ * 위젯들을 좌상단부터 채워나가며 빈 공간을 최소화
+ */
+export function optimizeLayout(
+  items: GridPosition[],
+  config: GridConfig
+): GridPosition[] {
+  console.log('🚀 optimizeLayout 시작:', { itemCount: items.length });
+
+  if (items.length === 0) return [];
+
+  const { cols } = config;
+
+  // 1. 위젯들을 크기 순으로 정렬 (큰 것부터 배치)
+  const sortedItems = [...items].sort((a, b) => {
+    const areaA = a.w * a.h;
+    const areaB = b.w * b.h;
+    if (areaA !== areaB) return areaB - areaA; // 큰 것부터
+    return a.y - b.y; // 같으면 y 위치 우선
+  });
+
+  console.log('📊 정렬된 위젯 (크기순):', sortedItems.map(item => ({ w: item.w, h: item.h, area: item.w * item.h })));
+
+  // 2. 각 위젯을 최적 위치에 배치
+  const result: GridPosition[] = [];
+
+  sortedItems.forEach((item, index) => {
+    // 첫 번째 위젯은 (0, 0)에 배치
+    if (result.length === 0) {
+      result.push({ ...item, x: 0, y: 0 });
+      console.log(`  ✓ 위젯 ${index}: (0, 0) - 첫 번째 위젯`);
+      return;
+    }
+
+    // 최적의 빈 공간 찾기
+    let bestPosition: GridPosition | null = null;
+    let minY = Infinity;
+    let minX = Infinity;
+
+    // 가능한 모든 위치를 탐색
+    for (let y = 0; y < 100; y++) { // 최대 탐색 범위
+      for (let x = 0; x <= cols - item.w; x++) {
+        const testPosition: GridPosition = { ...item, x, y };
+
+        // 그리드 경계 확인
+        if (!isWithinBounds(testPosition, config)) continue;
+
+        // 충돌 검사
+        const hasCollision = result.some(existingItem =>
+          checkCollision(testPosition, existingItem)
+        );
+
+        if (!hasCollision) {
+          // 더 위쪽이거나 같은 높이에서 더 왼쪽인 위치를 선택
+          if (y < minY || (y === minY && x < minX)) {
+            minY = y;
+            minX = x;
+            bestPosition = testPosition;
+          }
+
+          // 최상단 최좌측을 찾았으면 더 이상 탐색 불필요
+          if (y === 0 && x === 0) break;
+        }
+      }
+
+      // 현재 행에서 위치를 찾았으면 다음 행 탐색 불필요
+      if (bestPosition && bestPosition.y === y) break;
+    }
+
+    if (bestPosition) {
+      result.push(bestPosition);
+      console.log(`  ✓ 위젯 ${index}: (${bestPosition.x}, ${bestPosition.y}) - 최적 위치`);
+    } else {
+      // 빈 공간을 못 찾으면 findEmptySpace 사용
+      const fallbackPosition = findEmptySpace(item.w, item.h, result, config);
+      if (fallbackPosition) {
+        result.push({ ...item, ...fallbackPosition });
+        console.log(`  ⚠️ 위젯 ${index}: (${fallbackPosition.x}, ${fallbackPosition.y}) - fallback 위치`);
+      } else {
+        // 최악의 경우 원래 위치 유지
+        result.push(item);
+        console.error(`  ✗ 위젯 ${index}: 배치 실패, 원래 위치 유지`);
+      }
+    }
+  });
+
+  console.log('✅ optimizeLayout 완료:', result.map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h })));
+
+  // 원본 순서로 복원 (items 배열의 인덱스 순서 유지)
+  const resultMap = new Map(sortedItems.map((item, i) => [item, result[i]]));
+  return items.map(item => resultMap.get(item)!);
+}
+
+/**
  * CSS Transform 스타일 생성 (성능 최적화)
  */
 export function getTransformStyle(
@@ -446,7 +540,7 @@ export function getTransformStyle(
   skipTransition: boolean = false
 ): any {
   const pixels = gridToPixels(position, cellWidth, cellHeight, gap);
-  
+
   if (useCSSTransforms) {
     return {
       // Framer Motion 호환(x/y) + 일반 div 호환(transform) 병행
