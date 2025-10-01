@@ -116,18 +116,20 @@ export function isWithinBounds(
   position: GridPosition,
   config: GridConfig
 ): boolean {
-  const { cols, maxRows = 9 } = config;
-  
+  const { cols, maxRows = Infinity } = config;
+
   // 최소값 체크
   if (position.x < 0 || position.y < 0) return false;
-  
+
   // 너비/높이 최소값 체크
   if (position.w < 1 || position.h < 1) return false;
-  
-  // 최대값 체크
+
+  // X(가로) 최대값 체크
   if (position.x + position.w > cols) return false;
-  if (position.y + position.h > maxRows) return false;
-  
+
+  // Y(세로) 최대값 체크 - maxRows가 Infinity가 아닐 때만
+  if (maxRows !== Infinity && position.y + position.h > maxRows) return false;
+
   return true;
 }
 
@@ -138,24 +140,25 @@ export function constrainToBounds(
   position: GridPosition,
   config: GridConfig
 ): GridPosition {
-  const { cols, maxRows = 9 } = config;
-  
+  const { cols, maxRows = Infinity } = config;
+
   // 너비/높이 최소값 보장
   const w = Math.max(1, position.w);
   const h = Math.max(1, position.h);
-  
-  // X 위치 조정
+
+  // X 위치 조정 (가로만 제한)
   let x = Math.max(0, position.x);
   if (x + w > cols) {
     x = Math.max(0, cols - w);
   }
-  
-  // Y 위치 조정
+
+  // Y 위치 조정 (세로 무한 확장 지원)
   let y = Math.max(0, position.y);
-  if (y + h > maxRows) {
+  // maxRows가 Infinity가 아닐 때만 Y 위치 제한
+  if (maxRows !== Infinity && y + h > maxRows) {
     y = Math.max(0, maxRows - h);
   }
-  
+
   return { x, y, w, h };
 }
 
@@ -168,21 +171,37 @@ export function findEmptySpace(
   items: GridPosition[],
   config: GridConfig
 ): GridPosition | null {
-  const { cols, maxRows = 9 } = config;
-  
+  const { cols, maxRows = Infinity } = config;
+
+  // 기존 위젯들의 최대 Y 위치 계산
+  const maxY = items.length > 0
+    ? Math.max(...items.map(item => item.y + item.h))
+    : 0;
+
+  // 검색 범위 설정: maxRows가 Infinity면 maxY + 20까지, 아니면 maxRows까지
+  const searchLimit = maxRows === Infinity
+    ? maxY + 20
+    : Math.min(maxRows - height + 1, maxY + 20);
+
   // 그리드를 순회하며 빈 공간 찾기
-  for (let y = 0; y <= maxRows - height; y++) {
+  for (let y = 0; y < searchLimit; y++) {
     for (let x = 0; x <= cols - width; x++) {
       const testPosition: GridPosition = { x, y, w: width, h: height };
-      
+
       // 충돌 체크
       if (!checkCollisionWithItems(testPosition, items)) {
         return testPosition;
       }
     }
   }
-  
-  return null;
+
+  // 빈 공간이 없으면 기존 위젯들 아래에 배치
+  return {
+    x: 0,
+    y: maxY,
+    w: width,
+    h: height
+  };
 }
 
 /**

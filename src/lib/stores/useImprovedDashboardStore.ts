@@ -70,7 +70,7 @@ const initialConfig: DashboardConfig = {
   cols: 9,
   rowHeight: 120,
   gap: 16,
-  maxRows: 9,
+  // maxRows 제거 - 세로 무한 확장 허용
   isDraggable: true,
   isResizable: true,
   preventCollision: true,
@@ -465,7 +465,7 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
                 const pushRight = currentPos.x + currentPos.w;
                 
                 // 그리드 경계 체크
-                const canPushDown = pushDown + targetPos.h <= (state.config.maxRows || 9);
+                const canPushDown = true; // 세로 무한 확장 허용
                 const canPushRight = pushRight + targetPos.w <= state.config.cols;
                 
                 if (canPushDown && (!canPushRight || overlapY < overlapX)) {
@@ -752,13 +752,25 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
       })),
         {
           name: 'weave-dashboard-layout', // localStorage 키 이름
-          version: 1, // 스토리지 버전 (마이그레이션용)
+          version: 2, // 스토리지 버전 (v2: maxRows 제거로 세로 무한 확장 지원)
           partialize: (state) => ({
             // localStorage에 저장할 상태만 선택
             widgets: state.widgets,
             config: state.config,
             // editState는 임시 상태이므로 저장하지 않음
           }),
+          migrate: (persistedState: any, version: number) => {
+            // 버전 1에서 2로 마이그레이션: maxRows 제거
+            if (version === 1) {
+              console.log('📦 대시보드 v1 → v2 마이그레이션: 세로 무한 확장 활성화');
+              if (persistedState?.config?.maxRows !== undefined) {
+                const { maxRows, ...configWithoutMaxRows } = persistedState.config;
+                persistedState.config = configWithoutMaxRows;
+                console.log('✅ maxRows 제거 완료 - 세로 무한 확장 모드 활성화');
+              }
+            }
+            return persistedState;
+          },
           onRehydrateStorage: (state) => {
             console.log('🔄 대시보드 레이아웃 복원 시작...');
             return (state, error) => {
@@ -767,7 +779,8 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
               } else if (state) {
                 console.log('✅ 대시보드 레이아웃 복원 완료:', {
                   widgetCount: state.widgets.length,
-                  cols: state.config.cols
+                  cols: state.config.cols,
+                  verticalExpansion: state.config.maxRows === undefined ? '무한' : state.config.maxRows
                 });
               }
             };

@@ -726,13 +726,15 @@ export function ImprovedDashboard({
   // ESC 키 처리는 대시보드 페이지에서 통합 관리
   // (편집 모드와 사이드바를 동시에 닫기 위해)
   
-  // Compact 레이아웃 적용
+  // Compact 레이아웃 적용 (세로 무한 확장 모드에서는 비활성화)
   useEffect(() => {
     const compact = isCompactControlled ?? isCompact;
-    if (compact && config.compactType) {
-      compactWidgets(config.compactType);
+    // maxRows가 정의되지 않았으면 무한 확장 모드이므로 자동 압축 비활성화
+    const shouldCompact = compact && config.compactType && config.maxRows !== undefined;
+    if (shouldCompact && config.compactType) {
+      compactWidgets(config.compactType as 'vertical' | 'horizontal');
     }
-  }, [isCompactControlled, isCompact, config.compactType, compactWidgets]);
+  }, [isCompactControlled, isCompact, config.compactType, config.maxRows, compactWidgets]);
   
   // 드래그 핸들러
   const handleDragStart = useCallback((e: React.MouseEvent, widget: ImprovedWidget) => {
@@ -823,16 +825,18 @@ export function ImprovedDashboard({
         callbacks?.onDragStop?.(widget, finalPosition, e);
       }
       
-      // 자동 정렬 옵션이 켜져 있으면 압축 실행
+      // 세로 무한 확장 모드에서는 자동 압축 비활성화
+      // (자동 압축이 위젯을 위로 밀어내는 것을 방지)
       const compact = isCompactControlled ?? isCompact;
-      if (compact && config.compactType) {
-        compactWidgets(config.compactType);
+      const shouldCompact = compact && config.compactType && config.maxRows !== undefined;
+      if (shouldCompact && config.compactType) {
+        compactWidgets(config.compactType as 'vertical' | 'horizontal');
       }
 
       stopDragging();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      
+
       callbacks?.onLayoutChange?.(widgets);
     };
     
@@ -893,16 +897,18 @@ export function ImprovedDashboard({
         callbacks?.onResizeStop?.(widget, finalPosition, e);
       }
       
-      // 자동 정렬 옵션이 켜져 있으면 압축 실행
+      // 세로 무한 확장 모드에서는 자동 압축 비활성화
+      // (자동 압축이 위젯을 위로 밀어내는 것을 방지)
       const compact = isCompactControlled ?? isCompact;
-      if (compact && config.compactType) {
-        compactWidgets(config.compactType);
+      const shouldCompact = compact && config.compactType && config.maxRows !== undefined;
+      if (shouldCompact && config.compactType) {
+        compactWidgets(config.compactType as 'vertical' | 'horizontal');
       }
 
       stopResizing();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      
+
       callbacks?.onLayoutChange?.(widgets);
     };
     
@@ -1158,6 +1164,20 @@ export function ImprovedDashboard({
   // 반응형 컬럼 규칙(components 라이브러리의 훅 사용)
   useResponsiveCols(containerRef as React.RefObject<HTMLElement>, { onChange: setColumns, initialCols: config.cols });
 
+  // 컨테이너 최소 높이 동적 계산 (세로 무한 확장 지원)
+  const containerMinHeight = useMemo(() => {
+    if (widgets.length === 0) {
+      // 위젯이 없을 때는 최소 3행 높이 제공
+      return 3 * (config.rowHeight + config.gap);
+    }
+
+    // 모든 위젯의 최대 Y + H 위치 계산
+    const maxY = Math.max(...widgets.map(w => w.position.y + w.position.h));
+
+    // 최대 위치 + 여유 공간 3행
+    return (maxY + 3) * (config.rowHeight + config.gap);
+  }, [widgets, config.rowHeight, config.gap]);
+
   return (
     <div className={cn("w-full", className)}>
       {/* 툴바 - hideToolbar가 false이고 편집 모드일 때만 표시 */}
@@ -1179,7 +1199,14 @@ export function ImprovedDashboard({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => compactWidgets('vertical')}
+              onClick={() => {
+                // 세로 무한 확장 모드에서는 수동 정렬도 비활성화
+                if (config.maxRows !== undefined) {
+                  compactWidgets('vertical');
+                }
+              }}
+              disabled={config.maxRows === undefined}
+              title={config.maxRows === undefined ? '무한 확장 모드에서는 자동 정렬을 사용할 수 없습니다' : ''}
             >
               <Grid3x3 className="h-4 w-4 mr-2" />
               {getDashboardText.manualAlign('ko')}
@@ -1198,15 +1225,15 @@ export function ImprovedDashboard({
       )}
       
       {/* 그리드 컨테이너 - 드롭 존으로 사용 */}
-      <div 
+      <div
         ref={containerRef}
         className="relative"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        style={{ 
-          // maxRows(9) * (rowHeight(120) + gap(16)) = 9 * 136 = 1224px
-          minHeight: `${(config.maxRows || 9) * (config.rowHeight + config.gap)}px`,
-          background: isEditMode 
+        style={{
+          // 동적 최소 높이 - 위젯 배치에 따라 자동 확장
+          minHeight: `${containerMinHeight}px`,
+          background: isEditMode
             ? `repeating-linear-gradient(
                 0deg,
                 transparent,
