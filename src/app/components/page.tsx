@@ -97,6 +97,7 @@ import {
   getViewModeText,
   getProjectStatusText,
   getProjectStatusTitle,
+  getLoadingText,
   getProjectStatusDescription,
   getProjectPageText,
   getDataText,
@@ -440,7 +441,7 @@ export default function ComponentsPage() {
                           loading={isLoading}
                           onClick={handleLoadingClick}
                           loadingPlacement="right"
-                          loadingText={getButtonText.loading("ko")}
+                          loadingText={getLoadingText.pleaseWait("ko")}
                         >
                           {getButtonText.submit("ko")}
                         </LoadingButton>

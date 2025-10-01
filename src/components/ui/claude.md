@@ -1096,6 +1096,156 @@ calendar.sizes.default  // h-9 w-9 text-sm
 calendar.cell.radius    // rounded-md
 ```
 
+## ⏳ 로딩 UI 시스템
+
+프로젝트의 모든 로딩 상태 UI를 관리하는 통합 시스템입니다. 상세한 가이드는 [`docs/LOADING-GUIDE.md`](../../docs/LOADING-GUIDE.md)를 참조하세요.
+
+### 로딩 컴포넌트 목록
+
+| 컴포넌트 | 용도 | 사용 시기 |
+|---------|------|----------|
+| **FullPageLoadingSpinner** | 전체 페이지 로딩 | 페이지 초기 로딩 (스켈레톤 없을 때) |
+| **LoadingSpinner** | 인라인 로딩 | 컴포넌트 내부 단순 로딩 |
+| **LoadingButton** | 버튼 로딩 상태 | 버튼 클릭 후 액션 처리 |
+| **RouteChangeProgressBar** | 라우트 전환 | 페이지 네비게이션 (자동) |
+| **ProjectProgress** | 진행률 시각화 | 프로젝트 메트릭 표시 |
+| **Skeleton** (예정) | 구조 미리보기 | 전체 페이지 초기 로딩 (권장) |
+
+### 로딩 텍스트 시스템
+
+모든 로딩 텍스트는 `@/config/brand.ts`의 `getLoadingText` 헬퍼를 사용합니다.
+
+```typescript
+import { getLoadingText } from '@/config/brand'
+
+// 기본 로딩 메시지
+getLoadingText.page('ko')        // "페이지를 불러오는 중..."
+getLoadingText.content('ko')     // "콘텐츠를 불러오는 중..."
+getLoadingText.data('ko')        // "데이터를 불러오는 중..."
+getLoadingText.component('ko')   // "컴포넌트를 불러오는 중..."
+getLoadingText.pleaseWait('ko')  // "잠시만 기다려주세요..."
+
+// 접근성 레이블
+getLoadingText.aria('ko')        // "로딩 중"
+
+// 프로젝트 관련
+getLoadingText.contract('ko')    // "계약서 정보를 불러오는 중입니다..."
+getLoadingText.billing('ko')     // "청구서 정보를 불러오는 중입니다..."
+getLoadingText.documents('ko')   // "문서 목록을 불러오는 중입니다..."
+```
+
+### 사용 예시
+
+#### FullPageLoadingSpinner
+```tsx
+import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner'
+import { getLoadingText } from '@/config/brand'
+
+// loading.tsx 파일에서
+export default function Loading() {
+  return <FullPageLoadingSpinner text={getLoadingText.page('ko')} />
+}
+```
+
+#### LoadingSpinner
+```tsx
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { getLoadingText } from '@/config/brand'
+
+// 컴포넌트 내부에서
+{isLoading && (
+  <LoadingSpinner
+    size="md"
+    text={getLoadingText.data('ko')}
+  />
+)}
+```
+
+#### LoadingButton
+```tsx
+import { LoadingButton } from '@/components/ui/loading-button'
+import { getButtonText } from '@/config/brand'
+
+function SubmitForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  return (
+    <LoadingButton
+      loading={isSubmitting}
+      onClick={handleSubmit}
+    >
+      {getButtonText.submit('ko')}
+    </LoadingButton>
+  )
+}
+```
+
+#### RouteChangeProgressBar
+```tsx
+// layout.tsx에 전역 추가 (이미 적용됨)
+import { RouteChangeProgressBar } from '@/components/ui/route-progress-bar'
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <RouteChangeProgressBar />
+        {children}
+      </body>
+    </html>
+  )
+}
+```
+
+### 로딩 UI 결정 가이드
+
+```
+로딩 상태 발생
+    │
+    ├─ 전체 페이지 초기 로딩? → 스켈레톤 UI (권장) 또는 FullPageLoadingSpinner
+    ├─ 라우트 전환? → RouteChangeProgressBar (자동 적용)
+    ├─ 버튼 액션? → LoadingButton
+    ├─ 데이터 시각화? → ProjectProgress
+    └─ 컴포넌트 내부 로딩? → LoadingSpinner
+```
+
+### 접근성 준수사항
+
+- ✅ 모든 로딩 컴포넌트는 `aria-label` 지원
+- ✅ `getLoadingText.aria()` 사용 권장
+- ✅ 스크린 리더 호환성 보장
+- ✅ 키보드 내비게이션 방해하지 않음
+
+### 🚀 향후 계획 (Phase 2)
+
+#### Skeleton UI 추가 (권장)
+
+스켈레톤 UI는 CLS (Cumulative Layout Shift)를 최소화하고 인지된 성능을 향상시킵니다.
+
+```tsx
+// 예정: src/components/ui/skeleton.tsx
+<Skeleton className="w-full h-12" />
+
+// 예정: 재사용 가능한 스켈레톤
+<SkeletonCard />        // 카드 스켈레톤
+<SkeletonTable />       // 테이블 스켈레톤
+<SkeletonProjectDetail /> // 프로젝트 상세 스켈레톤
+```
+
+**적용 예정 영역**:
+- 프로젝트 목록 (ListView)
+- 프로젝트 상세 (DetailView)
+- 대시보드 위젯
+
+**예상 효과**:
+- CLS 감소 → Core Web Vitals 개선
+- 인지된 성능 향상 → 사용자 만족도 증가
+- 업계 표준 패턴 준수 → 전문성 향상
+
+---
+
+**참고 문서**: [`docs/LOADING-GUIDE.md`](../../docs/LOADING-GUIDE.md)
+
 ## 🔄 컴포넌트 페이지 재사용 가이드
 
 ### 스타일 재사용 원칙

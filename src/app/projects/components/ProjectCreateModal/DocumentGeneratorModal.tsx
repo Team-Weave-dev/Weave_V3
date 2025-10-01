@@ -207,8 +207,8 @@ export default function DocumentGeneratorModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col border-2 border-primary w-[95vw] sm:w-full p-0">
-        <DialogHeader className="flex-shrink-0 pb-4 pt-6 px-6">
+      <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col border-2 border-primary w-[95vw] sm:w-full p-0">
+        <DialogHeader className="flex-shrink-0 pb-3 pt-4 px-6">
           <DialogTitle className="text-xl font-semibold">
             {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.title.ko}
           </DialogTitle>
@@ -217,10 +217,10 @@ export default function DocumentGeneratorModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        {/* 메인 콘텐츠 */}
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 px-6">
             {/* 왼쪽: 템플릿 선택 및 생성된 문서 목록 */}
-            <div className="space-y-6">
+            <div className="flex flex-col gap-4 min-h-0 overflow-y-auto p-2 flex-1">
               {/* 템플릿 선택 섹션 */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">템플릿 선택</h3>
@@ -312,10 +312,10 @@ export default function DocumentGeneratorModal({
                 )}
               </div>
 
-              <Separator />
+              <Separator className="flex-shrink-0" />
 
               {/* 생성된 문서 목록 */}
-              <div className="space-y-4 flex-1">
+              <div className="flex flex-col gap-4 flex-1 min-h-0">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">
                     {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatedList.title.ko}
@@ -373,9 +373,9 @@ export default function DocumentGeneratorModal({
             </div>
 
             {/* 오른쪽: 미리보기/편집 */}
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4 min-h-0 flex-1">
               {/* 헤더와 토글 버튼 */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-shrink-0">
                 <h3 className="text-lg font-medium">
                   {isEditMode
                     ? uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.preview.editMode.ko
@@ -423,26 +423,26 @@ export default function DocumentGeneratorModal({
 
               {/* 편집 상태 안내 */}
               {isEditMode && hasUnsavedChanges && (
-                <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border">
+                <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border flex-shrink-0">
                   {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.preview.unsavedChanges.ko}
                 </div>
               )}
 
               {isEditMode && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground flex-shrink-0">
                   {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.preview.editDescription.ko}
                 </div>
               )}
 
               {/* 미리보기/편집 영역 */}
-              <div className="border rounded-lg h-full min-h-[500px] bg-muted/50">
+              <div className={`rounded-lg flex-1 min-h-0 bg-muted/50 ${isEditMode ? 'border-2 border-primary' : 'border'}`}>
                 {previewContent ? (
                   isEditMode ? (
                     // 편집 모드: Textarea
                     <Textarea
                       value={editedContent}
                       onChange={(e) => handleContentChange(e.target.value)}
-                      className="h-full min-h-[500px] resize-none font-mono text-sm leading-relaxed bg-background border-0 focus:ring-0"
+                      className="h-full w-full resize-none font-mono text-sm leading-relaxed bg-background border-0 focus:ring-0"
                       placeholder="문서 내용을 편집하세요..."
                     />
                   ) : (
@@ -463,12 +463,12 @@ export default function DocumentGeneratorModal({
                 )}
               </div>
             </div>
-          </div>
         </div>
 
         {/* 하단 버튼 */}
-        <div className="flex-shrink-0 flex justify-end gap-2 pt-4 pb-6 px-6">
-          <Button type="button" variant="outline" onClick={handleClose}>
+        <div className="flex-shrink-0 flex justify-end gap-2 pt-3 pb-4 px-6 bg-background border-t shadow-sm relative z-10">
+          <Button type="button" variant="outline" onClick={handleClose} className="gap-2">
+            <X className="h-4 w-4" />
             {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.buttons.close.ko}
           </Button>
         </div>

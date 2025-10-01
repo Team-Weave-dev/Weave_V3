@@ -148,6 +148,130 @@ className={layout.page.header.actions}  // flex items-center gap-2
 - **타입 정의**: `src/lib/types/project-table.types.ts`
 - **상태 관리**: React useState (향후 Zustand 연동 예정)
 
+### 💾 로컬스토리지 기반 데이터 영속성
+
+프로젝트 시스템은 **Clean Slate 접근법**을 사용하여 로컬스토리지에 데이터를 영구 저장합니다.
+
+#### 로컬스토리지 키 구조
+
+```typescript
+// 프로젝트 데이터
+'weave_custom_projects'           // 사용자 생성 프로젝트 목록
+'weave_project_documents'         // 프로젝트별 문서 데이터
+'preferredViewMode'               // 사용자 선호 뷰 모드 (list/detail)
+```
+
+#### 프로젝트 데이터 영속성
+
+**Clean Slate 시스템**:
+- ✅ 사용자가 생성한 프로젝트만 로컬스토리지에 저장
+- ✅ 새로고침 후에도 데이터 유지
+- ✅ Mock 데이터는 생성하지 않고 빈 상태에서 시작
+- ✅ SSR 환경에서 안전하게 동작 (`typeof window` 체크)
+
+**주요 함수들** (`src/lib/mock/projects.ts`):
+```typescript
+// 프로젝트 CRUD
+addCustomProject(project)         // 새 프로젝트 추가 (맨 앞에 삽입)
+updateCustomProject(id, updates)  // 프로젝트 업데이트 (수정일 자동 갱신)
+removeCustomProject(id)           // 프로젝트 삭제
+clearCustomProjects()             // 모든 프로젝트 삭제
+
+// 데이터 조회
+fetchMockProjects()               // localStorage 프로젝트만 반환 (300ms 지연)
+getMockProjectById(id)            // ID 또는 번호로 프로젝트 조회
+```
+
+#### 문서 데이터 영속성
+
+**프로젝트별 문서 관리** (`src/lib/mock/documents.ts`):
+```typescript
+// 문서 CRUD
+getProjectDocuments(projectId)              // 프로젝트의 문서 목록 조회
+saveProjectDocuments(projectId, documents)  // 프로젝트 문서 저장
+addProjectDocument(projectId, document)     // 새 문서 추가
+removeProjectDocument(projectId, documentId) // 문서 삭제
+clearProjectDocuments(projectId)            // 프로젝트의 모든 문서 삭제
+```
+
+**문서 데이터 구조**:
+```typescript
+// localStorage 저장 형식
+{
+  'project-1': [
+    { id: 'doc-1', name: '계약서', type: 'contract', ... },
+    { id: 'doc-2', name: '견적서', type: 'estimate', ... }
+  ],
+  'project-2': [ ... ]
+}
+```
+
+#### 뷰 모드 영속성
+
+**사용자 선호 뷰 모드 저장**:
+```typescript
+// 뷰 모드 변경 시 자동 저장
+localStorage.setItem('preferredViewMode', newMode)
+
+// 초기 로드 시 복원 (URL > localStorage > 기본값)
+const urlViewMode = searchParams.get('view')
+const savedMode = localStorage.getItem('preferredViewMode')
+const viewMode = urlViewMode || savedMode || 'list'
+```
+
+#### SSR 안전성
+
+**모든 로컬스토리지 작업은 클라이언트 전용**:
+```typescript
+// SSR 환경 체크
+if (typeof window === 'undefined') {
+  return []; // 또는 안전한 기본값
+}
+
+try {
+  const stored = localStorage.getItem(key);
+  // ... 로직
+} catch (error) {
+  console.error('localStorage 에러:', error);
+  return []; // 안전한 폴백
+}
+```
+
+#### 디버깅 도구
+
+**문서 시스템 디버깅 함수들** (`src/lib/mock/documents.ts`):
+```typescript
+debugLocalStorageState()           // 전체 localStorage 상태 출력
+cleanupLegacyDocumentKeys()        // 이전 버전 키 정리
+resetAllDocuments()                // 모든 문서 데이터 초기화
+debugProjectDocuments(projectId)   // 특정 프로젝트 문서 상태 확인
+```
+
+**사용 예시**:
+```typescript
+// 브라우저 콘솔에서
+import { debugLocalStorageState } from '@/lib/mock/documents';
+debugLocalStorageState(); // 전체 상태 확인
+```
+
+#### 데이터 흐름
+
+```
+사용자 액션
+    ↓
+프로젝트 생성/수정/삭제
+    ↓
+addCustomProject/updateCustomProject/removeCustomProject
+    ↓
+localStorage.setItem('weave_custom_projects', JSON.stringify(projects))
+    ↓
+refreshProjectData() 호출
+    ↓
+fetchMockProjects() → localStorage에서 데이터 로드
+    ↓
+UI 업데이트
+```
+
 ### URL 상태 동기화
 ```typescript
 // 뷰 모드를 URL 파라미터로 관리

@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ImprovedDashboard } from '@/components/dashboard/ImprovedDashboard'
-import { getDashboardText } from '@/config/brand'
+import { getDashboardText, getLoadingText } from '@/config/brand'
 import { Button } from '@/components/ui/button'
+import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner'
 import Typography from '@/components/ui/typography'
 import { Settings, Save, Layers, Grid3x3, LayoutDashboard, PanelRightOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -180,11 +181,7 @@ export default function DashboardPage() {
   }, [router])
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
+    return <FullPageLoadingSpinner text={getLoadingText.data('ko')} />
   }
 
   return (

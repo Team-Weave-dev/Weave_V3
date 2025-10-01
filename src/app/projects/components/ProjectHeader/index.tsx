@@ -75,7 +75,7 @@ export default function ProjectHeader({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Total Projects */}
         <StatCard
-          value={loading ? null : stats.totalCount}
+          value={stats.totalCount}
           label={getProjectPageText.statsTotal('ko')}
           icon={<Briefcase className="w-5 h-5 text-blue-500" />}
           bgColor="bg-blue-50"
@@ -83,7 +83,7 @@ export default function ProjectHeader({
 
         {/* In Progress */}
         <StatCard
-          value={loading ? null : stats.inProgress}
+          value={stats.inProgress}
           label={getProjectPageText.statsInProgress('ko')}
           icon={<Play className="w-5 h-5 text-purple-500" />}
           bgColor="bg-purple-50"
@@ -92,7 +92,7 @@ export default function ProjectHeader({
 
         {/* Review */}
         <StatCard
-          value={loading ? null : stats.review}
+          value={stats.review}
           label={getProjectPageText.statsReview('ko')}
           icon={<Eye className="w-5 h-5 text-orange-500" />}
           bgColor="bg-orange-50"
@@ -101,7 +101,7 @@ export default function ProjectHeader({
 
         {/* Completed */}
         <StatCard
-          value={loading ? null : stats.completed}
+          value={stats.completed}
           label={getProjectPageText.statsCompleted('ko')}
           icon={<CheckCircle className="w-5 h-5 text-green-500" />}
           bgColor="bg-green-50"
@@ -118,7 +118,7 @@ export default function ProjectHeader({
  * Individual statistics card component
  */
 interface StatCardProps {
-  value: number | null;
+  value: number;
   label: string;
   icon: React.ReactNode;
   bgColor: string;
@@ -131,11 +131,7 @@ function StatCard({ value, label, icon, bgColor, valueColor = 'text-foreground' 
       <div className="flex items-center justify-between">
         <div>
           <div className={`text-2xl font-bold ${valueColor}`}>
-            {value === null ? (
-              <div className="w-12 h-8 bg-muted rounded animate-pulse"></div>
-            ) : (
-              value
-            )}
+            {value}
           </div>
           <div className="text-sm text-muted-foreground">{label}</div>
         </div>

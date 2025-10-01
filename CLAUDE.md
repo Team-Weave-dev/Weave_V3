@@ -98,6 +98,7 @@ Weave_V3/
 | **🎨 UI Implementation**    | [`src/components/ui/claude.md`](./src/components/ui/claude.md) | shadcn/ui components, styling, and design system                            |
 | **🪝 Custom Hooks**         | [`src/hooks/claude.md`](./src/hooks/claude.md)                 | React hooks library and state management patterns                           |
 | **📚 Utilities**            | [`src/lib/claude.md`](./src/lib/claude.md)                     | Helper functions and common utilities                                       |
+| **⏳ Loading UI System**    | [`docs/LOADING-GUIDE.md`](./docs/LOADING-GUIDE.md)             | Loading states, spinners, skeletons, and progress indicators                |
 
 ## 🤖 Claude Workflow System
 
@@ -114,11 +115,45 @@ Weave_V3/
 
 ## 🔧 MCP Integration
 
-This project includes Model Context Protocol configuration:
+**프로젝트별 Model Context Protocol 설정 시스템**
 
-- **MCP Config**: `.claude/mcp-config.json`
-- **shadcn Integration**: Configured for this project specifically
-- **Environment**: `SHADCN_PROJECT_ROOT` points to project directory
+이 프로젝트는 표준화된 MCP 설정으로 Claude Code의 도구 권한과 동작을 세밀하게 제어합니다.
+
+### 📁 설정 파일 구조
+
+#### `.claude/settings.local.json` (표준화된 프로젝트 설정)
+
+**프로젝트별 권한 및 동작 설정 파일** - 최근 업데이트: 2025-09-30
+
+- **권한 시스템**: 3단계 권한 제어 (allow/deny/ask)
+- **허용된 MCP 서버**:
+  - `sequential-thinking`: 복잡한 다단계 추론 및 체계적 문제 해결
+  - `serena`: 시맨틱 코드 이해, 프로젝트 메모리, 세션 지속성
+  - `playwright`: 브라우저 자동화 및 E2E 테스팅, UI 검증
+- **허용된 도구**:
+  - Git 명령어: add, push, commit, reset, fetch, pull, checkout, cherry-pick, merge, rm, log
+  - 빌드 도구: npm run (type-check, build, dev), npx
+  - 파일 읽기: 스크린샷 임시 파일, `~/.claude/**`
+  - SlashCommand: `/sc:implement` 등 커스텀 명령어
+
+#### `.claude/mcp-config.json` (MCP 서버 구성)
+
+**MCP 서버별 실행 설정 파일**
+
+- **shadcn Integration**: shadcn/ui CLI 도구 통합
+- **Environment**: `SHADCN_PROJECT_ROOT` 환경 변수로 프로젝트 경로 지정
+
+### 🎯 설정 파일 역할
+
+| 파일                     | 역할                                    | 업데이트 빈도 |
+| ------------------------ | --------------------------------------- | ------------- |
+| `settings.local.json`    | 권한, 도구 제어                         | 프로젝트마다  |
+| `mcp-config.json`        | MCP 서버 실행 구성 및 환경 변수         | 초기 설정 후  |
+
+### 📝 설정 사용 방법
+
+1. **권한 추가**: `settings.local.json`의 `permissions.allow` 배열에 패턴 추가
+2. **MCP 서버 추가**: `mcp-config.json`의 `mcpServers` 객체에 서버 정의 추가
 
 ## 📊 Current Status
 
