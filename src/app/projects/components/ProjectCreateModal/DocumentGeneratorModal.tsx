@@ -373,9 +373,9 @@ export default function DocumentGeneratorModal({
             </div>
 
             {/* 오른쪽: 미리보기/편집 */}
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4 h-full">
               {/* 헤더와 토글 버튼 */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-shrink-0">
                 <h3 className="text-lg font-medium">
                   {isEditMode
                     ? uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.preview.editMode.ko
@@ -423,26 +423,26 @@ export default function DocumentGeneratorModal({
 
               {/* 편집 상태 안내 */}
               {isEditMode && hasUnsavedChanges && (
-                <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border">
+                <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border flex-shrink-0">
                   {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.preview.unsavedChanges.ko}
                 </div>
               )}
 
               {isEditMode && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground flex-shrink-0">
                   {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.preview.editDescription.ko}
                 </div>
               )}
 
               {/* 미리보기/편집 영역 */}
-              <div className="border rounded-lg h-full min-h-[500px] bg-muted/50">
+              <div className="border rounded-lg flex-1 bg-muted/50 overflow-hidden">
                 {previewContent ? (
                   isEditMode ? (
                     // 편집 모드: Textarea
                     <Textarea
                       value={editedContent}
                       onChange={(e) => handleContentChange(e.target.value)}
-                      className="h-full min-h-[500px] max-h-[60vh] overflow-y-auto resize-none font-mono text-sm leading-relaxed bg-background border-0 focus:ring-0"
+                      className="h-full w-full resize-none font-mono text-sm leading-relaxed bg-background border-0 focus:ring-0"
                       placeholder="문서 내용을 편집하세요..."
                     />
                   ) : (
