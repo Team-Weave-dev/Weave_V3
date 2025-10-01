@@ -92,8 +92,9 @@ export interface CalendarFilters {
 export interface IDataAdapter<T> {
   /**
    * 원본 데이터를 UnifiedCalendarItem으로 변환
+   * null을 반환하면 캘린더에 표시하지 않음 (예: 날짜가 없는 투두 항목)
    */
-  toUnified(data: T): UnifiedCalendarItem;
+  toUnified(data: T): UnifiedCalendarItem | null;
 
   /**
    * UnifiedCalendarItem을 원본 데이터로 역변환

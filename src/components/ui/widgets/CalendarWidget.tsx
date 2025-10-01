@@ -127,7 +127,11 @@ export function CalendarWidget({
 
   // Convert UnifiedCalendarItem to CalendarEvent
   const convertToCalendarEvents = (items: UnifiedCalendarItem[]): CalendarEvent[] => {
-    return items.map(item => {
+    // Filter out calendar source to prevent duplicates
+    // Calendar events are already in the local `events` state
+    const filteredItems = items.filter(item => item.source !== 'calendar');
+
+    return filteredItems.map(item => {
       // Map CalendarItemType to CalendarEvent type
       let eventType: CalendarEvent['type'] = 'other';
       if (item.type === 'event') eventType = 'other';

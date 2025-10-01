@@ -76,6 +76,7 @@ export class LocalStorageDataSource implements IDataSource {
 
   /**
    * 할 일 작업 조회
+   * TodoListWidget은 TodoTask 배열을 직접 저장함
    */
   async getTodoTasks(): Promise<TodoTask[]> {
     try {
@@ -84,7 +85,12 @@ export class LocalStorageDataSource implements IDataSource {
 
       const parsed = JSON.parse(data);
 
-      // TodoListWidget 데이터 구조 처리
+      // 직접 배열인 경우 (현재 사용 중인 구조)
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+
+      // 구 버전 sections 구조 처리 (하위 호환성)
       if (parsed.sections && Array.isArray(parsed.sections)) {
         // 모든 섹션의 tasks를 평탄화
         const allTasks: TodoTask[] = [];
@@ -94,11 +100,6 @@ export class LocalStorageDataSource implements IDataSource {
           }
         }
         return allTasks;
-      }
-
-      // 직접 배열인 경우
-      if (Array.isArray(parsed)) {
-        return parsed;
       }
 
       return [];
@@ -138,51 +139,12 @@ export class LocalStorageDataSource implements IDataSource {
 
   /**
    * 할 일 작업 저장
+   * TodoListWidget은 TodoTask 배열을 직접 저장함
    */
   async saveTodoTasks(tasks: TodoTask[]): Promise<void> {
     try {
-      // 기존 섹션 구조 유지하면서 tasks 업데이트
-      const existingData = localStorage.getItem(STORAGE_KEYS.TODO_TASKS);
-      let data;
-
-      if (existingData) {
-        const parsed = JSON.parse(existingData);
-        if (parsed.sections && Array.isArray(parsed.sections)) {
-          // 섹션별로 tasks 재분배 (sectionId 기준)
-          const sectionMap = new Map<string, TodoTask[]>();
-
-          for (const task of tasks) {
-            const sectionId = task.sectionId || 'inbox';
-            if (!sectionMap.has(sectionId)) {
-              sectionMap.set(sectionId, []);
-            }
-            sectionMap.get(sectionId)!.push(task);
-          }
-
-          // 각 섹션 업데이트
-          for (const section of parsed.sections) {
-            section.tasks = sectionMap.get(section.id) || [];
-          }
-
-          data = parsed;
-        } else {
-          // 기본 섹션 구조 생성
-          data = {
-            sections: [
-              { id: 'inbox', title: '받은 편지함', tasks },
-            ],
-          };
-        }
-      } else {
-        // 기본 섹션 구조 생성
-        data = {
-          sections: [
-            { id: 'inbox', title: '받은 편지함', tasks },
-          ],
-        };
-      }
-
-      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(data));
+      // 직접 배열로 저장 (현재 사용 중인 구조)
+      localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(tasks));
     } catch (error) {
       console.error('Failed to save todo tasks to localStorage:', error);
       throw error;
@@ -235,38 +197,56 @@ export class LocalStorageDataSource implements IDataSource {
 
   /**
    * 할 일 작업 삭제
+   * TodoListWidget은 TodoTask 배열을 직접 저장함
    */
   async deleteTodoTask(taskId: string): Promise<void> {
     try {
       // taskId에서 'todo-' 접두사 제거 (통합 캘린더가 추가한 접두사)
       const actualTaskId = taskId.startsWith('todo-') ? taskId.replace('todo-', '') : taskId;
 
-      // TodoListWidget의 통합 저장소에서 삭제
+      // TodoListWidget의 저장소에서 삭제
       const todoData = localStorage.getItem(STORAGE_KEYS.TODO_TASKS);
-      if (todoData) {
-        const parsed = JSON.parse(todoData);
+      if (!todoData) {
+        console.warn('No todo data found in localStorage');
+        return;
+      }
 
-        if (parsed.sections && Array.isArray(parsed.sections)) {
-          // 각 섹션에서 해당 task 제거 (children도 함께 제거)
-          for (const section of parsed.sections) {
-            if (section.tasks && Array.isArray(section.tasks)) {
-              section.tasks = section.tasks.filter((task: TodoTask) => {
-                // 해당 task 자체이거나 children으로 포함된 경우 제거
-                if (task.id === actualTaskId) {
-                  return false;
-                }
-                // children 배열에서도 제거
-                if (task.children && Array.isArray(task.children)) {
-                  task.children = task.children.filter((child: TodoTask) => child.id !== actualTaskId);
-                }
-                return true;
-              });
-            }
+      const parsed = JSON.parse(todoData);
+
+      // 직접 배열인 경우 (현재 사용 중인 구조)
+      if (Array.isArray(parsed)) {
+        const filteredTasks = parsed.filter((task: TodoTask) => {
+          // 해당 task 자체 제거
+          if (task.id === actualTaskId) {
+            return false;
           }
+          // children 배열에서도 제거
+          if (task.children && Array.isArray(task.children)) {
+            task.children = task.children.filter((child: TodoTask) => child.id !== actualTaskId);
+          }
+          return true;
+        });
 
-          // 수정된 데이터 저장
-          localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(parsed));
+        // 수정된 데이터 저장
+        localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(filteredTasks));
+      }
+      // 구 버전 sections 구조 처리 (하위 호환성)
+      else if (parsed.sections && Array.isArray(parsed.sections)) {
+        for (const section of parsed.sections) {
+          if (section.tasks && Array.isArray(section.tasks)) {
+            section.tasks = section.tasks.filter((task: TodoTask) => {
+              if (task.id === actualTaskId) {
+                return false;
+              }
+              if (task.children && Array.isArray(task.children)) {
+                task.children = task.children.filter((child: TodoTask) => child.id !== actualTaskId);
+              }
+              return true;
+            });
+          }
         }
+        // 수정된 데이터 저장
+        localStorage.setItem(STORAGE_KEYS.TODO_TASKS, JSON.stringify(parsed));
       }
 
       // 삭제 이벤트 발송 - 다른 위젯들에게 알림

@@ -10,7 +10,7 @@ import {
   DEFAULT_PRIORITY
 } from '../constants';
 import { generateInitialData } from '../constants/mock-data';
-import { notifyCalendarDataChanged } from '@/lib/calendar-integration/events';
+import { notifyCalendarDataChanged, addCalendarDataChangedListener } from '@/lib/calendar-integration/events';
 
 export function useTodoState(props?: {
   tasks?: TodoTask[],
@@ -381,6 +381,48 @@ export function useTodoState(props?: {
     setDraggedTask(null);
     setDragOverSection(null);
   }, [draggedTask, sections, setLocalTasks]);
+
+  // 실시간 동기화: 다른 위젯(캘린더)에서의 변경사항 감지
+  useEffect(() => {
+    const unsubscribe = addCalendarDataChangedListener((event) => {
+      const { source, changeType, itemId } = event.detail;
+
+      // 투두 소스의 삭제 이벤트만 처리
+      if (source === 'todo' && changeType === 'delete' && itemId) {
+        // localStorage에서 최신 데이터 다시 로드
+        try {
+          const data = localStorage.getItem(STORAGE_KEY);
+          if (data) {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+              // Date 객체 복원
+              parsed.forEach((task: any) => {
+                task.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
+                task.completedAt = task.completedAt ? new Date(task.completedAt) : undefined;
+                task.dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
+                if (task.children) {
+                  task.children.forEach((child: any) => {
+                    child.createdAt = child.createdAt ? new Date(child.createdAt) : new Date();
+                    child.completedAt = child.completedAt ? new Date(child.completedAt) : undefined;
+                    child.dueDate = child.dueDate ? new Date(child.dueDate) : undefined;
+                  });
+                }
+              });
+              // 상태 업데이트
+              setLocalTasks(parsed);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to sync todo data from external change:', error);
+        }
+      }
+    });
+
+    // 컴포넌트 언마운트 시 리스너 해제
+    return () => {
+      unsubscribe();
+    };
+  }, [setLocalTasks]);
 
   // Date groups for date view
   const dateGroups = useMemo(() => {

@@ -111,16 +111,16 @@ function getSectionCategoryName(sectionId?: string): string | undefined {
 export class TodoDataAdapter implements IDataAdapter<TodoTask> {
   /**
    * TodoTask를 UnifiedCalendarItem으로 변환
+   * 날짜가 없는 항목은 null을 반환하여 캘린더에 표시하지 않음
    */
-  toUnified(task: TodoTask): UnifiedCalendarItem {
-    const status = calculateTodoStatus(task);
+  toUnified(task: TodoTask): UnifiedCalendarItem | null {
+    // dueDate가 없으면 캘린더에 표시하지 않음
+    if (!task.dueDate) {
+      return null;
+    }
 
-    // 날짜: dueDate가 있으면 사용, 없으면 createdAt, 둘 다 없으면 현재 날짜
-    const date = task.dueDate
-      ? new Date(task.dueDate)
-      : task.createdAt
-      ? new Date(task.createdAt)
-      : new Date();
+    const status = calculateTodoStatus(task);
+    const date = new Date(task.dueDate);
 
     return {
       id: `todo-${task.id}`,
@@ -186,15 +186,21 @@ export class TodoDataAdapter implements IDataAdapter<TodoTask> {
   /**
    * 여러 TodoTask를 일괄 변환
    *
-   * 참고: 하위 작업(children)이 있는 경우, 각 하위 작업도 개별 아이템으로 변환됩니다.
-   * 이를 원하지 않으면 depth가 0인 최상위 작업만 변환하도록 필터링할 수 있습니다.
+   * 참고:
+   * - dueDate가 없는 작업은 변환하지 않음 (캘린더에 표시하지 않음)
+   * - 하위 작업(children)이 있는 경우, 각 하위 작업도 개별 아이템으로 변환됩니다.
+   * - 이를 원하지 않으면 depth가 0인 최상위 작업만 변환하도록 필터링할 수 있습니다.
    */
   toUnifiedBatch(tasks: TodoTask[]): UnifiedCalendarItem[] {
     const result: UnifiedCalendarItem[] = [];
 
     const processTasks = (taskList: TodoTask[]) => {
       for (const task of taskList) {
-        result.push(this.toUnified(task));
+        const unified = this.toUnified(task);
+        // null이 아닌 경우만 추가 (dueDate가 있는 경우)
+        if (unified) {
+          result.push(unified);
+        }
 
         // 하위 작업도 처리
         if (task.children && task.children.length > 0) {

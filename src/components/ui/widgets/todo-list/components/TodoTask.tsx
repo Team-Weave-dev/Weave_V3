@@ -72,7 +72,7 @@ export function TodoTask({
   const [editValue, setEditValue] = useState(task.title);
 
   const hasSubtasks = task.children && task.children.length > 0;
-  const dateBadge = task.dueDate ? formatDateBadge(task.dueDate, task.completed, dateFormat) : null;
+  const dateBadge = task.dueDate ? formatDateBadge(task.dueDate, task.completed, dateFormat) : { text: '미정', variant: 'outline' as const };
 
   const handleAddSubtask = (title: string, priority?: TodoPriority, dueDate?: Date) => {
     if (title.trim()) {
@@ -186,51 +186,62 @@ export function TodoTask({
           <Trash2 className="h-3 w-3 text-red-500" />
         </button>
         
-        {/* 마감일 배지 */}
-        {task.dueDate && (
-          <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-            <PopoverTrigger asChild>
-              <button className="hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1">
-                <Badge variant={dateBadge?.variant} className="text-xs">
-                  <CalendarDays className="h-3 w-3 mr-1" />
-                  {dateBadge?.text}
-                </Badge>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <div className="p-3 space-y-2">
-                <div className="text-sm font-medium">마감일 변경</div>
-                <div className="flex flex-col gap-1">
-                  {quickDateOptions.map(option => (
-                    <Button
-                      key={option.label}
-                      variant="ghost"
-                      size="sm"
-                      className="justify-start"
-                      onClick={() => {
-                        onUpdateDueDate(task.id, option.value());
-                        setDatePopoverOpen(false);
-                      }}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </div>
-                <div className="border-t pt-2">
-                  <Calendar
-                    selected={task.dueDate}
-                    onSelect={(date) => {
-                      onUpdateDueDate(task.id, date);
+        {/* 마감일 배지 - 날짜 미지정 시에도 표시 */}
+        <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+          <PopoverTrigger asChild>
+            <button className="hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1">
+              <Badge variant={dateBadge?.variant} className="text-xs">
+                <CalendarDays className="h-3 w-3 mr-1" />
+                {dateBadge?.text}
+              </Badge>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <div className="p-3 space-y-2">
+              <div className="text-sm font-medium">마감일 {task.dueDate ? '변경' : '설정'}</div>
+              <div className="flex flex-col gap-1">
+                {quickDateOptions.map(option => (
+                  <Button
+                    key={option.label}
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start"
+                    onClick={() => {
+                      onUpdateDueDate(task.id, option.value());
                       setDatePopoverOpen(false);
                     }}
-                    mode="single"
-                    className="rounded-md"
-                  />
-                </div>
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+                {task.dueDate && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => {
+                      onUpdateDueDate(task.id, undefined);
+                      setDatePopoverOpen(false);
+                    }}
+                  >
+                    날짜 제거
+                  </Button>
+                )}
               </div>
-            </PopoverContent>
-          </Popover>
-        )}
+              <div className="border-t pt-2">
+                <Calendar
+                  selected={task.dueDate}
+                  onSelect={(date) => {
+                    onUpdateDueDate(task.id, date);
+                    setDatePopoverOpen(false);
+                  }}
+                  mode="single"
+                  className="rounded-md"
+                />
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
         
         {/* 우선순위 플래그 - 항상 표시, 크기 증가 */}
         <Popover open={priorityPopoverOpen} onOpenChange={setPriorityPopoverOpen}>
