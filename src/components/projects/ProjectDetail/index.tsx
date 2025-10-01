@@ -1465,7 +1465,7 @@ export default function ProjectDetail({
               <Textarea
                 value={editingContent}
                 onChange={(event) => setEditingContent(event.target.value)}
-                className="min-h-[320px]"
+                className="min-h-[320px] max-h-[60vh] overflow-y-auto resize-none"
                 placeholder="문서 내용을 입력하세요"
               />
               <div className="flex justify-end gap-2">
@@ -1475,7 +1475,9 @@ export default function ProjectDetail({
                     setIsDocumentEditing(false);
                     setEditingContent('');
                   }}
+                  className="gap-2"
                 >
+                  <XIcon className="h-4 w-4" />
                   {getProjectPageText.cancel('ko')}
                 </Button>
                 <Button
