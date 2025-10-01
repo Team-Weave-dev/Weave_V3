@@ -1,16 +1,12 @@
 'use client';
 
 import React from 'react';
-import { Badge, type BadgeProps } from '@/components/ui/badge';
 import ProjectProgress from '@/components/ui/project-progress';
-import type {
-  ProjectTableRow,
-  PaymentStatus as PaymentStatusType,
-  ProjectStatus as ProjectStatusType
-} from '@/lib/types/project-table.types';
-import { getProjectStatusText, getPaymentStatusText } from '@/config/brand';
+import type { ProjectTableRow } from '@/lib/types/project-table.types';
 import { cn } from '@/lib/utils';
 import { Building2, CreditCardIcon, ClockIcon, FileTextIcon } from 'lucide-react';
+import { ProjectStatus } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
+import { PaymentStatus } from '@/components/projects/shared/ProjectInfoRenderer/PaymentStatus';
 
 interface ProjectCardCustomProps {
   project: ProjectTableRow;
@@ -38,23 +34,6 @@ export function ProjectCardCustom({
   className,
   lang = 'ko'
 }: ProjectCardCustomProps) {
-  // 상태별 배지 색상 매핑
-  const statusVariantMap: Record<ProjectStatusType, BadgeProps['variant']> = {
-    planning: 'status-soft-planning',
-    in_progress: 'status-soft-inprogress',
-    review: 'status-soft-review',
-    completed: 'status-soft-completed',
-    on_hold: 'status-soft-onhold',
-    cancelled: 'status-soft-cancelled'
-  };
-
-  const paymentVariantMap: Record<PaymentStatusType, BadgeProps['variant']> = {
-    not_started: 'secondary',
-    advance_completed: 'status-soft-inprogress',
-    interim_completed: 'status-soft-warning',
-    final_completed: 'status-soft-completed'
-  };
-
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
@@ -99,18 +78,18 @@ export function ProjectCardCustom({
           </h4>
         </div>
         <div className="flex items-center gap-2 ml-3">
-          <Badge
-            variant={project.paymentStatus ? paymentVariantMap[project.paymentStatus] : 'secondary'}
-            className="text-xs"
-          >
-            {project.paymentStatus ? getPaymentStatusText[project.paymentStatus](lang) : '미시작'}
-          </Badge>
-          <Badge
-            variant={statusVariantMap[project.status]}
-            className="text-xs"
-          >
-            {getProjectStatusText(project.status, lang)}
-          </Badge>
+          {/* 중앙화된 PaymentStatus 컴포넌트 사용 */}
+          <PaymentStatus
+            project={project}
+            mode="card"
+            lang={lang}
+          />
+          {/* 중앙화된 ProjectStatus 컴포넌트 사용 - 계약서 누락 시 자동으로 '검토' 표시 */}
+          <ProjectStatus
+            project={project}
+            mode="card"
+            lang={lang}
+          />
         </div>
       </div>
 

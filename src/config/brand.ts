@@ -411,7 +411,24 @@ export const uiText = {
         total: { ko: "전체 프로젝트", en: "Total Projects" },
         inProgress: { ko: "진행중", en: "In Progress" },
         review: { ko: "검토중", en: "In Review" },
-        completed: { ko: "완료", en: "Completed" }
+        completed: { ko: "완료", en: "Completed" },
+        monthlyRevenue: { ko: "예상 월 매출", en: "Expected Monthly Revenue" },
+        selectMonth: { ko: "월 선택", en: "Select Month" },
+        noProjects: { ko: "등록 프로젝트 없음", en: "No Projects" },
+        projects: { ko: "개 프로젝트", en: " Projects" },
+        // Tooltips for stats cards
+        totalTooltip: { ko: "계정에 등록된 모든 프로젝트의 수", en: "Total number of projects registered in the account" },
+        inProgressTooltip: { ko: "현재 진행 중인 프로젝트의 수", en: "Number of projects currently in progress" },
+        reviewTooltip: { ko: "계약서가 누락된 프로젝트의 수", en: "Number of projects missing contracts" },
+        completedTooltip: { ko: "완료된 프로젝트의 수", en: "Number of completed projects" }
+      },
+      revenue: {
+        tooltip: {
+          title: { ko: "월 매출 계산식", en: "Revenue Calculation" },
+          description: { ko: "해당 월에 등록된 프로젝트의 계약 금액을 합산했습니다.", en: "Sum of contract amounts for projects registered in this month." },
+          exchangeNote: { ko: "USD 금액은 해당 월의 환율을 적용하여 KRW로 환산되었습니다.", en: "USD amounts are converted to KRW using the exchange rate for that month." },
+          noProjects: { ko: "해당 월에 등록된 프로젝트가 없습니다.", en: "No projects registered in this month." }
+        }
       },
       list: {
         searchPlaceholder: { ko: "프로젝트 검색...", en: "Search projects..." },
@@ -632,7 +649,35 @@ export const uiText = {
           currentStage: {
             label: { ko: "현재 단계", en: "Current Stage" },
             defaultValue: { ko: "기획", en: "Planning" },
-            note: { ko: "생성 시 기본값: 기획", en: "Default on creation: Planning" }
+            note: {
+              ko: "프로젝트는 자동으로 단계가 결정됩니다: 기획(기본) → 검토(계약서 없이 금액 입력 또는 계약서 미완료) → 진행중(계약서 완료 + 금액 입력). 보류, 취소, 완료는 수동으로 선택 가능합니다.",
+              en: "Project stages are automatically determined: Planning (default) → Review (amount entered without contract or incomplete contract) → In Progress (contract completed + amount entered). On Hold, Cancelled, and Completed can be manually selected."
+            },
+            explanation: {
+              title: { ko: "프로젝트 단계 안내", en: "Project Stage Guide" },
+              summary: {
+                ko: "프로젝트는 기획 → 검토 → 진행중 순서로 자동 진행되며, 보류/취소/완료는 수동으로 선택할 수 있습니다.",
+                en: "Projects automatically progress from Planning → Review → In Progress. On Hold/Cancelled/Completed can be manually selected."
+              },
+              rules: {
+                planning: {
+                  ko: "기획: 신규 프로젝트 기본 단계 (계약서 없음)",
+                  en: "Planning: Default stage for new projects (no contract)"
+                },
+                review: {
+                  ko: "검토: 계약서 없이 금액 입력 또는 계약서 미완료",
+                  en: "Review: Amount entered without contract or incomplete contract"
+                },
+                inProgress: {
+                  ko: "진행중: 계약서 완료 + 총 금액 입력",
+                  en: "In Progress: Contract completed + total amount entered"
+                },
+                manual: {
+                  ko: "보류/취소/완료: 언제든 수동 선택 가능",
+                  en: "On Hold/Cancelled/Completed: Can be manually selected anytime"
+                }
+              }
+            }
           },
           paymentStatus: {
             label: { ko: "수금상태 *", en: "Payment Status *" },
@@ -788,6 +833,47 @@ export const uiText = {
         currencies: {
           KRW: { ko: "원화 (KRW)", en: "Korean Won (KRW)" },
           USD: { ko: "달러 (USD)", en: "US Dollar (USD)" }
+        },
+        // 프로젝트 단계 흐름 설명 (편집 모드 툴팁용)
+        statusFlowExplanation: {
+          title: { ko: "프로젝트 단계 안내", en: "Project Stage Guide" },
+          summary: {
+            ko: "프로젝트는 기획 → 검토 → 진행중 순서로 자동 진행되며, 보류/취소/완료는 수동으로 선택할 수 있습니다.",
+            en: "Projects automatically progress from Planning → Review → In Progress. On Hold/Cancelled/Completed can be manually selected."
+          },
+          rules: {
+            planning: {
+              ko: "기획: 신규 프로젝트 기본 단계 (계약서 없음)",
+              en: "Planning: Default stage for new projects (no contract)"
+            },
+            review: {
+              ko: "검토: 계약서 없이 금액 입력 또는 계약서 미완료",
+              en: "Review: Amount entered without contract or incomplete contract"
+            },
+            inProgress: {
+              ko: "진행중: 계약서 완료 + 총 금액 입력",
+              en: "In Progress: Contract completed + total amount entered"
+            },
+            manual: {
+              ko: "보류/취소/완료: 언제든 수동 선택 가능",
+              en: "On Hold/Cancelled/Completed: Can be manually selected anytime"
+            },
+            autoComplete: {
+              ko: "완료: 수금 상태가 잔금 완료로 변경되면 자동으로 완료 단계로 전환",
+              en: "Completed: Automatically changes to completed when payment status is final completed"
+            }
+          },
+          resetButton: {
+            label: { ko: "단계 초기화", en: "Reset Stage" },
+            tooltip: { ko: "기획 단계로 되돌리기", en: "Reset to Planning stage" },
+            confirmTitle: { ko: "단계 초기화 확인", en: "Confirm Stage Reset" },
+            confirmMessage: {
+              ko: "프로젝트를 기획 단계로 초기화하시겠습니까? 현재 단계 정보가 초기화됩니다.",
+              en: "Are you sure you want to reset the project to Planning stage? Current stage information will be reset."
+            },
+            confirmButton: { ko: "초기화", en: "Reset" },
+            cancelButton: { ko: "취소", en: "Cancel" }
+          }
         }
       },
       messages: {
@@ -1394,6 +1480,22 @@ export const getProjectPageText = {
   statsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.inProgress[lang],
   statsReview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.review[lang],
   statsCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.completed[lang],
+  statsMonthlyRevenue: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.monthlyRevenue[lang],
+  statsSelectMonth: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.selectMonth[lang],
+  statsNoProjects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.noProjects[lang],
+  statsProjects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.projects[lang],
+
+  // Stats Tooltips
+  statsTotalTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.totalTooltip[lang],
+  statsInProgressTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.inProgressTooltip[lang],
+  statsReviewTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.reviewTooltip[lang],
+  statsCompletedTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.completedTooltip[lang],
+
+  // Revenue Tooltip
+  revenueTooltipTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.revenue.tooltip.title[lang],
+  revenueTooltipDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.revenue.tooltip.description[lang],
+  revenueTooltipExchangeNote: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.revenue.tooltip.exchangeNote[lang],
+  revenueTooltipNoProjects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.revenue.tooltip.noProjects[lang],
 
   // List
   searchPlaceholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.list.searchPlaceholder[lang],
@@ -1582,7 +1684,33 @@ export const getProjectPageText = {
   deleteModalTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.title[lang],
   deleteModalMessage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.message[lang],
   deleteModalConfirm: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.confirm[lang],
-  deleteModalCancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.cancel[lang]
+  deleteModalCancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.deleteModal.cancel[lang],
+
+  // 프로젝트 생성 모달 - 현재 단계 설명
+  createModalCurrentStageNote: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.createModal.fields.currentStage.note[lang],
+  createModalCurrentStageExplanationTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.title[lang],
+  createModalCurrentStageExplanationSummary: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.summary[lang],
+  createModalCurrentStageExplanationPlanning: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.rules.planning[lang],
+  createModalCurrentStageExplanationReview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.rules.review[lang],
+  createModalCurrentStageExplanationInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.rules.inProgress[lang],
+  createModalCurrentStageExplanationManual: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.rules.manual[lang],
+
+  // 프로젝트 상세 - 단계 흐름 설명 (편집 모드 툴팁용)
+  statusFlowTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.title[lang],
+  statusFlowSummary: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.summary[lang],
+  statusFlowPlanning: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.rules.planning[lang],
+  statusFlowReview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.rules.review[lang],
+  statusFlowInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.rules.inProgress[lang],
+  statusFlowManual: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.rules.manual[lang],
+  statusFlowAutoComplete: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.rules.autoComplete[lang],
+
+  // 프로젝트 상세 - 단계 초기화 버튼
+  statusResetLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.label[lang],
+  statusResetTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.tooltip[lang],
+  statusResetConfirmTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.confirmTitle[lang],
+  statusResetConfirmMessage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.confirmMessage[lang],
+  statusResetConfirmButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.confirmButton[lang],
+  statusResetCancelButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.cancelButton[lang]
 }
 
 // 프로젝트 상태 텍스트 헬퍼 함수

@@ -405,6 +405,11 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
         [field]: value
       };
 
+      // 수금 상태가 잔금 완료로 변경되면 프로젝트 상태도 완료로 자동 변경
+      if (field === 'paymentStatus' && value === 'final_completed') {
+        newData.status = 'completed';
+      }
+
       // isDirty 체크 - 원본 데이터와 비교
       const isDirty = prev.originalData ?
         JSON.stringify(newData) !== JSON.stringify({
@@ -575,6 +580,43 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
     setIsDeleteModalOpen(false);
   };
 
+  // 단계 초기화 핸들러
+  const handleResetStatus = () => {
+    if (!project) return;
+
+    try {
+      const success = updateCustomProject(project.no, {
+        status: 'planning',
+        paymentStatus: 'not_started'
+      });
+
+      if (success) {
+        console.log('✅ 프로젝트 단계 초기화 성공:', {
+          id: project.id,
+          no: project.no,
+          name: project.name
+        });
+
+        toast({
+          title: "단계 초기화 완료",
+          description: "프로젝트가 기획 단계로 초기화되었습니다.",
+        });
+
+        refreshProjectData();
+      } else {
+        throw new Error('단계 초기화 실패');
+      }
+    } catch (error) {
+      console.error('❌ 단계 초기화 중 오류 발생:', error);
+
+      toast({
+        title: "초기화 실패",
+        description: "단계 초기화 중 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // 로딩 상태
   if (loading) {
     return <FullPageLoadingSpinner text={getLoadingText.content('ko')} />;
@@ -636,6 +678,8 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
         onUpdateField={updateField}
         onSaveEdit={saveEdit}
         onCancelEdit={cancelEdit}
+        // 단계 초기화
+        onResetStatus={handleResetStatus}
       />
 
       <DeleteDialog

@@ -4,8 +4,12 @@ import React from 'react';
 import { ViewMode } from '@/components/ui/view-mode-switch';
 import Typography from '@/components/ui/typography';
 import { Button } from '@/components/ui/button';
+import { SimpleStatCard } from '@/components/ui/stat-card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Briefcase, Plus, Play, Eye, CheckCircle } from 'lucide-react';
 import { getProjectPageText } from '@/config/brand';
+import type { ProjectTableRow } from '@/lib/types/project-table.types';
+import RevenueStatCard from './RevenueStatCard';
 
 interface ProjectHeaderProps {
   viewMode: ViewMode;
@@ -17,6 +21,7 @@ interface ProjectHeaderProps {
     completed: number;
     review: number;
   };
+  projects: ProjectTableRow[];  // 매출 계산용 프로젝트 데이터
   loading?: boolean;
 }
 
@@ -36,6 +41,7 @@ export default function ProjectHeader({
   onViewModeChange,
   onCreateProject,
   stats,
+  projects,
   loading = false
 }: ProjectHeaderProps) {
   return (
@@ -72,72 +78,92 @@ export default function ProjectHeader({
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Total Projects */}
-        <StatCard
-          value={stats.totalCount}
-          label={getProjectPageText.statsTotal('ko')}
-          icon={<Briefcase className="w-5 h-5 text-blue-500" />}
-          bgColor="bg-blue-50"
-        />
+        <TooltipProvider>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <div>
+                <SimpleStatCard
+                  value={stats.totalCount}
+                  label={getProjectPageText.statsTotal('ko')}
+                  icon={<Briefcase className="w-5 h-5 text-blue-500" />}
+                  bgColor="bg-blue-50"
+                  enableHover
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{getProjectPageText.statsTotalTooltip('ko')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* In Progress */}
-        <StatCard
-          value={stats.inProgress}
-          label={getProjectPageText.statsInProgress('ko')}
-          icon={<Play className="w-5 h-5 text-purple-500" />}
-          bgColor="bg-purple-50"
-          valueColor="text-purple-600"
-        />
+        <TooltipProvider>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <div>
+                <SimpleStatCard
+                  value={stats.inProgress}
+                  label={getProjectPageText.statsInProgress('ko')}
+                  icon={<Play className="w-5 h-5 text-purple-500" />}
+                  bgColor="bg-purple-50"
+                  valueColor="text-purple-600"
+                  enableHover
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{getProjectPageText.statsInProgressTooltip('ko')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Review */}
-        <StatCard
-          value={stats.review}
-          label={getProjectPageText.statsReview('ko')}
-          icon={<Eye className="w-5 h-5 text-orange-500" />}
-          bgColor="bg-orange-50"
-          valueColor="text-orange-600"
-        />
+        <TooltipProvider>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <div>
+                <SimpleStatCard
+                  value={stats.review}
+                  label={getProjectPageText.statsReview('ko')}
+                  icon={<Eye className="w-5 h-5 text-orange-500" />}
+                  bgColor="bg-orange-50"
+                  valueColor="text-orange-600"
+                  enableHover
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{getProjectPageText.statsReviewTooltip('ko')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Completed */}
-        <StatCard
-          value={stats.completed}
-          label={getProjectPageText.statsCompleted('ko')}
-          icon={<CheckCircle className="w-5 h-5 text-green-500" />}
-          bgColor="bg-green-50"
-          valueColor="text-green-600"
-        />
-      </div>
-    </div>
-  );
-}
+        <TooltipProvider>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <div>
+                <SimpleStatCard
+                  value={stats.completed}
+                  label={getProjectPageText.statsCompleted('ko')}
+                  icon={<CheckCircle className="w-5 h-5 text-green-500" />}
+                  bgColor="bg-green-50"
+                  valueColor="text-green-600"
+                  enableHover
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{getProjectPageText.statsCompletedTooltip('ko')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-/**
- * StatCard Component
- *
- * Individual statistics card component
- */
-interface StatCardProps {
-  value: number;
-  label: string;
-  icon: React.ReactNode;
-  bgColor: string;
-  valueColor?: string;
-}
-
-function StatCard({ value, label, icon, bgColor, valueColor = 'text-foreground' }: StatCardProps) {
-  return (
-    <div className="bg-background rounded-lg border p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className={`text-2xl font-bold ${valueColor}`}>
-            {value}
-          </div>
-          <div className="text-sm text-muted-foreground">{label}</div>
-        </div>
-        <div className={`p-2 ${bgColor} rounded-lg`}>
-          {icon}
-        </div>
+        {/* Monthly Revenue */}
+        <RevenueStatCard projects={projects} lang="ko" />
       </div>
     </div>
   );

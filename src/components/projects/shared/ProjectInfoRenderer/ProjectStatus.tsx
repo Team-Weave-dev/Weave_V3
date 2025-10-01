@@ -5,7 +5,7 @@ import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getProjectStatusText } from '@/config/brand';
 import type { ProjectStatus as ProjectStatusType, ProjectTableRow } from '@/lib/types/project-table.types';
-import { cn } from '@/lib/utils';
+import { cn, hasContractDocument, isContractComplete } from '@/lib/utils';
 
 interface ProjectStatusProps {
   project: ProjectTableRow;
@@ -28,7 +28,47 @@ export function ProjectStatus({
   className,
   lang = 'ko'
 }: ProjectStatusProps) {
-  const status = project.status;
+  // 🎯 프로젝트 상태 자동 결정 로직 (편집 모드가 아닐 때만 적용)
+  const displayStatus: ProjectStatusType = (() => {
+    // 편집 모드에서는 실제 저장된 status 표시
+    if (isEditing) {
+      return project.status;
+    }
+
+    // 🎯 최우선: 사용자가 수동으로 선택한 최종 상태는 항상 유지
+    // (보류, 취소, 완료는 자동 결정 로직을 적용하지 않음)
+    if (
+      project.status === 'on_hold' ||
+      project.status === 'cancelled' ||
+      project.status === 'completed'
+    ) {
+      return project.status;
+    }
+
+    // 1. 계약서가 없을 때
+    if (!hasContractDocument(project)) {
+      // 총 금액이 있으면 → 검토 (review)
+      if (project.totalAmount && project.totalAmount > 0) {
+        return 'review';
+      }
+      // 총 금액이 없으면 → 기획 (planning) 유지
+      return 'planning';
+    }
+
+    // 2. 계약서가 있지만 완료되지 않았으면 → 검토 (review)
+    if (!isContractComplete(project)) {
+      return 'review';
+    }
+
+    // 3. 계약서가 완료되었을 때:
+    //    - 총 금액 있음 → 진행중 (in_progress)
+    //    - 총 금액 없음 → 기획 (planning)
+    if (project.totalAmount && project.totalAmount > 0) {
+      return 'in_progress';
+    }
+
+    return 'planning';
+  })();
 
   // 모드별 스타일링
   const modeStyles = {
@@ -51,30 +91,27 @@ export function ProjectStatus({
   if (isEditing && onValueChange) {
     return (
       <Select
-        value={status}
+        value={project.status}
         onValueChange={onValueChange}
       >
         <SelectTrigger className={cn("w-full", className)}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="planning">
-            {getProjectStatusText('planning', lang)}
-          </SelectItem>
-          <SelectItem value="in_progress">
-            {getProjectStatusText('in_progress', lang)}
-          </SelectItem>
-          <SelectItem value="review">
-            {getProjectStatusText('review', lang)}
-          </SelectItem>
-          <SelectItem value="completed">
-            {getProjectStatusText('completed', lang)}
-          </SelectItem>
+          {/* 🎯 자동 결정 상태는 드롭다운에서 제거됨:
+              - planning: 계약서 완료 + 금액 없음 → 자동 표시
+              - in_progress: 계약서 완료 + 금액 있음 → 자동 표시
+              - review: 계약서 없음 또는 미완료 → 자동 표시
+          */}
+          {/* 사용자가 수동으로 선택 가능한 상태만 제공 */}
           <SelectItem value="on_hold">
             {getProjectStatusText('on_hold', lang)}
           </SelectItem>
           <SelectItem value="cancelled">
             {getProjectStatusText('cancelled', lang)}
+          </SelectItem>
+          <SelectItem value="completed">
+            {getProjectStatusText('completed', lang)}
           </SelectItem>
         </SelectContent>
       </Select>
@@ -82,12 +119,13 @@ export function ProjectStatus({
   }
 
   // 읽기 전용 모드일 때 Badge 컴포넌트 표시
+  // 계약서가 없으면 자동으로 '검토' 배지 표시
   return (
     <Badge
-      variant={statusVariantMap[status]}
+      variant={statusVariantMap[displayStatus]}
       className={cn(modeStyles[mode], className)}
     >
-      {getProjectStatusText(status, lang)}
+      {getProjectStatusText(displayStatus, lang)}
     </Badge>
   );
 }

@@ -329,6 +329,7 @@ export default function ProjectsView() {
         onViewModeChange={handleViewModeChange}
         onCreateProject={handleCreateProject}
         stats={stats}
+        projects={rawProjectData}
         loading={false}
       />
 

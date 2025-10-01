@@ -16,6 +16,9 @@ import { PaymentStatus as PaymentStatusComponent } from '@/components/projects/s
 import { ProjectStatus as ProjectStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
 import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DeleteDialog } from '@/components/ui/dialogDelete';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
@@ -81,7 +84,9 @@ import {
   Building2,
   Calculator,
   BarChart3,
-  Flag
+  Flag,
+  RotateCcw,
+  HelpCircle
 } from 'lucide-react';
 
 interface ProjectDetailProps {
@@ -100,6 +105,8 @@ interface ProjectDetailProps {
   onUpdateField?: (field: keyof EditableProjectData, value: string | number) => void;
   onSaveEdit?: () => void;
   onCancelEdit?: () => void;
+  // 단계 초기화
+  onResetStatus?: () => void;
 }
 
 type DocumentTabValue = 'contract' | 'invoice' | 'report' | 'estimate' | 'others';
@@ -117,6 +124,16 @@ type DocumentTabValue = 'contract' | 'invoice' | 'report' | 'estimate' | 'others
  * - Responsive design for full/compact modes
  * - Fully integrated with centralized text system
  */
+
+/**
+ * 문자열에서 숫자만 추출하는 헬퍼 함수
+ * @param value - 입력 문자열 (예: "₩50,000" 또는 "$1,234.56")
+ * @returns 추출된 숫자 (예: 50000 또는 123456)
+ */
+function extractNumber(value: string): number {
+  const numericOnly = value.replace(/[^\d]/g, '');
+  return numericOnly === '' ? 0 : Number(numericOnly);
+}
 
 function formatDocumentDate(date?: string): string {
   if (!date) {
@@ -166,7 +183,9 @@ export default function ProjectDetail({
   editState,
   onUpdateField,
   onSaveEdit,
-  onCancelEdit
+  onCancelEdit,
+  // 단계 초기화
+  onResetStatus
 }: ProjectDetailProps) {
   const lang = 'ko'; // TODO: 나중에 언어 설정과 연동
   const { toast } = useToast();
@@ -180,6 +199,7 @@ export default function ProjectDetail({
   const [mainTab, setMainTab] = useState('overview');
   const [documentSubTab, setDocumentSubTab] = useState<DocumentTabValue>('contract');
   const [taxSubTab, setTaxSubTab] = useState('taxInvoice');
+  const [isStatusHelpOpen, setIsStatusHelpOpen] = useState(false);
   const [documents, setDocuments] = useState<DocumentInfo[]>(() => {
     // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
     const storedDocuments = getProjectDocuments(project.no);
@@ -212,6 +232,12 @@ export default function ProjectDetail({
   const [previewDocument, setPreviewDocument] = useState<DocumentInfo | null>(null);
   const [isDocumentEditing, setIsDocumentEditing] = useState(false);
   const [editingContent, setEditingContent] = useState('');
+
+  // 총금액 입력 필드 포커스 상태 (통화 포맷 표시/숨김용)
+  const [isTotalAmountFocused, setIsTotalAmountFocused] = useState(false);
+
+  // 단계 초기화 확인 모달 상태
+  const [showResetStatusDialog, setShowResetStatusDialog] = useState(false);
 
   // 🔄 문서 상태를 새로고침하는 함수 (localStorage 변경 감지용)
   const refreshDocuments = useCallback(() => {
@@ -701,6 +727,18 @@ export default function ProjectDetail({
     });
   };
 
+  // 단계 초기화 핸들러
+  const handleResetStatus = () => {
+    if (onResetStatus) {
+      onResetStatus();
+      setShowResetStatusDialog(false);
+      toast({
+        title: getProjectPageText.statusResetConfirmButton(lang),
+        description: '프로젝트가 기획 단계로 초기화되었습니다.'
+      });
+    }
+  };
+
   const statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
     completed: 'status-soft-completed',
     in_progress: 'status-soft-inprogress',
@@ -924,9 +962,24 @@ export default function ProjectDetail({
                         <div className="space-y-2">
                           <div className="flex gap-2">
                             <Input
-                              type="number"
-                              value={editState?.editingData.totalAmount || ''}
-                              onChange={(e) => onUpdateField?.('totalAmount', e.target.value ? Number(e.target.value) : 0)}
+                              type="text"
+                              value={(() => {
+                                const amount = editState?.editingData.totalAmount || 0;
+                                const currency = editState?.editingData.currency || 'KRW';
+                                if (isTotalAmountFocused) {
+                                  return amount > 0 ? String(amount) : '';
+                                }
+                                return amount > 0 ? formatCurrency(amount, currency) : '';
+                              })()}
+                              onChange={(e) => {
+                                const numericValue = extractNumber(e.target.value)
+                                onUpdateField?.('totalAmount', numericValue)
+                              }}
+                              onFocus={(e) => {
+                                setIsTotalAmountFocused(true)
+                                e.target.select()
+                              }}
+                              onBlur={() => setIsTotalAmountFocused(false)}
                               className={editState?.errors.totalAmount ? 'border-destructive' : ''}
                               placeholder="예: 50000000"
                             />
@@ -1084,9 +1137,61 @@ export default function ProjectDetail({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* 현재 단계 */}
                     <div>
-                      <Label className="text-sm text-muted-foreground font-medium">
-                        {getProjectPageText.currentStage(lang)}
-                      </Label>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Label className="text-sm text-muted-foreground font-medium">
+                          {getProjectPageText.currentStage(lang)}
+                        </Label>
+                        <Popover open={isStatusHelpOpen} onOpenChange={setIsStatusHelpOpen}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                              aria-label={getProjectPageText.statusFlowTitle(lang)}
+                            >
+                              <HelpCircle className="h-3.5 w-3.5" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="max-w-sm p-3" side="top">
+                            <div className="space-y-2">
+                              <p className="font-semibold text-sm">
+                                {getProjectPageText.statusFlowTitle(lang)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {getProjectPageText.statusFlowSummary(lang)}
+                              </p>
+                              <div className="space-y-1 pt-2 border-t text-xs">
+                                <div>• {getProjectPageText.statusFlowPlanning(lang)}</div>
+                                <div>• {getProjectPageText.statusFlowReview(lang)}</div>
+                                <div>• {getProjectPageText.statusFlowInProgress(lang)}</div>
+                                <div>• {getProjectPageText.statusFlowManual(lang)}</div>
+                                <div>• {getProjectPageText.statusFlowAutoComplete(lang)}</div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        {/* 단계 초기화 버튼: 완료/보류/취소 상태일 때만 표시 */}
+                        {!isEditing && (project.status === 'completed' || project.status === 'on_hold' || project.status === 'cancelled') && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => setShowResetStatusDialog(true)}
+                                  className="h-auto px-2 py-1 text-xs"
+                                  aria-label={getProjectPageText.statusResetTooltip(lang)}
+                                >
+                                  <RotateCcw className="h-3 w-3 mr-1" />
+                                  {getProjectPageText.statusResetLabel(lang)}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">{getProjectPageText.statusResetTooltip(lang)}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                       {isEditing ? (
                         <Select
                           value={editState?.editingData.status || 'planning'}
@@ -1096,23 +1201,20 @@ export default function ProjectDetail({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="planning">
-                              {getProjectStatusText('planning', lang)}
-                            </SelectItem>
-                            <SelectItem value="in_progress">
-                              {getProjectStatusText('in_progress', lang)}
-                            </SelectItem>
-                            <SelectItem value="review">
-                              {getProjectStatusText('review', lang)}
-                            </SelectItem>
-                            <SelectItem value="completed">
-                              {getProjectStatusText('completed', lang)}
-                            </SelectItem>
+                            {/* 🎯 자동 결정 상태는 드롭다운에서 제거됨:
+                                - planning: 계약서 완료 + 금액 없음 → 자동 표시
+                                - in_progress: 계약서 완료 + 금액 있음 → 자동 표시
+                                - review: 계약서 없음 또는 미완료 → 자동 표시
+                            */}
+                            {/* 사용자가 수동으로 선택 가능한 상태만 제공 */}
                             <SelectItem value="on_hold">
                               {getProjectStatusText('on_hold', lang)}
                             </SelectItem>
                             <SelectItem value="cancelled">
                               {getProjectStatusText('cancelled', lang)}
+                            </SelectItem>
+                            <SelectItem value="completed">
+                              {getProjectStatusText('completed', lang)}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1538,6 +1640,21 @@ export default function ProjectDetail({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* 단계 초기화 확인 모달 */}
+      <DeleteDialog
+        open={showResetStatusDialog}
+        title={getProjectPageText.statusResetConfirmTitle(lang)}
+        description={getProjectPageText.statusResetConfirmMessage(lang)}
+        cancelLabel={getProjectPageText.statusResetCancelButton(lang)}
+        confirmLabel={getProjectPageText.statusResetConfirmButton(lang)}
+        icon={<RotateCcw className="h-8 w-8 text-primary" />}
+        borderClassName="border-2 border-primary"
+        confirmVariant="default"
+        cancelVariant="secondary"
+        onOpenChange={setShowResetStatusDialog}
+        onConfirm={handleResetStatus}
+      />
     </div>
   );
 }

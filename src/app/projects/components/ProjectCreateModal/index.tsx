@@ -123,12 +123,20 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
       console.log('✅ 날짜 검증 통과');
 
       // 새 프로젝트 데이터 생성
+      // 🎯 초기 상태: 항상 기획(planning)으로 시작
+      // 이후 ProjectStatus 컴포넌트의 자동 상태 결정 로직이 적용됨:
+      // - 계약서 없음 + 총금액 없음 → 기획 유지
+      // - 계약서 없음 + 총금액 있음 → 검토
+      // - 계약서 있음 + 미완료 → 검토
+      // - 계약서 완료 + 총금액 있음 → 진행중
+      const initialStatus: ProjectTableRow['status'] = 'planning';
+
       const newProject: Omit<ProjectTableRow, 'id' | 'no' | 'modifiedDate'> = {
         name: data.name,
         client: data.client,
         registrationDate: format(data.registrationDate, 'yyyy-MM-dd'),
         dueDate: format(data.dueDate, 'yyyy-MM-dd'),
-        status: 'planning', // 기본값: 기획단계
+        status: initialStatus,
         progress: 0, // 초기 진행률 0%
         settlementMethod: data.settlementMethod,
         paymentStatus: data.paymentStatus,
@@ -624,18 +632,37 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
             <div className="border-t my-4" />
 
             {/* 현재 단계 정보 */}
-            <div className="bg-muted/50 rounded-lg p-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">
-                  {uiText.componentDemo.projectPage.createModal.fields.currentStage.label.ko}:
-                </span>
-                <span className="text-muted-foreground">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold">
+                  {uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.title.ko}
+                </h4>
+                <span className="text-xs font-medium text-primary">
                   {uiText.componentDemo.projectPage.createModal.fields.currentStage.defaultValue.ko}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {uiText.componentDemo.projectPage.createModal.fields.currentStage.note.ko}
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.summary.ko}
               </p>
+
+              <div className="space-y-1.5 border-t pt-2">
+                <div className="text-xs text-muted-foreground">
+                  • {uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.rules.planning.ko}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  • {uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.rules.review.ko}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  • {uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.rules.inProgress.ko}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  • {uiText.componentDemo.projectPage.createModal.fields.currentStage.explanation.rules.manual.ko}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  • {uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.rules.autoComplete.ko}
+                </div>
+              </div>
             </div>
           </div>
 

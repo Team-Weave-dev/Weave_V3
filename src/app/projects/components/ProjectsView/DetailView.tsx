@@ -289,6 +289,11 @@ export default function DetailView({
         [field]: value
       };
 
+      // 수금 상태가 잔금 완료로 변경되면 프로젝트 상태도 완료로 자동 변경
+      if (field === 'paymentStatus' && value === 'final_completed') {
+        newData.status = 'completed';
+      }
+
       // isDirty 체크 - 원본 데이터와 비교
       const isDirty = prev.originalData ?
         JSON.stringify(newData) !== JSON.stringify({
@@ -481,6 +486,47 @@ export default function DetailView({
 
   const handleCancelDelete = () => {
     setIsDeleteModalOpen(false);
+  };
+
+  // 단계 초기화 핸들러
+  const handleResetStatus = () => {
+    const currentProject = selectedProject;
+    if (!currentProject) return;
+
+    try {
+      const success = updateCustomProject(currentProject.no, {
+        status: 'planning',
+        paymentStatus: 'not_started'
+      });
+
+      if (success) {
+        console.log('✅ DetailView 프로젝트 단계 초기화 성공:', {
+          id: currentProject.id,
+          no: currentProject.no,
+          name: currentProject.name
+        });
+
+        toast({
+          title: "단계 초기화 완료",
+          description: "프로젝트가 기획 단계로 초기화되었습니다.",
+        });
+
+        // 부모 컴포넌트에 변경사항 알림
+        if (onProjectsChange) {
+          onProjectsChange();
+        }
+      } else {
+        throw new Error('단계 초기화 실패');
+      }
+    } catch (error) {
+      console.error('❌ DetailView 단계 초기화 중 오류 발생:', error);
+
+      toast({
+        title: "초기화 실패",
+        description: "단계 초기화 중 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -689,6 +735,7 @@ export default function DetailView({
             onNavigateNext={handleNavigateNext}
             canNavigatePrevious={canNavigatePrevious}
             canNavigateNext={canNavigateNext}
+            onResetStatus={handleResetStatus}
           />
         ) : (
           <Card className="h-[calc(100vh-200px)]">

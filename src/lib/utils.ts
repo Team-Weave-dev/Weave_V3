@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { ProjectTableRow } from '@/lib/types/project-table.types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -61,4 +62,65 @@ export function formatCurrency(amount: number, currency: 'KRW' | 'USD' = 'KRW'):
     // KRW: 원화 기호 + 천단위 쉼표 (소수점 없음)
     return `₩${amount.toLocaleString('ko-KR')}`;
   }
+}
+
+/**
+ * 프로젝트에 계약서가 있는지 확인합니다.
+ *
+ * @param project - 확인할 프로젝트 데이터
+ * @returns 계약서가 존재하면 true, 없으면 false
+ *
+ * @example
+ * ```typescript
+ * if (!hasContractDocument(project)) {
+ *   // 계약서가 누락된 프로젝트 → 검토 상태로 표시
+ * }
+ * ```
+ */
+export function hasContractDocument(project: ProjectTableRow): boolean {
+  // 1. documentStatus에서 계약서 존재 여부 확인 (우선순위)
+  if (project.documentStatus?.contract?.exists) {
+    return true;
+  }
+
+  // 2. documents 배열에서 계약서 타입 문서 찾기
+  if (project.documents && project.documents.length > 0) {
+    return project.documents.some(doc => doc.type === 'contract');
+  }
+
+  // 3. 둘 다 없으면 계약서 없음
+  return false;
+}
+
+/**
+ * 프로젝트의 계약서가 완료 상태인지 확인합니다.
+ * 계약서 필수 항목이 모두 입력되어 'completed' 상태인 경우에만 true를 반환합니다.
+ *
+ * @param project - 확인할 프로젝트 데이터
+ * @returns 계약서가 완료 상태이면 true, 아니면 false
+ *
+ * @example
+ * ```typescript
+ * if (isContractComplete(project)) {
+ *   // 계약서 완료 → 진행중 상태로 표시
+ * } else {
+ *   // 계약서 미완료 → 검토 상태 유지
+ * }
+ * ```
+ */
+export function isContractComplete(project: ProjectTableRow): boolean {
+  // 1. documentStatus에서 계약서 상태 확인 (우선순위)
+  if (project.documentStatus?.contract?.status === 'completed') {
+    return true;
+  }
+
+  // 2. documents 배열에서 완료된 계약서 찾기
+  if (project.documents && project.documents.length > 0) {
+    return project.documents.some(
+      doc => doc.type === 'contract' && doc.status === 'completed'
+    );
+  }
+
+  // 3. 계약서가 없거나 완료되지 않음
+  return false;
 }
