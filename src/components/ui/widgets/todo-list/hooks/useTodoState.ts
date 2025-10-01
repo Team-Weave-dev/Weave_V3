@@ -3,13 +3,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { useLocalStorage } from './useLocalStorage';
 import { useDragAndDrop } from './useDragAndDrop';
 import type { TodoTask, TodoSection, TodoPriority, ViewMode } from '../types';
-import { 
-  STORAGE_KEY, 
-  SECTIONS_KEY, 
+import {
+  STORAGE_KEY,
+  SECTIONS_KEY,
   VIEW_MODE_KEY,
-  DEFAULT_PRIORITY 
+  DEFAULT_PRIORITY
 } from '../constants';
 import { generateInitialData } from '../constants/mock-data';
+import { notifyCalendarDataChanged } from '@/lib/calendar-integration/events';
 
 export function useTodoState(props?: {
   tasks?: TodoTask[],
@@ -39,7 +40,13 @@ export function useTodoState(props?: {
         // Use saved data if available
         const parsedTasks = JSON.parse(savedTasks);
         const parsedSections = JSON.parse(savedSections);
-        
+
+        // Validate parsed data is array
+        if (!Array.isArray(parsedTasks) || !Array.isArray(parsedSections)) {
+          console.warn('Invalid data format in localStorage, generating initial data');
+          return generateInitialData();
+        }
+
         // Restore Date objects
         parsedTasks.forEach((task: any) => {
           task.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
@@ -53,7 +60,7 @@ export function useTodoState(props?: {
             });
           }
         });
-        
+
         console.log('Returning saved data');
         return { tasks: parsedTasks, sections: parsedSections };
       } else {
@@ -100,10 +107,20 @@ export function useTodoState(props?: {
     initialData.tasks
   );
   
-  const [sections, setSections, clearSections] = useLocalStorage<TodoSection[]>(
+  const [sectionsRaw, setSectionsRaw, clearSections] = useLocalStorage<TodoSection[]>(
     SECTIONS_KEY,
     initialData.sections
   );
+
+  // Ensure sections is always an array (defensive programming)
+  const sections = Array.isArray(sectionsRaw) ? sectionsRaw : initialData.sections;
+  const setSections = useCallback((value: TodoSection[] | ((prev: TodoSection[]) => TodoSection[])) => {
+    const newValue = value instanceof Function ? value(sections) : value;
+    // Ensure we only set arrays
+    if (Array.isArray(newValue)) {
+      setSectionsRaw(newValue);
+    }
+  }, [sections, setSectionsRaw]);
   
   const [viewMode, setViewMode] = useLocalStorage<ViewMode>(
     VIEW_MODE_KEY,
@@ -139,6 +156,15 @@ export function useTodoState(props?: {
       if (task.id === taskId) {
         const updatedTask = { ...task, completed: !task.completed };
         onTaskToggle?.(taskId);
+
+        // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+        notifyCalendarDataChanged({
+          source: 'todo',
+          changeType: 'update',
+          itemId: taskId,
+          timestamp: Date.now(),
+        });
+
         return updatedTask;
       }
       // Check children
@@ -146,7 +172,7 @@ export function useTodoState(props?: {
         return {
           ...task,
           children: task.children.map(child =>
-            child.id === taskId 
+            child.id === taskId
               ? { ...child, completed: !child.completed }
               : child
           )
@@ -161,6 +187,15 @@ export function useTodoState(props?: {
       const filtered = prev.filter(task => {
         if (task.id === taskId) {
           onTaskDelete?.(taskId);
+
+          // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+          notifyCalendarDataChanged({
+            source: 'todo',
+            changeType: 'delete',
+            itemId: taskId,
+            timestamp: Date.now(),
+          });
+
           return false;
         }
         // Keep task but filter children
@@ -174,6 +209,9 @@ export function useTodoState(props?: {
   }, [setLocalTasks, onTaskDelete]);
 
   const handleAddTask = useCallback((title: string, sectionId?: string, parentId?: string, priority?: TodoPriority, dueDate?: Date) => {
+    // Ensure localTasks is an array
+    const tasks = Array.isArray(localTasks) ? localTasks : [];
+
     const newTask: TodoTask = {
       id: uuidv4(),
       title,
@@ -183,7 +221,7 @@ export function useTodoState(props?: {
       children: [],
       sectionId: sectionId || sections[0]?.id || 'default',
       parentId,
-      order: localTasks.filter(t => t.sectionId === sectionId && !t.parentId).length,
+      order: tasks.filter(t => t.sectionId === sectionId && !t.parentId).length,
       isExpanded: false,
       createdAt: new Date(),
       dueDate,
@@ -204,8 +242,16 @@ export function useTodoState(props?: {
       }
       return [...prev, newTask];
     });
-    
+
     onTaskAdd?.(newTask);
+
+    // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+    notifyCalendarDataChanged({
+      source: 'todo',
+      changeType: 'add',
+      itemId: newTask.id,
+      timestamp: Date.now(),
+    });
   }, [localTasks, sections, setLocalTasks, onTaskAdd]);
 
   const handleUpdateTask = useCallback((taskId: string, updates: Partial<TodoTask>) => {
@@ -213,6 +259,15 @@ export function useTodoState(props?: {
       if (task.id === taskId) {
         const updatedTask = { ...task, ...updates };
         onTaskUpdate?.(taskId, updates);
+
+        // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+        notifyCalendarDataChanged({
+          source: 'todo',
+          changeType: 'update',
+          itemId: taskId,
+          timestamp: Date.now(),
+        });
+
         return updatedTask;
       }
       // Check children
@@ -331,33 +386,36 @@ export function useTodoState(props?: {
   const dateGroups = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     const thisWeek = new Date(today);
     thisWeek.setDate(thisWeek.getDate() + 7);
-    
+
+    // Ensure localTasks is an array
+    const tasks = Array.isArray(localTasks) ? localTasks : [];
+
     return {
-      today: localTasks.filter(t => {
+      today: tasks.filter(t => {
         if (!t.dueDate) return false;
         const due = new Date(t.dueDate);
         due.setHours(0, 0, 0, 0);
         return due.getTime() === today.getTime();
       }),
-      tomorrow: localTasks.filter(t => {
+      tomorrow: tasks.filter(t => {
         if (!t.dueDate) return false;
         const due = new Date(t.dueDate);
         due.setHours(0, 0, 0, 0);
         return due.getTime() === tomorrow.getTime();
       }),
-      thisWeek: localTasks.filter(t => {
+      thisWeek: tasks.filter(t => {
         if (!t.dueDate) return false;
         const due = new Date(t.dueDate);
         due.setHours(0, 0, 0, 0);
         return due > tomorrow && due <= thisWeek;
       }),
-      overdue: localTasks.filter(t => {
+      overdue: tasks.filter(t => {
         if (!t.dueDate) return false;
         const due = new Date(t.dueDate);
         due.setHours(0, 0, 0, 0);

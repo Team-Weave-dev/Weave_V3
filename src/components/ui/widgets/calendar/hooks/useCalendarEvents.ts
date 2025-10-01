@@ -6,6 +6,7 @@ import {
   updateCalendarEvent,
   deleteCalendarEvent,
 } from '@/lib/mock/calendar-events';
+import { notifyCalendarDataChanged } from '@/lib/calendar-integration/events';
 
 /**
  * useCalendarEvents Hook
@@ -37,6 +38,15 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
     try {
       const updatedEvents = addCalendarEvent(event);
       setEvents(updatedEvents);
+
+      // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+      notifyCalendarDataChanged({
+        source: 'calendar',
+        changeType: 'add',
+        itemId: event.id,
+        timestamp: Date.now(),
+      });
+
       return true;
     } catch (err) {
       setError(err as Error);
@@ -49,6 +59,15 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
     try {
       const updatedEvents = updateCalendarEvent(event);
       setEvents(updatedEvents);
+
+      // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+      notifyCalendarDataChanged({
+        source: 'calendar',
+        changeType: 'update',
+        itemId: event.id,
+        timestamp: Date.now(),
+      });
+
       return true;
     } catch (err) {
       setError(err as Error);
@@ -61,6 +80,15 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
     try {
       const updatedEvents = deleteCalendarEvent(eventId);
       setEvents(updatedEvents);
+
+      // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+      notifyCalendarDataChanged({
+        source: 'calendar',
+        changeType: 'delete',
+        itemId: eventId,
+        timestamp: Date.now(),
+      });
+
       return true;
     } catch (err) {
       setError(err as Error);

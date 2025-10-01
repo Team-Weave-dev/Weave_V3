@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ import {
   Plus,
   Search,
   Settings,
+  Filter,
   Grid3x3,
   CalendarDays,
   Calendar as CalendarIconOutline,
@@ -30,6 +32,10 @@ import { format, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { getWidgetText } from '@/config/brand';
 import { typography } from '@/config/constants';
+import { useIntegratedCalendar } from '@/hooks/useIntegratedCalendar';
+import { integratedCalendarManager } from '@/lib/calendar-integration';
+import type { CalendarItemSource, UnifiedCalendarItem } from '@/types/integrated-calendar';
+import { cn } from '@/lib/utils';
 
 // Import refactored components
 import {
@@ -83,6 +89,7 @@ export function CalendarWidget({
   const [showEventDetail, setShowEventDetail] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showSourceFilter, setShowSourceFilter] = useState(false);
   
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,15 +103,49 @@ export function CalendarWidget({
     updateEvent,
     deleteEvent,
   } = useCalendarEvents(propEvents);
-  
+
   const {
     settings,
     saveSettings,
   } = useCalendarSettings();
-  
+
+  // Integrated calendar hook for multi-source data
+  const {
+    filteredItems: integratedItems,
+    filters: sourceFilters,
+    updateFilters: updateSourceFilters,
+    stats: sourceStats,
+    refresh: refreshIntegratedItems,
+  } = useIntegratedCalendar({
+    fetchOnMount: true,
+    autoRefresh: false,
+  });
+
   // Effective values
   const effectiveGridSize = gridSize || defaultSize;
   const displayTitle = title || getWidgetText.calendar.title('ko');
+
+  // Convert UnifiedCalendarItem to CalendarEvent
+  const convertToCalendarEvents = (items: UnifiedCalendarItem[]): CalendarEvent[] => {
+    return items.map(item => {
+      // Map CalendarItemType to CalendarEvent type
+      let eventType: CalendarEvent['type'] = 'other';
+      if (item.type === 'event') eventType = 'other';
+      else if (item.type === 'deadline') eventType = 'deadline';
+      else if (item.type === 'task') eventType = 'task';
+
+      return {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        date: item.date,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        allDay: item.allDay,
+        type: eventType,
+      };
+    });
+  };
 
   // Container size detection with optimization
   useEffect(() => {
@@ -149,14 +190,38 @@ export function CalendarWidget({
     };
   }, [currentView]);
 
-  // Filtered events with memoization
+  // Merged and filtered events with memoization
   const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    return events.filter(event => 
+    // Convert integrated items to CalendarEvent format (todo, tax)
+    const integratedEvents = convertToCalendarEvents(integratedItems);
+
+    // Merge local calendar events with integrated events
+    // Local events are from CalendarWidget's own storage
+    // Integrated events are from other widgets (TodoList, TaxDeadline)
+    const allEvents = [...events, ...integratedEvents];
+
+    // Remove duplicates by ID (in case of overlap)
+    const uniqueEvents = Array.from(
+      new Map(allEvents.map(event => [event.id, event])).values()
+    );
+
+    // Apply search filter
+    if (!searchQuery) return uniqueEvents;
+    return uniqueEvents.filter(event =>
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [events, searchQuery]);
+  }, [events, integratedItems, searchQuery, convertToCalendarEvents]);
+
+  // Source filter toggle handler
+  const toggleSourceFilter = (source: CalendarItemSource) => {
+    const currentSources = sourceFilters.sources || [];
+    const newSources = currentSources.includes(source)
+      ? currentSources.filter(s => s !== source)
+      : [...currentSources, source];
+
+    updateSourceFilters({ sources: newSources.length > 0 ? newSources : undefined });
+  };
 
   // Event handlers
   const handleDateSelect = (date: Date | undefined) => {
@@ -239,9 +304,29 @@ export function CalendarWidget({
     setShowEventPopover(true);
   };
 
-  const handleEventDelete = (event: CalendarEvent) => {
+  const handleEventDelete = async (event: CalendarEvent) => {
     if (window.confirm('이 일정을 삭제하시겠습니까?')) {
-      deleteEvent(event.id);
+      // Check if event is integrated (from other widgets) by ID pattern
+      const isIntegratedItem =
+        event.id.startsWith('todo-') ||
+        event.id.startsWith('tax-') ||
+        (event.id.startsWith('calendar-event-') && !events.some(e => e.id === event.id));
+
+      if (isIntegratedItem) {
+        try {
+          // Delete from source widget's localStorage
+          await integratedCalendarManager.deleteItem(event.id);
+
+          // Refresh integrated items
+          await refreshIntegratedItems();
+        } catch (error) {
+          console.error('Failed to delete integrated item:', error);
+        }
+      } else {
+        // Delete local calendar event
+        deleteEvent(event.id);
+      }
+
       setShowEventDetail(false);
       setSelectedEvent(null);
     }
@@ -346,11 +431,24 @@ export function CalendarWidget({
                   })}
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
+              {/* Source Filter */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setShowSourceFilter(!showSourceFilter)}
+              >
+                <Filter className={cn(
+                  "h-4 w-4",
+                  (sourceFilters.sources && sourceFilters.sources.length < 3) && "text-primary"
+                )} />
+              </Button>
+
               {/* Settings - Now Active! */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => setShowSettingsModal(true)}
               >
@@ -358,6 +456,41 @@ export function CalendarWidget({
               </Button>
             </div>
           </div>
+
+          {/* Source filter UI */}
+          {showSourceFilter && (
+            <div className="flex items-center gap-2 pt-2 border-t">
+              <span className="text-xs text-muted-foreground">소스:</span>
+              {(['calendar', 'todo', 'tax'] as CalendarItemSource[]).map((source) => {
+                const activeSources = sourceFilters.sources || ['calendar', 'todo', 'tax'];
+                const isActive = activeSources.includes(source);
+                const count = sourceStats.bySource[source] || 0;
+
+                const sourceColors = {
+                  calendar: 'bg-blue-100 text-blue-700 border-blue-200',
+                  todo: 'bg-green-100 text-green-700 border-green-200',
+                  tax: 'bg-red-100 text-red-700 border-red-200',
+                };
+
+                return (
+                  <Badge
+                    key={source}
+                    variant={isActive ? 'default' : 'outline'}
+                    className={cn(
+                      "cursor-pointer text-xs",
+                      isActive && sourceColors[source]
+                    )}
+                    onClick={() => toggleSourceFilter(source)}
+                  >
+                    {source === 'calendar' && '캘린더'}
+                    {source === 'todo' && '할일'}
+                    {source === 'tax' && '세무'}
+                    <span className="ml-1">({count})</span>
+                  </Badge>
+                );
+              })}
+            </div>
+          )}
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden px-1 pb-2" ref={contentRef}>
           <div className="flex flex-col h-full">

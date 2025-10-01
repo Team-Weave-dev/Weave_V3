@@ -25,6 +25,7 @@ export interface TodoSection {
   name: string;
   order: number;
   isExpanded?: boolean;
+  tasks?: TodoTask[];  // 각 섹션의 tasks 포함
 }
 
 export interface DateGroup {

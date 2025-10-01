@@ -173,27 +173,32 @@ export function TodoListWidget({
 
   // 섹션별로 작업 가져오기
   const getTasksBySection = useCallback((sectionId: string) => {
-    return localTasks.filter(task => task.sectionId === sectionId && !task.parentId);
+    // Ensure localTasks is an array
+    const tasks = Array.isArray(localTasks) ? localTasks : [];
+    return tasks.filter(task => task.sectionId === sectionId && !task.parentId);
   }, [localTasks]);
 
   // 날짜별로 작업 그룹화
   const getTasksByDateGroup = useCallback((group: any) => {
     const today = startOfDay(new Date());
     const result: TodoTask[] = [];
-    
+
     const collectTasks = (tasks: TodoTask[]) => {
+      // Ensure tasks is an array
+      if (!Array.isArray(tasks)) return;
+
       tasks.forEach(task => {
         if (!task.completed) {
           let shouldInclude = false;
-          
+
           if (group.id === 'overdue') {
             shouldInclude = !!(task.dueDate && startOfDay(task.dueDate) < today);
           } else if (group.dateRange) {
-            shouldInclude = !!(task.dueDate && 
-                           task.dueDate >= group.dateRange.start && 
+            shouldInclude = !!(task.dueDate &&
+                           task.dueDate >= group.dateRange.start &&
                            task.dueDate <= group.dateRange.end);
           }
-          
+
           if (shouldInclude) {
             result.push({
               ...task,
@@ -203,15 +208,15 @@ export function TodoListWidget({
             });
           }
         }
-        
+
         if (task.children && task.children.length > 0) {
           collectTasks(task.children);
         }
       });
     };
-    
+
     collectTasks(localTasks);
-    
+
     return result.sort((a, b) => {
       if (!a.dueDate || !b.dueDate) return 0;
       return a.dueDate.getTime() - b.dueDate.getTime();
@@ -221,8 +226,11 @@ export function TodoListWidget({
   // 완료된 작업 가져오기
   const getCompletedTasks = useCallback(() => {
     const result: TodoTask[] = [];
-    
+
     const collectCompletedTasks = (tasks: TodoTask[]) => {
+      // Ensure tasks is an array
+      if (!Array.isArray(tasks)) return;
+
       tasks.forEach(task => {
         if (task.completed) {
           result.push(task);
