@@ -215,7 +215,7 @@ export function CalendarWidget({
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [events, integratedItems, searchQuery, convertToCalendarEvents]);
+  }, [events, integratedItems, searchQuery]);
 
   // Source filter toggle handler
   const toggleSourceFilter = (source: CalendarItemSource) => {
@@ -496,10 +496,10 @@ export function CalendarWidget({
             </div>
           )}
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden px-1 pb-2" ref={contentRef}>
+        <CardContent className="flex-1 overflow-hidden px-2 pb-2" ref={contentRef}>
           <div className="flex flex-col h-full">
             {/* Navigation bar */}
-            <div className="calendar-nav mb-2 px-3">
+            <div className="calendar-nav mb-2 px-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Button

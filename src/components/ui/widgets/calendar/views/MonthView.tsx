@@ -145,17 +145,18 @@ const MonthView = React.memo(({
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    "border-r last:border-0 cursor-pointer hover:bg-accent/50 transition-colors overflow-hidden flex flex-col p-1",
+                    "border-r last:border-0 cursor-pointer hover:bg-accent/50 transition-colors flex flex-col relative",
+                    displayMode === 'compact' ? "p-0.5" : "p-1",
                     !isCurrentMonth && "bg-muted/30",
                     isToday(day) && "bg-primary/10",
-                    isSelected && "ring-2 ring-primary"
+                    isSelected && "ring-2 ring-inset ring-primary"
                   )}
                   style={{ minHeight: `${cellHeight}px`, maxHeight: `${cellHeight}px` }}
                   onClick={() => onDateSelect?.(day)}
                   onDoubleClick={() => onDateDoubleClick?.(day)}
                 >
                   <div className={cn(
-                    displayMode === 'compact' ? "text-[10px] leading-none mb-0.5" : 
+                    displayMode === 'compact' ? "text-[10px] leading-none mb-0.5" :
                     displayMode === 'bar' ? "text-[11px] mb-0.5" :
                     "text-sm mb-1",
                     "font-medium flex-shrink-0",
@@ -166,7 +167,7 @@ const MonthView = React.memo(({
                   )}>
                     {format(day, 'd')}
                   </div>
-                  
+
                   {/* 이벤트 목록 - 높이별 레이아웃 */}
                   <div className={cn(
                     "flex-1 overflow-hidden",
