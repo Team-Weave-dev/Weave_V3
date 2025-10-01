@@ -21,6 +21,7 @@ import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText,
 import type { ProjectTableRow, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types'
 import type { ProjectDocumentCategory, GeneratedDocument } from '@/lib/document-generator/templates'
 import { Badge } from '@/components/ui/badge'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import DocumentGeneratorModal from './DocumentGeneratorModal'
 import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog'
 
@@ -64,6 +65,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
     documentId: string | null;
     documentTitle: string | null;
   }>({ open: false, documentId: null, documentTitle: null })
+  const [previewDocument, setPreviewDocument] = useState<GeneratedDocument | null>(null)
 
   const { control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<ProjectCreateFormData>({
     defaultValues: {
@@ -82,6 +84,44 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
 
   const watchedRegistrationDate = watch('registrationDate')
   const watchedCurrency = watch('currency')
+  const watchedSettlementMethod = watch('settlementMethod')
+
+  /**
+   * 정산방식에 따라 사용 가능한 수금상태 옵션 반환
+   */
+  const getAvailablePaymentStatuses = (settlementMethod: SettlementMethod): PaymentStatus[] => {
+    switch (settlementMethod) {
+      case 'not_set':
+        // 미설정 → 미시작만
+        return ['not_started']
+
+      case 'advance_final':
+        // 선금+잔금 → 미시작, 선금 완료, 잔금 완료
+        return ['not_started', 'advance_completed', 'final_completed']
+
+      case 'advance_interim_final':
+        // 선금+중도금+잔금 → 미시작, 선금 완료, 중도금 완료, 잔금 완료
+        return ['not_started', 'advance_completed', 'interim_completed', 'final_completed']
+
+      case 'post_payment':
+        // 후불 → 미시작, 잔금 완료
+        return ['not_started', 'final_completed']
+
+      default:
+        return ['not_started']
+    }
+  }
+
+  // 정산방식 변경 시 수금상태 자동 리셋
+  React.useEffect(() => {
+    const availableStatuses = getAvailablePaymentStatuses(watchedSettlementMethod)
+    const currentPaymentStatus = watch('paymentStatus')
+
+    // 현재 선택된 수금상태가 허용되지 않으면 '미시작'으로 리셋
+    if (!availableStatuses.includes(currentPaymentStatus)) {
+      setValue('paymentStatus', 'not_started')
+    }
+  }, [watchedSettlementMethod, watch, setValue])
 
   const handleClose = () => {
     reset()
@@ -203,11 +243,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
 
   // 문서 미리보기 핸들러
   const handleDocumentPreview = (document: GeneratedDocument) => {
-    // DocumentGeneratorModal을 열면서 해당 문서의 내용을 미리보기로 표시
-    // 실제 구현에서는 별도의 미리보기 모달을 만들거나 DocumentGeneratorModal을 확장할 수 있음
-    console.log('문서 미리보기:', document.title)
-    // 임시로 alert 사용 (실제로는 더 나은 UI 구현)
-    alert(`문서 미리보기: ${document.title}\n\n${document.content.substring(0, 500)}...`)
+    setPreviewDocument(document)
   }
 
   // 현재 폼 데이터 가져오기 (문서 생성기에 전달용)
@@ -402,27 +438,38 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
                 name="paymentStatus"
                 control={control}
                 rules={{ required: uiText.componentDemo.projectPage.createModal.validation.paymentStatusRequired.ko }}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={uiText.componentDemo.projectPage.createModal.fields.paymentStatus.placeholder.ko} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="not_started">
-                        {getPaymentStatusText.not_started('ko')}
-                      </SelectItem>
-                      <SelectItem value="advance_completed">
-                        {getPaymentStatusText.advance_completed('ko')}
-                      </SelectItem>
-                      <SelectItem value="interim_completed">
-                        {getPaymentStatusText.interim_completed('ko')}
-                      </SelectItem>
-                      <SelectItem value="final_completed">
-                        {getPaymentStatusText.final_completed('ko')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+                render={({ field }) => {
+                  const availableStatuses = getAvailablePaymentStatuses(watchedSettlementMethod)
+                  return (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={uiText.componentDemo.projectPage.createModal.fields.paymentStatus.placeholder.ko} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableStatuses.includes('not_started') && (
+                          <SelectItem value="not_started">
+                            {getPaymentStatusText.not_started('ko')}
+                          </SelectItem>
+                        )}
+                        {availableStatuses.includes('advance_completed') && (
+                          <SelectItem value="advance_completed">
+                            {getPaymentStatusText.advance_completed('ko')}
+                          </SelectItem>
+                        )}
+                        {availableStatuses.includes('interim_completed') && (
+                          <SelectItem value="interim_completed">
+                            {getPaymentStatusText.interim_completed('ko')}
+                          </SelectItem>
+                        )}
+                        {availableStatuses.includes('final_completed') && (
+                          <SelectItem value="final_completed">
+                            {getPaymentStatusText.final_completed('ko')}
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )
+                }}
               />
               {errors.paymentStatus && (
                 <p className="text-sm text-destructive">{errors.paymentStatus.message}</p>
@@ -708,6 +755,30 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
         onOpenChange={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
       />
+
+      {/* 문서 미리보기 모달 */}
+      <Dialog
+        open={!!previewDocument}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewDocument(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl border-2 border-primary">
+          <DialogHeader>
+            <DialogTitle>{previewDocument?.title ?? '문서 미리보기'}</DialogTitle>
+            <DialogDescription>
+              생성된 문서의 내용을 확인할 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-2">
+            <pre className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+              {previewDocument?.content ?? '문서 내용이 없습니다.'}
+            </pre>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }
