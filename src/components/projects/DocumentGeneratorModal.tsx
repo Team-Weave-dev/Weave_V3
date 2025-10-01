@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { X as XIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -159,7 +160,7 @@ export default function ProjectDocumentGeneratorModal({
         <Textarea
           value={previewContent}
           onChange={(event) => setPreviewContent(event.target.value)}
-          className="min-h-[320px]"
+          className="min-h-[320px] max-h-[60vh] overflow-y-auto resize-none"
           placeholder="문서 내용을 입력하세요"
         />
         <div className="flex justify-end gap-2">
@@ -171,7 +172,9 @@ export default function ProjectDocumentGeneratorModal({
               setPreviewContent('');
               setSelectedTemplate(null);
             }}
+            className="gap-2"
           >
+            <XIcon className="h-4 w-4" />
             취소
           </Button>
           <Button onClick={handleGenerate}>
