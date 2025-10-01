@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DeleteDialog } from '@/components/ui/dialogDelete';
 import {
   ChevronDown,
   ChevronRight,
@@ -51,6 +52,7 @@ export function TodoSection({
 }: TodoSectionProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(section.name);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const taskCount = tasks.length;
 
   const handleUpdateSection = () => {
@@ -126,11 +128,7 @@ export function TodoSection({
           {/* 섹션 삭제 버튼 */}
           {onDeleteSection && (
             <button
-              onClick={() => {
-                if (window.confirm(getWidgetText.todoList.confirmDeleteSection('ko'))) {
-                  onDeleteSection(section.id);
-                }
-              }}
+              onClick={() => setShowDeleteDialog(true)}
               className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-800 rounded"
             >
               <Trash2 className="h-3 w-3 text-red-500" />
@@ -159,6 +157,23 @@ export function TodoSection({
           )}
           {children}
         </div>
+      )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      {onDeleteSection && (
+        <DeleteDialog
+          open={showDeleteDialog}
+          title="섹션 삭제"
+          description={getWidgetText.todoList.confirmDeleteSection('ko')}
+          confirmLabel="삭제"
+          cancelLabel="취소"
+          icon={<FolderPlus className="h-6 w-6" />}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={() => {
+            onDeleteSection(section.id);
+            setShowDeleteDialog(false);
+          }}
+        />
       )}
     </div>
   );
