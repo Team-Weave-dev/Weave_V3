@@ -27,6 +27,7 @@ export interface ProjectTableRow {
   settlementMethod?: SettlementMethod;  // 정산방식
   paymentStatus?: PaymentStatus;        // 수금상태
   totalAmount?: number;                 // 총 금액
+  currency?: Currency;                  // 통화 단위
   projectContent?: string;              // 프로젝트 내용
   // 지연 로딩 최적화를 위한 플래그
   hasContract?: boolean;
@@ -59,11 +60,17 @@ export type SettlementMethod =
   | 'post_payment';        // 후불
 
 // 수금상태 타입
+// 수금상태 타입
 export type PaymentStatus =
   | 'advance_completed'    // 선금 완료
   | 'interim_completed'    // 중도금 완료
   | 'final_completed'      // 잔금 완료
   | 'not_started';         // 미시작
+
+// 통화 단위 타입
+export type Currency =
+  | 'KRW'                  // 원화 (대한민국 원)
+  | 'USD';                 // 달러 (미국 달러)
 
 export interface ContractInfo {
   totalAmount?: number;       // 계약서 총 금액

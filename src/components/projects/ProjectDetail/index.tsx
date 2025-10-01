@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ProjectProgress from '@/components/ui/project-progress';
-import { getProjectPageText, getProjectStatusText, getSettlementMethodText, getPaymentStatusText } from '@/config/brand';
+import { getProjectPageText, getProjectStatusText, getSettlementMethodText, getPaymentStatusText, getCurrencyText } from '@/config/brand';
+import { formatCurrency } from '@/lib/utils';
 import ProjectDocumentGeneratorModal from '@/components/projects/DocumentGeneratorModal';
 import { PaymentStatus as PaymentStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/PaymentStatus';
 import { ProjectStatus as ProjectStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
@@ -37,7 +38,8 @@ import type {
   ProjectTableRow,
   ProjectStatus,
   SettlementMethod,
-  PaymentStatus
+  PaymentStatus,
+  Currency
 } from '@/lib/types/project-table.types';
 
 // 편집 관련 타입
@@ -50,6 +52,7 @@ interface EditableProjectData {
   projectContent?: string;
   totalAmount?: number;
   settlementMethod?: SettlementMethod;
+  currency?: Currency;
   paymentStatus?: PaymentStatus;
 }
 
@@ -882,6 +885,35 @@ export default function ProjectDetail({
                       )}
                     </div>
 
+                    {/* 통화 단위 */}
+                    <div>
+                      <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2 mb-1">
+                        {getProjectPageText.fieldCurrency(lang)}
+                      </Label>
+                      {isEditing ? (
+                        <Select
+                          value={editState?.editingData.currency || 'KRW'}
+                          onValueChange={(value) => onUpdateField?.('currency', value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="KRW">
+                              {getCurrencyText.KRW(lang)}
+                            </SelectItem>
+                            <SelectItem value="USD">
+                              {getCurrencyText.USD(lang)}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-sm block">
+                          {getCurrencyText[project.currency || 'KRW'](lang)}
+                        </span>
+                      )}
+                    </div>
+
                     {/* 총 계약금액 */}
                     <div>
                       <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2 mb-1">
@@ -913,7 +945,7 @@ export default function ProjectDetail({
                       ) : (
                         <span className="text-sm block">
                           {project.totalAmount
-                            ? `₩${project.totalAmount.toLocaleString('ko-KR')}`
+                            ? formatCurrency(project.totalAmount, project.currency || 'KRW')
                             : getProjectPageText.placeholderNotSet(lang)
                           }
                         </span>

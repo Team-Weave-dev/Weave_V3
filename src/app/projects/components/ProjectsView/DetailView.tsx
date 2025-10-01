@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ProjectDetail from '@/components/projects/ProjectDetail';
-import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
+import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types';
 import { getProjectPageText, getLoadingText } from '@/config/brand';
 import ProjectCardCustom from '@/components/projects/shared/ProjectCardCustom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -29,6 +29,7 @@ interface EditableProjectData {
   projectContent?: string;
   totalAmount?: number;
   settlementMethod?: SettlementMethod;
+  currency?: Currency;
   paymentStatus?: PaymentStatus;
 }
 

@@ -15,10 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 
-import { uiText, getSettlementMethodText, getPaymentStatusText, getLoadingText } from '@/config/brand'
-import type { ProjectTableRow, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types'
+import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getLoadingText } from '@/config/brand'
+import type { ProjectTableRow, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types'
 import type { ProjectDocumentCategory, GeneratedDocument } from '@/lib/document-generator/templates'
 import { Badge } from '@/components/ui/badge'
 import DocumentGeneratorModal from './DocumentGeneratorModal'
@@ -34,6 +34,7 @@ interface ProjectCreateFormData {
   name: string
   client: string
   settlementMethod: SettlementMethod
+  currency: Currency
   projectContent: string
   registrationDate: Date
   dueDate: Date
@@ -42,11 +43,22 @@ interface ProjectCreateFormData {
   generateDocuments: ProjectDocumentCategory[]
 }
 
+/**
+ * 문자열에서 숫자만 추출하는 헬퍼 함수
+ * @param value - 입력 문자열 (예: "₩50,000" 또는 "$1,234.56")
+ * @returns 추출된 숫자 (예: 50000 또는 123456)
+ */
+const extractNumber = (value: string): number => {
+  const numericOnly = value.replace(/[^\d]/g, '')
+  return numericOnly === '' ? 0 : Number(numericOnly)
+}
+
 export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }: ProjectCreateModalProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [generatedDocuments, setGeneratedDocuments] = useState<GeneratedDocument[]>([])
   const [showDocumentGenerator, setShowDocumentGenerator] = useState(false)
+  const [isTotalAmountFocused, setIsTotalAmountFocused] = useState(false)
   const [deleteDialogState, setDeleteDialogState] = useState<{
     open: boolean;
     documentId: string | null;
@@ -58,6 +70,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
       name: '',
       client: '',
       settlementMethod: 'not_set',
+      currency: 'KRW',
       projectContent: '',
       registrationDate: new Date(),
       dueDate: new Date(Date.now() + 1000), // 등록일보다 1초 늦게 설정
@@ -68,6 +81,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
   })
 
   const watchedRegistrationDate = watch('registrationDate')
+  const watchedCurrency = watch('currency')
 
   const handleClose = () => {
     reset()
@@ -188,24 +202,6 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
     alert(`문서 미리보기: ${document.title}\n\n${document.content.substring(0, 500)}...`)
   }
 
-  // 총금액 필드 UX 개선 핸들러
-  const handleTotalAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // 값이 0이면 빈 문자열로 변경하여 입력하기 쉽게 만듦
-    if (e.target.value === '0') {
-      e.target.value = ''
-    }
-  }
-
-  const handleTotalAmountBlur = (e: React.FocusEvent<HTMLInputElement>, onChange: (value: number) => void) => {
-    // 빈 값이면 0으로 복원
-    if (e.target.value === '' || e.target.value === '0') {
-      e.target.value = '0'
-      onChange(0)
-    } else {
-      onChange(Number(e.target.value))
-    }
-  }
-
   // 현재 폼 데이터 가져오기 (문서 생성기에 전달용)
   const getCurrentProjectData = (): Partial<ProjectCreateFormData> => {
     const currentValues = watch()
@@ -316,6 +312,36 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
               )}
             </div>
 
+            {/* 통화 단위 */}
+            <div className="space-y-2">
+              <Label htmlFor="currency">
+                {uiText.componentDemo.projectPage.createModal.fields.currency.label.ko}
+              </Label>
+              <Controller
+                name="currency"
+                control={control}
+                rules={{ required: "통화 단위를 선택하세요" }}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={uiText.componentDemo.projectPage.createModal.fields.currency.placeholder.ko} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="KRW">
+                        {getCurrencyText.KRW('ko')}
+                      </SelectItem>
+                      <SelectItem value="USD">
+                        {getCurrencyText.USD('ko')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.currency && (
+                <p className="text-sm text-destructive">{errors.currency.message}</p>
+              )}
+            </div>
+
             {/* 총 금액 */}
             <div className="space-y-2">
               <Label htmlFor="totalAmount">
@@ -331,12 +357,26 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
                 render={({ field }) => (
                   <Input
                     id="totalAmount"
-                    type="number"
-                    placeholder="총 프로젝트 금액을 입력하세요"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                    onFocus={handleTotalAmountFocus}
-                    onBlur={(e) => handleTotalAmountBlur(e, field.onChange)}
+                    type="text"
+                    value={
+                      isTotalAmountFocused
+                        ? (field.value > 0 ? field.value.toString() : '')
+                        : (field.value > 0 ? formatCurrency(field.value, watchedCurrency) : '')
+                    }
+                    onChange={(e) => {
+                      const numericValue = extractNumber(e.target.value)
+                      field.onChange(numericValue)
+                    }}
+                    onFocus={(e) => {
+                      setIsTotalAmountFocused(true)
+                      e.target.select()
+                    }}
+                    onBlur={() => setIsTotalAmountFocused(false)}
+                    placeholder={
+                      isTotalAmountFocused
+                        ? "숫자만 입력하세요"
+                        : `예: ${watchedCurrency === 'KRW' ? '₩50,000,000' : '$50,000.00'}`
+                    }
                   />
                 )}
               />

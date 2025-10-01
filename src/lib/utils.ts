@@ -36,3 +36,29 @@ export async function withMinimumDuration<T>(
 
   return result;
 }
+
+/**
+ * 통화 단위에 따라 금액을 포맷팅합니다.
+ *
+ * @param amount - 포맷팅할 금액
+ * @param currency - 통화 단위 ('KRW' 또는 'USD')
+ * @returns 통화 기호와 함께 포맷팅된 금액 문자열
+ *
+ * @example
+ * ```typescript
+ * formatCurrency(50000000, 'KRW')  // "₩50,000,000"
+ * formatCurrency(50000.5, 'USD')   // "$50,000.50"
+ * ```
+ */
+export function formatCurrency(amount: number, currency: 'KRW' | 'USD' = 'KRW'): string {
+  if (currency === 'USD') {
+    // USD: 달러 기호 + 소수점 2자리 + 천단위 쉼표
+    return `$${amount.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  } else {
+    // KRW: 원화 기호 + 천단위 쉼표 (소수점 없음)
+    return `₩${amount.toLocaleString('ko-KR')}`;
+  }
+}

@@ -8,7 +8,7 @@ import ProjectCreateModal from '@/app/projects/components/ProjectCreateModal';
 import { AlertCircleIcon } from 'lucide-react';
 import { getProjectPageText, getLoadingText } from '@/config/brand';
 import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner';
-import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus } from '@/lib/types/project-table.types';
+import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types';
 import { fetchMockProjects, fetchMockProject, removeCustomProject, addCustomProject, updateCustomProject } from '@/lib/mock/projects';
 import { addProjectDocument, getProjectDocuments } from '@/lib/mock/documents';
 import type { DocumentInfo } from '@/lib/types/project-table.types';
@@ -43,6 +43,7 @@ interface EditableProjectData {
   projectContent?: string;
   totalAmount?: number;
   settlementMethod?: SettlementMethod;
+  currency?: Currency;
   paymentStatus?: PaymentStatus;
 }
 
