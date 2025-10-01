@@ -19,40 +19,52 @@ const DayView = React.memo(({
   containerHeight
 }: CalendarViewProps) => {
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  const dayEvents = events.filter(event => 
+  const dayEvents = events.filter(event =>
     isSameDay(new Date(event.date), currentDate)
   );
-  
-  // 동적 높이 계산
+
+  // 종일 이벤트 필터링
+  const allDayEvents = dayEvents.filter(e => e.allDay);
+  const hasAllDayEvents = allDayEvents.length > 0;
+
+  // 동적 높이 계산 (종일 이벤트 영역 포함)
   const headerHeight = 60;
-  const scrollAreaHeight = Math.max(300, containerHeight - headerHeight);
-  
+  const allDayHeight = hasAllDayEvents ? 80 : 0;
+  const totalHeaderHeight = headerHeight + allDayHeight;
+  const scrollAreaHeight = Math.max(300, containerHeight - totalHeaderHeight);
+
   return (
     <div className="flex flex-col h-full">
+      {/* 날짜 헤더 */}
       <div className="p-4 border-b flex-shrink-0" style={{ height: `${headerHeight}px` }}>
         <h3 className="text-lg font-semibold">
           {format(currentDate, 'yyyy년 M월 d일 EEEE', { locale: ko })}
         </h3>
       </div>
-      
+
+      {/* 종일 이벤트 영역 - 스크롤 밖에 고정 */}
+      {hasAllDayEvents && (
+        <div
+          className="p-2 border-b bg-muted/30 flex-shrink-0"
+          style={{ minHeight: `${allDayHeight}px` }}
+          onDoubleClick={() => onDateDoubleClick?.(currentDate)}
+        >
+          <div className="text-xs text-muted-foreground mb-1">종일</div>
+          <div className="space-y-1">
+            {allDayEvents.map((event) => (
+              <MiniEvent
+                key={event.id}
+                event={event}
+                onClick={() => onEventClick?.(event)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 시간대별 이벤트 - 스크롤 영역 */}
       <ScrollArea className="flex-1" style={{ height: `${scrollAreaHeight}px` }}>
         <div className="min-h-[800px]">
-          {/* 종일 이벤트 */}
-          {dayEvents.filter(e => e.allDay).length > 0 && (
-            <div className="p-2 border-b bg-muted/50" onDoubleClick={() => onDateDoubleClick?.(currentDate)}>
-              <div className="text-xs text-muted-foreground mb-1">종일</div>
-              <div className="space-y-1">
-                {dayEvents.filter(e => e.allDay).map((event) => (
-                  <MiniEvent
-                    key={event.id}
-                    event={event}
-                    onClick={() => onEventClick?.(event)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          
           {/* 시간대별 이벤트 */}
           {hours.map((hour) => {
             const hourEvents = dayEvents.filter(event => {
