@@ -76,7 +76,6 @@ import {
   ChevronRight,
   Loader2,
   Building2,
-  Hash,
   Calculator,
   BarChart3,
   Flag
@@ -832,7 +831,7 @@ export default function ProjectDetail({
               <CardContent className="pt-6">
                 <div className="mb-4">
                   <h3 className="text-base font-semibold">
-                    {getProjectPageText.projectInfo(lang)}
+                    {getProjectPageText.projectInfo(lang)}({project.no})
                   </h3>
                 </div>
 
@@ -881,17 +880,6 @@ export default function ProjectDetail({
                       {isEditing && editState?.errors.client && (
                         <p className="text-xs text-destructive mt-1">{editState.errors.client}</p>
                       )}
-                    </div>
-
-                    {/* 프로젝트 번호 */}
-                    <div>
-                      <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2 mb-1">
-                        <Hash className="h-4 w-4" />
-                        {getProjectPageText.fieldProjectNo(lang)}
-                      </Label>
-                      <span className="text-sm block">
-                        {project.no}
-                      </span>
                     </div>
 
                     {/* 총 계약금액 */}
