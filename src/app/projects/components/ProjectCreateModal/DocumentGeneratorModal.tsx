@@ -442,7 +442,7 @@ export default function DocumentGeneratorModal({
                     <Textarea
                       value={editedContent}
                       onChange={(e) => handleContentChange(e.target.value)}
-                      className="h-full min-h-[500px] resize-none font-mono text-sm leading-relaxed bg-background border-0 focus:ring-0"
+                      className="h-full min-h-[500px] max-h-[60vh] overflow-y-auto resize-none font-mono text-sm leading-relaxed bg-background border-0 focus:ring-0"
                       placeholder="문서 내용을 편집하세요..."
                     />
                   ) : (
@@ -468,7 +468,8 @@ export default function DocumentGeneratorModal({
 
         {/* 하단 버튼 */}
         <div className="flex-shrink-0 flex justify-end gap-2 pt-4 pb-6 px-6">
-          <Button type="button" variant="outline" onClick={handleClose}>
+          <Button type="button" variant="outline" onClick={handleClose} className="gap-2">
+            <X className="h-4 w-4" />
             {uiText.componentDemo.projectPage.createModal.fields.documentGeneration.generatorModal.buttons.close.ko}
           </Button>
         </div>
