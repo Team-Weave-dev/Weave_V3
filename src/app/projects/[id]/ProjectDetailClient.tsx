@@ -8,7 +8,7 @@ import ProjectCreateModal from '@/app/projects/components/ProjectCreateModal';
 import { AlertCircleIcon } from 'lucide-react';
 import { getProjectPageText, getLoadingText } from '@/config/brand';
 import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner';
-import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types';
+import type { ProjectTableRow, ProjectStatus, SettlementMethod, PaymentStatus, Currency, WBSTask } from '@/lib/types/project-table.types';
 import { fetchMockProjects, fetchMockProject, removeCustomProject, addCustomProject, updateCustomProject } from '@/lib/mock/projects';
 import { addProjectDocument, getProjectDocuments } from '@/lib/mock/documents';
 import type { DocumentInfo } from '@/lib/types/project-table.types';
@@ -39,12 +39,13 @@ interface EditableProjectData {
   client: string;
   status: ProjectStatus;
   dueDate: string;
-  progress: number;
+  progress: number; // @deprecated - WBS 기반 자동 계산, 편집 불가
   projectContent?: string;
   totalAmount?: number;
   settlementMethod?: SettlementMethod;
   currency?: Currency;
   paymentStatus?: PaymentStatus;
+  wbsTasks: WBSTask[]; // 작업 목록 (단일 진실 공급원)
 }
 
 // 편집 상태 인터페이스
@@ -89,7 +90,8 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
       projectContent: '',
       totalAmount: undefined,
       settlementMethod: undefined,
-      paymentStatus: undefined
+      paymentStatus: undefined,
+      wbsTasks: []
     },
     originalData: null,
     errors: {},
@@ -364,7 +366,8 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
         projectContent: '',
         totalAmount: undefined,
         settlementMethod: undefined,
-        paymentStatus: undefined
+        paymentStatus: undefined,
+        wbsTasks: []
       },
       originalData: null,
       errors: {},
@@ -388,7 +391,8 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
         projectContent: project.projectContent || '',
         totalAmount: project.totalAmount,
         settlementMethod: project.settlementMethod,
-        paymentStatus: project.paymentStatus
+        paymentStatus: project.paymentStatus,
+        wbsTasks: project.wbsTasks || []
       },
       originalData: project,
       errors: {},

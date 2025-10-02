@@ -131,6 +131,7 @@ const demoProjects: ProjectTableRow[] = [
     hasContract: true,
     hasBilling: true,
     hasDocuments: true,
+    wbsTasks: [], // Empty WBS tasks for demo
   },
   {
     id: "project-2",
@@ -146,6 +147,7 @@ const demoProjects: ProjectTableRow[] = [
     hasContract: true,
     hasBilling: false,
     hasDocuments: true,
+    wbsTasks: [], // Empty WBS tasks for demo
   },
   {
     id: "project-3",
@@ -161,6 +163,7 @@ const demoProjects: ProjectTableRow[] = [
     hasContract: true,
     hasBilling: true,
     hasDocuments: true,
+    wbsTasks: [], // Empty WBS tasks for demo
   },
 ]
 

@@ -897,6 +897,54 @@ export const uiText = {
             confirmButton: { ko: "초기화", en: "Reset" },
             cancelButton: { ko: "취소", en: "Cancel" }
           }
+        },
+        // WBS (Work Breakdown Structure) 관련 텍스트
+        wbs: {
+          sectionTitle: { ko: "작업 목록 (WBS)", en: "Task List (WBS)" },
+          addTask: { ko: "작업 추가", en: "Add Task" },
+          addTaskDescription: { ko: "프로젝트에 새로운 작업을 추가합니다", en: "Add a new task to the project" },
+          emptyState: { ko: "등록된 작업이 없습니다", en: "No tasks registered" },
+          emptyStateDescription: { ko: "작업을 추가하여 프로젝트 진행률을 관리하세요", en: "Add tasks to manage project progress" },
+          taskName: { ko: "작업명", en: "Task Name" },
+          taskDescription: { ko: "작업 설명", en: "Task Description" },
+          taskStatus: { ko: "작업 상태", en: "Task Status" },
+          // 프로젝트 생성 모달용 템플릿 선택 텍스트
+          templateSelectLabel: { ko: "작업 템플릿", en: "Task Template" },
+          templateSelectPlaceholder: { ko: "프로젝트 유형 선택", en: "Select project type" },
+          templateSelectHelp: { ko: "프로젝트 유형에 맞는 기본 작업 목록이 자동으로 생성됩니다", en: "Default tasks will be created based on project type" },
+          // 빠른 템플릿 추가 기능 텍스트
+          quickAddButton: { ko: "템플릿으로 추가", en: "Add from Template" },
+          quickAddTitle: { ko: "작업 템플릿 선택", en: "Select Task Template" },
+          quickAddDescription: { ko: "선택한 템플릿의 작업들이 현재 목록에 추가됩니다", en: "Tasks from the selected template will be added to the current list" },
+          quickAddConfirm: { ko: "추가하기", en: "Add Tasks" },
+          quickAddCancel: { ko: "취소", en: "Cancel" },
+          // WBS 작업 상태
+          statuses: {
+            pending: { ko: "대기", en: "Pending" },
+            in_progress: { ko: "진행중", en: "In Progress" },
+            completed: { ko: "완료", en: "Completed" }
+          },
+          // WBS 템플릿 타입
+          templates: {
+            standard: { ko: "표준 프로젝트", en: "Standard Project" },
+            consulting: { ko: "컨설팅", en: "Consulting" },
+            education: { ko: "교육", en: "Education" },
+            custom: { ko: "직접 입력", en: "Custom" }
+          },
+          // WBS 템플릿 설명
+          templateDescriptions: {
+            standard: { ko: "기획, 설계, 개발, 테스트, 배포", en: "Planning, Design, Development, Testing, Deployment" },
+            consulting: { ko: "착수, 분석, 제안, 실행, 종료", en: "Initiation, Analysis, Proposal, Execution, Closure" },
+            education: { ko: "기획, 자료 제작, 리허설, 강의, 피드백", en: "Planning, Material Creation, Rehearsal, Lecture, Feedback" },
+            custom: { ko: "직접 작업 목록을 입력합니다", en: "Enter task list manually" }
+          },
+          // WBS 기능 관련
+          taskCount: { ko: "작업 개수", en: "Task Count" },
+          completedCount: { ko: "완료된 작업", en: "Completed Tasks" },
+          progressCalculation: { ko: "진행률 자동 계산", en: "Auto-calculated Progress" },
+          dragToReorder: { ko: "드래그하여 순서 변경", en: "Drag to reorder" },
+          deleteTask: { ko: "작업 삭제", en: "Delete Task" },
+          confirmDelete: { ko: "이 작업을 삭제하시겠습니까?", en: "Are you sure you want to delete this task?" }
         }
       },
       messages: {
@@ -1756,7 +1804,48 @@ export const getProjectPageText = {
   statusResetConfirmTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.confirmTitle[lang],
   statusResetConfirmMessage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.confirmMessage[lang],
   statusResetConfirmButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.confirmButton[lang],
-  statusResetCancelButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.cancelButton[lang]
+  statusResetCancelButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.statusFlowExplanation.resetButton.cancelButton[lang],
+
+  // WBS (Work Breakdown Structure) 관련
+  wbsSectionTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.sectionTitle[lang],
+  wbsAddTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.addTask[lang],
+  wbsAddTaskDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.addTaskDescription[lang],
+  wbsEmptyState: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.emptyState[lang],
+  wbsEmptyStateDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.emptyStateDescription[lang],
+  wbsTaskName: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.taskName[lang],
+  wbsTaskDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.taskDescription[lang],
+  wbsTaskStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.taskStatus[lang],
+  wbsTaskCount: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.taskCount[lang],
+  wbsCompletedCount: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.completedCount[lang],
+  wbsProgressCalculation: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.progressCalculation[lang],
+  wbsDragToReorder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.dragToReorder[lang],
+  wbsDeleteTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.deleteTask[lang],
+  wbsConfirmDelete: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.confirmDelete[lang],
+  // WBS 템플릿 선택 (프로젝트 생성 모달용)
+  wbsTemplateSelectLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.templateSelectLabel[lang],
+  wbsTemplateSelectPlaceholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.templateSelectPlaceholder[lang],
+  wbsTemplateSelectHelp: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.templateSelectHelp[lang],
+  // WBS 빠른 템플릿 추가 기능
+  wbsQuickAddButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.quickAddButton[lang],
+  wbsQuickAddTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.quickAddTitle[lang],
+  wbsQuickAddDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.quickAddDescription[lang],
+  wbsQuickAddConfirm: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.quickAddConfirm[lang],
+  wbsQuickAddCancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.quickAddCancel[lang]
+}
+
+// WBS 작업 상태 텍스트 헬퍼 함수
+export const getWBSStatusText = (status: 'pending' | 'in_progress' | 'completed', lang: 'ko' | 'en' = defaultLanguage) => {
+  return uiText.componentDemo.projectPage.projectDetails.wbs.statuses[status][lang];
+};
+
+// WBS 템플릿 텍스트 헬퍼 함수
+export const getWBSTemplateText = (template: 'standard' | 'consulting' | 'education' | 'custom', lang: 'ko' | 'en' = defaultLanguage) => {
+  return uiText.componentDemo.projectPage.projectDetails.wbs.templates[template][lang];
+};
+
+// WBS 템플릿 설명 헬퍼 함수
+export const getWBSTemplateDescription = (template: 'standard' | 'consulting' | 'education' | 'custom', lang: 'ko' | 'en' = defaultLanguage) => {
+  return uiText.componentDemo.projectPage.projectDetails.wbs.templateDescriptions[template][lang];
 }
 
 // 프로젝트 상태 텍스트 헬퍼 함수

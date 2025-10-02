@@ -21,6 +21,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. ✅ 작업 유형을 파악했는가? (컴포넌트/페이지/설정/기타)
 3. ✅ 해당 도메인의 claude.md를 읽었는가?
 4. ✅ 중앙화 시스템(config/brand.ts, constants.ts)을 확인했는가?
+5. ✅ **TASK.md 파일이 존재하는가? 존재한다면 반드시 참조하고 작업 진행 중 체크리스트를 실시간으로 업데이트할 것**
+   - 📝 **작업 시작 전/중/후 TASK.md의 체크리스트 항목을 Edit 도구로 체크(`[x]`) 표시**
+   - 🔄 **단순히 참조만 하지 말고, 각 작업 완료 시마다 해당 항목을 실제로 파일에 기록**
+   - ⚠️ **TASK.md 업데이트 없이 작업만 진행하는 것은 규칙 위반**
 
 **위 체크리스트를 완료하지 않으면 절대 작업을 시작하지 마세요.**
 

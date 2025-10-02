@@ -42,8 +42,12 @@ import type {
   ProjectStatus,
   SettlementMethod,
   PaymentStatus,
-  Currency
+  Currency,
+  WBSTask
 } from '@/lib/types/project-table.types';
+import { calculateProjectProgress } from '@/lib/types/project-table.types';
+import { getWBSTemplateByType } from '@/lib/wbs/templates';
+import { MiniWBS } from '@/components/projects/shared/MiniWBS';
 
 // 편집 관련 타입
 interface EditableProjectData {
@@ -51,12 +55,13 @@ interface EditableProjectData {
   client: string;
   status: ProjectStatus;
   dueDate: string;
-  progress: number;
+  progress: number; // @deprecated - WBS 기반 자동 계산, 편집 불가
   projectContent?: string;
   totalAmount?: number;
   settlementMethod?: SettlementMethod;
   currency?: Currency;
   paymentStatus?: PaymentStatus;
+  wbsTasks: WBSTask[]; // 작업 목록 (단일 진실 공급원)
 }
 
 interface ProjectEditState {
@@ -1058,18 +1063,30 @@ export default function ProjectDetail({
                       </span>
                     </div>
 
-                    {/* 마감일 - 편집 상태가 아닐 때만 우측에 표시 */}
-                    {!isEditing && (
+                    {/* 마감일 - 항상 우측에 표시 */}
+                    <div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground font-medium flex items-center gap-2">
                           <ClockIcon className="h-4 w-4" />
                           {getProjectPageText.dueDate(lang)}
                         </span>
-                        <span className="text-sm">
-                          {new Date(project.dueDate).toLocaleDateString('ko-KR')}
-                        </span>
+                        {isEditing ? (
+                          <Input
+                            type="date"
+                            value={editState?.editingData.dueDate?.split('T')[0] || ''}
+                            onChange={(e) => onUpdateField?.('dueDate', new Date(e.target.value).toISOString())}
+                            className={`w-auto text-sm h-8 ${editState?.errors.dueDate ? 'border-destructive' : ''}`}
+                          />
+                        ) : (
+                          <span className="text-sm">
+                            {new Date(project.dueDate).toLocaleDateString('ko-KR')}
+                          </span>
+                        )}
                       </div>
-                    )}
+                      {isEditing && editState?.errors.dueDate && (
+                        <p className="text-xs text-destructive mt-1 text-right">{editState.errors.dueDate}</p>
+                      )}
+                    </div>
 
                     {/* 수정일 */}
                     <div className="flex items-center justify-between">
@@ -1081,132 +1098,21 @@ export default function ProjectDetail({
                         {new Date(project.modifiedDate).toLocaleDateString('ko-KR')}
                       </span>
                     </div>
-                  </div>
-                </div>
 
-                {/* 하단 정보 */}
-                <div className="border-t pt-4 space-y-4">
-                  {/* 작업 진행률 */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm text-muted-foreground font-medium">
-                        {getProjectPageText.taskProgress(lang)}
-                      </Label>
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={editState?.editingData.progress || 0}
-                            onChange={(e) => onUpdateField?.('progress', parseInt(e.target.value) || 0)}
-                            className={`w-20 ${editState?.errors.progress ? 'border-destructive' : ''}`}
-                          />
-                          <span className="text-sm text-muted-foreground">%</span>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-medium">{project.progress}%</span>
-                      )}
-                    </div>
-                    {isEditing && editState?.errors.progress && (
-                      <p className="text-xs text-destructive mb-2">{editState.errors.progress}</p>
-                    )}
-                    <ProjectProgress value={isEditing ? (editState?.editingData.progress || 0) : (project.progress || 0)} size="sm" />
-                  </div>
-
-                  {/* 마감일 - 편집 상태일 때만 하단에 표시 */}
-                  {isEditing && (
-                    <div>
-                      <Label className="text-sm text-muted-foreground flex items-center gap-2">
-                        <ClockIcon className="h-4 w-4" />
-                        {getProjectPageText.dueDate(lang)}
-                      </Label>
-                      <Input
-                        type="date"
-                        value={editState?.editingData.dueDate?.split('T')[0] || ''}
-                        onChange={(e) => onUpdateField?.('dueDate', new Date(e.target.value).toISOString())}
-                        className={editState?.errors.dueDate ? 'border-destructive' : ''}
-                      />
-                      {editState?.errors.dueDate && (
-                        <p className="text-xs text-destructive mt-1">{editState.errors.dueDate}</p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 현재 단계와 수금상태 */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* 현재 단계 */}
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Label className="text-sm text-muted-foreground font-medium">
-                          {getProjectPageText.currentStage(lang)}
-                        </Label>
-                        <Popover open={isStatusHelpOpen} onOpenChange={setIsStatusHelpOpen}>
-                          <PopoverTrigger asChild>
-                            <button
-                              type="button"
-                              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
-                              aria-label={getProjectPageText.statusFlowTitle(lang)}
-                            >
-                              <HelpCircle className="h-3.5 w-3.5" />
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="max-w-sm p-3" side="top">
-                            <div className="space-y-2">
-                              <p className="font-semibold text-sm">
-                                {getProjectPageText.statusFlowTitle(lang)}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {getProjectPageText.statusFlowSummary(lang)}
-                              </p>
-                              <div className="space-y-1 pt-2 border-t text-xs">
-                                <div>• {getProjectPageText.statusFlowPlanning(lang)}</div>
-                                <div>• {getProjectPageText.statusFlowReview(lang)}</div>
-                                <div>• {getProjectPageText.statusFlowInProgress(lang)}</div>
-                                <div>• {getProjectPageText.statusFlowManual(lang)}</div>
-                                <div>• {getProjectPageText.statusFlowAutoComplete(lang)}</div>
-                              </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                        {/* 단계 초기화 버튼: 완료/보류/취소 상태일 때만 표시 */}
-                        {!isEditing && (project.status === 'completed' || project.status === 'on_hold' || project.status === 'cancelled') && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => setShowResetStatusDialog(true)}
-                                  className="h-auto px-2 py-1 text-xs"
-                                  aria-label={getProjectPageText.statusResetTooltip(lang)}
-                                >
-                                  <RotateCcw className="h-3 w-3 mr-1" />
-                                  {getProjectPageText.statusResetLabel(lang)}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">
-                                <p className="text-xs">{getProjectPageText.statusResetTooltip(lang)}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground font-medium">
+                        {getProjectPageText.currentStage(lang)}
+                      </span>
                       {isEditing ? (
                         <Select
                           value={editState?.editingData.status || 'planning'}
                           onValueChange={(value) => onUpdateField?.('status', value)}
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger className="w-auto h-8 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {/* 🎯 자동 결정 상태는 드롭다운에서 제거됨:
-                                - planning: 계약서 완료 + 금액 없음 → 자동 표시
-                                - in_progress: 계약서 완료 + 금액 있음 → 자동 표시
-                                - review: 계약서 없음 또는 미완료 → 자동 표시
-                            */}
-                            {/* 사용자가 수동으로 선택 가능한 상태만 제공 */}
                             <SelectItem value="on_hold">
                               {getProjectStatusText('on_hold', lang)}
                             </SelectItem>
@@ -1219,7 +1125,7 @@ export default function ProjectDetail({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <div className="mt-1">
+                        <div className="text-sm">
                           <ProjectStatusComponent
                             project={project}
                             mode="detail"
@@ -1230,45 +1136,33 @@ export default function ProjectDetail({
                     </div>
 
                     {/* 수금상태 */}
-                    <div>
-                      <Label className="text-sm text-muted-foreground font-medium">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground font-medium">
                         {getProjectPageText.paymentStatus(lang)}
-                      </Label>
+                      </span>
                       {isEditing ? (
                         <Select
                           value={editState?.editingData.paymentStatus || 'not_started'}
                           onValueChange={(value) => onUpdateField?.('paymentStatus', value)}
                         >
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger className="w-auto h-8 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {/* 🎯 정산방식에 따라 수금상태 항목이 달라짐:
-                                - 미설정: not_started만
-                                - 선금+잔금: not_started, advance_completed, final_completed
-                                - 선금+중도금+잔금: 모든 항목
-                                - 후불: not_started, final_completed
-                            */}
                             <SelectItem value="not_started">
                               {getPaymentStatusText.not_started(lang)}
                             </SelectItem>
-
-                            {/* 선금 완료 - 선금+잔금, 선금+중도금+잔금에서만 표시 */}
                             {(editState?.editingData.settlementMethod === 'advance_final' ||
                               editState?.editingData.settlementMethod === 'advance_interim_final') && (
                               <SelectItem value="advance_completed">
                                 {getPaymentStatusText.advance_completed(lang)}
                               </SelectItem>
                             )}
-
-                            {/* 중도금 완료 - 선금+중도금+잔금에서만 표시 */}
                             {editState?.editingData.settlementMethod === 'advance_interim_final' && (
                               <SelectItem value="interim_completed">
                                 {getPaymentStatusText.interim_completed(lang)}
                               </SelectItem>
                             )}
-
-                            {/* 잔금 완료 - 미설정 제외 모든 방식에서 표시 */}
                             {editState?.editingData.settlementMethod !== 'not_set' && (
                               <SelectItem value="final_completed">
                                 {getPaymentStatusText.final_completed(lang)}
@@ -1277,7 +1171,7 @@ export default function ProjectDetail({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <div className="mt-1">
+                        <div className="text-sm">
                           <PaymentStatusComponent
                             project={project}
                             mode="detail"
@@ -1287,6 +1181,84 @@ export default function ProjectDetail({
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* 하단 정보 */}
+                <div className="border-t pt-4 space-y-4">
+                  {/* 스크롤 영역: WBS만 */}
+                  <div className="max-h-[400px] overflow-y-auto pb-4">
+                    <MiniWBS
+                      tasks={isEditing ? (editState?.editingData.wbsTasks || []) : (project.wbsTasks || [])}
+                      isEditMode={isEditing}
+                      onStatusChange={(taskId, newStatus) => {
+                        if (!isEditing || !editState?.editingData.wbsTasks) return;
+                        const updatedTasks = editState.editingData.wbsTasks.map(task =>
+                          task.id === taskId ? { ...task, status: newStatus } : task
+                        );
+                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
+                      }}
+                      onDelete={(taskId) => {
+                        if (!isEditing || !editState?.editingData.wbsTasks) return;
+                        const updatedTasks = editState.editingData.wbsTasks.filter(task => task.id !== taskId);
+                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
+                      }}
+                      onAddTask={() => {
+                        if (!isEditing || !editState?.editingData.wbsTasks) return;
+                        const newTask: WBSTask = {
+                          id: `task-${Date.now()}`,
+                          name: `새 작업 ${editState.editingData.wbsTasks.length + 1}`,
+                          status: 'pending',
+                          createdAt: new Date().toISOString(),
+                          order: editState.editingData.wbsTasks.length
+                        };
+                        const updatedTasks = [...editState.editingData.wbsTasks, newTask];
+                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
+                      }}
+                      onAddFromTemplate={(template) => {
+                        if (!isEditing || !editState?.editingData.wbsTasks) return;
+
+                        // 템플릿에서 작업 목록 가져오기
+                        const templateTasks = getWBSTemplateByType(template);
+
+                        // 현재 목록 길이를 기준으로 order 조정
+                        const currentLength = editState.editingData.wbsTasks.length;
+                        const adjustedTasks = templateTasks.map((task, index) => ({
+                          ...task,
+                          id: `task-${Date.now()}-${index}`,
+                          order: currentLength + index
+                        }));
+
+                        // 현재 작업 목록에 추가
+                        const updatedTasks = [...editState.editingData.wbsTasks, ...adjustedTasks];
+                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
+                      }}
+                    />
+                  </div>
+
+                  {/* 작업 진행률 - 스크롤 영역 밖 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-sm text-muted-foreground font-medium">
+                        {getProjectPageText.taskProgress(lang)}
+                      </Label>
+                      <span className="text-sm font-medium">
+                        {isEditing
+                          ? calculateProjectProgress(editState?.editingData.wbsTasks || [])
+                          : calculateProjectProgress(project.wbsTasks || [])}%
+                      </span>
+                    </div>
+                    <ProjectProgress
+                      value={
+                        isEditing
+                          ? calculateProjectProgress(editState?.editingData.wbsTasks || [])
+                          : calculateProjectProgress(project.wbsTasks || [])
+                      }
+                      size="sm"
+                    />
+                  </div>
+
+                  {/* 구분선 */}
+                  <div className="border-t" />
 
                   {/* 프로젝트 내용 */}
                   <div>
@@ -1311,44 +1283,40 @@ export default function ProjectDetail({
                       <p className="text-xs text-destructive mt-1">{editState.errors.projectContent}</p>
                     )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* 3. 프로젝트 자료 현황 섹션 - 최하단 */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                  {documentCards.map(({ key, label, icon: Icon, status, subTab }) => {
-                    const { label: statusLabel, cardClass, textClass } = getCardStatusVisuals(status);
-                    const displayDate = status.lastUpdated ? formatDocumentDate(status.lastUpdated) : '--';
-                    const countLabel = status.count && status.count > 1 ? ` (${status.count})` : '';
-                    const ariaLabel = `${label}${countLabel} - ${statusLabel}`;
+                  {/* 프로젝트 자료 현황 - 프로젝트 내용 바로 아래 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+                    {documentCards.map(({ key, label, icon: Icon, status, subTab }) => {
+                      const { label: statusLabel, cardClass, textClass } = getCardStatusVisuals(status);
+                      const displayDate = status.lastUpdated ? formatDocumentDate(status.lastUpdated) : '--';
+                      const countLabel = status.count && status.count > 1 ? ` (${status.count})` : '';
+                      const ariaLabel = `${label}${countLabel} - ${statusLabel}`;
 
-                    return (
-                      <div
-                        key={key}
-                        className={`flex flex-col items-stretch p-4 border rounded-lg transition-colors focus:outline-none focus:ring-2 cursor-pointer ${cardClass}`}
-                        onClick={() => handleDocumentCardClick(subTab)}
-                        onKeyDown={(event) => handleDocumentCardKeyDown(event, subTab)}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={ariaLabel}
-                      >
-                        <div className="flex flex-col items-center text-center">
-                          <Icon className={`h-8 w-8 mb-2 ${textClass}`} />
-                          <h3 className="font-medium text-sm mb-1">
-                            {label}
-                            {countLabel}
-                          </h3>
-                          <span className={`text-xs font-medium mb-1 ${textClass}`}>
-                            {statusLabel}
-                          </span>
-                          <span className="text-xs text-muted-foreground">{displayDate}</span>
+                      return (
+                        <div
+                          key={key}
+                          className={`flex flex-col items-stretch p-4 border rounded-lg transition-colors focus:outline-none focus:ring-2 cursor-pointer ${cardClass}`}
+                          onClick={() => handleDocumentCardClick(subTab)}
+                          onKeyDown={(event) => handleDocumentCardKeyDown(event, subTab)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={ariaLabel}
+                        >
+                          <div className="flex flex-col items-center text-center">
+                            <Icon className={`h-8 w-8 mb-2 ${textClass}`} />
+                            <h3 className="font-medium text-sm mb-1">
+                              {label}
+                              {countLabel}
+                            </h3>
+                            <span className={`text-xs font-medium mb-1 ${textClass}`}>
+                              {statusLabel}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{displayDate}</span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>
