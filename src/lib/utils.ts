@@ -151,3 +151,64 @@ export function isContractComplete(project: ProjectTableRow): boolean {
   // 3. 계약서가 없거나 완료되지 않음
   return false;
 }
+
+/**
+ * 프로젝트의 실제 표시 상태를 자동 결정 로직에 따라 반환합니다.
+ *
+ * 자동 결정 규칙:
+ * 1. 수동 선택 상태 (보류/취소/완료)는 항상 유지됨
+ * 2. 계약서가 없을 때:
+ *    - 총 금액 있음 → 검토 (review)
+ *    - 총 금액 없음 → 기획 (planning)
+ * 3. 계약서가 있을 때:
+ *    - 총 금액 있음 → 진행중 (in_progress)
+ *    - 총 금액 없음 → 기획 (planning)
+ *
+ * @param project - 확인할 프로젝트 데이터
+ * @param ignoreManualStatus - true일 경우 수동 상태도 자동 결정 (기본값: false)
+ * @returns 실제 표시될 프로젝트 상태
+ *
+ * @example
+ * ```typescript
+ * // UI 표시용 - 수동 상태 유지
+ * const displayStatus = getActualProjectStatus(project);
+ *
+ * // 통계 계산용 - 모든 상태를 자동 결정
+ * const statsStatus = getActualProjectStatus(project, true);
+ * ```
+ */
+export function getActualProjectStatus(
+  project: ProjectTableRow,
+  ignoreManualStatus: boolean = false
+): ProjectTableRow['status'] {
+  // 🎯 최우선: 사용자가 수동으로 선택한 최종 상태는 항상 유지
+  // (보류, 취소, 완료는 자동 결정 로직을 적용하지 않음)
+  if (!ignoreManualStatus) {
+    if (
+      project.status === 'on_hold' ||
+      project.status === 'cancelled' ||
+      project.status === 'completed'
+    ) {
+      return project.status;
+    }
+  }
+
+  // 1. 계약서가 없을 때
+  if (!hasContractDocument(project)) {
+    // 총 금액이 있으면 → 검토 (review)
+    if (project.totalAmount && project.totalAmount > 0) {
+      return 'review';
+    }
+    // 총 금액이 없으면 → 기획 (planning) 유지
+    return 'planning';
+  }
+
+  // 2. 계약서가 있을 때 (계약서 생성 = 완료로 간주):
+  //    - 총 금액 있음 → 진행중 (in_progress)
+  //    - 총 금액 없음 → 기획 (planning)
+  if (project.totalAmount && project.totalAmount > 0) {
+    return 'in_progress';
+  }
+
+  return 'planning';
+}

@@ -1243,18 +1243,37 @@ export default function ProjectDetail({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
+                            {/* 🎯 정산방식에 따라 수금상태 항목이 달라짐:
+                                - 미설정: not_started만
+                                - 선금+잔금: not_started, advance_completed, final_completed
+                                - 선금+중도금+잔금: 모든 항목
+                                - 후불: not_started, final_completed
+                            */}
                             <SelectItem value="not_started">
                               {getPaymentStatusText.not_started(lang)}
                             </SelectItem>
-                            <SelectItem value="advance_completed">
-                              {getPaymentStatusText.advance_completed(lang)}
-                            </SelectItem>
-                            <SelectItem value="interim_completed">
-                              {getPaymentStatusText.interim_completed(lang)}
-                            </SelectItem>
-                            <SelectItem value="final_completed">
-                              {getPaymentStatusText.final_completed(lang)}
-                            </SelectItem>
+
+                            {/* 선금 완료 - 선금+잔금, 선금+중도금+잔금에서만 표시 */}
+                            {(editState?.editingData.settlementMethod === 'advance_final' ||
+                              editState?.editingData.settlementMethod === 'advance_interim_final') && (
+                              <SelectItem value="advance_completed">
+                                {getPaymentStatusText.advance_completed(lang)}
+                              </SelectItem>
+                            )}
+
+                            {/* 중도금 완료 - 선금+중도금+잔금에서만 표시 */}
+                            {editState?.editingData.settlementMethod === 'advance_interim_final' && (
+                              <SelectItem value="interim_completed">
+                                {getPaymentStatusText.interim_completed(lang)}
+                              </SelectItem>
+                            )}
+
+                            {/* 잔금 완료 - 미설정 제외 모든 방식에서 표시 */}
+                            {editState?.editingData.settlementMethod !== 'not_set' && (
+                              <SelectItem value="final_completed">
+                                {getPaymentStatusText.final_completed(lang)}
+                              </SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       ) : (

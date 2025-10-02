@@ -409,8 +409,11 @@ export const uiText = {
       },
       stats: {
         total: { ko: "전체 프로젝트", en: "Total Projects" },
+        planning: { ko: "기획", en: "Planning" },
+        review: { ko: "검토", en: "Review" },
         inProgress: { ko: "진행중", en: "In Progress" },
-        review: { ko: "검토중", en: "In Review" },
+        onHold: { ko: "보류", en: "On Hold" },
+        cancelled: { ko: "취소", en: "Cancelled" },
         completed: { ko: "완료", en: "Completed" },
         monthlyRevenue: { ko: "예상 월 매출", en: "Expected Monthly Revenue" },
         selectMonth: { ko: "월 선택", en: "Select Month" },
@@ -418,9 +421,29 @@ export const uiText = {
         projects: { ko: "개 프로젝트", en: " Projects" },
         // Tooltips for stats cards
         totalTooltip: { ko: "계정에 등록된 모든 프로젝트의 수", en: "Total number of projects registered in the account" },
-        inProgressTooltip: { ko: "현재 진행 중인 프로젝트의 수", en: "Number of projects currently in progress" },
+        planningTooltip: { ko: "계약서와 금액 정보가 준비 중인 프로젝트의 수", en: "Number of projects with pending contract and amount information" },
         reviewTooltip: { ko: "계약서가 누락된 프로젝트의 수", en: "Number of projects missing contracts" },
-        completedTooltip: { ko: "완료된 프로젝트의 수", en: "Number of completed projects" }
+        inProgressTooltip: { ko: "현재 진행 중인 프로젝트의 수", en: "Number of projects currently in progress" },
+        onHoldTooltip: { ko: "일시 중단된 프로젝트의 수", en: "Number of projects temporarily on hold" },
+        cancelledTooltip: { ko: "취소된 프로젝트의 수", en: "Number of cancelled projects" },
+        completedTooltip: { ko: "완료된 프로젝트의 수", en: "Number of completed projects" },
+        // New stats for refactored cards
+        overview: { ko: "프로젝트 개요", en: "Project Overview" },
+        overviewTooltipTitle: { ko: "프로젝트 통계 개요", en: "Project Statistics Overview" },
+        overviewTooltipDescription: { ko: "전체 프로젝트 수와 6가지 상태별 프로젝트 분포를 한눈에 확인할 수 있습니다.", en: "View total project count and distribution across 6 status categories at a glance." },
+        deadline: { ko: "마감일 임박", en: "Approaching Deadlines" },
+        noDeadlines: { ko: "임박한 마감일 없음", en: "No upcoming deadlines" },
+        deadlineTooltipTitle: { ko: "마감일 임박 프로젝트", en: "Projects with Upcoming Deadlines" },
+        deadlineTooltipDescription: { ko: "마감일이 임박한 프로젝트의 긴급도를 확인할 수 있습니다. 긴급(7일 미만), 주의(7-14일), 여유(14일 이상)로 분류됩니다.", en: "View urgency of projects with approaching deadlines. Categorized as Critical (< 7 days), Warning (7-14 days), Normal (≥ 14 days)." },
+        moreProjects: { ko: "개 더", en: " more" },
+        // Deadline legend texts
+        criticalLegend: { ko: "7일 미만: 긴급", en: "< 7 days: Critical" },
+        warningLegend: { ko: "14일 미만: 주의", en: "< 14 days: Warning" },
+        normalLegend: { ko: "14일 이상: 여유", en: "≥ 14 days: Normal" },
+        // Deadline category tooltips
+        criticalTooltip: { ko: "마감일까지 7일 미만 남은 긴급 프로젝트", en: "Critical projects with less than 7 days until deadline" },
+        warningTooltip: { ko: "마감일까지 7-14일 남은 주의 프로젝트", en: "Warning projects with 7-14 days until deadline" },
+        normalTooltip: { ko: "마감일까지 14일 이상 남은 여유 프로젝트", en: "Normal projects with 14 or more days until deadline" }
       },
       revenue: {
         tooltip: {
@@ -455,7 +478,7 @@ export const uiText = {
             options: {
               all: { ko: "모든 상태", en: "All Statuses" },
               inProgress: { ko: "진행중", en: "In Progress" },
-              review: { ko: "검토중", en: "In Review" },
+              review: { ko: "검토", en: "Review" },
               completed: { ko: "완료", en: "Completed" },
               onHold: { ko: "보류", en: "On Hold" }
             }
@@ -1477,8 +1500,11 @@ export const getProjectPageText = {
 
   // Stats
   statsTotal: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.total[lang],
-  statsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.inProgress[lang],
+  statsPlanning: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.planning[lang],
   statsReview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.review[lang],
+  statsInProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.inProgress[lang],
+  statsOnHold: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.onHold[lang],
+  statsCancelled: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.cancelled[lang],
   statsCompleted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.completed[lang],
   statsMonthlyRevenue: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.monthlyRevenue[lang],
   statsSelectMonth: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.selectMonth[lang],
@@ -1487,9 +1513,29 @@ export const getProjectPageText = {
 
   // Stats Tooltips
   statsTotalTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.totalTooltip[lang],
-  statsInProgressTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.inProgressTooltip[lang],
+  statsPlanningTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.planningTooltip[lang],
   statsReviewTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.reviewTooltip[lang],
+  statsInProgressTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.inProgressTooltip[lang],
+  statsOnHoldTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.onHoldTooltip[lang],
+  statsCancelledTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.cancelledTooltip[lang],
   statsCompletedTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.completedTooltip[lang],
+  // New stats for refactored cards
+  statsOverview: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.overview[lang],
+  statsOverviewTooltipTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.overviewTooltipTitle[lang],
+  statsOverviewTooltipDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.overviewTooltipDescription[lang],
+  statsDeadline: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.deadline[lang],
+  statsNoDeadlines: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.noDeadlines[lang],
+  statsDeadlineTooltipTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.deadlineTooltipTitle[lang],
+  statsDeadlineTooltipDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.deadlineTooltipDescription[lang],
+  moreProjects: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.moreProjects[lang],
+  // Deadline legend
+  criticalLegend: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.criticalLegend[lang],
+  warningLegend: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.warningLegend[lang],
+  normalLegend: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.normalLegend[lang],
+  // Deadline category tooltips
+  criticalTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.criticalTooltip[lang],
+  warningTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.warningTooltip[lang],
+  normalTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.stats.normalTooltip[lang],
 
   // Revenue Tooltip
   revenueTooltipTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.revenue.tooltip.title[lang],

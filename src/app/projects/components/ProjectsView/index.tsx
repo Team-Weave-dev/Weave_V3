@@ -15,7 +15,7 @@ import { fetchMockProjects, addCustomProject } from '@/lib/mock/projects';
 import { addProjectDocument } from '@/lib/mock/documents';
 import type { DocumentInfo } from '@/lib/types/project-table.types';
 import type { GeneratedDocument, ProjectDocumentCategory } from '@/lib/document-generator/templates';
-import { withMinimumDuration } from '@/lib/utils';
+import { withMinimumDuration, getActualProjectStatus } from '@/lib/utils';
 
 export default function ProjectsView() {
   const router = useRouter();
@@ -269,17 +269,25 @@ export default function ProjectsView() {
     if (loading || rawProjectData.length === 0) {
       return {
         totalCount: 0,
+        planning: 0,
+        review: 0,
         inProgress: 0,
-        completed: 0,
-        review: 0
+        onHold: 0,
+        cancelled: 0,
+        completed: 0
       };
     }
 
+    // 🎯 자동 결정 로직을 사용하여 실제 표시 상태로 카운트
+    // getActualProjectStatus를 사용하여 UI와 일관된 상태 계산
     return {
       totalCount: rawProjectData.length,
-      inProgress: rawProjectData.filter(p => p.status === 'in_progress').length,
-      completed: rawProjectData.filter(p => p.status === 'completed').length,
-      review: rawProjectData.filter(p => p.status === 'review').length
+      planning: rawProjectData.filter(p => getActualProjectStatus(p) === 'planning').length,
+      review: rawProjectData.filter(p => getActualProjectStatus(p) === 'review').length,
+      inProgress: rawProjectData.filter(p => getActualProjectStatus(p) === 'in_progress').length,
+      onHold: rawProjectData.filter(p => getActualProjectStatus(p) === 'on_hold').length,
+      cancelled: rawProjectData.filter(p => getActualProjectStatus(p) === 'cancelled').length,
+      completed: rawProjectData.filter(p => getActualProjectStatus(p) === 'completed').length
     };
   }, [rawProjectData, loading]);
 
