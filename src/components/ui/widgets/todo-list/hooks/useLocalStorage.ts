@@ -51,11 +51,11 @@ export function useLocalStorage<T>(
     try {
       setStoredValue(prev => {
         const valueToStore = value instanceof Function ? value(prev) : value;
-        
+
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(key, serialize(valueToStore));
         }
-        
+
         return valueToStore;
       });
     } catch (error) {

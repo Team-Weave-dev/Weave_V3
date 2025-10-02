@@ -8,7 +8,7 @@ import { getDashboardText, getLoadingText } from '@/config/brand'
 import { Button } from '@/components/ui/button'
 import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner'
 import Typography from '@/components/ui/typography'
-import { Settings, Save, Layers, Grid3x3, LayoutDashboard, PanelRightOpen } from 'lucide-react'
+import { Settings, Save, Layers, Grid3x3, LayoutDashboard, PanelRightOpen, ArrowUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useImprovedDashboardStore, selectIsEditMode } from '@/lib/stores/useImprovedDashboardStore'
 import { WidgetSelectorModal } from '@/components/dashboard/WidgetSelectorModal'
@@ -74,6 +74,7 @@ export default function DashboardPage() {
   const enterEditMode = useImprovedDashboardStore(state => state.enterEditMode)
   const exitEditMode = useImprovedDashboardStore(state => state.exitEditMode)
   const compactWidgets = useImprovedDashboardStore(state => state.compactWidgets)
+  const optimizeWidgetLayout = useImprovedDashboardStore(state => state.optimizeWidgetLayout)
   const findSpaceForWidget = useImprovedDashboardStore(state => state.findSpaceForWidget)
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
 
@@ -224,9 +225,14 @@ export default function DashboardPage() {
           ) : (
             // 편집 모드 툴바
             <>
-              <Button size="sm" variant="outline" onClick={handleAddWidget}>
+              {/* 위젯 추가/닫기 토글 버튼 */}
+              <Button
+                size="sm"
+                variant={widgetSidebarOpen ? "default" : "outline"}
+                onClick={() => setWidgetSidebarOpen(!widgetSidebarOpen)}
+              >
                 <PanelRightOpen className="h-4 w-4 mr-2" />
-                {getDashboardText.addWidget('ko')}
+                {widgetSidebarOpen ? '위젯 닫기' : getDashboardText.addWidget('ko')}
               </Button>
               <Button
                 size="sm"
@@ -241,11 +247,19 @@ export default function DashboardPage() {
                 variant="outline"
                 onClick={() => compactWidgets('vertical')}
               >
+                <ArrowUp className="h-4 w-4 mr-2" />
+                {getDashboardText.verticalAlign('ko')}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => optimizeWidgetLayout()}
+              >
                 <Grid3x3 className="h-4 w-4 mr-2" />
-                {getDashboardText.manualAlign('ko')}
+                {getDashboardText.optimizeLayout('ko')}
               </Button>
               <div className="h-6 w-px bg-border mx-1" />
-              <Button 
+              <Button
                 size="sm"
                 variant="default"
                 onClick={() => {

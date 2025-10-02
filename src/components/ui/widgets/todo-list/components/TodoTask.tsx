@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { DeleteDialog } from '@/components/ui/dialogDelete';
 import {
   ChevronDown,
   ChevronRight,
@@ -70,6 +71,7 @@ export function TodoTask({
   const [subtaskDueDate, setSubtaskDueDate] = useState<Date | undefined>();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(task.title);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const hasSubtasks = task.children && task.children.length > 0;
   const dateBadge = task.dueDate ? formatDateBadge(task.dueDate, task.completed, dateFormat) : { text: '미정', variant: 'outline' as const };
@@ -180,11 +182,7 @@ export function TodoTask({
         
         {/* 삭제 버튼 */}
         <button
-          onClick={() => {
-            if (window.confirm(getWidgetText.todoList.confirmDelete('ko'))) {
-              onDelete(task.id);
-            }
-          }}
+          onClick={() => setShowDeleteDialog(true)}
           className="p-0.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <Trash2 className="h-3 w-3 text-red-500" />
@@ -236,8 +234,30 @@ export function TodoTask({
                 <Calendar
                   selected={task.dueDate}
                   onSelect={(date) => {
-                    onUpdateDueDate(task.id, date);
-                    setDatePopoverOpen(false);
+                    // Calendar에서 날짜를 선택하면 date가 Date 객체로 전달됨
+                    // 같은 날짜를 다시 클릭하면 undefined가 될 수 있음
+                    if (date) {
+                      // 중복 업데이트 방지: 이미 같은 날짜가 선택되어 있으면 무시
+                      if (task.dueDate) {
+                        // task.dueDate가 문자열일 수 있으므로 Date 객체로 변환
+                        const existingDate = task.dueDate instanceof Date
+                          ? task.dueDate
+                          : new Date(task.dueDate);
+
+                        const isSameDate =
+                          date.getFullYear() === existingDate.getFullYear() &&
+                          date.getMonth() === existingDate.getMonth() &&
+                          date.getDate() === existingDate.getDate();
+
+                        if (isSameDate) {
+                          setDatePopoverOpen(false);
+                          return;
+                        }
+                      }
+
+                      onUpdateDueDate(task.id, date);
+                      setDatePopoverOpen(false);
+                    }
                   }}
                   mode="single"
                   className="rounded-md"
@@ -307,6 +327,21 @@ export function TodoTask({
           {renderSubtasks(task)}
         </div>
       )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      <DeleteDialog
+        open={showDeleteDialog}
+        title="할 일 삭제"
+        description={getWidgetText.todoList.confirmDelete('ko')}
+        confirmLabel="삭제"
+        cancelLabel="취소"
+        icon={<Trash2 className="h-6 w-6" />}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={() => {
+          onDelete(task.id);
+          setShowDeleteDialog(false);
+        }}
+      />
     </div>
   );
 }
