@@ -101,7 +101,7 @@ export function useTodoState(props?: {
   // Initialize data once
   const initialData = useMemo(() => getInitialData(), []);
 
-  // Local storage hooks
+  // Local storage hooks (Date는 ISO string으로 자동 변환됨)
   const [localTasks, setLocalTasks, clearTasks] = useLocalStorage<TodoTask[]>(
     STORAGE_KEY,
     initialData.tasks
@@ -281,32 +281,46 @@ export function useTodoState(props?: {
   }, [localTasks, sections, setSections, setLocalTasks, onTaskAdd]);
 
   const handleUpdateTask = useCallback((taskId: string, updates: Partial<TodoTask>) => {
-    setLocalTasks(prev => prev.map(task => {
-      if (task.id === taskId) {
-        const updatedTask = { ...task, ...updates };
-        onTaskUpdate?.(taskId, updates);
+    setLocalTasks(prev => {
+      return prev.map(task => {
+        if (task.id === taskId) {
+          const updatedTask = { ...task, ...updates };
+          onTaskUpdate?.(taskId, updates);
 
-        // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-        notifyCalendarDataChanged({
-          source: 'todo',
-          changeType: 'update',
-          itemId: taskId,
-          timestamp: Date.now(),
-        });
+          // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+          notifyCalendarDataChanged({
+            source: 'todo',
+            changeType: 'update',
+            itemId: taskId,
+            timestamp: Date.now(),
+          });
 
-        return updatedTask;
-      }
-      // Check children
-      if (task.children?.length) {
-        return {
-          ...task,
-          children: task.children.map(child =>
-            child.id === taskId ? { ...child, ...updates } : child
-          )
-        };
-      }
-      return task;
-    }));
+          return updatedTask;
+        }
+        // Check children
+        if (task.children?.length) {
+          const hasChildUpdate = task.children.some(child => child.id === taskId);
+          if (hasChildUpdate) {
+            // 하위 작업 업데이트 시에도 동기화 이벤트 발생
+            onTaskUpdate?.(taskId, updates);
+            notifyCalendarDataChanged({
+              source: 'todo',
+              changeType: 'update',
+              itemId: taskId,
+              timestamp: Date.now(),
+            });
+
+            return {
+              ...task,
+              children: task.children.map(child =>
+                child.id === taskId ? { ...child, ...updates } : child
+              )
+            };
+          }
+        }
+        return task;
+      });
+    });
   }, [setLocalTasks, onTaskUpdate]);
 
   // Section operations

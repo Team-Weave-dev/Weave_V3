@@ -609,6 +609,10 @@ export const uiText = {
             placeholder: { ko: "정산방식을 선택하세요", en: "Select settlement method" },
             extractFromContract: { ko: "계약서에서 추출", en: "Extract from contract" }
           },
+          currency: {
+            label: { ko: "통화 단위 *", en: "Currency *" },
+            placeholder: { ko: "통화 단위를 선택하세요", en: "Select currency" }
+          },
           projectContent: {
             label: { ko: "프로젝트 내용", en: "Project Content" },
             placeholder: { ko: "프로젝트 상세 내용을 입력하세요", en: "Enter project details" },
@@ -743,7 +747,8 @@ export const uiText = {
           projectContent: { ko: "프로젝트 내용", en: "Project Content" },
           paymentStatus: { ko: "수금상태", en: "Payment Status" },
           client: { ko: "클라이언트", en: "Client" },
-          projectNo: { ko: "프로젝트 번호", en: "Project Number" }
+          projectNo: { ko: "프로젝트 번호", en: "Project Number" },
+          currency: { ko: "통화 단위", en: "Currency" }
         },
         placeholders: {
           notSet: { ko: "미설정", en: "Not Set" },
@@ -778,6 +783,11 @@ export const uiText = {
           advance_completed: { ko: "선금 완료", en: "Advance Completed" },
           interim_completed: { ko: "중도금 완료", en: "Interim Completed" },
           final_completed: { ko: "잔금 완료", en: "Final Completed" }
+        },
+        // 통화 단위 옵션
+        currencies: {
+          KRW: { ko: "원화 (KRW)", en: "Korean Won (KRW)" },
+          USD: { ko: "달러 (USD)", en: "US Dollar (USD)" }
         }
       },
       messages: {
@@ -1557,6 +1567,7 @@ export const getProjectPageText = {
   fieldTotalAmount: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.totalAmount[lang],
   fieldProjectName: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.projectName[lang],
   fieldProjectNo: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.projectNo[lang],
+  fieldCurrency: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.currency[lang],
   fieldSettlementMethod: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.settlementMethod[lang],
   fieldAdvance: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.advance[lang],
   fieldProjectContent: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.fields.projectContent[lang],
@@ -1774,7 +1785,13 @@ export const getWidgetText = {
     description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일정을 확인하세요' : 'Check your schedule',
     today: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘' : 'Today',
     month: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월' : 'Month',
-    week: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '주' : 'Week'
+    week: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '주' : 'Week',
+    maximize: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최대화' : 'Maximize',
+    minimize: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최소화' : 'Minimize',
+    fullScreen: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전체 화면' : 'Full Screen',
+    dragToMove: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '드래그하여 이동' : 'Drag to move',
+    dragging: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '드래그 중...' : 'Dragging...',
+    dropToReschedule: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '다른 날짜에 놓아서 일정 변경' : 'Drop on another date to reschedule'
   },
   stats: {
     title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '통계' : 'Statistics',
@@ -2051,6 +2068,12 @@ export const getPaymentStatusText = {
   advance_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.advance_completed[lang],
   interim_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.interim_completed[lang],
   final_completed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.paymentStatuses.final_completed[lang]
+}
+
+// 통화 단위 헬퍼 함수
+export const getCurrencyText = {
+  KRW: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.currencies.KRW[lang],
+  USD: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.currencies.USD[lang]
 }
 
 // 로딩 헬퍼 함수

@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import MiniEvent from '../components/MiniEvent';
 import type { CalendarViewProps } from '../types';
 import type { CalendarEvent } from '@/types/dashboard';
+import { Droppable, Draggable } from '@hello-pangea/dnd';
 
 interface MonthViewProps extends CalendarViewProps {
   defaultSize?: { w: number; h: number };
@@ -141,57 +142,108 @@ const MonthView = React.memo(({
                 displayMode === 'bar' ? 3 :        // 바 모드: 3개까지
                 4;                                  // 풀 모드: 4개까지
               
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={cn(
-                    "border-r last:border-0 cursor-pointer hover:bg-accent/50 transition-colors flex flex-col relative",
-                    displayMode === 'compact' ? "p-0.5" : "p-1",
-                    !isCurrentMonth && "bg-muted/30",
-                    isToday(day) && "bg-primary/10",
-                    isSelected && "ring-2 ring-inset ring-primary"
-                  )}
-                  style={{ minHeight: `${cellHeight}px`, maxHeight: `${cellHeight}px` }}
-                  onClick={() => onDateSelect?.(day)}
-                  onDoubleClick={() => onDateDoubleClick?.(day)}
-                >
-                  <div className={cn(
-                    displayMode === 'compact' ? "text-[10px] leading-none mb-0.5" :
-                    displayMode === 'bar' ? "text-[11px] mb-0.5" :
-                    "text-sm mb-1",
-                    "font-medium flex-shrink-0",
-                    !isCurrentMonth && "text-muted-foreground",
-                    isToday(day) && "text-primary font-bold",
-                    dayOfWeek === 0 && "text-red-500",
-                    dayOfWeek === 6 && "text-blue-500"
-                  )}>
-                    {format(day, 'd')}
-                  </div>
+              const droppableId = `date-${format(day, 'yyyy-MM-dd')}`;
 
-                  {/* 이벤트 목록 - 높이별 레이아웃 */}
-                  <div className={cn(
-                    "flex-1 overflow-hidden",
-                    displayMode === 'compact' ? "space-y-[1px]" :
-                    "space-y-0.5"
-                  )}>
-                    {dayEvents.slice(0, maxEventsToShow).map((event) => (
-                      <MiniEvent
-                        key={event.id}
-                        event={event}
-                        onClick={() => onEventClick?.(event)}
-                        displayMode={displayMode as 'compact' | 'bar' | 'full'}
-                      />
-                    ))}
-                    {dayEvents.length > maxEventsToShow && (
+              return (
+                <Droppable key={day.toISOString()} droppableId={droppableId}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        "border-r last:border-0 cursor-pointer hover:bg-accent/50 transition-colors flex flex-col relative",
+                        displayMode === 'compact' ? "p-0.5" : "p-1",
+                        !isCurrentMonth && "bg-muted/30",
+                        isToday(day) && "bg-primary/10",
+                        isSelected && "ring-2 ring-inset ring-primary",
+                        snapshot.isDraggingOver && "bg-primary/20 ring-2 ring-primary"
+                      )}
+                      style={{ minHeight: `${cellHeight}px`, maxHeight: `${cellHeight}px` }}
+                      onClick={() => onDateSelect?.(day)}
+                      onDoubleClick={() => onDateDoubleClick?.(day)}
+                    >
                       <div className={cn(
-                        displayMode === 'compact' ? "text-[9px]" : "text-[10px]",
-                        "text-muted-foreground px-0.5"
+                        displayMode === 'compact' ? "text-[10px] leading-none mb-0.5" :
+                        displayMode === 'bar' ? "text-[11px] mb-0.5" :
+                        "text-sm mb-1",
+                        "font-medium flex-shrink-0",
+                        !isCurrentMonth && "text-muted-foreground",
+                        isToday(day) && "text-primary font-bold",
+                        dayOfWeek === 0 && "text-red-500",
+                        dayOfWeek === 6 && "text-blue-500"
                       )}>
-                        +{dayEvents.length - maxEventsToShow}
+                        {format(day, 'd')}
                       </div>
-                    )}
-                  </div>
-                </div>
+
+                      {/* 이벤트 목록 - 높이별 레이아웃 with Draggable */}
+                      <div className={cn(
+                        "flex-1 overflow-hidden",
+                        displayMode === 'compact' ? "space-y-[1px]" :
+                        "space-y-0.5"
+                      )}>
+                        {dayEvents.slice(0, maxEventsToShow).map((event, index) => {
+                          // Check if event is from integrated calendar (cannot be dragged)
+                          const isIntegrated =
+                            event.id.startsWith('todo-') ||
+                            event.id.startsWith('tax-') ||
+                            event.id.startsWith('calendar-event-');
+
+                          return (
+                            <Draggable
+                              key={event.id}
+                              draggableId={`event-${event.id}`}
+                              index={index}
+                              isDragDisabled={isIntegrated}
+                            >
+                              {(provided, snapshot) => {
+                                // 드래그 중일 때와 아닐 때의 스타일 분리
+                                const style = snapshot.isDragging
+                                  ? {
+                                      ...provided.draggableProps.style,
+                                      // 드래그 중: transform 그대로 사용 (커서 따라다님)
+                                    }
+                                  : {
+                                      ...provided.draggableProps.style,
+                                      // 드래그 아닐 때: transform 초기화
+                                      transform: 'translate(0px, 0px)',
+                                    };
+
+                                return (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    style={style}
+                                    className={cn(
+                                      snapshot.isDragging && "opacity-90 shadow-lg z-50 scale-105",
+                                      !snapshot.isDragging && "opacity-100",
+                                      isIntegrated ? "cursor-default" : "cursor-grab active:cursor-grabbing"
+                                    )}
+                                  >
+                                    <MiniEvent
+                                      event={event}
+                                      onClick={() => onEventClick?.(event)}
+                                      displayMode={displayMode as 'compact' | 'bar' | 'full'}
+                                    />
+                                  </div>
+                                );
+                              }}
+                            </Draggable>
+                          );
+                        })}
+                        {dayEvents.length > maxEventsToShow && (
+                          <div className={cn(
+                            displayMode === 'compact' ? "text-[9px]" : "text-[10px]",
+                            "text-muted-foreground px-0.5"
+                          )}>
+                            +{dayEvents.length - maxEventsToShow}
+                          </div>
+                        )}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
               );
             })}
           </div>

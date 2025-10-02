@@ -288,4 +288,34 @@
   .animate-shimmer {
     animation: shimmer 2s infinite;
   }
+
+  /* Drag and drop 최적화 - 부드러운 드래그 동작 */
+  [data-rbd-draggable-context-id] {
+    will-change: transform;
+  }
+
+  /* 드래그 중인 요소의 부드러운 이동 */
+  [data-rbd-drag-handle-draggable-id] {
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 드래그 가능한 요소에 커서 표시 */
+  [data-rbd-drag-handle-draggable-id]:not([data-rbd-drag-handle-draggable-id*="todo-"]):not([data-rbd-drag-handle-draggable-id*="tax-"]) {
+    cursor: grab;
+  }
+
+  [data-rbd-drag-handle-draggable-id]:not([data-rbd-drag-handle-draggable-id*="todo-"]):not([data-rbd-drag-handle-draggable-id*="tax-"]):active {
+    cursor: grabbing;
+  }
+
+  /* 드래그 중인 요소 (실제로 움직이는 요소) */
+  [data-rbd-draggable-id][data-rbd-dragging-over] {
+    pointer-events: auto !important;
+  }
+
+  /* 드래그 플레이스홀더 스타일 */
+  [data-rbd-placeholder-context-id] {
+    opacity: 0.5;
+  }
 }

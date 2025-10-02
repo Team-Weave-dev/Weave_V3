@@ -296,28 +296,22 @@ export default function ProjectsView() {
     loadData();
   }, []);
 
-  // 페이지 포커스 시 데이터 새로고침 (localStorage 변경 감지)
+  // Storage 이벤트로 다른 탭의 localStorage 변경 감지
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('📱 페이지 포커스 감지 - 프로젝트 데이터 새로고침');
+    const handleStorageChange = (e: StorageEvent) => {
+      // 프로젝트 관련 localStorage 키가 변경되었을 때만 리프레시
+      if (e.key === 'weave_custom_projects' || e.key === 'weave_project_documents') {
+        console.log('📦 Storage 변경 감지 - 다른 탭에서 데이터 업데이트됨:', e.key);
         refreshProjectData();
       }
     };
 
-    const handleFocus = () => {
-      console.log('🔄 윈도우 포커스 감지 - 프로젝트 데이터 새로고침');
-      refreshProjectData();
-    };
-
-    // 페이지 visibility 변경 감지 (탭 전환 등)
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    // 윈도우 포커스 감지 (다른 앱에서 돌아올 때)
-    window.addEventListener('focus', handleFocus);
+    // Storage 이벤트: 다른 탭/윈도우에서 localStorage 변경 시에만 감지
+    // 장점: 실제 데이터 변경만 감지, 단순 포커스 이동으로는 리프레시 안 됨
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [refreshProjectData]);
 
