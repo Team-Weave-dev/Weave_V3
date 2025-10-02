@@ -234,7 +234,7 @@ const MonthView = React.memo(({
                                   // 다른 위젯에 변경 사항 알림
                                   const event = new CustomEvent('calendarDataChanged', {
                                     detail: {
-                                      source: 'calendar',
+                                      source: 'todo',  // 'calendar'가 아닌 'todo'로 변경
                                       changeType: 'todo-date-update',
                                       itemId: todoTask.id,
                                       newDate: targetDate.toISOString(),

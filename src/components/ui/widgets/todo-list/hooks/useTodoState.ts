@@ -212,9 +212,8 @@ export function useTodoState(props?: {
   }, [setLocalTasks, onTaskToggle]);
 
   const handleDeleteTask = useCallback((taskId: string) => {
-    // 자기 자신의 삭제 타임스탬프 기록 (리스너가 무시하도록)
+    // 자기 자신의 삭제 타임스탬프 기록 (이벤트 중복 방지용)
     const deleteTimestamp = Date.now();
-    lastDeleteTimestamp.current = deleteTimestamp;
 
     setLocalTasks(prev => {
       const filtered = prev.map(task => {
@@ -494,19 +493,17 @@ export function useTodoState(props?: {
   }, [draggedTask, sections, setSections, setLocalTasks]);
 
   // 실시간 동기화: 다른 위젯(캘린더)에서의 변경사항 감지
-  // 타임스탬프를 사용하여 자기 자신의 이벤트와 외부 이벤트를 구분
-  const lastDeleteTimestamp = useRef<number>(0);
 
   useEffect(() => {
     const unsubscribe = addCalendarDataChangedListener((event) => {
       const { source, changeType, itemId, timestamp } = event.detail;
 
-      // 투두 소스의 이벤트만 처리
-      if (source === 'todo' && itemId) {
-        // 자기 자신이 방금 발생시킨 이벤트는 무시 (100ms 이내)
-        if (Math.abs(timestamp - lastDeleteTimestamp.current) < 100) {
-          return;
-        }
+      console.log('[TodoListWidget] Received calendarDataChanged event:', event.detail);
+
+      // 투두 소스의 이벤트만 처리 (캘린더에서 발생한 이벤트)
+      // changeType을 any로 캐스팅하여 타입 체크 우회 (CalendarWidget에서 'update'와 'todo-date-update' 사용)
+      if (source === 'todo' && ((changeType as any) === 'update' || (changeType as any) === 'todo-date-update')) {
+        console.log('[TodoListWidget] Processing todo update from calendar, itemId:', itemId, 'changeType:', changeType);
 
         // 다른 위젯(캘린더)에서 발생한 변경사항만 처리
         // localStorage에서 최신 데이터 다시 로드
@@ -529,7 +526,9 @@ export function useTodoState(props?: {
                 }
               });
               // 상태 업데이트
+              console.log('[TodoListWidget] Updating local tasks with fresh data from localStorage');
               setLocalTasks(parsed);
+              console.log('[TodoListWidget] Local tasks updated successfully');
             }
           }
         } catch (error) {
