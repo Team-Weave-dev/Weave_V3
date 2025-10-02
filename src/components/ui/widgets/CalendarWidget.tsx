@@ -35,6 +35,7 @@ import { typography } from '@/config/constants';
 import { useIntegratedCalendar } from '@/hooks/useIntegratedCalendar';
 import { integratedCalendarManager } from '@/lib/calendar-integration';
 import type { CalendarItemSource, UnifiedCalendarItem } from '@/types/integrated-calendar';
+import { addCalendarDataChangedListener } from '@/lib/calendar-integration/events';
 import { cn } from '@/lib/utils';
 
 // Import refactored components
@@ -102,6 +103,7 @@ export function CalendarWidget({
     addEvent,
     updateEvent,
     deleteEvent,
+    refreshEvents,
   } = useCalendarEvents(propEvents);
 
   const {
@@ -157,16 +159,16 @@ export function CalendarWidget({
       if (containerRef.current && contentRef.current) {
         const cardRect = containerRef.current.getBoundingClientRect();
         const contentRect = contentRef.current.getBoundingClientRect();
-        
+
         const navBar = contentRef.current.querySelector('.calendar-nav');
         const navHeight = navBar ? navBar.getBoundingClientRect().height : 32;
-        
+
         const horizontalPadding = 8;
         const verticalPadding = 12;
-        
+
         const availableWidth = contentRect.width - horizontalPadding;
         const availableHeight = Math.max(100, contentRect.height - navHeight - verticalPadding);
-        
+
         setContainerSize({
           width: availableWidth,
           height: availableHeight
@@ -176,11 +178,11 @@ export function CalendarWidget({
 
     updateSize();
     const timeoutId = setTimeout(updateSize, 100);
-    
+
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(updateSize);
     });
-    
+
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
@@ -193,6 +195,20 @@ export function CalendarWidget({
       resizeObserver.disconnect();
     };
   }, [currentView]);
+
+  // 실시간 동기화: 모달에서 발생한 변경사항을 감지하여 이벤트 새로고침
+  useEffect(() => {
+    const unsubscribe = addCalendarDataChangedListener((event) => {
+      // 캘린더 소스의 변경만 처리 (다른 위젯의 변경은 integratedItems로 처리됨)
+      if (event.detail.source === 'calendar') {
+        refreshEvents();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [refreshEvents]);
 
   // Merged and filtered events with memoization
   const filteredEvents = useMemo(() => {
