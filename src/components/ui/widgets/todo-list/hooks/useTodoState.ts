@@ -129,32 +129,56 @@ export function useTodoState(props?: {
     }
   };
 
-  // Local storage hooks (Date는 ISO string으로 자동 변환됨)
-  const [localTasks, setLocalTasks, clearTasks] = useLocalStorage<TodoTask[]>(
-    STORAGE_KEY,
-    initialData.tasks,
-    dateSerializer
-  );
-  
-  const [sectionsRaw, setSectionsRaw, clearSections] = useLocalStorage<TodoSection[]>(
-    SECTIONS_KEY,
-    initialData.sections
-  );
+  // React 상태 직접 관리 (useLocalStorage 대신 useState 사용)
+  const [localTasks, setLocalTasksState] = useState<TodoTask[]>(initialData.tasks);
+  const [sectionsRaw, setSectionsRaw] = useState<TodoSection[]>(initialData.sections);
+
+  // localStorage 동기화를 위한 헬퍼 함수
+  const setLocalTasks = useCallback((tasks: TodoTask[] | ((prev: TodoTask[]) => TodoTask[])) => {
+    setLocalTasksState((prevTasks) => {
+      const newTasks = typeof tasks === 'function' ? tasks(prevTasks) : tasks;
+      // localStorage에 저장
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newTasks));
+      }
+      return newTasks;
+    });
+  }, []);
+
+  // sections 업데이트 시 localStorage 동기화
+  const setSections = useCallback((sections: TodoSection[] | ((prev: TodoSection[]) => TodoSection[])) => {
+    setSectionsRaw((prevSections) => {
+      const newSections = typeof sections === 'function' ? sections(prevSections) : sections;
+      // localStorage에 저장
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(SECTIONS_KEY, JSON.stringify(newSections));
+      }
+      return newSections;
+    });
+  }, []);
 
   // Ensure sections is always an array (defensive programming)
   const sections = Array.isArray(sectionsRaw) ? sectionsRaw : initialData.sections;
-  const setSections = useCallback((value: TodoSection[] | ((prev: TodoSection[]) => TodoSection[])) => {
-    const newValue = value instanceof Function ? value(sections) : value;
-    // Ensure we only set arrays
-    if (Array.isArray(newValue)) {
-      setSectionsRaw(newValue);
-    }
-  }, [sections, setSectionsRaw]);
   
-  const [viewMode, setViewMode] = useLocalStorage<ViewMode>(
-    VIEW_MODE_KEY,
-    'section'
-  );
+  // viewMode도 useState로 변경
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(VIEW_MODE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return 'section';
+  });
+
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeState(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(VIEW_MODE_KEY, JSON.stringify(mode));
+    }
+  }, []);
 
   // Local UI state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
@@ -495,51 +519,84 @@ export function useTodoState(props?: {
   // 실시간 동기화: 다른 위젯(캘린더)에서의 변경사항 감지
 
   useEffect(() => {
+    const handleStorageChange = () => {
+      // localStorage에서 최신 데이터 다시 로드
+      console.log('[TodoListWidget] handleStorageChange called');
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        console.log('[TodoListWidget] Raw localStorage data:', data);
+        if (data) {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) {
+            // 새 배열을 만들어서 React가 변경을 감지하도록 함
+            const updatedTasks = parsed.map((task: any) => {
+              console.log('[TodoListWidget] Before date conversion - Task:', task.id, 'DueDate:', task.dueDate);
+
+              // 새 객체를 만들어서 불변성 유지
+              const newTask = { ...task };
+              newTask.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
+              newTask.completedAt = task.completedAt ? new Date(task.completedAt) : undefined;
+              newTask.dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
+
+              console.log('[TodoListWidget] After date conversion - Task:', newTask.id, 'DueDate:', newTask.dueDate);
+
+              if (task.children && task.children.length > 0) {
+                newTask.children = task.children.map((child: any) => ({
+                  ...child,
+                  createdAt: child.createdAt ? new Date(child.createdAt) : new Date(),
+                  completedAt: child.completedAt ? new Date(child.completedAt) : undefined,
+                  dueDate: child.dueDate ? new Date(child.dueDate) : undefined
+                }));
+              }
+
+              return newTask;
+            });
+
+            // 상태 업데이트 (useState의 setter 직접 사용)
+            console.log('[TodoListWidget] Updating local tasks with fresh data from localStorage:', updatedTasks);
+
+            // React 상태 직접 업데이트 (localStorage 저장 없이)
+            setLocalTasksState([...updatedTasks]);
+
+            console.log('[TodoListWidget] Local tasks updated successfully');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync todo data from storage change:', error);
+      }
+    };
+
     const unsubscribe = addCalendarDataChangedListener((event) => {
       const { source, changeType, itemId, timestamp } = event.detail;
 
       console.log('[TodoListWidget] Received calendarDataChanged event:', event.detail);
+      console.log('[TodoListWidget] Event detail breakdown - source:', source, 'changeType:', changeType, 'itemId:', itemId);
 
       // 투두 소스의 이벤트만 처리 (캘린더에서 발생한 이벤트)
       // changeType을 any로 캐스팅하여 타입 체크 우회 (CalendarWidget에서 'update'와 'todo-date-update' 사용)
-      if (source === 'todo' && ((changeType as any) === 'update' || (changeType as any) === 'todo-date-update')) {
-        console.log('[TodoListWidget] Processing todo update from calendar, itemId:', itemId, 'changeType:', changeType);
+      if (source === 'todo') {
+        console.log('[TodoListWidget] Source is todo, checking changeType...');
+        if ((changeType as any) === 'update' || (changeType as any) === 'todo-date-update') {
+          console.log('[TodoListWidget] Processing todo update from calendar, itemId:', itemId, 'changeType:', changeType);
+          console.log('[TodoListWidget] Calling handleStorageChange...');
 
-        // 다른 위젯(캘린더)에서 발생한 변경사항만 처리
-        // localStorage에서 최신 데이터 다시 로드
-        try {
-          const data = localStorage.getItem(STORAGE_KEY);
-          if (data) {
-            const parsed = JSON.parse(data);
-            if (Array.isArray(parsed)) {
-              // Date 객체 복원
-              parsed.forEach((task: any) => {
-                task.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
-                task.completedAt = task.completedAt ? new Date(task.completedAt) : undefined;
-                task.dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
-                if (task.children) {
-                  task.children.forEach((child: any) => {
-                    child.createdAt = child.createdAt ? new Date(child.createdAt) : new Date();
-                    child.completedAt = child.completedAt ? new Date(child.completedAt) : undefined;
-                    child.dueDate = child.dueDate ? new Date(child.dueDate) : undefined;
-                  });
-                }
-              });
-              // 상태 업데이트
-              console.log('[TodoListWidget] Updating local tasks with fresh data from localStorage');
-              setLocalTasks(parsed);
-              console.log('[TodoListWidget] Local tasks updated successfully');
-            }
-          }
-        } catch (error) {
-          console.error('Failed to sync todo data from external change:', error);
+          // localStorage 변경을 감지하여 상태 업데이트
+          handleStorageChange();
+        } else {
+          console.log('[TodoListWidget] ChangeType not matched. Actual changeType:', changeType);
         }
+      } else {
+        console.log('[TodoListWidget] Source not matched. Actual source:', source);
       }
     });
+
+    // storage 이벤트 리스너 추가 (다른 탭/윈도우에서의 변경사항 감지)
+    window.addEventListener('storage', handleStorageChange);
 
     // 컴포넌트 언마운트 시 리스너 해제
     return () => {
       unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [setLocalTasks]);
 
