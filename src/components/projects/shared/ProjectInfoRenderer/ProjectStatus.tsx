@@ -5,7 +5,7 @@ import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getProjectStatusText } from '@/config/brand';
 import type { ProjectStatus as ProjectStatusType, ProjectTableRow } from '@/lib/types/project-table.types';
-import { cn, hasContractDocument, isContractComplete } from '@/lib/utils';
+import { cn, hasContractDocument } from '@/lib/utils';
 
 interface ProjectStatusProps {
   project: ProjectTableRow;
@@ -55,12 +55,7 @@ export function ProjectStatus({
       return 'planning';
     }
 
-    // 2. 계약서가 있지만 완료되지 않았으면 → 검토 (review)
-    if (!isContractComplete(project)) {
-      return 'review';
-    }
-
-    // 3. 계약서가 완료되었을 때:
+    // 2. 계약서가 있을 때 (계약서 생성 = 완료로 간주):
     //    - 총 금액 있음 → 진행중 (in_progress)
     //    - 총 금액 없음 → 기획 (planning)
     if (project.totalAmount && project.totalAmount > 0) {
@@ -99,9 +94,9 @@ export function ProjectStatus({
         </SelectTrigger>
         <SelectContent>
           {/* 🎯 자동 결정 상태는 드롭다운에서 제거됨:
-              - planning: 계약서 완료 + 금액 없음 → 자동 표시
-              - in_progress: 계약서 완료 + 금액 있음 → 자동 표시
-              - review: 계약서 없음 또는 미완료 → 자동 표시
+              - planning: 계약서 없음 + 금액 없음, 또는 계약서 있음 + 금액 없음 → 자동 표시
+              - in_progress: 계약서 있음 + 금액 있음 → 자동 표시
+              - review: 계약서 없음 + 금액 있음 → 자동 표시
           */}
           {/* 사용자가 수동으로 선택 가능한 상태만 제공 */}
           <SelectItem value="on_hold">

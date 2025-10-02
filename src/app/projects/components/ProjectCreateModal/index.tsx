@@ -165,10 +165,11 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
       // 새 프로젝트 데이터 생성
       // 🎯 초기 상태: 항상 기획(planning)으로 시작
       // 이후 ProjectStatus 컴포넌트의 자동 상태 결정 로직이 적용됨:
-      // - 계약서 없음 + 총금액 없음 → 기획 유지
-      // - 계약서 없음 + 총금액 있음 → 검토
-      // - 계약서 있음 + 미완료 → 검토
-      // - 계약서 완료 + 총금액 있음 → 진행중
+      // - 계약서 없음 + 금액 없음 → 기획 유지
+      // - 계약서 없음 + 금액 있음 → 검토
+      // - 계약서 있음 + 금액 없음 → 기획
+      // - 계약서 있음 + 금액 있음 → 진행중
+      // - 보류/취소/완료는 수동 선택 시 자동 변경되지 않음
       const initialStatus: ProjectTableRow['status'] = 'planning';
 
       const newProject: Omit<ProjectTableRow, 'id' | 'no' | 'modifiedDate'> = {

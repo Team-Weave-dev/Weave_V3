@@ -650,31 +650,31 @@ export const uiText = {
             label: { ko: "현재 단계", en: "Current Stage" },
             defaultValue: { ko: "기획", en: "Planning" },
             note: {
-              ko: "프로젝트는 자동으로 단계가 결정됩니다: 기획(기본) → 검토(계약서 없이 금액 입력 또는 계약서 미완료) → 진행중(계약서 완료 + 금액 입력). 보류, 취소, 완료는 수동으로 선택 가능합니다.",
-              en: "Project stages are automatically determined: Planning (default) → Review (amount entered without contract or incomplete contract) → In Progress (contract completed + amount entered). On Hold, Cancelled, and Completed can be manually selected."
+              ko: "프로젝트 단계는 계약서와 금액 정보를 기준으로 자동 설정됩니다. 보류, 취소, 완료 상태는 필요할 때 직접 선택하실 수 있으며, 한번 선택한 상태는 계속 유지됩니다.",
+              en: "Project stages are automatically set based on contract and amount information. You can manually select On Hold, Cancelled, or Completed status when needed, and once selected, it remains unchanged."
             },
             explanation: {
-              title: { ko: "프로젝트 단계 안내", en: "Project Stage Guide" },
+              title: { ko: "프로젝트 단계는 어떻게 결정되나요?", en: "How are project stages determined?" },
               summary: {
-                ko: "프로젝트는 기획 → 검토 → 진행중 순서로 자동 진행되며, 보류/취소/완료는 수동으로 선택할 수 있습니다.",
-                en: "Projects automatically progress from Planning → Review → In Progress. On Hold/Cancelled/Completed can be manually selected."
+                ko: "프로젝트 단계는 계약서와 금액 정보를 기준으로 자동으로 설정됩니다. 보류, 취소, 완료 상태는 필요할 때 직접 선택하실 수 있어요.",
+                en: "Project stages are automatically set based on contract and amount information. You can manually select On Hold, Cancelled, or Completed status when needed."
               },
               rules: {
                 planning: {
-                  ko: "기획: 신규 프로젝트 기본 단계 (계약서 없음)",
-                  en: "Planning: Default stage for new projects (no contract)"
+                  ko: "기획: 계약서와 금액 정보가 아직 없거나, 계약서는 있지만 금액이 미정인 경우",
+                  en: "Planning: When contract and amount are not set yet, or contract exists but amount is pending"
                 },
                 review: {
-                  ko: "검토: 계약서 없이 금액 입력 또는 계약서 미완료",
-                  en: "Review: Amount entered without contract or incomplete contract"
+                  ko: "검토: 금액은 정해졌지만 계약서가 아직 준비되지 않은 경우",
+                  en: "Review: When amount is set but contract is not ready yet"
                 },
                 inProgress: {
-                  ko: "진행중: 계약서 완료 + 총 금액 입력",
-                  en: "In Progress: Contract completed + total amount entered"
+                  ko: "진행중: 계약서와 금액 정보가 모두 준비된 경우",
+                  en: "In Progress: When both contract and amount are ready"
                 },
                 manual: {
-                  ko: "보류/취소/완료: 언제든 수동 선택 가능",
-                  en: "On Hold/Cancelled/Completed: Can be manually selected anytime"
+                  ko: "보류/취소/완료: 필요에 따라 언제든지 직접 선택하실 수 있어요",
+                  en: "On Hold/Cancelled/Completed: You can select these anytime as needed"
                 }
               }
             }
@@ -836,31 +836,31 @@ export const uiText = {
         },
         // 프로젝트 단계 흐름 설명 (편집 모드 툴팁용)
         statusFlowExplanation: {
-          title: { ko: "프로젝트 단계 안내", en: "Project Stage Guide" },
+          title: { ko: "프로젝트 단계는 어떻게 결정되나요?", en: "How are project stages determined?" },
           summary: {
-            ko: "프로젝트는 기획 → 검토 → 진행중 순서로 자동 진행되며, 보류/취소/완료는 수동으로 선택할 수 있습니다.",
-            en: "Projects automatically progress from Planning → Review → In Progress. On Hold/Cancelled/Completed can be manually selected."
+            ko: "프로젝트 단계는 계약서와 금액 정보를 기준으로 자동으로 설정됩니다. 보류, 취소, 완료 상태는 필요할 때 직접 선택하실 수 있어요.",
+            en: "Project stages are automatically set based on contract and amount information. You can manually select On Hold, Cancelled, or Completed status when needed."
           },
           rules: {
             planning: {
-              ko: "기획: 신규 프로젝트 기본 단계 (계약서 없음)",
-              en: "Planning: Default stage for new projects (no contract)"
+              ko: "기획: 계약서와 금액 정보가 아직 없거나, 계약서는 있지만 금액이 미정인 경우",
+              en: "Planning: When contract and amount are not set yet, or contract exists but amount is pending"
             },
             review: {
-              ko: "검토: 계약서 없이 금액 입력 또는 계약서 미완료",
-              en: "Review: Amount entered without contract or incomplete contract"
+              ko: "검토: 금액은 정해졌지만 계약서가 아직 준비되지 않은 경우",
+              en: "Review: When amount is set but contract is not ready yet"
             },
             inProgress: {
-              ko: "진행중: 계약서 완료 + 총 금액 입력",
-              en: "In Progress: Contract completed + total amount entered"
+              ko: "진행중: 계약서와 금액 정보가 모두 준비된 경우",
+              en: "In Progress: When both contract and amount are ready"
             },
             manual: {
-              ko: "보류/취소/완료: 언제든 수동 선택 가능",
-              en: "On Hold/Cancelled/Completed: Can be manually selected anytime"
+              ko: "보류/취소/완료: 필요에 따라 언제든지 직접 선택하실 수 있어요",
+              en: "On Hold/Cancelled/Completed: You can select these anytime as needed"
             },
             autoComplete: {
-              ko: "완료: 수금 상태가 잔금 완료로 변경되면 자동으로 완료 단계로 전환",
-              en: "Completed: Automatically changes to completed when payment status is final completed"
+              ko: "💡 도움말: 직접 선택한 보류, 취소, 완료 상태는 계약서나 금액이 변경되어도 그대로 유지됩니다.",
+              en: "💡 Tip: Manually selected On Hold, Cancelled, or Completed status remains unchanged even when contract or amount is modified."
             }
           },
           resetButton: {

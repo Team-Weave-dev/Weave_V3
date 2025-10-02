@@ -555,21 +555,10 @@ export function getTemplatesForCategory(category: ProjectDocumentCategory): Proj
   return projectDocumentTemplates[category] || [];
 }
 
-export function getTemplatesByCategory(category: ProjectDocumentCategory): DocumentTemplate[] {
-  const templates = projectDocumentTemplates[category] || [];
-  return templates.map(t => ({
-    id: t.id,
-    name: t.title,
-    description: t.description,
-    category: t.category
-  }));
-}
-
-export function getAllTemplates(): DocumentTemplate[] {
-  const allCategories: ProjectDocumentCategory[] = ['contract', 'invoice', 'estimate', 'report', 'others'];
-  return allCategories.flatMap(category => getTemplatesByCategory(category));
-}
-
+/**
+ * 프로젝트 생성 모달의 폼 데이터를 임시 ProjectTableRow로 변환
+ * 문서 생성기가 ProjectTableRow를 요구하므로 필요한 헬퍼 함수
+ */
 export interface ProjectCreateFormData {
   name: string;
   client: string;
@@ -578,33 +567,29 @@ export interface ProjectCreateFormData {
   projectContent?: string;
 }
 
-export function generateDocumentFromTemplate(
-  template: DocumentTemplate,
-  projectData: ProjectCreateFormData
-): GeneratedDocument {
-  const projectTemplate = projectDocumentTemplates[template.category]?.find(t => t.id === template.id);
+export function createTemporaryProject(formData: Partial<ProjectCreateFormData>): import('@/lib/types/project-table.types').ProjectTableRow {
+  const now = new Date();
 
-  if (!projectTemplate) {
-    throw new Error(`Template not found: ${template.id}`);
-  }
-
-  // ProjectTableRow 형태로 변환
-  const mockProject: import('@/lib/types/project-table.types').ProjectTableRow = {
+  return {
     id: 'temp-' + Date.now(),
     no: 'TEMP001',
-    name: projectData.name,
-    client: projectData.client,
-    registrationDate: new Date().toISOString(),
-    dueDate: projectData.dueDate?.toISOString() || new Date().toISOString(),
-    modifiedDate: new Date().toISOString(),
+    name: formData.name || '[프로젝트명]',
+    client: formData.client || '[클라이언트명]',
+    registrationDate: formatISODate(now) || now.toISOString(),
+    dueDate: formatISODate(formData.dueDate) || formatISODate(now) || now.toISOString(),
+    modifiedDate: now.toISOString(),
     status: 'planning',
     progress: 0,
     paymentProgress: 'not_started',
+    settlementMethod: 'not_set',
+    paymentStatus: 'not_started',
+    projectContent: formData.projectContent,
+    totalAmount: formData.totalAmount,
     contract: {
-      totalAmount: projectData.totalAmount || 0,
-      content: projectData.projectContent || '',
+      totalAmount: formData.totalAmount || 0,
+      content: formData.projectContent || '',
       contractorInfo: {
-        name: projectData.client,
+        name: formData.client || '[클라이언트명]',
         position: '담당자'
       },
       reportInfo: {
@@ -620,19 +605,8 @@ export function generateDocumentFromTemplate(
         businessReceipt: '미설정'
       },
       other: {
-        date: new Date().toISOString()
+        date: now.toISOString()
       }
     }
-  };
-
-  const payload = projectTemplate.build({ project: mockProject });
-
-  return {
-    id: 'doc-' + Date.now(),
-    title: payload.name,
-    content: payload.content,
-    templateId: payload.templateId,
-    category: payload.category,
-    createdAt: new Date()
   };
 }

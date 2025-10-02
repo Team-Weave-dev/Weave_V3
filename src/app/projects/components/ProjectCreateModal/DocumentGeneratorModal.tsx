@@ -15,12 +15,10 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { uiText } from '@/config/brand'
 import {
   type ProjectDocumentCategory,
-  type DocumentTemplate,
   type GeneratedDocument,
   type ProjectCreateFormData,
-  getTemplatesByCategory,
-  getAllTemplates,
-  generateDocumentFromTemplate
+  getTemplatesForCategory,
+  createTemporaryProject
 } from '@/lib/document-generator/templates'
 
 interface DocumentGeneratorModalProps {
@@ -52,7 +50,7 @@ export default function DocumentGeneratorModal({
 
   // 선택된 카테고리의 템플릿 목록
   const availableTemplates = selectedCategory
-    ? getTemplatesByCategory(selectedCategory)
+    ? getTemplatesForCategory(selectedCategory)
     : []
 
   // 선택된 템플릿
@@ -74,17 +72,17 @@ export default function DocumentGeneratorModal({
     }
 
     try {
-      // 기본값을 포함한 프로젝트 데이터 생성
-      const mockProjectData: ProjectCreateFormData = {
+      // 폼 데이터를 임시 프로젝트로 변환
+      const tempProject = createTemporaryProject({
         name: projectData.name || '[프로젝트명]',
         client: projectData.client || '[클라이언트명]',
         totalAmount: projectData.totalAmount || 1000000,
         dueDate: projectData.dueDate || new Date(),
         projectContent: projectData.projectContent || '[프로젝트 내용을 입력하세요]'
-      }
+      })
 
-      const generated = generateDocumentFromTemplate(template, mockProjectData)
-      setPreviewContent(generated.content)
+      const payload = template.build({ project: tempProject })
+      setPreviewContent(payload.content)
     } catch (error) {
       console.error('미리보기 생성 오류:', error)
       setPreviewContent('미리보기를 생성할 수 없습니다. 템플릿을 확인해주세요.')
@@ -136,29 +134,33 @@ export default function DocumentGeneratorModal({
     setIsGenerating(true)
     try {
       let documentContent: string
+      let documentTitle: string
 
       // 편집된 내용이 있으면 그것을 사용, 없으면 기본 생성
       if (isEditMode && editedContent) {
         documentContent = editedContent
+        documentTitle = selectedTemplate.title + ' (편집됨)'
       } else if (previewContent) {
         documentContent = previewContent
+        documentTitle = selectedTemplate.title
       } else {
         // 기본 템플릿 생성 로직
-        const mockProjectData: ProjectCreateFormData = {
+        const tempProject = createTemporaryProject({
           name: projectData.name || '[프로젝트명]',
           client: projectData.client || '[클라이언트명]',
           totalAmount: projectData.totalAmount || 1000000,
           dueDate: projectData.dueDate || new Date(),
           projectContent: projectData.projectContent || '[프로젝트 내용]'
-        }
-        const generated = generateDocumentFromTemplate(selectedTemplate, mockProjectData)
-        documentContent = generated.content
+        })
+        const payload = selectedTemplate.build({ project: tempProject })
+        documentContent = payload.content
+        documentTitle = payload.name
       }
 
-      // 편집된 내용으로 문서 생성
+      // 문서 생성
       const generatedDocument: GeneratedDocument = {
         id: 'doc-' + Date.now(),
-        title: selectedTemplate.name + (hasUnsavedChanges ? ' (편집됨)' : ''),
+        title: documentTitle,
         content: documentContent,
         templateId: selectedTemplate.id,
         category: selectedTemplate.category,
@@ -267,7 +269,7 @@ export default function DocumentGeneratorModal({
                       <SelectContent>
                         {availableTemplates.map((template) => (
                           <SelectItem key={template.id} value={template.id}>
-                            {template.name}
+                            {template.title}
                           </SelectItem>
                         ))}
                       </SelectContent>

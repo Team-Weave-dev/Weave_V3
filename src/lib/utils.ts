@@ -67,6 +67,11 @@ export function formatCurrency(amount: number, currency: 'KRW' | 'USD' = 'KRW'):
 /**
  * 프로젝트에 계약서가 있는지 확인합니다.
  *
+ * 확인 순서:
+ * 1. documentStatus.contract.exists (Mock 프로젝트)
+ * 2. documents 배열에서 type === 'contract' 찾기 (Mock 프로젝트)
+ * 3. localStorage에서 계약서 문서 찾기 (사용자 생성 프로젝트)
+ *
  * @param project - 확인할 프로젝트 데이터
  * @returns 계약서가 존재하면 true, 없으면 false
  *
@@ -85,10 +90,32 @@ export function hasContractDocument(project: ProjectTableRow): boolean {
 
   // 2. documents 배열에서 계약서 타입 문서 찾기
   if (project.documents && project.documents.length > 0) {
-    return project.documents.some(doc => doc.type === 'contract');
+    const hasContractInArray = project.documents.some(doc => doc.type === 'contract');
+    if (hasContractInArray) {
+      return true;
+    }
   }
 
-  // 3. 둘 다 없으면 계약서 없음
+  // 3. localStorage에서 계약서 문서 확인 (사용자 생성 프로젝트용)
+  // SSR 환경에서는 건너뛰기
+  if (typeof window !== 'undefined') {
+    try {
+      const storedKey = 'weave_project_documents';
+      const stored = localStorage.getItem(storedKey);
+      if (stored) {
+        const allDocuments = JSON.parse(stored);
+        const projectDocuments = allDocuments[project.no] || allDocuments[project.id] || [];
+        if (Array.isArray(projectDocuments)) {
+          return projectDocuments.some((doc: any) => doc.type === 'contract');
+        }
+      }
+    } catch (error) {
+      // localStorage 접근 실패 시 무시 (에러 로그는 선택적)
+      console.warn('localStorage 계약서 확인 중 오류:', error);
+    }
+  }
+
+  // 4. 모든 확인 실패 - 계약서 없음
   return false;
 }
 

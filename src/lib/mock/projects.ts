@@ -84,6 +84,17 @@ export function generateMockProjects(): ProjectTableRow[] {
     });
     const documentStatus = summarizeDocuments(documents);
 
+    // 총 금액 생성 (프로젝트마다 다른 금액)
+    // 계약서가 있는 경우 더 높은 확률로 금액 설정
+    const hasContract = documentStatus.contract.exists;
+    const shouldHaveAmount = hasContract
+      ? seededRandom(seed4 + 2000) > 0.2  // 계약서 있으면 80% 확률로 금액 있음
+      : seededRandom(seed4 + 2000) > 0.5; // 계약서 없으면 50% 확률로 금액 있음
+
+    const totalAmount = shouldHaveAmount
+      ? Math.floor((seededRandom(seed5 + 3000) * 200000000 + 10000000) / 1000000) * 1000000  // 1천만~2.1억원 (백만원 단위)
+      : undefined;
+
     return {
       id: `project-${i + 1}`,
       no: `WEAVE_${String(i + 1).padStart(3, '0')}`,
@@ -95,6 +106,7 @@ export function generateMockProjects(): ProjectTableRow[] {
       status: statuses[statusIndex],
       dueDate: dueDate.toISOString(),
       modifiedDate: modifiedDate.toISOString(),
+      totalAmount,
       hasContract: seededRandom(seed1 + 1000) > 0.5,
       hasBilling: seededRandom(seed2 + 1000) > 0.3,
       hasDocuments: documents.length > 0,
