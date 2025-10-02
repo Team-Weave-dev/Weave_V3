@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투두리스트 날짜 변경 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            background: white;
+            border-left: 3px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+        .warning {
+            border-left-color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <h1>투두리스트 날짜 변경 테스트</h1>
+
+    <div class="test-section">
+        <h2>1. localStorage 테스트</h2>
+        <button onclick="testLocalStorage()">localStorage 테스트</button>
+        <button onclick="clearLocalStorage()">localStorage 초기화</button>
+        <button onclick="viewLocalStorage()">localStorage 내용 보기</button>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Date 객체 변환 테스트</h2>
+        <button onclick="testDateConversion()">Date 변환 테스트</button>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 실제 투두 데이터 테스트</h2>
+        <button onclick="loadTodos()">투두 데이터 로드</button>
+        <button onclick="updateFirstTodoDate()">첫 번째 투두 날짜 변경</button>
+        <button onclick="createTestTodo()">테스트 투두 생성</button>
+    </div>
+
+    <div class="test-section">
+        <h2>로그</h2>
+        <button onclick="clearLog()">로그 지우기</button>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString('ko-KR');
+            entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type}]`, message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function testLocalStorage() {
+            try {
+                log('localStorage 테스트 시작');
+
+                // 테스트 데이터 저장
+                const testData = {
+                    id: 'test-1',
+                    title: '테스트 투두',
+                    dueDate: new Date('2025-01-15'),
+                    createdAt: new Date()
+                };
+
+                log('저장할 데이터: ' + JSON.stringify(testData));
+
+                // JSON 저장
+                localStorage.setItem('test-todo', JSON.stringify(testData));
+
+                // 다시 불러오기
+                const loaded = localStorage.getItem('test-todo');
+                log('불러온 데이터 (raw): ' + loaded);
+
+                // 파싱
+                const parsed = JSON.parse(loaded);
+                log('파싱된 데이터: ' + JSON.stringify(parsed));
+
+                // Date 복원
+                parsed.dueDate = new Date(parsed.dueDate);
+                parsed.createdAt = new Date(parsed.createdAt);
+
+                log('Date 복원 후: ' + JSON.stringify(parsed));
+                log('dueDate 타입: ' + typeof parsed.dueDate);
+                log('dueDate instanceof Date: ' + (parsed.dueDate instanceof Date));
+
+                log('localStorage 테스트 성공', 'success');
+            } catch (error) {
+                log('localStorage 테스트 실패: ' + error.message, 'error');
+            }
+        }
+
+        function clearLocalStorage() {
+            if (confirm('정말로 localStorage를 초기화하시겠습니까?')) {
+                localStorage.clear();
+                log('localStorage가 초기화되었습니다', 'warning');
+            }
+        }
+
+        function viewLocalStorage() {
+            log('=== localStorage 내용 ===');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                log(`${key}: ${value.substring(0, 200)}...`);
+            }
+        }
+
+        function testDateConversion() {
+            log('Date 변환 테스트 시작');
+
+            // 다양한 Date 생성 방법
+            const dates = [
+                new Date(),
+                new Date('2025-01-15'),
+                new Date(2025, 0, 15),
+                new Date('2025-01-15T10:30:00'),
+                addDays(new Date(), 1)
+            ];
+
+            dates.forEach((date, index) => {
+                log(`Date ${index + 1}: ${date}`);
+                log(`  -> toISOString: ${date.toISOString()}`);
+                log(`  -> toJSON: ${date.toJSON()}`);
+                log(`  -> valueOf: ${date.valueOf()}`);
+
+                // JSON 변환 테스트
+                const json = JSON.stringify({ date });
+                log(`  -> JSON.stringify: ${json}`);
+
+                const parsed = JSON.parse(json);
+                log(`  -> JSON.parse: ${parsed.date}`);
+                log(`  -> typeof: ${typeof parsed.date}`);
+
+                const restored = new Date(parsed.date);
+                log(`  -> 복원된 Date: ${restored}`);
+                log(`  -> 같은 날짜? ${date.getTime() === restored.getTime()}`);
+            });
+        }
+
+        function addDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        function loadTodos() {
+            try {
+                const todosStr = localStorage.getItem('todoTasks');
+                if (!todosStr) {
+                    log('저장된 투두 데이터가 없습니다', 'warning');
+                    return;
+                }
+
+                const todos = JSON.parse(todosStr);
+                log(`투두 개수: ${todos.length}`);
+
+                todos.forEach((todo, index) => {
+                    log(`투두 ${index + 1}: ${todo.title}`);
+                    log(`  - ID: ${todo.id}`);
+                    log(`  - dueDate: ${todo.dueDate}`);
+                    log(`  - dueDate 타입: ${typeof todo.dueDate}`);
+                });
+            } catch (error) {
+                log('투두 로드 실패: ' + error.message, 'error');
+            }
+        }
+
+        function updateFirstTodoDate() {
+            try {
+                const todosStr = localStorage.getItem('todoTasks');
+                if (!todosStr) {
+                    log('저장된 투두 데이터가 없습니다', 'warning');
+                    return;
+                }
+
+                const todos = JSON.parse(todosStr);
+                if (todos.length === 0) {
+                    log('투두가 없습니다', 'warning');
+                    return;
+                }
+
+                const newDate = new Date();
+                newDate.setDate(newDate.getDate() + 3); // 3일 후
+
+                log(`첫 번째 투두 업데이트 전: ${JSON.stringify(todos[0])}`);
+
+                todos[0].dueDate = newDate.toISOString();
+
+                log(`첫 번째 투두 업데이트 후: ${JSON.stringify(todos[0])}`);
+
+                // 저장
+                localStorage.setItem('todoTasks', JSON.stringify(todos));
+
+                // 이벤트 발생
+                const event = new CustomEvent('calendarDataChanged', {
+                    detail: {
+                        source: 'todo',
+                        changeType: 'update',
+                        itemId: todos[0].id,
+                        timestamp: Date.now()
+                    }
+                });
+                window.dispatchEvent(event);
+
+                log('투두 날짜가 업데이트되었습니다. 페이지를 새로고침해서 확인하세요.', 'success');
+            } catch (error) {
+                log('투두 업데이트 실패: ' + error.message, 'error');
+            }
+        }
+
+        function createTestTodo() {
+            try {
+                const todosStr = localStorage.getItem('todoTasks') || '[]';
+                const todos = JSON.parse(todosStr);
+
+                const newTodo = {
+                    id: 'test-' + Date.now(),
+                    title: '테스트 투두 - ' + new Date().toLocaleString('ko-KR'),
+                    completed: false,
+                    priority: 'p3',
+                    depth: 0,
+                    children: [],
+                    sectionId: 'default',
+                    order: todos.length,
+                    isExpanded: false,
+                    createdAt: new Date().toISOString(),
+                    dueDate: addDays(new Date(), 2).toISOString()
+                };
+
+                todos.push(newTodo);
+                localStorage.setItem('todoTasks', JSON.stringify(todos));
+
+                log('테스트 투두가 생성되었습니다: ' + newTodo.title, 'success');
+                log('새로고침해서 확인하세요');
+            } catch (error) {
+                log('투두 생성 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 페이지 로드 시 자동 실행
+        window.addEventListener('load', () => {
+            log('테스트 페이지가 로드되었습니다');
+            viewLocalStorage();
+        });
+    </script>
+</body>
+</html>
