@@ -207,7 +207,7 @@ const MonthView = React.memo(({
                               console.log('[CalendarWidget] Todo task dropped on date:', format(targetDate, 'yyyy-MM-dd'), todoTask);
 
                               // localStorage에서 투두 데이터 업데이트
-                              const todosStr = localStorage.getItem('todoTasks');
+                              const todosStr = localStorage.getItem('weave_dashboard_todo_tasks');
                               if (todosStr) {
                                 const todos = JSON.parse(todosStr);
 
@@ -229,7 +229,7 @@ const MonthView = React.memo(({
 
                                 if (updateTodoDate(todos)) {
                                   // localStorage에 저장
-                                  localStorage.setItem('todoTasks', JSON.stringify(todos));
+                                  localStorage.setItem('weave_dashboard_todo_tasks', JSON.stringify(todos));
 
                                   // 다른 위젯에 변경 사항 알림
                                   const event = new CustomEvent('calendarDataChanged', {

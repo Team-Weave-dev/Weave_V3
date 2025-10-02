@@ -437,7 +437,7 @@ export function CalendarWidget({
             const todoId = event.id.replace('todo-', '');
 
             // Update the todo item in localStorage
-            const todosStr = localStorage.getItem('todoTasks');
+            const todosStr = localStorage.getItem('weave_dashboard_todo_tasks');
             console.log('[CalendarWidget] Todo tasks from localStorage:', todosStr ? 'Found' : 'Not found');
 
             if (todosStr) {
@@ -468,7 +468,7 @@ export function CalendarWidget({
 
               if (updated) {
                 // Save updated todos
-                localStorage.setItem('todoTasks', JSON.stringify(todos));
+                localStorage.setItem('weave_dashboard_todo_tasks', JSON.stringify(todos));
                 console.log('[CalendarWidget] Saved updated todos to localStorage');
 
                 // Notify other widgets about the change
