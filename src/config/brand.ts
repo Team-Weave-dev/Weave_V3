@@ -1881,11 +1881,41 @@ export const getDashboardText = {
   autoLayout: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '자동 정렬' : 'Auto Layout',
   verticalAlign: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위로 정렬' : 'Align Top',
   optimizeLayout: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위치 최적화' : 'Optimize Layout',
+  resetLayout: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '초기화' : 'Reset Layout',
   editMode: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '편집' : 'Edit',
   complete: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료' : 'Done',
   addWidget: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 추가' : 'Add Widget',
   selectWidget: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 선택' : 'Select Widget',
-  cancel: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '취소' : 'Cancel'
+  cancel: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '취소' : 'Cancel',
+
+  // 위젯 관련
+  widgets: {
+    calendar: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '캘린더' : 'Calendar',
+    todoList: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '할 일 목록' : 'To-Do List',
+    projectSummary: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 현황' : 'Project Summary',
+    kpiMetrics: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '핵심 성과 지표' : 'KPI Metrics',
+    taxDeadline: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세무 일정' : 'Tax Deadline',
+    revenueChart: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '매출 차트' : 'Revenue Chart',
+    taxCalculator: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '세금 계산기' : 'Tax Calculator',
+    recentActivity: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최근 활동' : 'Recent Activity',
+    weather: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '날씨' : 'Weather',
+    custom: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 위젯' : 'New Widget'
+  },
+
+  // 위젯 액션
+  closeWidget: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 닫기' : 'Close Widget',
+  noSpaceAlert: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯을 추가할 공간이 없습니다. 기존 위젯을 조정해주세요.' : 'No space for new widget. Please adjust existing widgets.',
+
+  // 툴팁
+  resetLayoutTooltip: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 배치를 초기 상태로 되돌립니다' : 'Reset widget layout to initial state',
+
+  // 초기화 모달
+  resetModal: {
+    title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 배치 초기화' : 'Reset Widget Layout',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '위젯 배치를 초기 상태로 되돌리시겠습니까?\n(위젯 내부 데이터는 유지됩니다)' : 'Reset widget layout to initial state?\n(Widget data will be preserved)',
+    confirmButton: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '초기화' : 'Reset',
+    cancelButton: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '취소' : 'Cancel'
+  }
 }
 
 // 세금 관리 텍스트

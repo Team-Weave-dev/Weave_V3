@@ -15,7 +15,8 @@ import {
   Maximize2,
   Grid3x3,
   Layers,
-  ArrowUp
+  ArrowUp,
+  RotateCcw
 } from 'lucide-react';
 import { 
   useImprovedDashboardStore,
@@ -446,6 +447,7 @@ export function ImprovedDashboard({
     selectWidget,
     setHoveredPosition,
     setDragOverWidget,
+    resetStore,
   } = useImprovedDashboardStore();
   
   // 로컬 상태
@@ -929,7 +931,7 @@ export function ImprovedDashboard({
       alert('위젯을 추가할 공간이 없습니다.');
       return;
     }
-    
+
     const newWidget: ImprovedWidget = {
       id: `widget_${Date.now()}`,
       type: 'custom',
@@ -938,9 +940,89 @@ export function ImprovedDashboard({
       minW: defaultSize.minWidth || 2,
       minH: defaultSize.minHeight || 2,
     };
-    
+
     addWidget(newWidget);
   }, [findSpaceForWidget, addWidget]);
+
+  // 레이아웃 초기화 (위젯 종류와 위치를 디폴트값으로 리셋)
+  const handleResetLayout = useCallback(() => {
+    // 확인 다이얼로그
+    if (!confirm('위젯 배치를 초기 상태로 되돌리시겠습니까?\n(위젯 내부 데이터는 유지됩니다)')) {
+      return;
+    }
+
+    // 기본 위젯 위치 정의 (9x8 그리드 기준)
+    const defaultPos: Record<ImprovedWidget['type'], GridPosition> = {
+      calendar: { x: 0, y: 0, w: 5, h: 4 },
+      projectSummary: { x: 5, y: 0, w: 4, h: 4 },
+      kpiMetrics: { x: 0, y: 4, w: 5, h: 2 },
+      taxDeadline: { x: 0, y: 6, w: 5, h: 2 },
+      todoList: { x: 5, y: 4, w: 4, h: 4 },
+      revenueChart: { x: 0, y: 8, w: 3, h: 2 },
+      taxCalculator: { x: 0, y: 0, w: 2, h: 2 },
+      recentActivity: { x: 3, y: 8, w: 3, h: 2 },
+      weather: { x: 0, y: 0, w: 2, h: 1 },
+      custom: { x: 6, y: 8, w: 2, h: 2 },
+    };
+
+    // 스토어 초기화
+    resetStore();
+
+    // 기본 위젯 5개 추가
+    const defaultWidgets: ImprovedWidget[] = [
+      {
+        id: 'widget_calendar_1',
+        type: 'calendar',
+        title: '캘린더',
+        position: defaultPos.calendar,
+        data: undefined,
+        minW: 2,
+        minH: 2,
+        maxW: 6,
+        maxH: 4,
+      },
+      {
+        id: 'widget_project_1',
+        type: 'projectSummary',
+        title: '프로젝트 현황',
+        position: defaultPos.projectSummary,
+        data: mockProjects,
+        minW: 3,
+        minH: 2,
+      },
+      {
+        id: 'widget_kpi_1',
+        type: 'kpiMetrics',
+        title: '핵심 성과 지표',
+        position: defaultPos.kpiMetrics,
+        data: mockKPIMetrics,
+        minW: 4,
+        minH: 2,
+        maxW: 9,
+      },
+      {
+        id: 'widget_tax_1',
+        type: 'taxDeadline',
+        title: '세무 일정',
+        position: defaultPos.taxDeadline,
+        minW: 2,
+        minH: 2,
+      },
+      {
+        id: 'widget_todo_1',
+        type: 'todoList',
+        title: '할 일 목록',
+        position: defaultPos.todoList,
+        data: mockTodoData,
+        minW: 2,
+        minH: 2,
+        maxW: 5,
+      },
+    ];
+
+    // 위젯 추가
+    defaultWidgets.forEach((widget) => addWidget(widget));
+  }, [resetStore, addWidget]);
 
   // 드래그 오버 핸들러 (사이드바에서 대시보드로)
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -1216,8 +1298,17 @@ export function ImprovedDashboard({
               <Grid3x3 className="h-4 w-4 mr-2" />
               {getDashboardText.optimizeLayout('ko')}
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleResetLayout}
+              title="위젯 배치를 초기 상태로 되돌립니다"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              {getDashboardText.resetLayout('ko')}
+            </Button>
           </div>
-          
+
           <Button 
             size="sm"
             variant="default"
