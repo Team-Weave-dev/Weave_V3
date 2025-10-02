@@ -28,9 +28,9 @@ interface MonthViewProps extends CalendarViewProps {
  * MonthView Component
  * 월간 캘린더 뷰 - Google Calendar 스타일
  */
-const MonthView = React.memo(({ 
-  currentDate, 
-  events, 
+const MonthView = React.memo(({
+  currentDate,
+  events,
   onDateSelect,
   onEventClick,
   onDateDoubleClick,
@@ -45,6 +45,9 @@ const MonthView = React.memo(({
   const calendarStart = startOfWeek(monthStart, { locale: ko });
   const calendarEnd = endOfWeek(monthEnd, { locale: ko });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+  // HTML5 드래그 오버 상태 추적
+  const [dragOverDate, setDragOverDate] = React.useState<Date | null>(null);
   
   // 그리드 크기가 없으면 기본값 사용
   const effectiveGridSize = gridSize || defaultSize;
@@ -156,11 +159,102 @@ const MonthView = React.memo(({
                         !isCurrentMonth && "bg-muted/30",
                         isToday(day) && "bg-primary/10",
                         isSelected && "ring-2 ring-inset ring-primary",
-                        snapshot.isDraggingOver && "bg-primary/20 ring-2 ring-primary"
+                        snapshot.isDraggingOver && "bg-primary/20 ring-2 ring-primary",
+                        dragOverDate && isSameDay(dragOverDate, day) && "bg-primary/20 ring-2 ring-primary"
                       )}
                       style={{ minHeight: `${cellHeight}px`, maxHeight: `${cellHeight}px` }}
                       onClick={() => onDateSelect?.(day)}
                       onDoubleClick={() => onDateDoubleClick?.(day)}
+                      // HTML5 Drag and Drop API for cross-widget dragging (TodoListWidget → CalendarWidget)
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        // dataTransfer에서 타입 확인
+                        const types = e.dataTransfer.types;
+                        if (types.includes('application/json')) {
+                          setDragOverDate(day);
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        // 자식 요소로 이동하는 경우 무시
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX;
+                        const y = e.clientY;
+
+                        if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                          if (dragOverDate && isSameDay(dragOverDate, day)) {
+                            setDragOverDate(null);
+                          }
+                        }
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'copy';
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        try {
+                          const dataJson = e.dataTransfer.getData('application/json');
+                          if (dataJson) {
+                            const data = JSON.parse(dataJson);
+
+                            // TodoListWidget에서 드래그된 투두 아이템인지 확인
+                            if (data.type === 'todo-task' && data.task) {
+                              const todoTask = data.task;
+                              const targetDate = day;
+
+                              console.log('[CalendarWidget] Todo task dropped on date:', format(targetDate, 'yyyy-MM-dd'), todoTask);
+
+                              // localStorage에서 투두 데이터 업데이트
+                              const todosStr = localStorage.getItem('weave_dashboard_todo_tasks');
+                              if (todosStr) {
+                                const todos = JSON.parse(todosStr);
+
+                                // 재귀적으로 투두 찾기 및 업데이트
+                                const updateTodoDate = (todoList: any[]): boolean => {
+                                  for (let todo of todoList) {
+                                    if (todo.id === todoTask.id) {
+                                      todo.dueDate = targetDate.toISOString();
+                                      return true;
+                                    }
+                                    if (todo.children && todo.children.length > 0) {
+                                      if (updateTodoDate(todo.children)) {
+                                        return true;
+                                      }
+                                    }
+                                  }
+                                  return false;
+                                };
+
+                                if (updateTodoDate(todos)) {
+                                  // localStorage에 저장
+                                  localStorage.setItem('weave_dashboard_todo_tasks', JSON.stringify(todos));
+
+                                  // 다른 위젯에 변경 사항 알림
+                                  const event = new CustomEvent('calendarDataChanged', {
+                                    detail: {
+                                      source: 'todo',  // 'calendar'가 아닌 'todo'로 변경
+                                      changeType: 'todo-date-update',
+                                      itemId: todoTask.id,
+                                      newDate: targetDate.toISOString(),
+                                      timestamp: Date.now()
+                                    }
+                                  });
+                                  window.dispatchEvent(event);
+
+                                  console.log('[CalendarWidget] Todo date updated successfully');
+                                }
+                              }
+                            }
+                          }
+                        } catch (error) {
+                          console.error('[CalendarWidget] Error processing drop:', error);
+                        } finally {
+                          // 드래그 오버 상태 초기화
+                          setDragOverDate(null);
+                        }
+                      }}
                     >
                       <div className={cn(
                         displayMode === 'compact' ? "text-[10px] leading-none mb-0.5" :
@@ -182,18 +276,22 @@ const MonthView = React.memo(({
                         "space-y-0.5"
                       )}>
                         {dayEvents.slice(0, maxEventsToShow).map((event, index) => {
-                          // Check if event is from integrated calendar (cannot be dragged)
+                          // Check if event is from integrated calendar
+                          // 투두와 캘린더 이벤트는 드래그 가능, 세금만 드래그 불가
                           const isIntegrated =
                             event.id.startsWith('todo-') ||
                             event.id.startsWith('tax-') ||
                             event.id.startsWith('calendar-event-');
+
+                          // 세금 이벤트만 드래그 비활성화
+                          const isDragDisabled = event.id.startsWith('tax-');
 
                           return (
                             <Draggable
                               key={event.id}
                               draggableId={`event-${event.id}`}
                               index={index}
-                              isDragDisabled={isIntegrated}
+                              isDragDisabled={isDragDisabled}
                             >
                               {(provided, snapshot) => {
                                 // 드래그 중일 때와 아닐 때의 스타일 분리
@@ -217,7 +315,7 @@ const MonthView = React.memo(({
                                     className={cn(
                                       snapshot.isDragging && "opacity-90 shadow-lg z-50 scale-105",
                                       !snapshot.isDragging && "opacity-100",
-                                      isIntegrated ? "cursor-default" : "cursor-grab active:cursor-grabbing"
+                                      isDragDisabled ? "cursor-default" : "cursor-grab active:cursor-grabbing"
                                     )}
                                   >
                                     <MiniEvent

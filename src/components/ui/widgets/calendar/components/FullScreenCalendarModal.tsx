@@ -23,6 +23,7 @@ import {
   CalendarDays,
   Calendar as CalendarIconOutline,
   List,
+  X,
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -303,7 +304,7 @@ export default function FullScreenCalendarModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
+        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0" hideClose>
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-2xl font-bold">
@@ -360,10 +361,21 @@ export default function FullScreenCalendarModal({
                   size="sm"
                   className="h-9 w-9 p-0"
                   onClick={() => setShowSettingsModal(true)}
+                  aria-label={getWidgetText.calendar.title('ko')}
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
-                {/* Note: Dialog 컴포넌트가 기본적으로 우측 상단에 닫기 버튼을 제공합니다 */}
+
+                {/* Close button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0"
+                  onClick={onClose}
+                  aria-label="닫기"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </DialogHeader>

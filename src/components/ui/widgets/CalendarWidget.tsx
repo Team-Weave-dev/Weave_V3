@@ -36,6 +36,7 @@ import { typography } from '@/config/constants';
 import { useIntegratedCalendar } from '@/hooks/useIntegratedCalendar';
 import { integratedCalendarManager } from '@/lib/calendar-integration';
 import type { CalendarItemSource, UnifiedCalendarItem } from '@/types/integrated-calendar';
+import { addCalendarDataChangedListener } from '@/lib/calendar-integration/events';
 import { cn } from '@/lib/utils';
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
 
@@ -106,6 +107,7 @@ export function CalendarWidget({
     addEvent,
     updateEvent,
     deleteEvent,
+    refreshEvents,
   } = useCalendarEvents(propEvents);
 
   const {
@@ -161,16 +163,16 @@ export function CalendarWidget({
       if (containerRef.current && contentRef.current) {
         const cardRect = containerRef.current.getBoundingClientRect();
         const contentRect = contentRef.current.getBoundingClientRect();
-        
+
         const navBar = contentRef.current.querySelector('.calendar-nav');
         const navHeight = navBar ? navBar.getBoundingClientRect().height : 32;
-        
+
         const horizontalPadding = 8;
         const verticalPadding = 12;
-        
+
         const availableWidth = contentRect.width - horizontalPadding;
         const availableHeight = Math.max(100, contentRect.height - navHeight - verticalPadding);
-        
+
         setContainerSize({
           width: availableWidth,
           height: availableHeight
@@ -180,11 +182,11 @@ export function CalendarWidget({
 
     updateSize();
     const timeoutId = setTimeout(updateSize, 100);
-    
+
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(updateSize);
     });
-    
+
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
@@ -197,6 +199,28 @@ export function CalendarWidget({
       resizeObserver.disconnect();
     };
   }, [currentView]);
+
+  // 실시간 동기화: 모달에서 발생한 변경사항을 감지하여 이벤트 새로고침
+  useEffect(() => {
+    const unsubscribe = addCalendarDataChangedListener((event) => {
+      console.log('[CalendarWidget] Received calendarDataChanged event:', event.detail);
+
+      // 캘린더 소스의 변경 처리
+      if (event.detail.source === 'calendar') {
+        refreshEvents();
+      }
+
+      // 투두 소스의 변경 처리 - 통합 아이템 새로고침
+      if (event.detail.source === 'todo') {
+        console.log('[CalendarWidget] Refreshing integrated items due to todo change');
+        refreshIntegratedItems();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [refreshEvents]);
 
   // Merged and filtered events with memoization
   const filteredEvents = useMemo(() => {
@@ -287,12 +311,66 @@ export function CalendarWidget({
   };
 
   const handleEventSave = (eventData: Partial<CalendarEvent>) => {
-    if (editingEvent && editingEvent.id) {
-      // Update existing event (only if it has an ID)
+    // 투두 아이템인지 확인
+    const isTodoItem = editingEvent?.id?.startsWith('todo-');
+
+    if (isTodoItem && editingEvent) {
+      // 투두 아이템 업데이트
+      const todoId = editingEvent.id.replace('todo-', '');
+
+      try {
+        // localStorage에서 투두 데이터 읽기
+        const todosStr = localStorage.getItem('weave_dashboard_todo_tasks');
+        if (todosStr) {
+          const todos = JSON.parse(todosStr);
+
+          // 해당 투두 찾기 및 업데이트
+          let updated = false;
+          todos.forEach((todo: any) => {
+            if (todo.id === todoId) {
+              // 날짜 업데이트
+              if (eventData.date) {
+                todo.dueDate = eventData.date instanceof Date
+                  ? eventData.date.toISOString()
+                  : new Date(eventData.date).toISOString();
+              }
+              // 제목 업데이트 (필요한 경우)
+              if (eventData.title && eventData.title !== editingEvent.title) {
+                todo.title = eventData.title;
+              }
+              updated = true;
+            }
+          });
+
+          if (updated) {
+            // localStorage에 저장
+            localStorage.setItem('weave_dashboard_todo_tasks', JSON.stringify(todos));
+
+            // TodoListWidget에 변경 알림
+            const changeEvent = new CustomEvent('calendarDataChanged', {
+              detail: {
+                source: 'todo',
+                changeType: 'update',
+                itemId: todoId,
+                timestamp: Date.now(),
+              }
+            });
+            window.dispatchEvent(changeEvent);
+            console.log('[CalendarWidget] Updated todo item via edit modal:', todoId);
+
+            // 통합 아이템 새로고침
+            refreshIntegratedItems();
+          }
+        }
+      } catch (error) {
+        console.error('Failed to update todo item:', error);
+      }
+    } else if (editingEvent && editingEvent.id) {
+      // 일반 캘린더 이벤트 업데이트
       const updatedEvent = { ...editingEvent, ...eventData } as CalendarEvent;
       updateEvent(updatedEvent);
     } else {
-      // Create new event
+      // 새 이벤트 생성
       const newEvent = {
         id: `event-${Date.now()}`,
         ...eventData,
@@ -363,36 +441,129 @@ export function CalendarWidget({
 
   // Handle drag end for event rescheduling
   const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
+    console.log('[CalendarWidget] handleDragEnd called:', result);
+
+    if (!result.destination) {
+      console.log('[CalendarWidget] No destination, returning');
+      return;
+    }
 
     // Extract event ID from draggableId (format: "event-{id}")
     const eventId = result.draggableId.replace('event-', '');
+    console.log('[CalendarWidget] Event ID:', eventId);
+
     const event = filteredEvents.find(e => e.id === eventId);
-    if (!event) return;
+    if (!event) {
+      console.log('[CalendarWidget] Event not found:', eventId);
+      return;
+    }
+    console.log('[CalendarWidget] Found event:', event);
 
     // Check if event is from integrated calendar (other widgets)
-    // Integrated items cannot be rescheduled from calendar widget
     const isIntegratedItem =
       event.id.startsWith('todo-') ||
       event.id.startsWith('tax-') ||
       (event.id.startsWith('calendar-event-') && !events.some(e => e.id === event.id));
 
-    if (isIntegratedItem) {
-      // Integrated items should be edited from their source widget
-      console.warn('Integrated calendar items cannot be rescheduled from calendar widget');
-      return;
-    }
+    console.log('[CalendarWidget] Is integrated item:', isIntegratedItem);
 
     // Parse new date from droppableId
     // Format: "date-YYYY-MM-DD" or "date-YYYY-MM-DD-HH:MM"
     const droppableId = result.destination.droppableId;
+    console.log('[CalendarWidget] Destination droppableId:', droppableId);
+
     const parts = droppableId.split('-');
+    console.log('[CalendarWidget] Parsed parts:', parts);
 
     if (parts[0] === 'date' && parts.length >= 4) {
       const year = parseInt(parts[1]);
       const month = parseInt(parts[2]) - 1; // JavaScript months are 0-indexed
       const day = parseInt(parts[3]);
       const newDate = new Date(year, month, day);
+      console.log('[CalendarWidget] New date:', newDate, format(newDate, 'yyyy-MM-dd'));
+
+      if (isIntegratedItem) {
+        // Handle integrated items (todo, tax, etc.)
+        if (event.id.startsWith('todo-')) {
+          // Update todo item's due date through integrated calendar manager
+          try {
+            // Get the original todo ID (remove 'todo-' prefix)
+            const todoId = event.id.replace('todo-', '');
+
+            // Update the todo item in localStorage
+            const todosStr = localStorage.getItem('weave_dashboard_todo_tasks');
+            console.log('[CalendarWidget] Todo tasks from localStorage:', todosStr ? 'Found' : 'Not found');
+
+            if (todosStr) {
+              const todos = JSON.parse(todosStr);
+              console.log('[CalendarWidget] Parsed todos count:', todos.length);
+
+              // 재귀적으로 투두 찾기 및 업데이트
+              const updateTodoDate = (todoList: any[]): boolean => {
+                for (let todo of todoList) {
+                  console.log('[CalendarWidget] Checking todo:', todo.id, 'against', todoId);
+                  if (todo.id === todoId) {
+                    console.log('[CalendarWidget] Found matching todo! Updating date from', todo.dueDate, 'to', newDate.toISOString());
+                    todo.dueDate = newDate.toISOString();
+                    return true;
+                  }
+                  if (todo.children && todo.children.length > 0) {
+                    console.log('[CalendarWidget] Checking children of todo:', todo.id);
+                    if (updateTodoDate(todo.children)) {
+                      return true;
+                    }
+                  }
+                }
+                return false;
+              };
+
+              const updated = updateTodoDate(todos);
+              console.log('[CalendarWidget] Update result:', updated);
+
+              if (updated) {
+                // Save updated todos
+                localStorage.setItem('weave_dashboard_todo_tasks', JSON.stringify(todos));
+                console.log('[CalendarWidget] Saved updated todos to localStorage. Updated tasks:', todos);
+
+                // Notify other widgets about the change
+                const eventDetail = {
+                  source: 'todo',
+                  changeType: 'update',
+                  itemId: todoId,
+                  timestamp: Date.now(),
+                };
+                const event = new CustomEvent('calendarDataChanged', {
+                  detail: eventDetail
+                });
+                window.dispatchEvent(event);
+                console.log('[CalendarWidget] Dispatched calendarDataChanged event with detail:', eventDetail);
+
+                // Refresh integrated items to reflect the change
+                refreshIntegratedItems();
+                console.log('[CalendarWidget] Called refreshIntegratedItems');
+
+                console.log('[CalendarWidget] Todo date updated via drag:', todoId, 'to', format(newDate, 'yyyy-MM-dd'));
+              } else {
+                console.log('[CalendarWidget] Failed to find todo with ID:', todoId);
+              }
+            }
+          } catch (error) {
+            console.error('Failed to update todo item date:', error);
+          }
+          return; // Exit after handling todo items
+        }
+
+        // 세금 이벤트는 드래그 불가능하므로 여기에 오지 않아야 함
+        if (event.id.startsWith('tax-')) {
+          console.warn('Tax events should not be draggable');
+          return;
+        }
+
+        // calendar-event- 로 시작하는 이벤트는 일반 캘린더 이벤트처럼 처리
+        if (!event.id.startsWith('calendar-event-')) {
+          return; // Unknown integrated item type
+        }
+      }
 
       // For local calendar events, update directly
       const updatedEvent: CalendarEvent = {
@@ -721,10 +892,18 @@ export function CalendarWidget({
         isOpen={showFullScreen}
         onClose={() => setShowFullScreen(false)}
         initialDate={selectedDate}
-        initialEvents={events}
+        initialEvents={filteredEvents} // 투두와 세금 이벤트를 포함한 모든 이벤트 전달
         onEventUpdate={(updatedEvents) => {
           // Sync events back to the widget if needed
-          // This depends on your state management strategy
+          // Only update local calendar events, not integrated items
+          const localEvents = updatedEvents.filter(e =>
+            !e.id.startsWith('todo-') &&
+            !e.id.startsWith('tax-') &&
+            !e.id.startsWith('calendar-event-')
+          );
+          if (localEvents.length > 0) {
+            // Update local events if needed
+          }
         }}
       />
     </>
