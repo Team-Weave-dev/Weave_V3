@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { WBSTask, WBSTemplateType } from '@/lib/types/project-table.types';
+import { WBSTask } from '@/lib/types/project-table.types';
 import { getWBSTaskCounts } from '@/lib/types/project-table.types';
 import {
   Collapsible,
@@ -10,12 +10,12 @@ import {
 } from '@/components/ui/collapsible';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Plus, Zap } from 'lucide-react';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { getProjectPageText } from '@/config/brand';
 import { WBSTaskItem } from './WBSTaskItem';
-import { WBSTemplateSelectDialog } from './WBSTemplateSelectDialog';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
+import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog';
 
 interface MiniWBSProps {
   tasks: WBSTask[];
@@ -23,8 +23,10 @@ interface MiniWBSProps {
   onStatusChange?: (taskId: string, newStatus: WBSTask['status']) => void;
   onDelete?: (taskId: string) => void;
   onAddTask?: () => void;
-  onAddFromTemplate?: (template: WBSTemplateType) => void;
+  onNameChange?: (taskId: string, newName: string) => void;
+  onDescriptionChange?: (taskId: string, newDescription: string) => void;
   onReorder?: (tasks: WBSTask[]) => void; // Phase 2.3: 순서 변경 핸들러
+  onDeleteAll?: () => void; // 전체 삭제 핸들러
   className?: string;
 }
 
@@ -45,12 +47,14 @@ export function MiniWBS({
   onStatusChange,
   onDelete,
   onAddTask,
-  onAddFromTemplate,
+  onNameChange,
+  onDescriptionChange,
   onReorder,
+  onDeleteAll,
   className
 }: MiniWBSProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
   // 작업 통계 계산
   const counts = getWBSTaskCounts(tasks);
@@ -82,6 +86,14 @@ export function MiniWBS({
     onReorder(updatedTasks);
   };
 
+  // 전체 삭제 확인 핸들러
+  const handleDeleteAllConfirm = () => {
+    if (onDeleteAll) {
+      onDeleteAll();
+    }
+    setShowDeleteAllDialog(false);
+  };
+
   return (
     <div className={cn("space-y-3", className)}>
       {/* Collapsible 헤더 */}
@@ -108,23 +120,20 @@ export function MiniWBS({
             </Button>
           </CollapsibleTrigger>
 
-          {/* 편집 모드: 작업 추가 버튼 */}
+          {/* 편집 모드: 전체 삭제 + 작업 추가 버튼 */}
           {isEditMode && (
-            <div className="flex gap-2">
-              {/* 템플릿으로 추가 버튼 (Phase 2.2) */}
-              {onAddFromTemplate && (
+            <div className="flex items-center gap-2">
+              {onDeleteAll && hasTasks && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsDialogOpen(true)}
-                  className="h-8 gap-1"
+                  onClick={() => setShowDeleteAllDialog(true)}
+                  className="h-8 gap-1 text-destructive hover:text-destructive"
                 >
-                  <Zap className="h-3 w-3" />
-                  {getProjectPageText.wbsQuickAddButton('ko')}
+                  <Trash2 className="h-3 w-3" />
+                  {getProjectPageText.wbsDeleteAll('ko')}
                 </Button>
               )}
-
-              {/* 개별 작업 추가 버튼 */}
               {onAddTask && (
                 <Button
                   variant="outline"
@@ -161,6 +170,8 @@ export function MiniWBS({
                         isEditMode={isEditMode}
                         onStatusChange={onStatusChange}
                         onDelete={onDelete}
+                        onNameChange={onNameChange}
+                        onDescriptionChange={onDescriptionChange}
                       />
                     ))}
                     {provided.placeholder}
@@ -179,14 +190,15 @@ export function MiniWBS({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* 템플릿 선택 다이얼로그 (Phase 2.2) */}
-      {isEditMode && onAddFromTemplate && (
-        <WBSTemplateSelectDialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          onConfirm={onAddFromTemplate}
-        />
-      )}
+      {/* 전체 삭제 확인 모달 */}
+      <DocumentDeleteDialog
+        open={showDeleteAllDialog}
+        mode="bulk"
+        customTitle={getProjectPageText.wbsConfirmDeleteAll('ko')}
+        customDescription={getProjectPageText.wbsDeleteAllDescription('ko')}
+        onOpenChange={setShowDeleteAllDialog}
+        onConfirm={handleDeleteAllConfirm}
+      />
     </div>
   );
 }

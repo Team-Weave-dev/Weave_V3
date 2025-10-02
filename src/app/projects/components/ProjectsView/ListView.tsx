@@ -8,12 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
 import type { ProjectTableRow, ProjectStatus, ProjectTableColumn, ProjectTableConfig } from '@/lib/types/project-table.types';
+import { calculateProjectProgress } from '@/lib/types/project-table.types';
 import { getProjectPageText, getViewModeText } from '@/config/brand';
 import { layout, defaults } from '@/config/constants';
 import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ProjectStatus as ProjectStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
 import { PaymentStatus } from '@/components/projects/shared/ProjectInfoRenderer/PaymentStatus';
+import ProjectProgress from '@/components/ui/project-progress';
 import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog';
 
 interface ListViewProps {
@@ -104,13 +106,15 @@ export default function ListView({
   const [isColumnSettingsOpen, setIsColumnSettingsOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Stats for display - props로 받은 projects 데이터 사용
+  // Stats for display - WBS 기반 진행률 사용 (단일 진실 공급원)
   const stats = useMemo(() => {
     if (loading) return { inProgress: 0, completed: 0, avgProgress: 0 };
     return {
       inProgress: projects.filter(p => p.status === 'in_progress').length,
       completed: projects.filter(p => p.status === 'completed').length,
-      avgProgress: Math.round(projects.reduce((acc, p) => acc + p.progress, 0) / projects.length || 0)
+      avgProgress: Math.round(
+        projects.reduce((acc, p) => acc + calculateProjectProgress(p.wbsTasks || []), 0) / projects.length || 0
+      )
     };
   }, [projects, loading]);
 
@@ -131,6 +135,19 @@ export default function ListView({
             project={row}
             mode="table"
             lang="ko"
+          />
+        );
+      case 'progress':
+        // WBS 기반 진행률 계산 (단일 진실 공급원) - 프로그레스바로 표시
+        const progressValue = calculateProjectProgress(row.wbsTasks || []);
+        return (
+          <ProjectProgress
+            value={progressValue}
+            size="sm"
+            showLabel
+            labelPlacement="bottom"
+            labelClassName="text-[11px] text-muted-foreground"
+            className="max-w-[120px]"
           />
         );
       default:

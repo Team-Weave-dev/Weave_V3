@@ -135,8 +135,9 @@ function saveCustomProjects(projects: ProjectTableRow[]): void {
  * - 10개의 기본 작업으로 구성 (기존 진행률 유지)
  */
 function migrateProjectToWBS(project: ProjectTableRow): ProjectTableRow {
-  // 이미 WBS가 있으면 마이그레이션 불필요
-  if (project.wbsTasks && project.wbsTasks.length > 0) {
+  // wbsTasks 속성이 존재하면 (빈 배열이더라도) 마이그레이션 불필요
+  // 사용자가 의도적으로 작업 목록을 비운 경우를 보존하기 위함
+  if (project.wbsTasks !== undefined) {
     return project;
   }
 

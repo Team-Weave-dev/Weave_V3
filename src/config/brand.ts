@@ -592,6 +592,10 @@ export const uiText = {
       labels: {
         projectStatus: { ko: "프로젝트 상태", en: "Project Status" },
         taskProgress: { ko: "작업 진행률", en: "Task Progress" },
+        taskProgressTooltip: {
+          ko: "작업 목록의 완료된 작업 개수를 기반으로 자동 계산됩니다. 작업을 완료 상태로 변경하면 진행률이 자동으로 업데이트됩니다.",
+          en: "Automatically calculated based on completed tasks in the task list. Progress updates automatically when tasks are marked as complete."
+        },
         paymentStatus: { ko: "수금상태", en: "Payment Status" },
         currentStage: { ko: "현재 단계", en: "Current Stage" },
         hasContract: { ko: "계약서 있음", en: "Has Contract" },
@@ -847,7 +851,7 @@ export const uiText = {
         },
         // 수금상태 옵션
         paymentStatuses: {
-          not_started: { ko: "미시작", en: "Not Started" },
+          not_started: { ko: "협의중", en: "In Negotiation" },
           advance_completed: { ko: "선금 완료", en: "Advance Completed" },
           interim_completed: { ko: "중도금 완료", en: "Interim Completed" },
           final_completed: { ko: "잔금 완료", en: "Final Completed" }
@@ -904,7 +908,7 @@ export const uiText = {
           addTask: { ko: "작업 추가", en: "Add Task" },
           addTaskDescription: { ko: "프로젝트에 새로운 작업을 추가합니다", en: "Add a new task to the project" },
           emptyState: { ko: "등록된 작업이 없습니다", en: "No tasks registered" },
-          emptyStateDescription: { ko: "작업을 추가하여 프로젝트 진행률을 관리하세요", en: "Add tasks to manage project progress" },
+          emptyStateDescription: { ko: "편집 버튼을 눌러 작업을 추가하여 프로젝트 진행률을 관리하세요", en: "Click the edit button to add tasks and manage project progress" },
           taskName: { ko: "작업명", en: "Task Name" },
           taskDescription: { ko: "작업 설명", en: "Task Description" },
           taskStatus: { ko: "작업 상태", en: "Task Status" },
@@ -944,7 +948,10 @@ export const uiText = {
           progressCalculation: { ko: "진행률 자동 계산", en: "Auto-calculated Progress" },
           dragToReorder: { ko: "드래그하여 순서 변경", en: "Drag to reorder" },
           deleteTask: { ko: "작업 삭제", en: "Delete Task" },
-          confirmDelete: { ko: "이 작업을 삭제하시겠습니까?", en: "Are you sure you want to delete this task?" }
+          confirmDelete: { ko: "이 작업을 삭제하시겠습니까?", en: "Are you sure you want to delete this task?" },
+          deleteAll: { ko: "전체 삭제", en: "Delete All" },
+          confirmDeleteAll: { ko: "모든 작업을 삭제하시겠습니까?", en: "Are you sure you want to delete all tasks?" },
+          deleteAllDescription: { ko: "모든 작업이 삭제됩니다. 이 작업은 되돌릴 수 없습니다.", en: "All tasks will be deleted. This action cannot be undone." }
         }
       },
       messages: {
@@ -1708,6 +1715,7 @@ export const getProjectPageText = {
   // Labels
   projectStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.projectStatus[lang],
   taskProgress: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.taskProgress[lang],
+  taskProgressTooltip: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.taskProgressTooltip[lang],
   paymentStatus: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.paymentStatus[lang],
   currentStage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.currentStage[lang],
   hasContract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.labels.hasContract[lang],
@@ -1821,6 +1829,9 @@ export const getProjectPageText = {
   wbsDragToReorder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.dragToReorder[lang],
   wbsDeleteTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.deleteTask[lang],
   wbsConfirmDelete: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.confirmDelete[lang],
+  wbsDeleteAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.deleteAll[lang],
+  wbsConfirmDeleteAll: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.confirmDeleteAll[lang],
+  wbsDeleteAllDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.deleteAllDescription[lang],
   // WBS 템플릿 선택 (프로젝트 생성 모달용)
   wbsTemplateSelectLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.templateSelectLabel[lang],
   wbsTemplateSelectPlaceholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.projectDetails.wbs.templateSelectPlaceholder[lang],

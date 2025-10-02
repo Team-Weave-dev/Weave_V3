@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpIcon } from '@/components/ui/help-icon';
 import { BaseStatCard } from '@/components/ui/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { getProjectPageText } from '@/config/brand';
-import { Briefcase, HelpCircle } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
 
 interface CombinedStatsCardProps {
   stats: {
@@ -29,35 +29,17 @@ interface CombinedStatsCardProps {
  * - 우측: 2열 3행 그리드 (기획/검토/진행중, 보류/취소/완료)
  */
 export default function CombinedStatsCard({ stats, lang = 'ko' }: CombinedStatsCardProps) {
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
-
   return (
     <BaseStatCard enableHover className="p-3">
       {/* 헤더 */}
       <div className="text-xs font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
         <Briefcase className="w-3.5 h-3.5" />
         {getProjectPageText.statsOverview(lang)}
-        <Popover open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={getProjectPageText.statsOverviewTooltipTitle(lang)}
-            >
-              <HelpCircle className="h-3.5 w-3.5" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="max-w-sm p-3" side="top">
-            <div className="space-y-2">
-              <p className="font-semibold text-sm">
-                {getProjectPageText.statsOverviewTooltipTitle(lang)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {getProjectPageText.statsOverviewTooltipDescription(lang)}
-              </p>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <HelpIcon
+          title={getProjectPageText.statsOverviewTooltipTitle(lang)}
+          content={getProjectPageText.statsOverviewTooltipDescription(lang)}
+          ariaLabel={getProjectPageText.statsOverviewTooltipTitle(lang)}
+        />
       </div>
 
       {/* 좌우 분할 레이아웃 */}

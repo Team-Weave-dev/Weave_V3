@@ -65,9 +65,9 @@ export function PaymentStatus({
     );
   }
 
-  // 상태별 배지 색상 매핑 (ProjectCardCustom과 동일한 규칙)
+  // 상태별 배지 색상 매핑 (프로젝트 상태 배지와 통일)
   const paymentVariantMap: Record<PaymentStatusType, BadgeProps['variant']> = {
-    not_started: 'secondary',
+    not_started: 'status-soft-planning',      // 회색 (프로젝트 기획 단계와 동일)
     advance_completed: 'status-soft-inprogress',
     interim_completed: 'status-soft-warning',
     final_completed: 'status-soft-completed'

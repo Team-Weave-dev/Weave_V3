@@ -17,14 +17,13 @@ import { Calendar } from '@/components/ui/calendar'
 import { useToast } from '@/hooks/use-toast'
 import { cn, formatCurrency } from '@/lib/utils'
 
-import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getLoadingText, getProjectPageText, getWBSTemplateText, getWBSTemplateDescription } from '@/config/brand'
-import type { ProjectTableRow, SettlementMethod, PaymentStatus, Currency, WBSTemplateType } from '@/lib/types/project-table.types'
+import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getLoadingText, getProjectPageText } from '@/config/brand'
+import type { ProjectTableRow, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types'
 import type { ProjectDocumentCategory, GeneratedDocument } from '@/lib/document-generator/templates'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import DocumentGeneratorModal from './DocumentGeneratorModal'
 import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog'
-import { getWBSTemplateByType } from '@/lib/wbs/templates'
 
 interface ProjectCreateModalProps {
   isOpen: boolean
@@ -42,7 +41,6 @@ interface ProjectCreateFormData {
   dueDate: Date
   paymentStatus: PaymentStatus
   totalAmount: number
-  wbsTemplate: WBSTemplateType  // WBS 템플릿 선택
   generateDocuments: ProjectDocumentCategory[]
 }
 
@@ -80,7 +78,6 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
       dueDate: new Date(Date.now() + 1000), // 등록일보다 1초 늦게 설정
       paymentStatus: 'not_started',
       totalAmount: 0,
-      wbsTemplate: 'standard',  // 기본 템플릿: 표준 프로젝트
       generateDocuments: []
     }
   })
@@ -192,7 +189,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
         hasDocuments: generatedDocuments.length > 0,
         generateDocuments: [...new Set(generatedDocuments.map(doc => doc.category))],
         generatedDocuments: generatedDocuments.length > 0 ? [...generatedDocuments] : undefined,
-        wbsTasks: getWBSTemplateByType(data.wbsTemplate) // 선택된 템플릿에 따라 기본 작업 목록 생성
+        wbsTasks: [] // 빈 작업 목록으로 시작 (사용자 직접 입력)
       }
 
       console.log('🔥 ProjectCreateModal: onProjectCreate 콜백 호출!', newProject);
@@ -603,55 +600,6 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
                   />
                 )}
               />
-            </div>
-
-            <div className="border-t my-4" />
-
-            {/* WBS 템플릿 선택 */}
-            <div className="space-y-2">
-              <Label htmlFor="wbsTemplate">
-                {getProjectPageText.wbsTemplateSelectLabel('ko')}
-              </Label>
-              <Controller
-                name="wbsTemplate"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="wbsTemplate">
-                      <SelectValue placeholder={getProjectPageText.wbsTemplateSelectPlaceholder('ko')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{getWBSTemplateText('standard', 'ko')}</span>
-                          <span className="text-xs text-muted-foreground">{getWBSTemplateDescription('standard', 'ko')}</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="consulting">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{getWBSTemplateText('consulting', 'ko')}</span>
-                          <span className="text-xs text-muted-foreground">{getWBSTemplateDescription('consulting', 'ko')}</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="education">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{getWBSTemplateText('education', 'ko')}</span>
-                          <span className="text-xs text-muted-foreground">{getWBSTemplateDescription('education', 'ko')}</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="custom">
-                        <div className="flex flex-col">
-                          <span className="font-medium">{getWBSTemplateText('custom', 'ko')}</span>
-                          <span className="text-xs text-muted-foreground">{getWBSTemplateDescription('custom', 'ko')}</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              <p className="text-sm text-muted-foreground">
-                {getProjectPageText.wbsTemplateSelectHelp('ko')}
-              </p>
             </div>
 
             <div className="border-t my-4" />

@@ -8,6 +8,8 @@ interface DocumentDeleteDialogProps {
   open: boolean;
   mode: 'single' | 'bulk';
   targetName?: string;
+  customTitle?: string; // 커스텀 제목 (optional)
+  customDescription?: string; // 커스텀 설명 (optional)
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }
@@ -16,22 +18,28 @@ export default function DocumentDeleteDialog({
   open,
   mode,
   targetName,
+  customTitle,
+  customDescription,
   onOpenChange,
   onConfirm
 }: DocumentDeleteDialogProps) {
   const lang = 'ko';
-  const title =
+  const defaultTitle =
     mode === 'single'
       ? getProjectPageText.deleteSingleTitle(lang)
       : getProjectPageText.deleteBulkTitle(lang);
-  const descriptionBase =
+  const defaultDescriptionBase =
     mode === 'single'
       ? getProjectPageText.deleteSingleDescription(lang)
       : getProjectPageText.deleteBulkDescription(lang);
-  const description =
+  const defaultDescription =
     mode === 'single' && targetName
-      ? `${descriptionBase} (${targetName})`
-      : descriptionBase;
+      ? `${defaultDescriptionBase} (${targetName})`
+      : defaultDescriptionBase;
+
+  // customTitle/customDescription이 있으면 사용, 없으면 기본값 사용
+  const title = customTitle || defaultTitle;
+  const description = customDescription || defaultDescription;
 
   return (
     <DeleteDialog

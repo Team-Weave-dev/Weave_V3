@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ProjectProgress from '@/components/ui/project-progress';
-import { getProjectPageText, getProjectStatusText, getSettlementMethodText, getPaymentStatusText, getCurrencyText } from '@/config/brand';
+import { getProjectPageText, getProjectStatusText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getWBSStatusText } from '@/config/brand';
+import { typography } from '@/config/constants';
 import { formatCurrency } from '@/lib/utils';
 import ProjectDocumentGeneratorModal from '@/components/projects/DocumentGeneratorModal';
 import { PaymentStatus as PaymentStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/PaymentStatus';
@@ -19,6 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { DeleteDialog } from '@/components/ui/dialogDelete';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpIcon } from '@/components/ui/help-icon';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
@@ -758,15 +760,97 @@ export default function ProjectDetail({
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-start justify-between mb-4">
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className={mode === 'full' ? 'text-2xl font-semibold mb-2 flex items-center gap-2' : 'text-lg font-semibold mb-2 flex items-center gap-2'}>
               <FileTextIcon className="h-5 w-5" />
               {project.name}
             </h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <Building2 className="h-4 w-4" />
               <span>{project.client}</span>
             </div>
+            {/* 작업 정보 표시 */}
+            {(() => {
+              const tasks = project.wbsTasks || [];
+              if (tasks.length === 0) {
+                return (
+                  <div className={typography.detail.taskInfoEmpty}>
+                    -
+                  </div>
+                );
+              }
+
+              const completedTasks = tasks.filter(t => t.status === 'completed');
+              const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
+              const pendingTasks = tasks.filter(t => t.status === 'pending');
+              const completedCount = completedTasks.length;
+              const totalCount = tasks.length;
+
+              let displayTask: WBSTask | null = null;
+              let taskIndex = 0;
+              let statusText = '';
+
+              // 우선순위 1: 진행중 작업 중 완료된 다음 순차 작업
+              if (inProgressTasks.length > 0) {
+                // 작업 목록에서 완료된 작업 다음의 첫 번째 진행중 작업 찾기
+                let foundNextInProgress = false;
+                for (let i = 0; i < tasks.length; i++) {
+                  const task = tasks[i];
+                  // 완료된 작업들을 지나친 후 첫 번째 진행중 작업
+                  if (task.status === 'in_progress' && (i === 0 || tasks.slice(0, i).every(t => t.status === 'completed'))) {
+                    displayTask = task;
+                    taskIndex = completedCount + 1;
+                    statusText = getWBSStatusText('in_progress', lang);
+                    foundNextInProgress = true;
+                    break;
+                  }
+                }
+                // 만약 위 조건에 맞는 게 없으면 첫 번째 진행중 작업 표시
+                if (!foundNextInProgress) {
+                  displayTask = inProgressTasks[0];
+                  taskIndex = completedCount + 1;
+                  statusText = getWBSStatusText('in_progress', lang);
+                }
+              }
+              // 우선순위 2: 마지막 완료 작업
+              else if (completedTasks.length > 0) {
+                displayTask = completedTasks[completedTasks.length - 1];
+                taskIndex = completedCount;
+                statusText = getWBSStatusText('completed', lang);
+              }
+              // 우선순위 3: 첫 번째 대기 작업
+              else if (pendingTasks.length > 0) {
+                displayTask = pendingTasks[0];
+                taskIndex = 0;
+                statusText = getWBSStatusText('pending', lang);
+              }
+
+              if (!displayTask) {
+                return (
+                  <div className={typography.detail.taskInfoEmpty}>
+                    -
+                  </div>
+                );
+              }
+
+              const taskName = displayTask.name || `작업 ${tasks.indexOf(displayTask) + 1}`;
+              const displayText = `${taskName} ${statusText} (${taskIndex}/${totalCount})`;
+
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={typography.detail.taskInfo}>
+                        {displayText}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="font-medium">{taskName} {statusText} ({taskIndex}/{totalCount})</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })()}
           </div>
           <div className="flex gap-2">
             {onNavigatePrevious && (
@@ -1264,7 +1348,8 @@ export default function ProjectDetail({
                         if (!isEditing || !editState?.editingData.wbsTasks) return;
                         const newTask: WBSTask = {
                           id: `task-${Date.now()}`,
-                          name: `새 작업 ${editState.editingData.wbsTasks.length + 1}`,
+                          name: '', // 빈 값으로 시작
+                          description: '', // 빈 값으로 시작
                           status: 'pending',
                           createdAt: new Date().toISOString(),
                           order: editState.editingData.wbsTasks.length
@@ -1272,27 +1357,27 @@ export default function ProjectDetail({
                         const updatedTasks = [...editState.editingData.wbsTasks, newTask];
                         onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
                       }}
-                      onAddFromTemplate={(template) => {
-                        if (!isEditing || !editState?.editingData.wbsTasks) return;
-
-                        // 템플릿에서 작업 목록 가져오기
-                        const templateTasks = getWBSTemplateByType(template);
-
-                        // 현재 목록 길이를 기준으로 order 조정
-                        const currentLength = editState.editingData.wbsTasks.length;
-                        const adjustedTasks = templateTasks.map((task, index) => ({
-                          ...task,
-                          id: `task-${Date.now()}-${index}`,
-                          order: currentLength + index
-                        }));
-
-                        // 현재 작업 목록에 추가
-                        const updatedTasks = [...editState.editingData.wbsTasks, ...adjustedTasks];
-                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
-                      }}
                       onReorder={(reorderedTasks) => {
                         if (!isEditing) return;
                         onUpdateField?.('wbsTasks' as keyof EditableProjectData, reorderedTasks as never);
+                      }}
+                      onNameChange={(taskId, newName) => {
+                        if (!isEditing || !editState?.editingData.wbsTasks) return;
+                        const updatedTasks = editState.editingData.wbsTasks.map(task =>
+                          task.id === taskId ? { ...task, name: newName } : task
+                        );
+                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
+                      }}
+                      onDescriptionChange={(taskId, newDescription) => {
+                        if (!isEditing || !editState?.editingData.wbsTasks) return;
+                        const updatedTasks = editState.editingData.wbsTasks.map(task =>
+                          task.id === taskId ? { ...task, description: newDescription } : task
+                        );
+                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
+                      }}
+                      onDeleteAll={() => {
+                        if (!isEditing) return;
+                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, [] as never);
                       }}
                     />
                   </div>
@@ -1300,9 +1385,15 @@ export default function ProjectDetail({
                   {/* 작업 진행률 - 스크롤 영역 밖 */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm text-muted-foreground font-medium">
-                        {getProjectPageText.taskProgress(lang)}
-                      </Label>
+                      <div className="flex items-center gap-1.5">
+                        <Label className="text-sm text-muted-foreground font-medium">
+                          {getProjectPageText.taskProgress(lang)}
+                        </Label>
+                        <HelpIcon
+                          content={getProjectPageText.taskProgressTooltip(lang)}
+                          ariaLabel="작업 진행률 설명"
+                        />
+                      </div>
                       <span className="text-sm font-medium">
                         {isEditing
                           ? calculateProjectProgress(editState?.editingData.wbsTasks || [])

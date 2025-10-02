@@ -4,7 +4,7 @@
 
 이 디렉토리는 **shadcn/ui** 기반의 모든 UI 컴포넌트를 포함합니다. 각 컴포넌트는 **Radix UI** 기반으로 접근성이 보장되며, **Tailwind CSS**로 스타일링됩니다.
 
-## 📦 설치된 컴포넌트 (42개)
+## 📦 설치된 컴포넌트 (43개)
 
 - **Accordion**: 접기/펼치기 패널 컴포넌트
 - **Advanced-table**: 컬럼 드롭다운/리사이징을 포함한 고급 테이블
@@ -23,6 +23,7 @@
 - **Footer**: 푸터 레이아웃 컴포넌트
 - **Form**: 폼 컨텍스트 및 검증 컴포넌트
 - **Header**: 상단 고정 헤더 네비게이션
+- **Help-icon**: 재사용 가능한 도움말 아이콘 컴포넌트 (Popover 기반)
 - **Hero-section**: 히어로 섹션 레이아웃 컴포넌트
 - **Interactive-card**: 호버 인터랙션이 포함된 카드 래퍼
 - **Input**: 텍스트 입력 필드 컴포넌트
@@ -46,7 +47,7 @@
 - **Typography**: 타이포그래피 프리셋
 - **View-mode-switch**: 리스트/상세 뷰 모드 전환 컴포넌트
 
-*마지막 업데이트: 2025-09-24*
+*마지막 업데이트: 2025-10-02*
 
 
 **특별 기능**:
@@ -120,6 +121,61 @@ function SubmitForm() {
 - 3가지 스피너 위치 (left, right, center)
 - 완전한 접근성 지원 (aria-describedby, 스크린 리더)
 - 기존 Button 컴포넌트의 모든 variant와 호환
+
+#### HelpIcon (`help-icon.tsx`)
+```typescript
+// 기본 도움말 아이콘
+<HelpIcon
+  content={getProjectPageText.taskProgressTooltip('ko')}
+  ariaLabel="작업 진행률 설명"
+/>
+
+// 제목이 포함된 도움말
+<HelpIcon
+  title={getProjectPageText.statsDeadlineTooltipTitle('ko')}
+  content={getProjectPageText.statsDeadlineTooltipDescription('ko')}
+  ariaLabel={getProjectPageText.statsDeadlineTooltipTitle('ko')}
+/>
+
+// 커스텀 위치 및 크기
+<HelpIcon
+  content="이 기능에 대한 설명입니다."
+  side="right"
+  iconSize="md"
+/>
+
+// 실제 사용 예시 (ProjectDetail 컴포넌트)
+<div className="flex items-center gap-1.5">
+  <Label className="text-sm text-muted-foreground font-medium">
+    {getProjectPageText.taskProgress(lang)}
+  </Label>
+  <HelpIcon
+    content={getProjectPageText.taskProgressTooltip(lang)}
+    ariaLabel="작업 진행률 설명"
+  />
+</div>
+```
+
+**주요 기능**:
+- **클릭형 Popover**: 호버가 아닌 클릭으로 도움말 표시 (일관성)
+- **중앙화된 UI**: 모든 물음표 아이콘의 스타일과 동작 통일
+- **텍스트 분리**: 컴포넌트는 UI만 담당, 텍스트는 brand.ts에서 관리
+- **유연한 설정**: title, side, iconSize 등 커스터마이징 가능
+- **완전한 접근성**: aria-label 지원, 키보드 네비게이션
+
+**Props**:
+- `content` (필수): 도움말 설명 텍스트
+- `title` (선택): 도움말 제목
+- `side` (선택): Popover 표시 위치 (top, right, bottom, left)
+- `iconSize` (선택): 아이콘 크기 (sm, md, lg)
+- `className` (선택): 추가 CSS 클래스
+- `ariaLabel` (선택): 접근성 레이블 (기본값: "도움말")
+
+**사용 가이드라인**:
+- 모든 물음표 아이콘은 이 컴포넌트를 사용하여 일관성 유지
+- 텍스트는 절대 하드코딩하지 않고 brand.ts에서 가져오기
+- title이 있으면 구조화된 레이아웃, 없으면 간단한 텍스트만 표시
+- 클릭형이므로 사용자가 명확한 의도로 도움말을 확인할 수 있음
 
 #### Input (`input.tsx`)
 ```typescript
