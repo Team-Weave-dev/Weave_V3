@@ -1785,7 +1785,13 @@ export const getWidgetText = {
     description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일정을 확인하세요' : 'Check your schedule',
     today: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘' : 'Today',
     month: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월' : 'Month',
-    week: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '주' : 'Week'
+    week: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '주' : 'Week',
+    maximize: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최대화' : 'Maximize',
+    minimize: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '최소화' : 'Minimize',
+    fullScreen: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '전체 화면' : 'Full Screen',
+    dragToMove: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '드래그하여 이동' : 'Drag to move',
+    dragging: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '드래그 중...' : 'Dragging...',
+    dropToReschedule: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '다른 날짜에 놓아서 일정 변경' : 'Drop on another date to reschedule'
   },
   stats: {
     title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '통계' : 'Statistics',
