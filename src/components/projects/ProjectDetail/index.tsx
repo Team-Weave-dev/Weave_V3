@@ -1101,9 +1101,61 @@ export default function ProjectDetail({
 
                     {/* 현재 단계 */}
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground font-medium">
-                        {getProjectPageText.currentStage(lang)}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-muted-foreground font-medium">
+                          {getProjectPageText.currentStage(lang)}
+                        </span>
+                        <Popover open={isStatusHelpOpen} onOpenChange={setIsStatusHelpOpen}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                              aria-label={getProjectPageText.statusFlowTitle(lang)}
+                            >
+                              <HelpCircle className="h-3.5 w-3.5" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="max-w-sm p-3" side="top">
+                            <div className="space-y-2">
+                              <p className="font-semibold text-sm">
+                                {getProjectPageText.statusFlowTitle(lang)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {getProjectPageText.statusFlowSummary(lang)}
+                              </p>
+                              <div className="space-y-1 pt-2 border-t text-xs">
+                                <div>• {getProjectPageText.statusFlowPlanning(lang)}</div>
+                                <div>• {getProjectPageText.statusFlowReview(lang)}</div>
+                                <div>• {getProjectPageText.statusFlowInProgress(lang)}</div>
+                                <div>• {getProjectPageText.statusFlowManual(lang)}</div>
+                                <div>• {getProjectPageText.statusFlowAutoComplete(lang)}</div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        {/* 단계 초기화 버튼: 완료/보류/취소 상태일 때만 표시 */}
+                        {!isEditing && (project.status === 'completed' || project.status === 'on_hold' || project.status === 'cancelled') && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => setShowResetStatusDialog(true)}
+                                  className="h-auto px-2 py-1 text-xs"
+                                  aria-label={getProjectPageText.statusResetTooltip(lang)}
+                                >
+                                  <RotateCcw className="h-3 w-3 mr-1" />
+                                  {getProjectPageText.statusResetLabel(lang)}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                <p className="text-xs">{getProjectPageText.statusResetTooltip(lang)}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                       {isEditing ? (
                         <Select
                           value={editState?.editingData.status || 'planning'}
@@ -1113,6 +1165,12 @@ export default function ProjectDetail({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
+                            {/* 🎯 자동 결정 상태는 드롭다운에서 제거됨:
+                                - planning: 계약서 완료 + 금액 없음 → 자동 표시
+                                - in_progress: 계약서 완료 + 금액 있음 → 자동 표시
+                                - review: 계약서 없음 또는 미완료 → 자동 표시
+                            */}
+                            {/* 사용자가 수동으로 선택 가능한 상태만 제공 */}
                             <SelectItem value="on_hold">
                               {getProjectStatusText('on_hold', lang)}
                             </SelectItem>
