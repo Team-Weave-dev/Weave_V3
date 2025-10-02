@@ -1290,6 +1290,10 @@ export default function ProjectDetail({
                         const updatedTasks = [...editState.editingData.wbsTasks, ...adjustedTasks];
                         onUpdateField?.('wbsTasks' as keyof EditableProjectData, updatedTasks as never);
                       }}
+                      onReorder={(reorderedTasks) => {
+                        if (!isEditing) return;
+                        onUpdateField?.('wbsTasks' as keyof EditableProjectData, reorderedTasks as never);
+                      }}
                     />
                   </div>
 

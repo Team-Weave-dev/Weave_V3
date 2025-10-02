@@ -4,12 +4,14 @@ import { WBSTask } from '@/lib/types/project-table.types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, GripVertical } from 'lucide-react';
 import { getWBSStatusText } from '@/config/brand';
 import { cn } from '@/lib/utils';
+import { Draggable } from '@hello-pangea/dnd';
 
 interface WBSTaskItemProps {
   task: WBSTask;
+  index: number; // Draggable을 위한 index
   isEditMode?: boolean;
   onStatusChange?: (taskId: string, newStatus: WBSTask['status']) => void;
   onDelete?: (taskId: string) => void;
@@ -20,10 +22,12 @@ interface WBSTaskItemProps {
  *
  * @description
  * - 읽기 모드: 상태 배지만 표시
- * - 편집 모드: 체크박스로 상태 변경 + 삭제 버튼
+ * - 편집 모드: 체크박스로 상태 변경 + 삭제 버튼 + 드래그 핸들
+ * - Phase 2.3: 드래그 앤 드롭으로 순서 변경
  */
 export function WBSTaskItem({
   task,
+  index,
   isEditMode = false,
   onStatusChange,
   onDelete
@@ -57,56 +61,74 @@ export function WBSTaskItem({
   };
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 p-3 rounded-lg border transition-colors",
-        isEditMode && "hover:bg-accent/50",
-        task.status === 'completed' && "bg-muted/30"
-      )}
-    >
-      {/* 편집 모드: 체크박스 | 읽기 모드: 상태 배지 */}
-      {isEditMode ? (
-        <Checkbox
-          checked={task.status === 'completed'}
-          onCheckedChange={handleStatusChange}
-          aria-label={`${task.name} 작업 완료 상태 토글`}
-        />
-      ) : (
-        <Badge variant={getStatusBadgeVariant()}>
-          {getWBSStatusText(task.status, 'ko')}
-        </Badge>
-      )}
-
-      {/* 작업명 */}
-      <div className="flex-1 min-w-0">
-        <p
+    <Draggable draggableId={task.id} index={index} isDragDisabled={!isEditMode}>
+      {(provided, snapshot) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
           className={cn(
-            "text-sm font-medium truncate",
-            task.status === 'completed' && "line-through text-muted-foreground"
+            "flex items-center gap-3 p-3 rounded-lg border transition-colors",
+            isEditMode && "hover:bg-accent/50",
+            task.status === 'completed' && "bg-muted/30",
+            snapshot.isDragging && "shadow-lg ring-2 ring-primary/20"
           )}
-          title={task.name}
         >
-          {task.name}
-        </p>
-        {task.description && (
-          <p className="text-xs text-muted-foreground truncate mt-1" title={task.description}>
-            {task.description}
-          </p>
-        )}
-      </div>
+          {/* 드래그 핸들 (편집 모드에서만 표시) */}
+          {isEditMode && (
+            <div
+              {...provided.dragHandleProps}
+              className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="작업 순서 변경"
+            >
+              <GripVertical className="h-4 w-4" />
+            </div>
+          )}
 
-      {/* 편집 모드: 삭제 버튼 */}
-      {isEditMode && onDelete && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
-          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-          aria-label={`${task.name} 작업 삭제`}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+          {/* 편집 모드: 체크박스 | 읽기 모드: 상태 배지 */}
+          {isEditMode ? (
+            <Checkbox
+              checked={task.status === 'completed'}
+              onCheckedChange={handleStatusChange}
+              aria-label={`${task.name} 작업 완료 상태 토글`}
+            />
+          ) : (
+            <Badge variant={getStatusBadgeVariant()}>
+              {getWBSStatusText(task.status, 'ko')}
+            </Badge>
+          )}
+
+          {/* 작업명 */}
+          <div className="flex-1 min-w-0">
+            <p
+              className={cn(
+                "text-sm font-medium truncate",
+                task.status === 'completed' && "line-through text-muted-foreground"
+              )}
+              title={task.name}
+            >
+              {task.name}
+            </p>
+            {task.description && (
+              <p className="text-xs text-muted-foreground truncate mt-1" title={task.description}>
+                {task.description}
+              </p>
+            )}
+          </div>
+
+          {/* 편집 모드: 삭제 버튼 */}
+          {isEditMode && onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              aria-label={`${task.name} 작업 삭제`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       )}
-    </div>
+    </Draggable>
   );
 }

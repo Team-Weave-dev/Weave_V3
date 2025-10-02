@@ -15,6 +15,7 @@ import { getProjectPageText } from '@/config/brand';
 import { WBSTaskItem } from './WBSTaskItem';
 import { WBSTemplateSelectDialog } from './WBSTemplateSelectDialog';
 import { cn } from '@/lib/utils';
+import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 
 interface MiniWBSProps {
   tasks: WBSTask[];
@@ -23,6 +24,7 @@ interface MiniWBSProps {
   onDelete?: (taskId: string) => void;
   onAddTask?: () => void;
   onAddFromTemplate?: (template: WBSTemplateType) => void;
+  onReorder?: (tasks: WBSTask[]) => void; // Phase 2.3: 순서 변경 핸들러
   className?: string;
 }
 
@@ -34,6 +36,7 @@ interface MiniWBSProps {
  * - 접기/펼치기 기능
  * - 편집 모드에서 작업 추가/삭제/상태 변경
  * - 템플릿으로 빠르게 작업 추가 (Phase 2.2)
+ * - 드래그 앤 드롭으로 순서 변경 (Phase 2.3)
  * - 읽기 모드에서 상태만 표시
  */
 export function MiniWBS({
@@ -43,6 +46,7 @@ export function MiniWBS({
   onDelete,
   onAddTask,
   onAddFromTemplate,
+  onReorder,
   className
 }: MiniWBSProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -51,6 +55,32 @@ export function MiniWBS({
   // 작업 통계 계산
   const counts = getWBSTaskCounts(tasks);
   const hasTasks = tasks.length > 0;
+
+  // 정렬된 작업 목록
+  const sortedTasks = [...tasks].sort((a, b) => a.order - b.order);
+
+  // 드래그 앤 드롭 핸들러 (Phase 2.3)
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination || !onReorder) return;
+
+    const { source, destination } = result;
+
+    // 같은 위치로 드롭한 경우 무시
+    if (source.index === destination.index) return;
+
+    // 배열 재정렬
+    const reorderedTasks = Array.from(sortedTasks);
+    const [movedTask] = reorderedTasks.splice(source.index, 1);
+    reorderedTasks.splice(destination.index, 0, movedTask);
+
+    // order 필드 업데이트
+    const updatedTasks = reorderedTasks.map((task, index) => ({
+      ...task,
+      order: index
+    }));
+
+    onReorder(updatedTasks);
+  };
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -112,19 +142,32 @@ export function MiniWBS({
 
         <CollapsibleContent className="mt-3">
           {hasTasks ? (
-            <div className="space-y-2">
-              {tasks
-                .sort((a, b) => a.order - b.order)
-                .map((task) => (
-                  <WBSTaskItem
-                    key={task.id}
-                    task={task}
-                    isEditMode={isEditMode}
-                    onStatusChange={onStatusChange}
-                    onDelete={onDelete}
-                  />
-                ))}
-            </div>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="wbs-tasks">
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={cn(
+                      "space-y-2",
+                      snapshot.isDraggingOver && "bg-accent/20 rounded-lg p-2"
+                    )}
+                  >
+                    {sortedTasks.map((task, index) => (
+                      <WBSTaskItem
+                        key={task.id}
+                        task={task}
+                        index={index}
+                        isEditMode={isEditMode}
+                        onStatusChange={onStatusChange}
+                        onDelete={onDelete}
+                      />
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           ) : (
             <div className="py-8 text-center text-sm text-muted-foreground border rounded-lg">
               <p>{getProjectPageText.wbsEmptyState('ko')}</p>

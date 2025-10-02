@@ -9,8 +9,11 @@
 - 프로젝트 생성 모달 및 상세 정보에 통합
 
 ## 📊 구현 범위
-- ✅ Phase 1: 기본 기능
-- ✅ Phase 2: UX 개선
+- ✅ Phase 1: 기본 기능 (완료)
+- ✅ Phase 2: UX 개선 (완료)
+  - ✅ 2.1 프로젝트 생성 모달 업데이트
+  - ✅ 2.2 빠른 작업 추가 기능
+  - ✅ 2.3 작업 순서 변경 (드래그 앤 드롭)
 - ⏸️ Phase 3: 고급 기능 (향후)
 
 ---
@@ -107,12 +110,16 @@
   - [x] 브랜드 텍스트 중앙화 완료
   - [x] 타입 체크 통과
 
-### 2.3 작업 순서 변경 (드래그 앤 드롭)
-- [ ] @hello-pangea/dnd 라이브러리 활용
-  - [ ] DragDropContext 설정
-  - [ ] Draggable로 각 작업 아이템 래핑
-  - [ ] onDragEnd 핸들러로 순서 업데이트
-- [ ] order 필드 기반 정렬 로직
+### 2.3 작업 순서 변경 (드래그 앤 드롭) ✅
+- [x] @hello-pangea/dnd 라이브러리 활용
+  - [x] DragDropContext 설정 (MiniWBS)
+  - [x] Draggable로 각 작업 아이템 래핑 (WBSTaskItem)
+  - [x] onDragEnd 핸들러로 순서 업데이트
+- [x] order 필드 기반 정렬 로직
+- [x] 드래그 핸들 (GripVertical 아이콘) 추가
+- [x] 드래그 중 시각적 피드백 (shadow, ring)
+- [x] ProjectDetail에 onReorder 핸들러 연결
+- [x] 타입 체크 통과
 
 ---
 
