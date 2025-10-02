@@ -7,123 +7,29 @@ import type {
 } from '@/lib/types/project-table.types';
 
 /**
- * Generate mock project data
- * Used consistently across all project views
+ * ============================================================================
+ * CLEAN SLATE 시스템: localStorage 기반 프로젝트 관리
+ * ============================================================================
+ *
+ * 이 파일은 사용자가 생성한 프로젝트만 localStorage에 저장하고 관리합니다.
+ * Mock 데이터는 생성하지 않으며, 빈 상태에서 시작합니다.
+ *
+ * 주요 함수:
+ * - addCustomProject(): 프로젝트 추가
+ * - updateCustomProject(): 프로젝트 업데이트
+ * - removeCustomProject(): 프로젝트 삭제
+ * - fetchMockProjects(): 비동기 프로젝트 목록 조회 (localStorage)
+ * - getMockProjectById(): 단일 프로젝트 조회 (localStorage)
  */
-export function generateMockProjects(): ProjectTableRow[] {
-  const clients = ['Client A', 'Client B', 'Client C', 'Client D', 'Client E'];
-  const statuses: ProjectTableRow['status'][] = [
-    'planning', 'in_progress', 'review', 'completed', 'on_hold', 'cancelled'
-  ];
-
-  const seededRandom = (seed: number): number => {
-    const x = Math.sin(seed) * 10000;
-    return x - Math.floor(x);
-  };
-
-  const baseDate = new Date(2024, 0, 1);
-  const dayInterval = 7;
-
-  return Array.from({ length: 20 }, (_, i) => {
-    const seed1 = i * 1234 + 5678;
-    const seed2 = i * 2345 + 6789;
-    const seed3 = i * 3456 + 7890;
-    const seed4 = i * 4567 + 8901;
-    const seed5 = i * 5678 + 9012;
-
-    const registrationDate = new Date(
-      baseDate.getTime() +
-      (i * dayInterval * 24 * 60 * 60 * 1000) +
-      (Math.floor(seededRandom(seed1) * 3) * 24 * 60 * 60 * 1000)
-    );
-    const dueDate = new Date(
-      registrationDate.getTime() +
-      Math.floor(seededRandom(seed2) * 90) * 24 * 60 * 60 * 1000
-    );
-
-    const currentDate = new Date();
-    const maxModifyTime = Math.min(
-      currentDate.getTime(),
-      registrationDate.getTime() + 180 * 24 * 60 * 60 * 1000
-    );
-    const modifyTimeRange = maxModifyTime - registrationDate.getTime();
-    const modifiedDate = new Date(
-      registrationDate.getTime() +
-      Math.floor(seededRandom(seed3) * modifyTimeRange)
-    );
-
-    const progress = Math.floor(seededRandom(seed4) * 101);
-    // 수금상태 결정 (프로젝트 진행률 기반)
-    let paymentProgress: PaymentStatus = 'not_started';
-
-    if (progress >= 80) {
-      // 80% 이상 진행: 잔금 완료 또는 중도금 완료
-      paymentProgress = seededRandom(seed5) > 0.5 ? 'final_completed' : 'interim_completed';
-    } else if (progress >= 50) {
-      // 50% 이상 진행: 중도금 완료 또는 선금 완료
-      paymentProgress = seededRandom(seed5) > 0.6 ? 'interim_completed' : 'advance_completed';
-    } else if (progress >= 20) {
-      // 20% 이상 진행: 선금 완료
-      paymentProgress = 'advance_completed';
-    } else {
-      // 20% 미만 진행: 미시작
-      paymentProgress = 'not_started';
-    }
-
-    const statusIndex = Math.floor(seededRandom(seed1 + seed2) * statuses.length);
-    // 완료된 프로젝트는 대부분 잔금 완료
-    if (statuses[statusIndex] === 'completed' && seededRandom(seed3 + seed4) > 0.3) {
-      paymentProgress = 'final_completed';
-    }
-
-    const documents = generateProjectDocuments({
-      projectIndex: i,
-      registrationDate,
-      seededRandom,
-      seed: seed1 + seed2 + seed3
-    });
-    const documentStatus = summarizeDocuments(documents);
-
-    // 총 금액 생성 (프로젝트마다 다른 금액)
-    // 계약서가 있는 경우 더 높은 확률로 금액 설정
-    const hasContract = documentStatus.contract.exists;
-    const shouldHaveAmount = hasContract
-      ? seededRandom(seed4 + 2000) > 0.2  // 계약서 있으면 80% 확률로 금액 있음
-      : seededRandom(seed4 + 2000) > 0.5; // 계약서 없으면 50% 확률로 금액 있음
-
-    const totalAmount = shouldHaveAmount
-      ? Math.floor((seededRandom(seed5 + 3000) * 200000000 + 10000000) / 1000000) * 1000000  // 1천만~2.1억원 (백만원 단위)
-      : undefined;
-
-    return {
-      id: `project-${i + 1}`,
-      no: `WEAVE_${String(i + 1).padStart(3, '0')}`,
-      name: `프로젝트 ${i + 1}`,
-      registrationDate: registrationDate.toISOString(),
-      client: clients[i % clients.length],
-      progress,
-      paymentProgress,
-      status: statuses[statusIndex],
-      dueDate: dueDate.toISOString(),
-      modifiedDate: modifiedDate.toISOString(),
-      totalAmount,
-      hasContract: seededRandom(seed1 + 1000) > 0.5,
-      hasBilling: seededRandom(seed2 + 1000) > 0.3,
-      hasDocuments: documents.length > 0,
-      documents,
-      documentStatus
-    };
-  });
-}
 
 /**
- * Get a single project by ID or No
- * 기본 mock 데이터와 사용자 생성 프로젝트 모두에서 검색
+ * Get a single project by ID or No (Clean Slate 시스템)
+ * localStorage의 사용자 생성 프로젝트에서만 검색
  */
 export function getMockProjectById(id: string): ProjectTableRow | null {
   console.log('🔍 getMockProjectById 호출됨. 검색할 ID:', id);
 
-  // 먼저 사용자 생성 프로젝트에서 찾기
+  // localStorage의 사용자 생성 프로젝트에서만 찾기 (Clean Slate 시스템)
   const customProjects = getCustomProjects();
   console.log('📋 사용자 생성 프로젝트 개수:', customProjects.length);
 
@@ -133,19 +39,8 @@ export function getMockProjectById(id: string): ProjectTableRow | null {
 
   const customProject = customProjects.find(p => p.id === id || p.no === id);
   if (customProject) {
-    console.log('✅ 사용자 생성 프로젝트에서 발견:', { id: customProject.id, no: customProject.no, name: customProject.name });
+    console.log('✅ 프로젝트 발견:', { id: customProject.id, no: customProject.no, name: customProject.name });
     return customProject;
-  }
-
-  console.log('⚠️ 사용자 생성 프로젝트에서 찾을 수 없음. 기본 mock 데이터에서 검색 중...');
-
-  // 없으면 기본 mock 데이터에서 찾기
-  const baseMockProjects = generateMockProjects();
-  const baseMockProject = baseMockProjects.find(p => p.id === id || p.no === id);
-
-  if (baseMockProject) {
-    console.log('✅ 기본 mock 데이터에서 발견:', { id: baseMockProject.id, no: baseMockProject.no, name: baseMockProject.name });
-    return baseMockProject;
   }
 
   console.log('❌ 프로젝트를 찾을 수 없음:', id);
@@ -322,94 +217,118 @@ export async function fetchMockProject(id: string): Promise<ProjectTableRow | nu
   return project;
 }
 
-interface DocumentGenerationParams {
-  projectIndex: number;
-  registrationDate: Date;
-  seededRandom: (seed: number) => number;
-  seed: number;
-}
+// ============================================================================
+// 디버깅 도구 (Debugging Tools)
+// ============================================================================
 
-const DOCUMENT_TYPE_LABELS: Record<DocumentInfo['type'], string> = {
-  contract: '계약서',
-  invoice: '청구서',
-  report: '보고서',
-  estimate: '견적서',
-  etc: '기타 문서'
-};
+/**
+ * localStorage의 모든 프로젝트와 마감일 정보를 상세히 출력
+ * 브라우저 콘솔에서 debugDeadlineProjects()로 호출 가능
+ */
+export function debugDeadlineProjects(): void {
+  console.log('🔍 [DEBUG] === 마감일 디버깅 시작 ===');
 
-const DOCUMENT_TYPES: DocumentInfo['type'][] = ['contract', 'invoice', 'report', 'estimate', 'etc'];
+  const projects = getCustomProjects();
+  console.log(`📊 총 프로젝트 수: ${projects.length}`);
 
-function generateProjectDocuments({
-  projectIndex,
-  registrationDate,
-  seededRandom,
-  seed
-}: DocumentGenerationParams): DocumentInfo[] {
-  const documents: DocumentInfo[] = [];
+  if (projects.length === 0) {
+    console.log('ℹ️ localStorage에 저장된 프로젝트가 없습니다.');
+    return;
+  }
 
-  DOCUMENT_TYPES.forEach((type, typeIndex) => {
-    const typeSeed = seed + typeIndex * 1111;
-    const chance = seededRandom(typeSeed);
-    const documentCount = chance > 0.8 ? 2 : chance > 0.5 ? 1 : 0;
+  console.log('\n📋 프로젝트별 상세 정보:');
+  projects.forEach((project, index) => {
+    const dueDate = project.dueDate;
+    const parsedDate = dueDate ? new Date(dueDate) : null;
+    const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
 
-    for (let docIndex = 0; docIndex < documentCount; docIndex += 1) {
-      const createdAtOffsetDays = Math.floor(seededRandom(typeSeed + docIndex + 1) * 120);
-      const createdAt = new Date(
-        registrationDate.getTime() + createdAtOffsetDays * 24 * 60 * 60 * 1000
-      );
+    let daysRemaining = null;
+    let category = null;
 
-      documents.push({
-        id: `project-${projectIndex + 1}-${type}-${docIndex + 1}`,
-        type,
-        name: `${DOCUMENT_TYPE_LABELS[type]} ${docIndex + 1}`,
-        createdAt: createdAt.toISOString(),
-        status: 'completed'
-      });
-    }
-  });
+    if (isValidDate && parsedDate) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      parsedDate.setHours(0, 0, 0, 0);
 
-  return documents;
-}
+      const diffTime = parsedDate.getTime() - now.getTime();
+      daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-function summarizeDocuments(documents: DocumentInfo[]): ProjectDocumentStatus {
-  const grouped = documents.reduce<Record<DocumentInfo['type'], DocumentInfo[]>>((acc, doc) => {
-    acc[doc.type].push(doc);
-    return acc;
-  }, {
-    contract: [],
-    invoice: [],
-    report: [],
-    estimate: [],
-    etc: []
-  });
-
-  const buildStatus = (type: DocumentInfo['type']): DocumentStatus => {
-    const docs = grouped[type];
-    if (docs.length === 0) {
-      return {
-        exists: false,
-        status: 'none',
-        count: 0
-      };
+      // 마감일 초과 → 긴급
+      if (daysRemaining < 0) {
+        category = '초과 (긴급)';
+      }
+      // 당일 또는 7일 미만 → 긴급
+      else if (daysRemaining < 7) {
+        category = '긴급';
+      }
+      // 7일 이상 14일 미만 → 주의
+      else if (daysRemaining < 14) {
+        category = '주의';
+      }
+      // 14일 이상 → 여유
+      else {
+        category = '여유';
+      }
     }
 
-    const latest = docs.reduce((latestDoc, currentDoc) => (
-      currentDoc.createdAt > latestDoc.createdAt ? currentDoc : latestDoc
-    ), docs[0]);
+    const displayDays = daysRemaining !== null
+      ? (daysRemaining < 0 ? `초과 D+${Math.abs(daysRemaining)}` : `D-${daysRemaining}`)
+      : 'N/A';
 
-    return {
-      exists: true,
-      status: 'completed',
-      lastUpdated: latest.createdAt,
-      count: docs.length
-    };
-  };
+    console.log(`\n${index + 1}. ${project.name} (${project.no})`);
+    console.log(`   마감일: ${dueDate || '없음'}`);
+    console.log(`   파싱 결과: ${isValidDate ? parsedDate?.toISOString().split('T')[0] : 'Invalid Date'}`);
+    console.log(`   남은 일수: ${displayDays}`);
+    console.log(`   카테고리: ${category || 'N/A'}`);
+    console.log(`   상태(원본): ${project.status}`);
+    console.log(`   총 금액: ${project.totalAmount || '없음'}`);
+    console.log(`   계약서: ${project.documentStatus?.contract?.exists ? '있음' : '없음'}`);
+  });
 
-  return {
-    contract: buildStatus('contract'),
-    invoice: buildStatus('invoice'),
-    report: buildStatus('report'),
-    estimate: buildStatus('estimate'),
-    etc: buildStatus('etc')
-  };
+  console.log('\n✅ 디버깅 완료');
 }
+
+/**
+ * 특정 프로젝트의 마감일 정보만 출력
+ */
+export function debugProjectDeadline(projectIdOrNo: string): void {
+  const project = getMockProjectById(projectIdOrNo);
+
+  if (!project) {
+    console.log(`❌ 프로젝트를 찾을 수 없습니다: ${projectIdOrNo}`);
+    return;
+  }
+
+  console.log(`🔍 [DEBUG] ${project.name} 마감일 정보:`);
+  console.log(`   마감일: ${project.dueDate || '없음'}`);
+
+  if (project.dueDate) {
+    const parsedDate = new Date(project.dueDate);
+    const isValidDate = !isNaN(parsedDate.getTime());
+
+    console.log(`   파싱 결과: ${isValidDate ? parsedDate.toISOString() : 'Invalid Date'}`);
+
+    if (isValidDate) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      parsedDate.setHours(0, 0, 0, 0);
+
+      const diffTime = parsedDate.getTime() - now.getTime();
+      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      const displayDays = daysRemaining < 0 ? `초과 D+${Math.abs(daysRemaining)}` : `D-${daysRemaining}`;
+      let category = '';
+      if (daysRemaining < 0) category = '초과 (긴급)';
+      else if (daysRemaining < 7) category = '긴급';
+      else if (daysRemaining < 14) category = '주의';
+      else category = '여유';
+
+      console.log(`   남은 일수: ${displayDays}`);
+      console.log(`   카테고리: ${category}`);
+    }
+  }
+}
+
+// ============================================================================
+// localStorage 키 상수
+// ============================================================================
