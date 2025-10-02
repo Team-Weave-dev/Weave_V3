@@ -101,31 +101,84 @@ export function useTodoState(props?: {
   // Initialize data once
   const initialData = useMemo(() => getInitialData(), []);
 
-  // Local storage hooks (Date는 ISO string으로 자동 변환됨)
-  const [localTasks, setLocalTasks, clearTasks] = useLocalStorage<TodoTask[]>(
-    STORAGE_KEY,
-    initialData.tasks
-  );
-  
-  const [sectionsRaw, setSectionsRaw, clearSections] = useLocalStorage<TodoSection[]>(
-    SECTIONS_KEY,
-    initialData.sections
-  );
+  // Custom serialization for Date objects
+  const dateSerializer = {
+    serialize: (value: TodoTask[]) => {
+      console.log('[useTodoState] Serializing tasks:', value);
+      return JSON.stringify(value);
+    },
+    deserialize: (value: string) => {
+      const parsed = JSON.parse(value);
+      // Convert date strings back to Date objects
+      if (Array.isArray(parsed)) {
+        parsed.forEach((task: any) => {
+          if (task.createdAt) task.createdAt = new Date(task.createdAt);
+          if (task.completedAt) task.completedAt = new Date(task.completedAt);
+          if (task.dueDate) task.dueDate = new Date(task.dueDate);
+          if (task.children) {
+            task.children.forEach((child: any) => {
+              if (child.createdAt) child.createdAt = new Date(child.createdAt);
+              if (child.completedAt) child.completedAt = new Date(child.completedAt);
+              if (child.dueDate) child.dueDate = new Date(child.dueDate);
+            });
+          }
+        });
+      }
+      console.log('[useTodoState] Deserialized tasks:', parsed);
+      return parsed;
+    }
+  };
+
+  // React 상태 직접 관리 (useLocalStorage 대신 useState 사용)
+  const [localTasks, setLocalTasksState] = useState<TodoTask[]>(initialData.tasks);
+  const [sectionsRaw, setSectionsRaw] = useState<TodoSection[]>(initialData.sections);
+
+  // localStorage 동기화를 위한 헬퍼 함수
+  const setLocalTasks = useCallback((tasks: TodoTask[] | ((prev: TodoTask[]) => TodoTask[])) => {
+    setLocalTasksState((prevTasks) => {
+      const newTasks = typeof tasks === 'function' ? tasks(prevTasks) : tasks;
+      // localStorage에 저장
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newTasks));
+      }
+      return newTasks;
+    });
+  }, []);
+
+  // sections 업데이트 시 localStorage 동기화
+  const setSections = useCallback((sections: TodoSection[] | ((prev: TodoSection[]) => TodoSection[])) => {
+    setSectionsRaw((prevSections) => {
+      const newSections = typeof sections === 'function' ? sections(prevSections) : sections;
+      // localStorage에 저장
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(SECTIONS_KEY, JSON.stringify(newSections));
+      }
+      return newSections;
+    });
+  }, []);
 
   // Ensure sections is always an array (defensive programming)
   const sections = Array.isArray(sectionsRaw) ? sectionsRaw : initialData.sections;
-  const setSections = useCallback((value: TodoSection[] | ((prev: TodoSection[]) => TodoSection[])) => {
-    const newValue = value instanceof Function ? value(sections) : value;
-    // Ensure we only set arrays
-    if (Array.isArray(newValue)) {
-      setSectionsRaw(newValue);
-    }
-  }, [sections, setSectionsRaw]);
   
-  const [viewMode, setViewMode] = useLocalStorage<ViewMode>(
-    VIEW_MODE_KEY,
-    'section'
-  );
+  // viewMode도 useState로 변경
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(VIEW_MODE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return 'section';
+  });
+
+  const setViewMode = useCallback((mode: ViewMode) => {
+    setViewModeState(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(VIEW_MODE_KEY, JSON.stringify(mode));
+    }
+  }, []);
 
   // Local UI state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
@@ -183,9 +236,8 @@ export function useTodoState(props?: {
   }, [setLocalTasks, onTaskToggle]);
 
   const handleDeleteTask = useCallback((taskId: string) => {
-    // 자기 자신의 삭제 타임스탬프 기록 (리스너가 무시하도록)
+    // 자기 자신의 삭제 타임스탬프 기록 (이벤트 중복 방지용)
     const deleteTimestamp = Date.now();
-    lastDeleteTimestamp.current = deleteTimestamp;
 
     setLocalTasks(prev => {
       const filtered = prev.map(task => {
@@ -281,19 +333,28 @@ export function useTodoState(props?: {
   }, [localTasks, sections, setSections, setLocalTasks, onTaskAdd]);
 
   const handleUpdateTask = useCallback((taskId: string, updates: Partial<TodoTask>) => {
+    console.log('[useTodoState] handleUpdateTask called:', taskId, updates);
+
     setLocalTasks(prev => {
-      return prev.map(task => {
+      console.log('[useTodoState] Previous tasks:', prev);
+
+      const updatedTasks = prev.map(task => {
         if (task.id === taskId) {
           const updatedTask = { ...task, ...updates };
-          onTaskUpdate?.(taskId, updates);
+          console.log('[useTodoState] Updated task:', updatedTask);
 
-          // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-          notifyCalendarDataChanged({
-            source: 'todo',
-            changeType: 'update',
-            itemId: taskId,
-            timestamp: Date.now(),
-          });
+          // Defer callbacks to avoid state update issues
+          setTimeout(() => {
+            onTaskUpdate?.(taskId, updates);
+
+            // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+            notifyCalendarDataChanged({
+              source: 'todo',
+              changeType: 'update',
+              itemId: taskId,
+              timestamp: Date.now(),
+            });
+          }, 0);
 
           return updatedTask;
         }
@@ -302,13 +363,15 @@ export function useTodoState(props?: {
           const hasChildUpdate = task.children.some(child => child.id === taskId);
           if (hasChildUpdate) {
             // 하위 작업 업데이트 시에도 동기화 이벤트 발생
-            onTaskUpdate?.(taskId, updates);
-            notifyCalendarDataChanged({
-              source: 'todo',
-              changeType: 'update',
-              itemId: taskId,
-              timestamp: Date.now(),
-            });
+            setTimeout(() => {
+              onTaskUpdate?.(taskId, updates);
+              notifyCalendarDataChanged({
+                source: 'todo',
+                changeType: 'update',
+                itemId: taskId,
+                timestamp: Date.now(),
+              });
+            }, 0);
 
             return {
               ...task,
@@ -320,6 +383,9 @@ export function useTodoState(props?: {
         }
         return task;
       });
+
+      console.log('[useTodoState] Updated tasks:', updatedTasks);
+      return updatedTasks;
     });
   }, [setLocalTasks, onTaskUpdate]);
 
@@ -356,6 +422,23 @@ export function useTodoState(props?: {
   const handleDragStart = useCallback((e: React.DragEvent, task: TodoTask) => {
     setDraggedTask(task);
     e.dataTransfer.effectAllowed = 'move';
+
+    // 캘린더 위젯과의 상호작용을 위해 task 데이터를 dataTransfer에 저장
+    // HTML5 drag and drop API를 사용하여 위젯 간 드래그 지원
+    const taskData = {
+      type: 'todo-task',
+      task: {
+        id: task.id,
+        title: task.title,
+        dueDate: task.dueDate,
+        priority: task.priority,
+        completed: task.completed
+      }
+    };
+    e.dataTransfer.setData('application/json', JSON.stringify(taskData));
+    e.dataTransfer.setData('text/plain', task.title); // 폴백용
+
+    console.log('[TodoListWidget] Drag started for task:', task.id, task.title);
   }, []);
 
   const handleDragEnd = useCallback(() => {
@@ -434,53 +517,86 @@ export function useTodoState(props?: {
   }, [draggedTask, sections, setSections, setLocalTasks]);
 
   // 실시간 동기화: 다른 위젯(캘린더)에서의 변경사항 감지
-  // 타임스탬프를 사용하여 자기 자신의 이벤트와 외부 이벤트를 구분
-  const lastDeleteTimestamp = useRef<number>(0);
 
   useEffect(() => {
+    const handleStorageChange = () => {
+      // localStorage에서 최신 데이터 다시 로드
+      console.log('[TodoListWidget] handleStorageChange called');
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        console.log('[TodoListWidget] Raw localStorage data:', data);
+        if (data) {
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed)) {
+            // 새 배열을 만들어서 React가 변경을 감지하도록 함
+            const updatedTasks = parsed.map((task: any) => {
+              console.log('[TodoListWidget] Before date conversion - Task:', task.id, 'DueDate:', task.dueDate);
+
+              // 새 객체를 만들어서 불변성 유지
+              const newTask = { ...task };
+              newTask.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
+              newTask.completedAt = task.completedAt ? new Date(task.completedAt) : undefined;
+              newTask.dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
+
+              console.log('[TodoListWidget] After date conversion - Task:', newTask.id, 'DueDate:', newTask.dueDate);
+
+              if (task.children && task.children.length > 0) {
+                newTask.children = task.children.map((child: any) => ({
+                  ...child,
+                  createdAt: child.createdAt ? new Date(child.createdAt) : new Date(),
+                  completedAt: child.completedAt ? new Date(child.completedAt) : undefined,
+                  dueDate: child.dueDate ? new Date(child.dueDate) : undefined
+                }));
+              }
+
+              return newTask;
+            });
+
+            // 상태 업데이트 (useState의 setter 직접 사용)
+            console.log('[TodoListWidget] Updating local tasks with fresh data from localStorage:', updatedTasks);
+
+            // React 상태 직접 업데이트 (localStorage 저장 없이)
+            setLocalTasksState([...updatedTasks]);
+
+            console.log('[TodoListWidget] Local tasks updated successfully');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync todo data from storage change:', error);
+      }
+    };
+
     const unsubscribe = addCalendarDataChangedListener((event) => {
       const { source, changeType, itemId, timestamp } = event.detail;
 
-      // 투두 소스의 이벤트만 처리
-      if (source === 'todo' && itemId) {
-        // 자기 자신이 방금 발생시킨 이벤트는 무시 (100ms 이내)
-        if (Math.abs(timestamp - lastDeleteTimestamp.current) < 100) {
-          return;
-        }
+      console.log('[TodoListWidget] Received calendarDataChanged event:', event.detail);
+      console.log('[TodoListWidget] Event detail breakdown - source:', source, 'changeType:', changeType, 'itemId:', itemId);
 
-        // 다른 위젯(캘린더)에서 발생한 변경사항만 처리
-        // localStorage에서 최신 데이터 다시 로드
-        try {
-          const data = localStorage.getItem(STORAGE_KEY);
-          if (data) {
-            const parsed = JSON.parse(data);
-            if (Array.isArray(parsed)) {
-              // Date 객체 복원
-              parsed.forEach((task: any) => {
-                task.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
-                task.completedAt = task.completedAt ? new Date(task.completedAt) : undefined;
-                task.dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
-                if (task.children) {
-                  task.children.forEach((child: any) => {
-                    child.createdAt = child.createdAt ? new Date(child.createdAt) : new Date();
-                    child.completedAt = child.completedAt ? new Date(child.completedAt) : undefined;
-                    child.dueDate = child.dueDate ? new Date(child.dueDate) : undefined;
-                  });
-                }
-              });
-              // 상태 업데이트
-              setLocalTasks(parsed);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to sync todo data from external change:', error);
+      // 투두 소스의 이벤트만 처리 (캘린더에서 발생한 이벤트)
+      // changeType을 any로 캐스팅하여 타입 체크 우회 (CalendarWidget에서 'update'와 'todo-date-update' 사용)
+      if (source === 'todo') {
+        console.log('[TodoListWidget] Source is todo, checking changeType...');
+        if ((changeType as any) === 'update' || (changeType as any) === 'todo-date-update') {
+          console.log('[TodoListWidget] Processing todo update from calendar, itemId:', itemId, 'changeType:', changeType);
+          console.log('[TodoListWidget] Calling handleStorageChange...');
+
+          // localStorage 변경을 감지하여 상태 업데이트
+          handleStorageChange();
+        } else {
+          console.log('[TodoListWidget] ChangeType not matched. Actual changeType:', changeType);
         }
+      } else {
+        console.log('[TodoListWidget] Source not matched. Actual source:', source);
       }
     });
+
+    // storage 이벤트 리스너 추가 (다른 탭/윈도우에서의 변경사항 감지)
+    window.addEventListener('storage', handleStorageChange);
 
     // 컴포넌트 언마운트 시 리스너 해제
     return () => {
       unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [setLocalTasks]);
 

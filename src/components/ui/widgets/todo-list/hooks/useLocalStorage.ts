@@ -51,9 +51,16 @@ export function useLocalStorage<T>(
     try {
       setStoredValue(prev => {
         const valueToStore = value instanceof Function ? value(prev) : value;
+        console.log(`[useLocalStorage] Saving ${key}:`, valueToStore);
 
         if (typeof window !== 'undefined') {
-          window.localStorage.setItem(key, serialize(valueToStore));
+          const serialized = serialize(valueToStore);
+          console.log(`[useLocalStorage] Serialized ${key}:`, serialized);
+          window.localStorage.setItem(key, serialized);
+
+          // Verify the save
+          const saved = window.localStorage.getItem(key);
+          console.log(`[useLocalStorage] Verification - saved ${key}:`, saved);
         }
 
         return valueToStore;

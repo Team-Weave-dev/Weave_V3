@@ -209,7 +209,9 @@ export function TodoTask({
                     size="sm"
                     className="justify-start"
                     onClick={() => {
-                      onUpdateDueDate(task.id, option.value());
+                      const dateValue = option.value();
+                      console.log('[TodoTask] Quick date option clicked:', option.label, 'value:', dateValue);
+                      onUpdateDueDate(task.id, dateValue);
                       setDatePopoverOpen(false);
                     }}
                   >
@@ -232,7 +234,7 @@ export function TodoTask({
               </div>
               <div className="border-t pt-2">
                 <Calendar
-                  selected={task.dueDate}
+                  selected={task.dueDate ? (task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate)) : undefined}
                   onSelect={(date) => {
                     // Calendar에서 날짜를 선택하면 date가 Date 객체로 전달됨
                     // 같은 날짜를 다시 클릭하면 undefined가 될 수 있음
@@ -255,6 +257,7 @@ export function TodoTask({
                         }
                       }
 
+                      console.log('[TodoTask] Updating due date for task:', task.id, 'to:', date);
                       onUpdateDueDate(task.id, date);
                       setDatePopoverOpen(false);
                     }

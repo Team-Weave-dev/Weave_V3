@@ -122,6 +122,16 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
     [events]
   );
 
+  // 이벤트 새로고침 (localStorage에서 최신 데이터 로드)
+  const refreshEvents = useCallback(() => {
+    try {
+      const loadedEvents = loadCalendarEvents();
+      setEvents(loadedEvents);
+    } catch (err) {
+      setError(err as Error);
+    }
+  }, []);
+
   return {
     events,
     isLoading,
@@ -131,5 +141,6 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
     deleteEvent,
     getEventsByDate,
     getEventsByRange,
+    refreshEvents,
   };
 }
