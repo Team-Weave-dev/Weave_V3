@@ -415,47 +415,60 @@ export function CalendarWidget({
             const todosStr = localStorage.getItem('todoTasks');
             if (todosStr) {
               const todos = JSON.parse(todosStr);
-              const updatedTodos = todos.map((todo: any) => {
-                if (todo.id === todoId) {
-                  return { ...todo, dueDate: newDate.toISOString() };
-                }
-                // Also check children
-                if (todo.children && todo.children.length > 0) {
-                  return {
-                    ...todo,
-                    children: todo.children.map((child: any) =>
-                      child.id === todoId
-                        ? { ...child, dueDate: newDate.toISOString() }
-                        : child
-                    )
-                  };
-                }
-                return todo;
-              });
 
-              // Save updated todos
-              localStorage.setItem('todoTasks', JSON.stringify(updatedTodos));
-
-              // Notify other widgets about the change
-              const event = new CustomEvent('calendarDataChanged', {
-                detail: {
-                  source: 'todo',
-                  changeType: 'update',
-                  itemId: todoId,
-                  timestamp: Date.now(),
+              // 재귀적으로 투두 찾기 및 업데이트
+              const updateTodoDate = (todoList: any[]): boolean => {
+                for (let todo of todoList) {
+                  if (todo.id === todoId) {
+                    todo.dueDate = newDate.toISOString();
+                    return true;
+                  }
+                  if (todo.children && todo.children.length > 0) {
+                    if (updateTodoDate(todo.children)) {
+                      return true;
+                    }
+                  }
                 }
-              });
-              window.dispatchEvent(event);
+                return false;
+              };
 
-              // Refresh integrated items to reflect the change
-              refreshIntegratedItems();
+              if (updateTodoDate(todos)) {
+                // Save updated todos
+                localStorage.setItem('todoTasks', JSON.stringify(todos));
+
+                // Notify other widgets about the change
+                const event = new CustomEvent('calendarDataChanged', {
+                  detail: {
+                    source: 'todo',
+                    changeType: 'update',
+                    itemId: todoId,
+                    timestamp: Date.now(),
+                  }
+                });
+                window.dispatchEvent(event);
+
+                // Refresh integrated items to reflect the change
+                refreshIntegratedItems();
+
+                console.log('[CalendarWidget] Todo date updated via drag:', todoId, 'to', format(newDate, 'yyyy-MM-dd'));
+              }
             }
           } catch (error) {
             console.error('Failed to update todo item date:', error);
           }
+          return; // Exit after handling todo items
         }
-        // For other integrated items (tax, etc.), you can add similar handling here
-        return; // Exit after handling integrated items
+
+        // 세금 이벤트는 드래그 불가능하므로 여기에 오지 않아야 함
+        if (event.id.startsWith('tax-')) {
+          console.warn('Tax events should not be draggable');
+          return;
+        }
+
+        // calendar-event- 로 시작하는 이벤트는 일반 캘린더 이벤트처럼 처리
+        if (!event.id.startsWith('calendar-event-')) {
+          return; // Unknown integrated item type
+        }
       }
 
       // For local calendar events, update directly
@@ -785,10 +798,18 @@ export function CalendarWidget({
         isOpen={showFullScreen}
         onClose={() => setShowFullScreen(false)}
         initialDate={selectedDate}
-        initialEvents={events}
+        initialEvents={filteredEvents} // 투두와 세금 이벤트를 포함한 모든 이벤트 전달
         onEventUpdate={(updatedEvents) => {
           // Sync events back to the widget if needed
-          // This depends on your state management strategy
+          // Only update local calendar events, not integrated items
+          const localEvents = updatedEvents.filter(e =>
+            !e.id.startsWith('todo-') &&
+            !e.id.startsWith('tax-') &&
+            !e.id.startsWith('calendar-event-')
+          );
+          if (localEvents.length > 0) {
+            // Update local events if needed
+          }
         }}
       />
     </>

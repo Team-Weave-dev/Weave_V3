@@ -399,6 +399,23 @@ export function useTodoState(props?: {
   const handleDragStart = useCallback((e: React.DragEvent, task: TodoTask) => {
     setDraggedTask(task);
     e.dataTransfer.effectAllowed = 'move';
+
+    // 캘린더 위젯과의 상호작용을 위해 task 데이터를 dataTransfer에 저장
+    // HTML5 drag and drop API를 사용하여 위젯 간 드래그 지원
+    const taskData = {
+      type: 'todo-task',
+      task: {
+        id: task.id,
+        title: task.title,
+        dueDate: task.dueDate,
+        priority: task.priority,
+        completed: task.completed
+      }
+    };
+    e.dataTransfer.setData('application/json', JSON.stringify(taskData));
+    e.dataTransfer.setData('text/plain', task.title); // 폴백용
+
+    console.log('[TodoListWidget] Drag started for task:', task.id, task.title);
   }, []);
 
   const handleDragEnd = useCallback(() => {
