@@ -387,17 +387,10 @@ export function CalendarWidget({
     if (!event) return;
 
     // Check if event is from integrated calendar (other widgets)
-    // Integrated items cannot be rescheduled from calendar widget
     const isIntegratedItem =
       event.id.startsWith('todo-') ||
       event.id.startsWith('tax-') ||
       (event.id.startsWith('calendar-event-') && !events.some(e => e.id === event.id));
-
-    if (isIntegratedItem) {
-      // Integrated items should be edited from their source widget
-      console.warn('Integrated calendar items cannot be rescheduled from calendar widget');
-      return;
-    }
 
     // Parse new date from droppableId
     // Format: "date-YYYY-MM-DD" or "date-YYYY-MM-DD-HH:MM"
@@ -409,6 +402,61 @@ export function CalendarWidget({
       const month = parseInt(parts[2]) - 1; // JavaScript months are 0-indexed
       const day = parseInt(parts[3]);
       const newDate = new Date(year, month, day);
+
+      if (isIntegratedItem) {
+        // Handle integrated items (todo, tax, etc.)
+        if (event.id.startsWith('todo-')) {
+          // Update todo item's due date through integrated calendar manager
+          try {
+            // Get the original todo ID (remove 'todo-' prefix)
+            const todoId = event.id.replace('todo-', '');
+
+            // Update the todo item in localStorage
+            const todosStr = localStorage.getItem('todoTasks');
+            if (todosStr) {
+              const todos = JSON.parse(todosStr);
+              const updatedTodos = todos.map((todo: any) => {
+                if (todo.id === todoId) {
+                  return { ...todo, dueDate: newDate.toISOString() };
+                }
+                // Also check children
+                if (todo.children && todo.children.length > 0) {
+                  return {
+                    ...todo,
+                    children: todo.children.map((child: any) =>
+                      child.id === todoId
+                        ? { ...child, dueDate: newDate.toISOString() }
+                        : child
+                    )
+                  };
+                }
+                return todo;
+              });
+
+              // Save updated todos
+              localStorage.setItem('todoTasks', JSON.stringify(updatedTodos));
+
+              // Notify other widgets about the change
+              const event = new CustomEvent('calendarDataChanged', {
+                detail: {
+                  source: 'todo',
+                  changeType: 'update',
+                  itemId: todoId,
+                  timestamp: Date.now(),
+                }
+              });
+              window.dispatchEvent(event);
+
+              // Refresh integrated items to reflect the change
+              refreshIntegratedItems();
+            }
+          } catch (error) {
+            console.error('Failed to update todo item date:', error);
+          }
+        }
+        // For other integrated items (tax, etc.), you can add similar handling here
+        return; // Exit after handling integrated items
+      }
 
       // For local calendar events, update directly
       const updatedEvent: CalendarEvent = {

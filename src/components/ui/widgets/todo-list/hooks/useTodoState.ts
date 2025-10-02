@@ -101,10 +101,39 @@ export function useTodoState(props?: {
   // Initialize data once
   const initialData = useMemo(() => getInitialData(), []);
 
+  // Custom serialization for Date objects
+  const dateSerializer = {
+    serialize: (value: TodoTask[]) => {
+      console.log('[useTodoState] Serializing tasks:', value);
+      return JSON.stringify(value);
+    },
+    deserialize: (value: string) => {
+      const parsed = JSON.parse(value);
+      // Convert date strings back to Date objects
+      if (Array.isArray(parsed)) {
+        parsed.forEach((task: any) => {
+          if (task.createdAt) task.createdAt = new Date(task.createdAt);
+          if (task.completedAt) task.completedAt = new Date(task.completedAt);
+          if (task.dueDate) task.dueDate = new Date(task.dueDate);
+          if (task.children) {
+            task.children.forEach((child: any) => {
+              if (child.createdAt) child.createdAt = new Date(child.createdAt);
+              if (child.completedAt) child.completedAt = new Date(child.completedAt);
+              if (child.dueDate) child.dueDate = new Date(child.dueDate);
+            });
+          }
+        });
+      }
+      console.log('[useTodoState] Deserialized tasks:', parsed);
+      return parsed;
+    }
+  };
+
   // Local storage hooks (Date는 ISO string으로 자동 변환됨)
   const [localTasks, setLocalTasks, clearTasks] = useLocalStorage<TodoTask[]>(
     STORAGE_KEY,
-    initialData.tasks
+    initialData.tasks,
+    dateSerializer
   );
   
   const [sectionsRaw, setSectionsRaw, clearSections] = useLocalStorage<TodoSection[]>(
@@ -281,19 +310,28 @@ export function useTodoState(props?: {
   }, [localTasks, sections, setSections, setLocalTasks, onTaskAdd]);
 
   const handleUpdateTask = useCallback((taskId: string, updates: Partial<TodoTask>) => {
+    console.log('[useTodoState] handleUpdateTask called:', taskId, updates);
+
     setLocalTasks(prev => {
-      return prev.map(task => {
+      console.log('[useTodoState] Previous tasks:', prev);
+
+      const updatedTasks = prev.map(task => {
         if (task.id === taskId) {
           const updatedTask = { ...task, ...updates };
-          onTaskUpdate?.(taskId, updates);
+          console.log('[useTodoState] Updated task:', updatedTask);
 
-          // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-          notifyCalendarDataChanged({
-            source: 'todo',
-            changeType: 'update',
-            itemId: taskId,
-            timestamp: Date.now(),
-          });
+          // Defer callbacks to avoid state update issues
+          setTimeout(() => {
+            onTaskUpdate?.(taskId, updates);
+
+            // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+            notifyCalendarDataChanged({
+              source: 'todo',
+              changeType: 'update',
+              itemId: taskId,
+              timestamp: Date.now(),
+            });
+          }, 0);
 
           return updatedTask;
         }
@@ -302,13 +340,15 @@ export function useTodoState(props?: {
           const hasChildUpdate = task.children.some(child => child.id === taskId);
           if (hasChildUpdate) {
             // 하위 작업 업데이트 시에도 동기화 이벤트 발생
-            onTaskUpdate?.(taskId, updates);
-            notifyCalendarDataChanged({
-              source: 'todo',
-              changeType: 'update',
-              itemId: taskId,
-              timestamp: Date.now(),
-            });
+            setTimeout(() => {
+              onTaskUpdate?.(taskId, updates);
+              notifyCalendarDataChanged({
+                source: 'todo',
+                changeType: 'update',
+                itemId: taskId,
+                timestamp: Date.now(),
+              });
+            }, 0);
 
             return {
               ...task,
@@ -320,6 +360,9 @@ export function useTodoState(props?: {
         }
         return task;
       });
+
+      console.log('[useTodoState] Updated tasks:', updatedTasks);
+      return updatedTasks;
     });
   }, [setLocalTasks, onTaskUpdate]);
 

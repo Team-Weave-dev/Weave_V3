@@ -64,27 +64,111 @@ export const saveCalendarEvents = (events: CalendarEvent[]) => {
   }
 };
 
-// 이벤트 추가
+// 중복 이벤트 체크를 위한 최근 추가 이벤트 캐시
+const recentlyAddedEvents = new Map<string, number>();
+const DUPLICATE_WINDOW_MS = 500; // 500ms 이내의 같은 이벤트는 중복으로 간주
+
+// 이벤트 추가 (React StrictMode 중복 방지)
 export const addCalendarEvent = (event: CalendarEvent): CalendarEvent[] => {
   const events = loadCalendarEvents();
+
+  // 중복 체크를 위한 이벤트 시그니처 생성
+  const eventSignature = `${event.title}_${event.date}_${event.startTime}_${event.type}`;
+  const now = Date.now();
+
+  // 최근에 추가된 같은 이벤트가 있는지 체크
+  const lastAdded = recentlyAddedEvents.get(eventSignature);
+  if (lastAdded && (now - lastAdded) < DUPLICATE_WINDOW_MS) {
+    console.warn('[Calendar] Duplicate event prevented (React StrictMode):', event.title);
+    return events; // 중복이면 기존 이벤트 목록 반환
+  }
+
+  // 캐시에 이벤트 추가
+  recentlyAddedEvents.set(eventSignature, now);
+
+  // 오래된 캐시 엔트리 정리 (메모리 누수 방지)
+  for (const [key, timestamp] of recentlyAddedEvents.entries()) {
+    if (now - timestamp > DUPLICATE_WINDOW_MS * 2) {
+      recentlyAddedEvents.delete(key);
+    }
+  }
+
+  // 실제로 이벤트 추가
   const newEvents = [...events, event];
   saveCalendarEvents(newEvents);
   return newEvents;
 };
 
-// 이벤트 수정
+// 중복 업데이트 체크를 위한 캐시
+const recentlyUpdatedEvents = new Map<string, number>();
+
+// 이벤트 수정 (React StrictMode 중복 방지)
 export const updateCalendarEvent = (updatedEvent: CalendarEvent): CalendarEvent[] => {
   const events = loadCalendarEvents();
-  const newEvents = events.map(event => 
+
+  // 중복 체크를 위한 업데이트 시그니처 생성
+  const updateSignature = `update_${updatedEvent.id}_${JSON.stringify(updatedEvent)}`;
+  const now = Date.now();
+
+  // 최근에 같은 업데이트가 있었는지 체크
+  const lastUpdated = recentlyUpdatedEvents.get(updateSignature);
+  if (lastUpdated && (now - lastUpdated) < DUPLICATE_WINDOW_MS) {
+    console.warn('[Calendar] Duplicate update prevented (React StrictMode):', updatedEvent.id);
+    return events; // 중복이면 기존 이벤트 목록 반환
+  }
+
+  // 캐시에 업데이트 추가
+  recentlyUpdatedEvents.set(updateSignature, now);
+
+  // 오래된 캐시 엔트리 정리 (메모리 누수 방지)
+  for (const [key, timestamp] of recentlyUpdatedEvents.entries()) {
+    if (now - timestamp > DUPLICATE_WINDOW_MS * 2) {
+      recentlyUpdatedEvents.delete(key);
+    }
+  }
+
+  // 실제로 이벤트 수정
+  const newEvents = events.map(event =>
     event.id === updatedEvent.id ? updatedEvent : event
   );
   saveCalendarEvents(newEvents);
   return newEvents;
 };
 
-// 이벤트 삭제
+// 중복 삭제 체크를 위한 캐시
+const recentlyDeletedEvents = new Map<string, number>();
+
+// 이벤트 삭제 (React StrictMode 중복 방지)
 export const deleteCalendarEvent = (eventId: string): CalendarEvent[] => {
   const events = loadCalendarEvents();
+
+  // 이미 삭제된 이벤트인지 체크 (이벤트가 없으면 이미 삭제된 것)
+  const eventExists = events.some(event => event.id === eventId);
+  if (!eventExists) {
+    console.warn('[Calendar] Event already deleted or not found:', eventId);
+    return events;
+  }
+
+  const now = Date.now();
+
+  // 최근에 같은 삭제 요청이 있었는지 체크
+  const lastDeleted = recentlyDeletedEvents.get(eventId);
+  if (lastDeleted && (now - lastDeleted) < DUPLICATE_WINDOW_MS) {
+    console.warn('[Calendar] Duplicate delete prevented (React StrictMode):', eventId);
+    return events; // 중복이면 기존 이벤트 목록 반환
+  }
+
+  // 캐시에 삭제 추가
+  recentlyDeletedEvents.set(eventId, now);
+
+  // 오래된 캐시 엔트리 정리 (메모리 누수 방지)
+  for (const [key, timestamp] of recentlyDeletedEvents.entries()) {
+    if (now - timestamp > DUPLICATE_WINDOW_MS * 2) {
+      recentlyDeletedEvents.delete(key);
+    }
+  }
+
+  // 실제로 이벤트 삭제
   const newEvents = events.filter(event => event.id !== eventId);
   saveCalendarEvents(newEvents);
   return newEvents;
