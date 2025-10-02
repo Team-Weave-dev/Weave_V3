@@ -26,6 +26,7 @@ import {
   CalendarDays,
   Calendar as CalendarIconOutline,
   List,
+  Maximize,
 } from 'lucide-react';
 import type { CalendarWidgetProps, CalendarEvent } from '@/types/dashboard';
 import { format, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
@@ -36,6 +37,7 @@ import { useIntegratedCalendar } from '@/hooks/useIntegratedCalendar';
 import { integratedCalendarManager } from '@/lib/calendar-integration';
 import type { CalendarItemSource, UnifiedCalendarItem } from '@/types/integrated-calendar';
 import { cn } from '@/lib/utils';
+import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
 
 // Import refactored components
 import {
@@ -51,6 +53,7 @@ import {
   viewModes,
   type ViewMode,
 } from './calendar';
+import FullScreenCalendarModal from './calendar/components/FullScreenCalendarModal';
 
 // View mode icons mapping
 const viewModeIcons = {
@@ -90,6 +93,7 @@ export function CalendarWidget({
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSourceFilter, setShowSourceFilter] = useState(false);
+  const [showFullScreen, setShowFullScreen] = useState(false);
   
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -283,8 +287,8 @@ export function CalendarWidget({
   };
 
   const handleEventSave = (eventData: Partial<CalendarEvent>) => {
-    if (editingEvent) {
-      // Update existing event
+    if (editingEvent && editingEvent.id) {
+      // Update existing event (only if it has an ID)
       const updatedEvent = { ...editingEvent, ...eventData } as CalendarEvent;
       updateEvent(updatedEvent);
     } else {
@@ -294,9 +298,10 @@ export function CalendarWidget({
         ...eventData,
       } as CalendarEvent;
       addEvent(newEvent);
-      onEventAdd?.(newEvent.date, newEvent);
+      // Note: addEvent already saves to localStorage and notifies other widgets
+      // No need to call onEventAdd separately
     }
-    
+
     setShowEventPopover(false);
     setEditingEvent(null);
   };
@@ -341,7 +346,7 @@ export function CalendarWidget({
     setEditingEvent(null);
     // Open the popover which will use selectedDate
     setShowEventPopover(true);
-    
+
     // If time is specified, we need to pre-populate it
     if (time) {
       const prefilledEvent: CalendarEvent = {
@@ -353,6 +358,72 @@ export function CalendarWidget({
         allDay: false,
       };
       setEditingEvent(prefilledEvent);
+    }
+  };
+
+  // Handle drag end for event rescheduling
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    // Extract event ID from draggableId (format: "event-{id}")
+    const eventId = result.draggableId.replace('event-', '');
+    const event = filteredEvents.find(e => e.id === eventId);
+    if (!event) return;
+
+    // Check if event is from integrated calendar (other widgets)
+    // Integrated items cannot be rescheduled from calendar widget
+    const isIntegratedItem =
+      event.id.startsWith('todo-') ||
+      event.id.startsWith('tax-') ||
+      (event.id.startsWith('calendar-event-') && !events.some(e => e.id === event.id));
+
+    if (isIntegratedItem) {
+      // Integrated items should be edited from their source widget
+      console.warn('Integrated calendar items cannot be rescheduled from calendar widget');
+      return;
+    }
+
+    // Parse new date from droppableId
+    // Format: "date-YYYY-MM-DD" or "date-YYYY-MM-DD-HH:MM"
+    const droppableId = result.destination.droppableId;
+    const parts = droppableId.split('-');
+
+    if (parts[0] === 'date' && parts.length >= 4) {
+      const year = parseInt(parts[1]);
+      const month = parseInt(parts[2]) - 1; // JavaScript months are 0-indexed
+      const day = parseInt(parts[3]);
+      const newDate = new Date(year, month, day);
+
+      // For local calendar events, update directly
+      const updatedEvent: CalendarEvent = {
+        ...event,
+        date: newDate,
+      };
+
+      // If time is included in droppableId (WeekView, DayView)
+      if (parts.length >= 6) {
+        const hour = parseInt(parts[4]);
+        const minute = parseInt(parts[5]);
+
+        // Calculate duration from original event
+        let duration = 60; // default 1 hour
+        if (event.startTime && event.endTime) {
+          const [startHour, startMin] = event.startTime.split(':').map(Number);
+          const [endHour, endMin] = event.endTime.split(':').map(Number);
+          duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+        }
+
+        // Set new start time
+        updatedEvent.startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+        // Calculate new end time
+        const endMinutes = hour * 60 + minute + duration;
+        const endHour = Math.floor(endMinutes / 60);
+        const endMin = endMinutes % 60;
+        updatedEvent.endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+      }
+
+      updateEvent(updatedEvent);
     }
   };
 
@@ -453,8 +524,20 @@ export function CalendarWidget({
                 size="sm"
                 className="h-8 w-8 p-0"
                 onClick={() => setShowSettingsModal(true)}
+                aria-label={getWidgetText.calendar.title('ko')}
               >
                 <Settings className="h-4 w-4" />
+              </Button>
+
+              {/* Maximize */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setShowFullScreen(true)}
+                aria-label={getWidgetText.calendar.maximize('ko')}
+              >
+                <Maximize className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -561,10 +644,11 @@ export function CalendarWidget({
                 </Popover>
               </div>
             </div>
-            
-            {/* View content */}
-            <div className="flex-1 overflow-hidden">
-              {currentView === 'month' && (
+
+            {/* View content with DragDropContext */}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <div className="flex-1 overflow-hidden">
+                {currentView === 'month' && (
                 <MonthView
                   currentDate={currentDate}
                   events={filteredEvents}
@@ -606,7 +690,8 @@ export function CalendarWidget({
                   containerHeight={containerSize.height}
                 />
               )}
-            </div>
+              </div>
+            </DragDropContext>
           </div>
         </CardContent>
       </Card>
@@ -629,6 +714,18 @@ export function CalendarWidget({
         onClose={() => setShowSettingsModal(false)}
         settings={settings}
         onSave={saveSettings}
+      />
+
+      {/* Full Screen Modal */}
+      <FullScreenCalendarModal
+        isOpen={showFullScreen}
+        onClose={() => setShowFullScreen(false)}
+        initialDate={selectedDate}
+        initialEvents={events}
+        onEventUpdate={(updatedEvents) => {
+          // Sync events back to the widget if needed
+          // This depends on your state management strategy
+        }}
       />
     </>
   );
