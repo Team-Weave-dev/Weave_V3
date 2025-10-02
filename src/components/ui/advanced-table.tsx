@@ -41,6 +41,8 @@ export interface AdvancedTableProps {
   onDeselectAll?: () => void;
   // 커스텀 셀 렌더러
   customCellRenderer?: (value: any, column: ProjectTableColumn, row: ProjectTableRow) => React.ReactNode;
+  // 칼럼 드래그 비활성화 (외부 DragDropContext와 충돌 방지)
+  disableColumnDrag?: boolean;
 }
 
 export function AdvancedTable({
@@ -55,7 +57,8 @@ export function AdvancedTable({
   onItemSelect,
   onSelectAll,
   onDeselectAll,
-  customCellRenderer
+  customCellRenderer,
+  disableColumnDrag = false
 }: AdvancedTableProps) {
   // StrictMode와 호환을 위한 클라이언트 사이드 렌더링 상태
   const [isClient, setIsClient] = useState(false);
@@ -325,7 +328,7 @@ export function AdvancedTable({
       {/* 테이블 */}
       <Card>
         <Table>
-          {isClient ? (
+          {isClient && !disableColumnDrag ? (
             <DragDropContext
               onDragStart={handleDragStart}
               onDragEnd={handleColumnReorder}
@@ -337,17 +340,19 @@ export function AdvancedTable({
                 renderClone={(provided, snapshot, rubric) => {
                   const column = visibleColumns[rubric.source.index];
                   return (
-                    <TableHead
+                    <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className="select-none opacity-90 shadow-2xl scale-110 bg-background border-2 border-primary z-[1000] rounded-md"
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground select-none opacity-90 shadow-2xl scale-110 bg-background border-2 border-primary z-[1000] rounded-md"
                       style={{
                         width: getColumnWidth(column),
+                        display: 'flex',
+                        alignItems: 'center',
                         ...provided.draggableProps.style,
                       }}
                     >
-                      <div className="flex items-center gap-2 px-2">
+                      <div className="flex items-center gap-2">
                         <span className="flex-shrink-0 font-medium">{column.label}</span>
                         {column.sortable && (
                           <div className="flex flex-col flex-shrink-0">
@@ -356,7 +361,7 @@ export function AdvancedTable({
                           </div>
                       )}
                     </div>
-                  </TableHead>
+                  </div>
                 );
               }}
             >

@@ -496,6 +496,7 @@ export default function ListView({
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
         customCellRenderer={customCellRenderer}
+        disableColumnDrag={isColumnSettingsOpen}
       />
 
       {/* Delete Confirmation Dialog */}
