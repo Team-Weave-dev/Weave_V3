@@ -900,7 +900,7 @@ export const uiText = {
         },
         // WBS (Work Breakdown Structure) 관련 텍스트
         wbs: {
-          sectionTitle: { ko: "작업 목록 (WBS)", en: "Task List (WBS)" },
+          sectionTitle: { ko: "작업목록", en: "Task List" },
           addTask: { ko: "작업 추가", en: "Add Task" },
           addTaskDescription: { ko: "프로젝트에 새로운 작업을 추가합니다", en: "Add a new task to the project" },
           emptyState: { ko: "등록된 작업이 없습니다", en: "No tasks registered" },
