@@ -208,17 +208,10 @@ const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <nav
-      className={cn("flex items-center justify-between gap-4", className)}
+      className={cn("flex flex-col items-center gap-3", className)}
       aria-label={ariaLabel || `${getProjectPageText.paginationPageOf(language)} ${getProjectPageText.paginationOf(language)}`}
       role="navigation"
     >
-      {/* 정보 텍스트 */}
-      {showInfo && (
-        <div className="text-sm text-muted-foreground whitespace-nowrap">
-          {getInfoText()}
-        </div>
-      )}
-
       {/* 페이지네이션 컨트롤 */}
       <div className="flex items-center gap-1">
         {/* 첫 페이지로 */}
@@ -296,6 +289,13 @@ const Pagination: React.FC<PaginationProps> = ({
           <ChevronsRight className="w-4 h-4" />
         </Button>
       </div>
+
+      {/* 정보 텍스트 */}
+      {showInfo && (
+        <div className="text-sm text-muted-foreground whitespace-nowrap">
+          {getInfoText()}
+        </div>
+      )}
     </nav>
   );
 };

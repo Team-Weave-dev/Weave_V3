@@ -607,6 +607,7 @@ export function createTemporaryProject(formData: Partial<ProjectCreateFormData>)
       other: {
         date: now.toISOString()
       }
-    }
+    },
+    wbsTasks: [] // WBS 작업 목록 (미리보기용 임시 프로젝트는 빈 배열)
   };
 }

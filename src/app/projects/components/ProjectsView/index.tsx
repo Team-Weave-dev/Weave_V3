@@ -342,10 +342,9 @@ export default function ProjectsView() {
       />
 
       <div
-        className="transition-all duration-200 ease-in-out"
+        className="transition-opacity duration-200 ease-in-out"
         style={{
-          opacity: isTransitioning ? 0.5 : 1,
-          transform: isTransitioning ? 'translateY(4px)' : 'translateY(0)'
+          opacity: isTransitioning ? 0.5 : 1
         }}
       >
         {viewMode === 'list' ? (

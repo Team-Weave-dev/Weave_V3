@@ -17,7 +17,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { useToast } from '@/hooks/use-toast'
 import { cn, formatCurrency } from '@/lib/utils'
 
-import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getLoadingText } from '@/config/brand'
+import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getLoadingText, getProjectPageText } from '@/config/brand'
 import type { ProjectTableRow, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types'
 import type { ProjectDocumentCategory, GeneratedDocument } from '@/lib/document-generator/templates'
 import { Badge } from '@/components/ui/badge'
@@ -178,7 +178,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
         registrationDate: format(data.registrationDate, 'yyyy-MM-dd'),
         dueDate: format(data.dueDate, 'yyyy-MM-dd'),
         status: initialStatus,
-        progress: 0, // 초기 진행률 0%
+        progress: 0, // 초기 진행률 0% (WBS 기반 자동 계산됨)
         settlementMethod: data.settlementMethod,
         paymentStatus: data.paymentStatus,
         paymentProgress: data.paymentStatus, // 표시용 필드
@@ -188,7 +188,8 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
         hasBilling: false,
         hasDocuments: generatedDocuments.length > 0,
         generateDocuments: [...new Set(generatedDocuments.map(doc => doc.category))],
-        generatedDocuments: generatedDocuments.length > 0 ? [...generatedDocuments] : undefined
+        generatedDocuments: generatedDocuments.length > 0 ? [...generatedDocuments] : undefined,
+        wbsTasks: [] // 빈 작업 목록으로 시작 (사용자 직접 입력)
       }
 
       console.log('🔥 ProjectCreateModal: onProjectCreate 콜백 호출!', newProject);

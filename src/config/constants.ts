@@ -120,6 +120,14 @@ export const typography = {
     badge: "text-xs",
     caption: "text-xs text-muted-foreground",
     heading: "font-semibold text-sm text-foreground"
+  },
+  detail: {
+    // 프로젝트 상세 정보 텍스트 스타일
+    taskInfo: "text-sm text-gray-500 dark:text-gray-400 font-medium truncate max-w-md cursor-help",
+    taskInfoEmpty: "text-sm text-gray-500 dark:text-gray-400 font-medium",
+    // 재사용 가능한 회색 텍스트 스타일
+    secondaryText: "text-sm text-gray-500 dark:text-gray-400 font-medium",
+    tertiaryText: "text-xs text-gray-500 dark:text-gray-400"
   }
 } as const
 

@@ -3,7 +3,8 @@ import type {
   DocumentStatus,
   ProjectDocumentStatus,
   ProjectTableRow,
-  PaymentStatus
+  PaymentStatus,
+  WBSTask
 } from '@/lib/types/project-table.types';
 
 /**
@@ -53,6 +54,11 @@ const CUSTOM_PROJECTS_KEY = 'weave_custom_projects';
 /**
  * localStorage에서 사용자가 생성한 프로젝트들 가져오기
  * SSR 환경에서는 빈 배열 반환
+ *
+ * @description
+ * - localStorage에서 프로젝트 로드
+ * - 자동 WBS 마이그레이션 수행
+ * - 마이그레이션이 발생하면 localStorage에 다시 저장
  */
 function getCustomProjects(): ProjectTableRow[] {
   // SSR 환경에서는 localStorage 접근 불가
@@ -62,7 +68,29 @@ function getCustomProjects(): ProjectTableRow[] {
 
   try {
     const stored = localStorage.getItem(CUSTOM_PROJECTS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) {
+      return [];
+    }
+
+    const projects: ProjectTableRow[] = JSON.parse(stored);
+
+    // WBS 마이그레이션 수행
+    const migratedProjects = migrateAllProjectsToWBS(projects);
+
+    // 마이그레이션이 발생했는지 확인 (배열 길이 또는 내용 변경)
+    const migrationOccurred = migratedProjects.some((migrated, index) => {
+      const original = projects[index];
+      return migrated.wbsTasks && migrated.wbsTasks.length > 0 &&
+             (!original.wbsTasks || original.wbsTasks.length === 0);
+    });
+
+    // 마이그레이션이 발생했으면 localStorage에 다시 저장
+    if (migrationOccurred) {
+      console.log('💾 마이그레이션된 프로젝트를 localStorage에 저장합니다.');
+      localStorage.setItem(CUSTOM_PROJECTS_KEY, JSON.stringify(migratedProjects));
+    }
+
+    return migratedProjects;
   } catch (error) {
     console.error('Error reading custom projects from localStorage:', error);
     return [];
@@ -87,7 +115,92 @@ function saveCustomProjects(projects: ProjectTableRow[]): void {
 }
 
 /**
+ * ============================================================================
+ * WBS 마이그레이션 (Data Migration for WBS)
+ * ============================================================================
+ *
+ * 기존 프로젝트를 WBS 시스템으로 자동 마이그레이션합니다.
+ * progress 필드를 wbsTasks 기반으로 전환하여 Single Source of Truth를 보장합니다.
+ */
+
+/**
+ * 기존 프로젝트를 WBS 시스템으로 마이그레이션
+ *
+ * @param project - 마이그레이션할 프로젝트
+ * @returns WBS 데이터를 포함한 프로젝트
+ *
+ * @description
+ * - 이미 wbsTasks가 있으면 그대로 반환
+ * - 없으면 기존 progress 값을 유지하는 더미 태스크 생성
+ * - 10개의 기본 작업으로 구성 (기존 진행률 유지)
+ */
+function migrateProjectToWBS(project: ProjectTableRow): ProjectTableRow {
+  // wbsTasks 속성이 존재하면 (빈 배열이더라도) 마이그레이션 불필요
+  // 사용자가 의도적으로 작업 목록을 비운 경우를 보존하기 위함
+  if (project.wbsTasks !== undefined) {
+    return project;
+  }
+
+  // 기존 progress 값 (없으면 0)
+  const oldProgress = project.progress || 0;
+
+  // 10개의 더미 태스크 생성
+  const totalTasks = 10;
+  const completedTasks = Math.round((oldProgress / 100) * totalTasks);
+
+  const dummyTasks: WBSTask[] = Array.from({ length: totalTasks }, (_, i) => {
+    const taskNumber = i + 1;
+    const isCompleted = i < completedTasks;
+
+    return {
+      id: `legacy-task-${taskNumber}`,
+      name: `기존 작업 ${taskNumber}`,
+      description: '마이그레이션으로 생성된 레거시 작업',
+      status: isCompleted ? 'completed' : 'pending',
+      createdAt: project.registrationDate,
+      order: i,
+      ...(isCompleted && { completedAt: project.modifiedDate })
+    };
+  });
+
+  console.log(`🔄 WBS 마이그레이션: ${project.name} (진행률 ${oldProgress}% → ${completedTasks}/${totalTasks} 작업 완료)`);
+
+  return {
+    ...project,
+    wbsTasks: dummyTasks
+  };
+}
+
+/**
+ * 모든 프로젝트를 WBS 시스템으로 일괄 마이그레이션
+ *
+ * @param projects - 마이그레이션할 프로젝트 배열
+ * @returns 마이그레이션된 프로젝트 배열
+ */
+function migrateAllProjectsToWBS(projects: ProjectTableRow[]): ProjectTableRow[] {
+  let migrationCount = 0;
+
+  const migratedProjects = projects.map(project => {
+    const needsMigration = !project.wbsTasks || project.wbsTasks.length === 0;
+    if (needsMigration) {
+      migrationCount++;
+    }
+    return migrateProjectToWBS(project);
+  });
+
+  if (migrationCount > 0) {
+    console.log(`✅ WBS 마이그레이션 완료: ${migrationCount}개 프로젝트`);
+  }
+
+  return migratedProjects;
+}
+
+/**
  * 새 프로젝트 추가
+ *
+ * @description
+ * - wbsTasks가 없는 경우 빈 배열로 초기화
+ * - 새 프로젝트는 항상 WBS 시스템을 포함
  */
 export function addCustomProject(project: ProjectTableRow): void {
   console.log('💾 addCustomProject 호출됨:', { id: project.id, no: project.no, name: project.name });
@@ -95,7 +208,13 @@ export function addCustomProject(project: ProjectTableRow): void {
   const existingProjects = getCustomProjects();
   console.log('📋 기존 프로젝트 개수:', existingProjects.length);
 
-  const updatedProjects = [project, ...existingProjects];
+  // wbsTasks가 없으면 빈 배열로 초기화 (새 프로젝트는 WBS 시스템 사용)
+  const projectWithWBS: ProjectTableRow = {
+    ...project,
+    wbsTasks: project.wbsTasks || []
+  };
+
+  const updatedProjects = [projectWithWBS, ...existingProjects];
   console.log('📝 업데이트된 프로젝트 개수:', updatedProjects.length);
 
   saveCustomProjects(updatedProjects);

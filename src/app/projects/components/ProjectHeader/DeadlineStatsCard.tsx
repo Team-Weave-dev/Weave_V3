@@ -2,11 +2,11 @@
 
 import React, { useMemo, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HelpIcon } from '@/components/ui/help-icon';
 import { BaseStatCard } from '@/components/ui/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { getProjectPageText } from '@/config/brand';
-import { Clock, HelpCircle, XCircle, AlertTriangle, Activity, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, XCircle, AlertTriangle, Activity, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ProjectTableRow } from '@/lib/types/project-table.types';
 
 interface DeadlineStatsCardProps {
@@ -34,7 +34,6 @@ interface DeadlineProject {
  * - 14일 이상: 여유 (파란색)
  */
 export default function DeadlineStatsCard({ projects, lang = 'ko' }: DeadlineStatsCardProps) {
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   // 마감일 임박 프로젝트 계산
@@ -139,27 +138,11 @@ export default function DeadlineStatsCard({ projects, lang = 'ko' }: DeadlineSta
       <div className="text-xs font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
         <Clock className="w-3.5 h-3.5" />
         {getProjectPageText.statsDeadline(lang)}
-        <Popover open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={getProjectPageText.statsDeadlineTooltipTitle(lang)}
-            >
-              <HelpCircle className="h-3.5 w-3.5" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="max-w-sm p-3" side="top">
-            <div className="space-y-2">
-              <p className="font-semibold text-sm">
-                {getProjectPageText.statsDeadlineTooltipTitle(lang)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {getProjectPageText.statsDeadlineTooltipDescription(lang)}
-              </p>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <HelpIcon
+          title={getProjectPageText.statsDeadlineTooltipTitle(lang)}
+          content={getProjectPageText.statsDeadlineTooltipDescription(lang)}
+          ariaLabel={getProjectPageText.statsDeadlineTooltipTitle(lang)}
+        />
       </div>
 
       {/* 좌우 분할 레이아웃 */}
