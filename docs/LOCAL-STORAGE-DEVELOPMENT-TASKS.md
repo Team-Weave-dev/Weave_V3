@@ -230,9 +230,22 @@
 - **작업**:
   ```typescript
   interface Project { ... }
+  interface WBSTask { ... }
+  type SettlementMethod = ...
+  type PaymentStatus = ...
+  interface ProjectDocumentStatus { ... }
+  interface EstimateInfo { ... }
+  interface ContractInfo { ... }
+  interface BillingInfo { ... }
   function isProject(data: unknown): data is Project
   const projectSchema: JSONSchema
   ```
+- **주요 필드**:
+  - WBS 시스템: wbsTasks (작업 목록)
+  - 결제 시스템: settlementMethod, paymentStatus, totalAmount
+  - 문서 시스템: documentStatus, documents
+  - 견적/계약/청구: estimate, contract, billing
+  - 프로젝트 내용: projectContent
 - **완료 기준**: Project 타입 검증 테스트 통과
 
 ### [ ] 3.3 Client 엔티티 타입
@@ -295,12 +308,29 @@
 - **작업**:
   ```typescript
   class ProjectService extends BaseService<Project> {
+    // 기본 조회
     async getProjectsByStatus(status: string)
     async getProjectsByClient(clientId: string)
     async getProjectWithRelations(id: string)
+
+    // WBS 관리
+    async addWBSTask(projectId: string, task: WBSTask)
+    async updateWBSTask(projectId: string, taskId: string, updates: Partial<WBSTask>)
+    async removeWBSTask(projectId: string, taskId: string)
+    async reorderWBSTasks(projectId: string, taskIds: string[])
+    async calculateProgress(projectId: string): number  // WBS 기반 자동 계산
+
+    // 결제 관리
+    async updatePaymentStatus(projectId: string, status: PaymentStatus)
+    async updateSettlementMethod(projectId: string, method: SettlementMethod)
+
+    // 문서 관리
+    async updateDocumentStatus(projectId: string, status: ProjectDocumentStatus)
+    async addDocument(projectId: string, document: DocumentInfo)
+    async removeDocument(projectId: string, documentId: string)
   }
   ```
-- **테스트**: 프로젝트 CRUD 및 조회 테스트
+- **테스트**: 프로젝트 CRUD, WBS 관리, 결제/문서 관리 테스트
 - **완료 기준**: 모든 ProjectService 테스트 통과
 
 ### [ ] 4.3 TaskService 구현

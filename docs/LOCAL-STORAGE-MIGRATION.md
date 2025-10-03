@@ -146,8 +146,9 @@ CREATE TABLE projects (
   no TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT,
+  project_content TEXT,         -- 프로젝트 상세 내용
   status TEXT NOT NULL CHECK (status IN ('planning', 'in_progress', 'review', 'completed', 'on_hold', 'cancelled')),
-  progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+  progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),  -- WBS 기반 자동 계산 (읽기 전용)
   payment_progress INTEGER DEFAULT 0 CHECK (payment_progress >= 0 AND payment_progress <= 100),
   start_date DATE,
   end_date DATE,
@@ -155,7 +156,10 @@ CREATE TABLE projects (
   modified_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   budget DECIMAL(15, 2),
   actual_cost DECIMAL(15, 2),
+  total_amount DECIMAL(15, 2), -- 총 프로젝트 금액
   currency TEXT DEFAULT 'KRW',
+  settlement_method TEXT CHECK (settlement_method IN ('not_set', 'advance_final', 'advance_interim_final', 'post_payment')),
+  payment_status TEXT CHECK (payment_status IN ('not_started', 'advance_completed', 'interim_completed', 'final_completed')),
   has_contract BOOLEAN DEFAULT false,
   has_billing BOOLEAN DEFAULT false,
   has_documents BOOLEAN DEFAULT false,
@@ -166,6 +170,26 @@ CREATE TABLE projects (
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, no)
 );
+
+-- WBS Tasks 테이블 (프로젝트 작업 분해 구조)
+CREATE TABLE wbs_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'in_progress', 'completed')),
+  assignee TEXT,                -- 담당자 (향후 user_id로 확장 가능)
+  "order" INTEGER NOT NULL,     -- 정렬 순서
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  started_at TIMESTAMPTZ,       -- 진행 시작 일시
+  completed_at TIMESTAMPTZ,     -- 완료 일시
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- WBS Tasks 인덱스
+CREATE INDEX idx_wbs_tasks_project_id ON wbs_tasks(project_id);
+CREATE INDEX idx_wbs_tasks_status ON wbs_tasks(status);
+CREATE INDEX idx_wbs_tasks_order ON wbs_tasks(project_id, "order");
 
 -- Clients 테이블
 CREATE TABLE clients (
@@ -242,10 +266,11 @@ CREATE TABLE documents (
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  type TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'draft',
+  type TEXT NOT NULL CHECK (type IN ('contract', 'invoice', 'estimate', 'report', 'etc')),
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'approved', 'completed', 'archived')),
   content TEXT,
-  template_id UUID,
+  template_id TEXT,             -- 템플릿 식별자
+  source TEXT CHECK (source IN ('generated', 'uploaded', 'imported')),  -- 생성 출처
   version INTEGER DEFAULT 1,
   tags TEXT[],
   size INTEGER,

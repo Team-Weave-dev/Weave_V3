@@ -94,27 +94,47 @@ interface Project {
   no: string;                    // 프로젝트 번호 (예: WEAVE_001)
   name: string;
   description?: string;
+  projectContent?: string;       // 프로젝트 상세 내용
 
   // 상태
   status: 'planning' | 'in_progress' | 'review' | 'completed' | 'on_hold' | 'cancelled';
-  progress: number;              // 0-100
-  paymentProgress: number;       // 0-100
+  /**
+   * @deprecated WBS 시스템 도입 후 wbsTasks로부터 자동 계산
+   * 기존 데이터 호환성을 위해 유지하되 읽기 전용으로 사용 권장
+   */
+  progress: number;              // 0-100 (WBS 기반 자동 계산)
+  paymentProgress?: number;      // 0-100 (결제 진행률)
 
   // 일정
   startDate?: string;            // ISO 8601
-  endDate?: string;              // ISO 8601
+  endDate?: string;              // ISO 8601 (마감일)
   registrationDate: string;      // ISO 8601
   modifiedDate: string;          // ISO 8601
 
-  // 금액
-  budget?: number;
-  actualCost?: number;
+  // 금액 및 결제
+  budget?: number;               // 예산
+  actualCost?: number;           // 실제 비용
+  totalAmount?: number;          // 총 프로젝트 금액
   currency?: string;             // KRW, USD, etc
 
-  // 플래그
+  // 결제 시스템
+  settlementMethod?: SettlementMethod;  // 정산 방식
+  paymentStatus?: PaymentStatus;         // 수금 상태
+
+  // WBS (Work Breakdown Structure) 시스템
+  wbsTasks: WBSTask[];           // 프로젝트 작업 목록 (진행률 계산의 단일 진실 공급원)
+
+  // 플래그 (지연 로딩 최적화)
   hasContract: boolean;
   hasBilling: boolean;
   hasDocuments: boolean;
+
+  // 세부 정보 (필요 시 지연 로딩)
+  contract?: ContractInfo;
+  estimate?: EstimateInfo;       // 견적서 정보
+  billing?: BillingInfo;
+  documents?: DocumentInfo[];
+  documentStatus?: ProjectDocumentStatus;  // 문서 현황 통합 관리
 
   // 메타데이터
   tags?: string[];
@@ -123,6 +143,36 @@ interface Project {
 
   createdAt: string;
   updatedAt: string;
+}
+
+// 정산 방식 타입
+export type SettlementMethod =
+  | 'not_set'              // 미설정
+  | 'advance_final'        // 선금+잔금
+  | 'advance_interim_final' // 선금+중도금+잔금
+  | 'post_payment';        // 후불
+
+// 수금 상태 타입
+export type PaymentStatus =
+  | 'advance_completed'    // 선금 완료
+  | 'interim_completed'    // 중도금 완료
+  | 'final_completed'      // 잔금 완료
+  | 'not_started';         // 미시작
+
+// WBS 작업 상태
+export type WBSTaskStatus = 'pending' | 'in_progress' | 'completed';
+
+// WBS 작업 아이템
+export interface WBSTask {
+  id: string;                    // 작업 고유 ID
+  name: string;                  // 작업명
+  description?: string;          // 작업 설명
+  status: WBSTaskStatus;         // 작업 상태
+  assignee?: string;             // 담당자
+  createdAt: string;             // 생성 일시 (ISO 8601)
+  startedAt?: string;            // 시작 일시 (ISO 8601)
+  completedAt?: string;          // 완료 일시 (ISO 8601)
+  order: number;                 // 정렬 순서 (드래그 앤 드롭)
 }
 
 // LocalStorage Key: projects
@@ -308,14 +358,15 @@ interface Document {
 
   // 기본 정보
   name: string;
-  type: 'contract' | 'invoice' | 'estimate' | 'report' | 'other';
+  type: 'contract' | 'invoice' | 'estimate' | 'report' | 'etc';
 
   // 상태
-  status: 'draft' | 'complete' | 'archived';
+  status: 'draft' | 'sent' | 'approved' | 'completed' | 'archived';
 
   // 내용
   content?: string;              // Markdown or HTML
   templateId?: string;           // 템플릿 ID
+  source?: 'generated' | 'uploaded' | 'imported';  // 생성 출처
 
   // 메타데이터
   version?: number;
@@ -332,6 +383,75 @@ interface Document {
   savedAt: string;               // ISO 8601
   createdAt: string;
   updatedAt: string;
+}
+
+// 프로젝트 문서 현황 통합 관리
+export interface ProjectDocumentStatus {
+  contract: DocumentStatus;      // 계약서
+  invoice: DocumentStatus;       // 청구서
+  report: DocumentStatus;        // 보고서
+  estimate: DocumentStatus;      // 견적서
+  etc: DocumentStatus;           // 기타문서
+}
+
+// 개별 문서 상태
+export interface DocumentStatus {
+  exists: boolean;               // 문서 존재 여부
+  status: 'none' | 'draft' | 'completed' | 'approved' | 'sent';
+  lastUpdated?: string;          // 마지막 업데이트 (ISO 8601)
+  count?: number;                // 문서 개수 (복수 문서 가능)
+}
+
+// 견적서 상세 정보
+export interface EstimateInfo {
+  totalAmount?: number;          // 견적서 총 금액
+  content?: string;              // 견적서 내용
+  createdAt?: string;            // 견적서 생성일 (ISO 8601)
+  validUntil?: string;           // 견적서 유효기간 (ISO 8601)
+  status?: 'draft' | 'sent' | 'approved' | 'rejected';
+}
+
+// 계약서 상세 정보
+export interface ContractInfo {
+  totalAmount?: number;          // 계약서 총 금액
+  content?: string;              // 계약서 내용
+  contractorInfo?: {
+    name: string;
+    position: string;
+  };
+  reportInfo?: {
+    type: string;
+  };
+  estimateInfo?: {
+    type: string;
+  };
+  documentIssue?: {
+    taxInvoice: string;
+    receipt: string;
+    cashReceipt: string;
+    businessReceipt: string;
+  };
+  other?: {
+    date: string;
+  };
+}
+
+// 청구/정산 상세 정보
+export interface BillingInfo {
+  // 금액 정보
+  totalAmount: number;           // 총 프로젝트 금액
+  paidAmount: number;            // 총 입금액 (계약금 + 중도금 + 잔금)
+  remainingAmount: number;       // 미수금
+
+  // 수금 단계별 세부 정보
+  contractAmount: number;        // 계약금 (선수금)
+  interimAmount: number;         // 중도금
+  finalAmount: number;           // 잔금
+
+  // 실제 입금 현황
+  contractPaid: number;          // 계약금 입금액
+  interimPaid: number;           // 중도금 입금액
+  finalPaid: number;             // 잔금 입금액
 }
 
 // LocalStorage Key: documents:[projectId]

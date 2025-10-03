@@ -30,8 +30,8 @@
 | **대시보드** | `weave-dashboard-layout` | `lib/stores/useImprovedDashboardStore.ts` | 위젯 레이아웃 및 설정 |
 | **할일** | 커스텀 훅 기반 | `components/ui/widgets/todo-list/hooks/useLocalStorage.ts` | 할일 목록 데이터 |
 | **캘린더** | `calendar_events` | `lib/calendar-integration/LocalStorageDataSource.ts` | 캘린더 이벤트 |
-| **프로젝트** | `weave_custom_projects` | `lib/mock/projects.ts` | 프로젝트 기본 정보 |
-| **문서** | `weave_project_documents` | `lib/mock/documents.ts` | 프로젝트별 문서 |
+| **프로젝트** | `weave_custom_projects` | `lib/mock/projects.ts` | 프로젝트 기본 정보 + WBS 시스템 + 결제 관리 |
+| **문서** | `weave_project_documents` | `lib/mock/documents.ts` | 프로젝트별 문서 + 문서 생성 시스템 |
 | **클라이언트** | (미구현) | - | 클라이언트 정보 |
 | **설정** | `preferredViewMode` 등 | 여러 곳에 분산 | 사용자 설정 |
 
