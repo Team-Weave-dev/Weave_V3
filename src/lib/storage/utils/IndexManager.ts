@@ -112,16 +112,25 @@ export class IndexManager {
     // Handle both single and multi-value indexes
     const values = Array.isArray(value) ? value : [value];
 
+    let itemAdded = false;
     for (const val of values) {
       let ids = index.get(val);
       if (!ids) {
         ids = new Set();
         index.set(val, ids);
       }
+      const sizeBefore = ids.size;
       ids.add(id);
+      // Only count as added if this is a new ID
+      if (ids.size > sizeBefore) {
+        itemAdded = true;
+      }
     }
 
-    this.updateItemCount();
+    // Increment total count only if item was actually added
+    if (itemAdded) {
+      this.stats.totalIndexedItems++;
+    }
   }
 
   /**
@@ -139,13 +148,19 @@ export class IndexManager {
     const index = this.indexes.get(indexName);
     if (!index) return;
 
+    let itemRemoved = false;
+
     if (value) {
       // Remove from specific value(s)
       const values = Array.isArray(value) ? value : [value];
       for (const val of values) {
         const ids = index.get(val);
         if (ids) {
+          const sizeBefore = ids.size;
           ids.delete(id);
+          if (ids.size < sizeBefore) {
+            itemRemoved = true;
+          }
           if (ids.size === 0) {
             index.delete(val);
           }
@@ -154,14 +169,21 @@ export class IndexManager {
     } else {
       // Remove from all values
       for (const [key, ids] of index.entries()) {
+        const sizeBefore = ids.size;
         ids.delete(id);
+        if (ids.size < sizeBefore) {
+          itemRemoved = true;
+        }
         if (ids.size === 0) {
           index.delete(key);
         }
       }
     }
 
-    this.updateItemCount();
+    // Decrement total count only if item was actually removed
+    if (itemRemoved && this.stats.totalIndexedItems > 0) {
+      this.stats.totalIndexedItems--;
+    }
   }
 
   /**
@@ -191,7 +213,8 @@ export class IndexManager {
     const index = this.indexes.get(indexName);
     if (index) {
       index.clear();
-      this.updateItemCount();
+      // Recalculate total count after clearing
+      this.recalculateItemCount();
     }
   }
 
@@ -202,7 +225,8 @@ export class IndexManager {
     for (const index of this.indexes.values()) {
       index.clear();
     }
-    this.updateItemCount();
+    // Reset to 0 since all indexes are cleared
+    this.stats.totalIndexedItems = 0;
   }
 
   /**
@@ -214,7 +238,8 @@ export class IndexManager {
     this.indexes.delete(indexName);
     this.definitions.delete(indexName);
     this.stats.totalIndexes--;
-    this.updateItemCount();
+    // Recalculate total count after deletion
+    this.recalculateItemCount();
   }
 
   // ============================================================================
@@ -373,9 +398,13 @@ export class IndexManager {
   }
 
   /**
-   * Update total indexed items count
+   * Recalculate total indexed items count
+   *
+   * This is an expensive operation (O(n*m)) that should only be called
+   * when necessary (e.g., after clearing or deleting indexes).
+   * For add/remove operations, use incremental updates instead.
    */
-  private updateItemCount(): void {
+  private recalculateItemCount(): void {
     let total = 0;
 
     for (const index of this.indexes.values()) {
@@ -439,10 +468,17 @@ export class IndexManager {
    * Rebuild an index from scratch
    *
    * @param indexName - Index name
-   * @param items - Items to re-index
+   * @param items - Items to re-index (must have an 'id' field)
    * @param extractor - Function to extract field value from item
+   *
+   * @example
+   * ```typescript
+   * interface Project { id: string; status: string; }
+   * const projects: Project[] = [...];
+   * indexManager.rebuildIndex('project-by-status', projects, (p) => p.status);
+   * ```
    */
-  rebuildIndex<T>(
+  rebuildIndex<T extends { id: string }>(
     indexName: string,
     items: T[],
     extractor: (item: T, id: string) => string | string[]
@@ -450,9 +486,12 @@ export class IndexManager {
     this.clearIndex(indexName);
 
     for (const item of items) {
-      // Assume items have an 'id' field
-      const id = (item as any).id;
-      if (!id) continue;
+      // Type-safe access to id field
+      const id = item.id;
+      if (!id || typeof id !== 'string') {
+        console.warn(`Skipping item with invalid id:`, item);
+        continue;
+      }
 
       const value = extractor(item, id);
       this.addToIndex(indexName, id, value);

@@ -57,6 +57,11 @@ export class StorageManager {
   private batchOptions: Required<BatchOptions>;
 
   /**
+   * Transaction running flag for preventing concurrent transactions
+   */
+  private isTransactionRunning: boolean;
+
+  /**
    * Create a new StorageManager instance
    *
    * @param adapter - The storage adapter to use
@@ -72,6 +77,7 @@ export class StorageManager {
     this.subscribers = new Map();
     this.config = { ...STORAGE_CONFIG, ...config };
     this.batchOptions = { ...BATCH_OPTIONS, ...batchOptions } as Required<BatchOptions>;
+    this.isTransactionRunning = false;
 
     // Initialize cache layer with configuration
     this.cacheLayer = new CacheLayer({
@@ -427,10 +433,26 @@ export class StorageManager {
    * Execute operations in a transaction
    *
    * If the transaction function throws, all changes are rolled back.
+   * Only one transaction can run at a time to prevent data corruption.
    *
    * @param fn - Transaction function
+   * @throws StorageError if another transaction is already running
    */
   async transaction(fn: TransactionFunction): Promise<void> {
+    // Prevent concurrent transactions
+    if (this.isTransactionRunning) {
+      throw new StorageError(
+        'Another transaction is already in progress. Wait for it to complete before starting a new one.',
+        'TRANSACTION_ERROR',
+        {
+          severity: 'high',
+          userMessage: '다른 트랜잭션이 실행 중입니다. 완료될 때까지 기다려주세요.',
+        }
+      );
+    }
+
+    this.isTransactionRunning = true;
+
     try {
       // Get all current keys for snapshot
       const keys = await this.adapter.keys();
@@ -442,13 +464,24 @@ export class StorageManager {
         // Execute transaction function
         await fn(this.adapter);
 
-        // Transaction succeeded - invalidate cache for changed keys
-        // This ensures cache consistency after successful transaction
+        // Transaction succeeded - update cache for changed keys
+        // This improves cache hit rate by updating instead of invalidating
         const currentKeys = await this.adapter.keys();
         const changedKeys = await this.detectChangedKeys(context.snapshot, currentKeys);
 
-        // Invalidate cache for all changed keys
-        changedKeys.forEach((key) => this.invalidateCache(key));
+        // Update cache for all changed keys to improve hit rate
+        await Promise.all(
+          changedKeys.map(async (key) => {
+            const newValue = await this.adapter.get(key);
+            if (newValue !== null) {
+              // Key was added or updated - update cache
+              this.setCached(key, newValue);
+            } else {
+              // Key was deleted - invalidate cache
+              this.invalidateCache(key);
+            }
+          })
+        );
       } catch (error) {
         // Transaction failed - rollback to snapshot
         await this.rollback(context);
@@ -473,6 +506,9 @@ export class StorageManager {
           cause: error as Error,
         }
       );
+    } finally {
+      // Always release the lock
+      this.isTransactionRunning = false;
     }
   }
 

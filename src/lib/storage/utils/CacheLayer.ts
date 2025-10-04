@@ -106,22 +106,27 @@ export class CacheLayer {
    * @param ttl - Optional TTL override (milliseconds)
    */
   set<T extends JsonValue>(key: string, value: T, ttl?: number): void {
-    // Check if cache is full and eviction is needed
-    if (this.cache.size >= this.options.maxSize && !this.cache.has(key)) {
-      this.evict();
+    try {
+      // Check if cache is full and eviction is needed
+      if (this.cache.size >= this.options.maxSize && !this.cache.has(key)) {
+        this.evict();
+      }
+
+      const now = Date.now();
+      const entry: CacheEntry<T> = {
+        value,
+        timestamp: now,
+        ttl: ttl ?? this.options.defaultTTL,
+        accessCount: 1,
+        lastAccess: now,
+      } as CacheEntry<T>;
+
+      this.cache.set(key, entry);
+      this.updateStats('size');
+    } catch (error) {
+      // Log error but don't throw - cache failures should not break the application
+      console.error(`Failed to set cache entry for key "${key}":`, error);
     }
-
-    const now = Date.now();
-    const entry: CacheEntry<T> = {
-      value,
-      timestamp: now,
-      ttl: ttl ?? this.options.defaultTTL,
-      accessCount: 1,
-      lastAccess: now,
-    } as CacheEntry<T>;
-
-    this.cache.set(key, entry);
-    this.updateStats('size');
   }
 
   /**
@@ -230,7 +235,9 @@ export class CacheLayer {
     let oldestTime = Infinity;
 
     for (const [key, entry] of this.cache.entries()) {
-      const lastAccess = ('lastAccess' in entry ? entry.lastAccess : entry.timestamp);
+      // LRU uses lastAccess field, fallback to timestamp for compatibility
+      const lastAccess =
+        (entry as any).lastAccess !== undefined ? (entry as any).lastAccess : entry.timestamp;
       if (lastAccess < oldestTime) {
         oldestTime = lastAccess;
         oldestKey = key;
@@ -251,7 +258,8 @@ export class CacheLayer {
     let minAccessCount = Infinity;
 
     for (const [key, entry] of this.cache.entries()) {
-      const accessCount = ('accessCount' in entry ? entry.accessCount : 1);
+      // LFU uses accessCount field, default to 1 for compatibility
+      const accessCount = (entry as any).accessCount !== undefined ? (entry as any).accessCount : 1;
       if (accessCount < minAccessCount) {
         minAccessCount = accessCount;
         lfuKey = key;
@@ -379,14 +387,14 @@ export class CacheLayer {
   private updateAccessMetadata(key: string, entry: CacheEntry<any>): void {
     const now = Date.now();
 
-    // Update access count for LFU
-    if ('accessCount' in entry) {
-      (entry as LFUCacheEntry<any>).accessCount = (entry.accessCount ?? 0) + 1;
+    // Update access count for LFU (if field exists)
+    if ((entry as any).accessCount !== undefined) {
+      (entry as any).accessCount = (entry as any).accessCount + 1;
     }
 
-    // Update last access time for LRU
-    if ('lastAccess' in entry) {
-      (entry as LRUCacheEntry<any>).lastAccess = now;
+    // Update last access time for LRU (if field exists)
+    if ((entry as any).lastAccess !== undefined) {
+      (entry as any).lastAccess = now;
     }
 
     // Re-set the entry to maintain reference
