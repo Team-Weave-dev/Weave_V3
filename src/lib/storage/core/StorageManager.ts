@@ -20,7 +20,9 @@ import type {
   CacheStats,
   BatchOperationResult,
   BatchOptions,
+  SetOptions,
 } from '../types/base';
+import { StorageError, STORAGE_CONSTANTS } from '../types/base';
 import { STORAGE_CONFIG, CACHE_OPTIONS, BATCH_OPTIONS } from '../config';
 import { CacheLayer } from '../utils/CacheLayer';
 import { processBatch, processMapBatch } from '../utils/batch';
@@ -110,19 +112,41 @@ export class StorageManager {
    *
    * @param key - Storage key
    * @param value - Value to store
+   * @param options - Optional set configuration
    */
-  async set<T>(key: string, value: T): Promise<void> {
-    // Get old value for event notification
-    const oldValue = await this.adapter.get<T>(key);
+  async set<T>(key: string, value: T, options?: SetOptions): Promise<void> {
+    try {
+      let oldValue: T | undefined;
 
-    // Set value in adapter
-    await this.adapter.set(key, value);
+      // Only read oldValue if needed for notification
+      // This prevents race condition and improves performance
+      const needsOldValue =
+        options?.notifyOldValue ||
+        this.subscribers.has(key) ||
+        this.subscribers.has(STORAGE_CONSTANTS.WILDCARD_KEY);
 
-    // Update cache
-    this.setCached(key, value);
+      if (needsOldValue) {
+        oldValue = (await this.adapter.get<T>(key)) || undefined;
+      }
 
-    // Notify subscribers
-    this.notify(key, value, oldValue || undefined, 'set');
+      // Set value in adapter
+      await this.adapter.set(key, value);
+
+      // Update cache (unless skipCache option is set)
+      if (!options?.skipCache) {
+        this.setCached(key, value, options?.cacheTTL);
+      }
+
+      // Notify subscribers
+      this.notify(key, value, oldValue, 'set');
+    } catch (error) {
+      throw new StorageError(
+        `Failed to set key "${key}"`,
+        'SET_ERROR',
+        key,
+        error as Error
+      );
+    }
   }
 
   /**
@@ -131,31 +155,49 @@ export class StorageManager {
    * @param key - Storage key to remove
    */
   async remove(key: string): Promise<void> {
-    // Get old value for event notification
-    const oldValue = await this.adapter.get(key);
+    try {
+      // Get old value for event notification
+      const oldValue = await this.adapter.get(key);
 
-    // Remove from adapter
-    await this.adapter.remove(key);
+      // Remove from adapter
+      await this.adapter.remove(key);
 
-    // Invalidate cache
-    this.invalidateCache(key);
+      // Invalidate cache
+      this.invalidateCache(key);
 
-    // Notify subscribers
-    this.notify(key, undefined, oldValue || undefined, 'remove');
+      // Notify subscribers
+      this.notify(key, undefined, oldValue || undefined, 'remove');
+    } catch (error) {
+      throw new StorageError(
+        `Failed to remove key "${key}"`,
+        'REMOVE_ERROR',
+        key,
+        error as Error
+      );
+    }
   }
 
   /**
    * Clear all storage entries
    */
   async clear(): Promise<void> {
-    // Clear adapter
-    await this.adapter.clear();
+    try {
+      // Clear adapter
+      await this.adapter.clear();
 
-    // Clear cache
-    this.clearCache();
+      // Clear cache
+      this.clearCache();
 
-    // Notify subscribers
-    this.notify('*', undefined, undefined, 'clear');
+      // Notify subscribers
+      this.notify(STORAGE_CONSTANTS.WILDCARD_KEY, undefined, undefined, 'clear');
+    } catch (error) {
+      throw new StorageError(
+        'Failed to clear storage',
+        'CLEAR_ERROR',
+        undefined,
+        error as Error
+      );
+    }
   }
 
   // ============================================================================
@@ -229,8 +271,8 @@ export class StorageManager {
     }
 
     // Notify wildcard subscribers (subscribed to all changes)
-    const wildcardSubscribers = this.subscribers.get('*');
-    if (wildcardSubscribers && key !== '*') {
+    const wildcardSubscribers = this.subscribers.get(STORAGE_CONSTANTS.WILDCARD_KEY);
+    if (wildcardSubscribers && key !== STORAGE_CONSTANTS.WILDCARD_KEY) {
       wildcardSubscribers.forEach((callback) => {
         try {
           callback(event);
@@ -301,41 +343,55 @@ export class StorageManager {
    * // { success: true, successCount: 2, failureCount: 0, executionTime: 45 }
    * ```
    */
-  async setBatch(
-    items: Map<string, any>,
-    options?: BatchOptions
+  async setBatch<T = any>(
+    items: Map<string, T>,
+    options?: BatchOptions & { notifyOldValues?: boolean }
   ): Promise<BatchOperationResult> {
-    const batchOpts = { ...this.batchOptions, ...options };
+    try {
+      const batchOpts = { ...this.batchOptions, ...options };
 
-    const result = await processMapBatch(
-      items,
-      async (key, value) => {
-        // Get old value for event notification
-        const oldValue = await this.adapter.get(key);
+      // Read old values in batch if needed (performance optimization)
+      const oldValues = new Map<string, T>();
+      if (options?.notifyOldValues) {
+        const keys = Array.from(items.keys());
+        const values = await this.getBatch<T>(keys);
+        values.forEach((value, key) => oldValues.set(key, value));
+      }
 
-        // Set value in adapter
-        await this.adapter.set(key, value);
+      const result = await processMapBatch(
+        items,
+        async (key, value) => {
+          // Set value in adapter
+          await this.adapter.set(key, value);
 
-        // Update cache
-        this.setCached(key, value);
+          // Update cache
+          this.setCached(key, value);
 
-        // Notify subscribers for each key
-        this.notify(key, value, oldValue || undefined, 'batch');
+          // Notify subscribers for each key
+          this.notify(key, value, oldValues.get(key), 'batch');
 
-        return true;
-      },
-      batchOpts
-    );
+          return true;
+        },
+        batchOpts
+      );
 
-    // Return batch operation result without the results map
-    return {
-      success: result.success,
-      successCount: result.successCount,
-      failureCount: result.failureCount,
-      errors: result.errors,
-      executionTime: result.executionTime,
-      throughput: result.throughput,
-    };
+      // Return batch operation result without the results map
+      return {
+        success: result.success,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        errors: result.errors,
+        executionTime: result.executionTime,
+        throughput: result.throughput,
+      };
+    } catch (error) {
+      throw new StorageError(
+        'Failed to set batch items',
+        'SET_ERROR',
+        undefined,
+        error as Error
+      );
+    }
   }
 
   /**
@@ -368,24 +424,46 @@ export class StorageManager {
    * @param fn - Transaction function
    */
   async transaction(fn: TransactionFunction): Promise<void> {
-    // Get all current keys for snapshot
-    const keys = await this.adapter.keys();
-
-    // Create snapshot of current state
-    const context = await this.createSnapshot(keys);
-
     try {
-      // Execute transaction function
-      await fn(this.adapter);
+      // Get all current keys for snapshot
+      const keys = await this.adapter.keys();
 
-      // Transaction succeeded - no action needed
-      // Changes are already applied by the transaction function
+      // Create snapshot of current state
+      const context = await this.createSnapshot(keys);
+
+      try {
+        // Execute transaction function
+        await fn(this.adapter);
+
+        // Transaction succeeded - invalidate cache for changed keys
+        // This ensures cache consistency after successful transaction
+        const currentKeys = await this.adapter.keys();
+        const changedKeys = await this.detectChangedKeys(context.snapshot, currentKeys);
+
+        // Invalidate cache for all changed keys
+        changedKeys.forEach((key) => this.invalidateCache(key));
+      } catch (error) {
+        // Transaction failed - rollback to snapshot
+        await this.rollback(context);
+
+        // Re-throw error for caller to handle
+        throw new StorageError(
+          'Transaction failed and was rolled back',
+          'TRANSACTION_ERROR',
+          undefined,
+          error as Error
+        );
+      }
     } catch (error) {
-      // Transaction failed - rollback to snapshot
-      await this.rollback(context);
-
-      // Re-throw error for caller to handle
-      throw error;
+      if (error instanceof StorageError) {
+        throw error;
+      }
+      throw new StorageError(
+        'Transaction initialization failed',
+        'TRANSACTION_ERROR',
+        undefined,
+        error as Error
+      );
     }
   }
 
@@ -416,32 +494,80 @@ export class StorageManager {
   }
 
   /**
+   * Detect which keys have changed since the snapshot
+   *
+   * @param snapshot - Original snapshot
+   * @param currentKeys - Current keys in storage
+   * @returns Array of changed key names
+   */
+  private async detectChangedKeys(
+    snapshot: Map<string, any>,
+    currentKeys: string[]
+  ): Promise<string[]> {
+    const changed: string[] = [];
+
+    // Check all current keys for changes
+    for (const key of currentKeys) {
+      const oldValue = snapshot.get(key);
+      const newValue = await this.adapter.get(key);
+
+      // Key was added or value changed
+      if (oldValue === undefined || JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        changed.push(key);
+      }
+    }
+
+    // Check for deleted keys
+    const currentKeySet = new Set(currentKeys);
+    for (const key of snapshot.keys()) {
+      if (!currentKeySet.has(key)) {
+        changed.push(key);
+      }
+    }
+
+    return changed;
+  }
+
+  /**
    * Rollback to a previous snapshot
    *
    * @param context - Transaction context with snapshot
    */
   private async rollback(context: TransactionContext): Promise<void> {
-    // Get all current keys
-    const currentKeys = await this.adapter.keys();
+    try {
+      // Get all current keys
+      const currentKeys = await this.adapter.keys();
 
-    // Restore snapshot values
-    await Promise.all(
-      Array.from(context.snapshot.entries()).map(async ([key, value]) => {
-        await this.adapter.set(key, value);
-        this.setCached(key, value);
-      })
-    );
-
-    // Remove keys that didn't exist in snapshot
-    const snapshotKeys = new Set(context.snapshot.keys());
-    await Promise.all(
-      currentKeys
-        .filter((key) => !snapshotKeys.has(key))
-        .map(async (key) => {
-          await this.adapter.remove(key);
-          this.invalidateCache(key);
+      // Restore snapshot values
+      await Promise.all(
+        Array.from(context.snapshot.entries()).map(async ([key, value]) => {
+          await this.adapter.set(key, value);
+          this.setCached(key, value);
+          // Notify subscribers about rollback
+          this.notify(key, value, undefined, 'rollback');
         })
-    );
+      );
+
+      // Remove keys that didn't exist in snapshot
+      const snapshotKeys = new Set(context.snapshot.keys());
+      await Promise.all(
+        currentKeys
+          .filter((key) => !snapshotKeys.has(key))
+          .map(async (key) => {
+            await this.adapter.remove(key);
+            this.invalidateCache(key);
+            // Notify subscribers about rollback
+            this.notify(key, undefined, undefined, 'rollback');
+          })
+      );
+    } catch (error) {
+      throw new StorageError(
+        'Rollback failed',
+        'ROLLBACK_ERROR',
+        undefined,
+        error as Error
+      );
+    }
   }
 
   // ============================================================================

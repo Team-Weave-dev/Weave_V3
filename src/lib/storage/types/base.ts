@@ -13,7 +13,7 @@
 /**
  * Storage operation types for event tracking
  */
-export type StorageOperation = 'set' | 'remove' | 'clear' | 'batch';
+export type StorageOperation = 'set' | 'remove' | 'clear' | 'batch' | 'rollback';
 
 /**
  * Storage event emitted when data changes
@@ -412,3 +412,68 @@ export function isSchemaVersion(value: unknown): value is SchemaVersion {
     'migrations' in value
   );
 }
+
+// ============================================================================
+// Error Handling
+// ============================================================================
+
+/**
+ * Storage error codes for categorizing errors
+ */
+export type StorageErrorCode =
+  | 'GET_ERROR'
+  | 'SET_ERROR'
+  | 'REMOVE_ERROR'
+  | 'CLEAR_ERROR'
+  | 'TRANSACTION_ERROR'
+  | 'ADAPTER_ERROR'
+  | 'CACHE_ERROR'
+  | 'ROLLBACK_ERROR';
+
+/**
+ * Custom error class for storage operations
+ */
+export class StorageError extends Error {
+  constructor(
+    message: string,
+    public readonly code: StorageErrorCode,
+    public readonly key?: string,
+    public readonly cause?: Error
+  ) {
+    super(message);
+    this.name = 'StorageError';
+
+    // Maintain proper stack trace for debugging
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, StorageError);
+    }
+  }
+}
+
+// ============================================================================
+// Operation Options
+// ============================================================================
+
+/**
+ * Options for set operations
+ */
+export interface SetOptions {
+  /** Whether to read and notify old value to subscribers */
+  notifyOldValue?: boolean;
+  /** Custom TTL for cache (milliseconds) */
+  cacheTTL?: number;
+  /** Skip cache update */
+  skipCache?: boolean;
+}
+
+// ============================================================================
+// Storage Constants
+// ============================================================================
+
+/**
+ * Constants used throughout the storage system
+ */
+export const STORAGE_CONSTANTS = {
+  /** Wildcard key for subscribing to all changes */
+  WILDCARD_KEY: '*',
+} as const;
