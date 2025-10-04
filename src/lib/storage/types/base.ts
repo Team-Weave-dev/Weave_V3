@@ -35,6 +35,23 @@ export interface JsonArray extends Array<JsonValue> {}
  */
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
+/**
+ * Type guard function for runtime type validation
+ *
+ * @template T - The type to validate against
+ * @param data - The data to validate
+ * @returns True if data matches type T, false otherwise
+ *
+ * @example
+ * ```typescript
+ * const isUser: TypeGuard<User> = (data): data is User => {
+ *   return typeof data === 'object' && data !== null &&
+ *          'id' in data && 'name' in data;
+ * };
+ * ```
+ */
+export type TypeGuard<T> = (data: unknown) => data is T;
+
 // ============================================================================
 // Storage Operation Types
 // ============================================================================

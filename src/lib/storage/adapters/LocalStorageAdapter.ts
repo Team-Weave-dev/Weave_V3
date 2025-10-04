@@ -9,9 +9,10 @@
  * - Type-safe storage operations
  */
 
-import type { StorageAdapter } from '../types/base';
-import { STORAGE_CONFIG } from '../config';
-import { compressData, decompressData, hasEnoughSpace, getStorageUsage } from '../utils/compression';
+import type { StorageAdapter, TypeGuard } from '../types/base';
+import { StorageError } from '../types/base';
+import { STORAGE_CONFIG, validateId } from '../config';
+import { CompressionManager, decompressData, hasEnoughSpace, getStorageUsage } from '../utils/compression';
 
 /**
  * Configuration options for LocalStorageAdapter
@@ -33,16 +34,20 @@ export interface LocalStorageConfig {
  */
 export class LocalStorageAdapter implements StorageAdapter {
   /**
+   * Compression prefix for identifying compressed data
+   */
+  private static readonly COMPRESSION_PREFIX = '__COMPRESSED__:';
+
+  /**
    * Key prefix for all localStorage entries
    * Prevents key collisions with other applications
    */
   private prefix: string;
 
   /**
-   * Compression settings
+   * Compression manager for advanced compression with statistics
    */
-  private enableCompression: boolean;
-  private compressionThreshold: number;
+  private compressionManager?: CompressionManager;
 
   /**
    * Create a new LocalStorageAdapter
@@ -51,18 +56,32 @@ export class LocalStorageAdapter implements StorageAdapter {
    */
   constructor(config?: LocalStorageConfig) {
     this.prefix = config?.prefix ?? STORAGE_CONFIG.prefix;
-    this.enableCompression = config?.enableCompression ?? STORAGE_CONFIG.enableCompression ?? false;
-    this.compressionThreshold = config?.compressionThreshold ?? STORAGE_CONFIG.compressionThreshold ?? 10 * 1024;
+    const enableCompression = config?.enableCompression ?? STORAGE_CONFIG.enableCompression ?? false;
+
+    // Initialize CompressionManager if compression is enabled
+    if (enableCompression) {
+      this.compressionManager = new CompressionManager({
+        enabled: true,
+        threshold: config?.compressionThreshold ?? STORAGE_CONFIG.compressionThreshold ?? 10 * 1024,
+        minRatio: 0.9, // Apply compression only if it reduces size by at least 10%
+        enableStats: true,
+        adaptiveThreshold: true, // Enable adaptive threshold optimization
+      });
+    }
   }
 
   /**
    * Build full key with prefix
    *
+   * Validates and sanitizes the key to prevent injection attacks.
+   *
    * @param key - Storage key
    * @returns Prefixed key for localStorage
+   * @throws {Error} If key is invalid
    */
   private buildKey(key: string): string {
-    return `${this.prefix}${key}`;
+    const safeKey = validateId(key, 'storage key');
+    return `${this.prefix}${safeKey}`;
   }
 
   /**
@@ -97,12 +116,16 @@ export class LocalStorageAdapter implements StorageAdapter {
    * Get a value from localStorage
    *
    * @param key - Storage key
+   * @param typeGuard - Optional type guard function for runtime validation
    * @returns The stored value or null if not found
+   * @throws {StorageError} If localStorage is unavailable, operation fails, or type validation fails
    */
-  async get<T>(key: string): Promise<T | null> {
+  async get<T>(key: string, typeGuard?: TypeGuard<T>): Promise<T | null> {
     if (!this.isAvailable()) {
-      console.warn('localStorage is not available');
-      return null;
+      throw new StorageError('localStorage is not available', 'ADAPTER_ERROR', {
+        key,
+        severity: 'critical',
+      });
     }
 
     try {
@@ -114,20 +137,41 @@ export class LocalStorageAdapter implements StorageAdapter {
       }
 
       // Check if data is compressed
-      const COMPRESSION_PREFIX = '__COMPRESSED__:';
       let jsonString = value;
 
-      if (value.startsWith(COMPRESSION_PREFIX)) {
+      if (value.startsWith(LocalStorageAdapter.COMPRESSION_PREFIX)) {
         // Extract and decompress data
-        const compressedData = value.substring(COMPRESSION_PREFIX.length);
-        jsonString = decompressData(compressedData);
+        const compressedData = value.substring(LocalStorageAdapter.COMPRESSION_PREFIX.length);
+        jsonString = this.compressionManager
+          ? this.compressionManager.decompress(compressedData)
+          : decompressData(compressedData);
       }
 
       // Parse JSON value
-      return JSON.parse(jsonString) as T;
+      const parsed = JSON.parse(jsonString);
+
+      // Validate type if type guard is provided
+      if (typeGuard && !typeGuard(parsed)) {
+        throw new StorageError(`Type validation failed for key "${key}"`, 'GET_ERROR', {
+          key,
+          severity: 'high',
+        });
+      }
+
+      return parsed as T;
     } catch (error) {
-      console.error(`Error getting key "${key}" from localStorage:`, error);
-      return null;
+      if (error instanceof StorageError) {
+        throw error;
+      }
+      throw new StorageError(
+        `Failed to get key "${key}" from localStorage`,
+        'GET_ERROR',
+        {
+          key,
+          cause: error instanceof Error ? error : new Error(String(error)),
+          severity: 'high',
+        }
+      );
     }
   }
 
@@ -148,14 +192,13 @@ export class LocalStorageAdapter implements StorageAdapter {
 
       // Apply compression if enabled and data is large enough
       let dataToStore = serialized;
-      const COMPRESSION_PREFIX = '__COMPRESSED__:';
 
-      if (this.enableCompression) {
-        const compressionResult = compressData(serialized, this.compressionThreshold);
+      if (this.compressionManager) {
+        const compressionResult = this.compressionManager.compress(serialized);
 
         if (compressionResult.compressed) {
           // Use compressed version if it's actually smaller
-          dataToStore = COMPRESSION_PREFIX + compressionResult.data;
+          dataToStore = LocalStorageAdapter.COMPRESSION_PREFIX + compressionResult.data;
         }
       }
 
@@ -164,11 +207,29 @@ export class LocalStorageAdapter implements StorageAdapter {
       if (error instanceof Error && error.name === 'QuotaExceededError') {
         // Provide storage usage information
         const usage = getStorageUsage();
-        throw new Error(
-          `localStorage quota exceeded. Used: ${usage.percentage.toFixed(1)}% (${usage.used}/${usage.total} bytes)`
+        throw new StorageError(
+          `localStorage quota exceeded. Used: ${usage.percentage.toFixed(1)}% (${usage.used}/${usage.total} bytes)`,
+          'SET_ERROR',
+          {
+            key,
+            cause: error,
+            severity: 'critical',
+            userMessage: '저장 공간이 부족합니다. 불필요한 데이터를 삭제해주세요.',
+          }
         );
       }
-      throw error;
+      if (error instanceof StorageError) {
+        throw error;
+      }
+      throw new StorageError(
+        `Failed to set key "${key}" in localStorage`,
+        'SET_ERROR',
+        {
+          key,
+          cause: error instanceof Error ? error : new Error(String(error)),
+          severity: 'high',
+        }
+      );
     }
   }
 
@@ -176,28 +237,45 @@ export class LocalStorageAdapter implements StorageAdapter {
    * Remove a value from localStorage
    *
    * @param key - Storage key to remove
+   * @throws {StorageError} If localStorage is unavailable or operation fails
    */
   async remove(key: string): Promise<void> {
     if (!this.isAvailable()) {
-      console.warn('localStorage is not available');
-      return;
+      throw new StorageError('localStorage is not available', 'ADAPTER_ERROR', {
+        key,
+        severity: 'critical',
+      });
     }
 
     try {
       const fullKey = this.buildKey(key);
       localStorage.removeItem(fullKey);
     } catch (error) {
-      console.error(`Error removing key "${key}" from localStorage:`, error);
+      if (error instanceof StorageError) {
+        throw error;
+      }
+      throw new StorageError(
+        `Failed to remove key "${key}" from localStorage`,
+        'REMOVE_ERROR',
+        {
+          key,
+          cause: error instanceof Error ? error : new Error(String(error)),
+          severity: 'medium',
+        }
+      );
     }
   }
 
   /**
    * Clear all storage entries with this adapter's prefix
+   *
+   * @throws {StorageError} If localStorage is unavailable or operation fails
    */
   async clear(): Promise<void> {
     if (!this.isAvailable()) {
-      console.warn('localStorage is not available');
-      return;
+      throw new StorageError('localStorage is not available', 'ADAPTER_ERROR', {
+        severity: 'critical',
+      });
     }
 
     try {
@@ -215,7 +293,10 @@ export class LocalStorageAdapter implements StorageAdapter {
         localStorage.removeItem(fullKey);
       });
     } catch (error) {
-      console.error('Error clearing localStorage:', error);
+      throw new StorageError('Failed to clear localStorage', 'CLEAR_ERROR', {
+        cause: error instanceof Error ? error : new Error(String(error)),
+        severity: 'high',
+      });
     }
   }
 
@@ -262,5 +343,17 @@ export class LocalStorageAdapter implements StorageAdapter {
       console.error(`Error checking key "${key}" in localStorage:`, error);
       return false;
     }
+  }
+
+  /**
+   * Get compression statistics
+   *
+   * Returns compression statistics if CompressionManager is enabled,
+   * otherwise returns null.
+   *
+   * @returns Compression statistics or null
+   */
+  getCompressionStats() {
+    return this.compressionManager?.getStats() ?? null;
   }
 }

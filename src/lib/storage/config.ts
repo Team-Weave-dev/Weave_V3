@@ -133,7 +133,7 @@ export const STORAGE_KEYS = {
  * @throws {Error} If ID is invalid
  * @returns Sanitized ID
  */
-function validateId(id: string, context: string): string {
+export function validateId(id: string, context: string): string {
   if (!id || typeof id !== 'string') {
     throw new Error(`Invalid ${context} ID: must be a non-empty string`);
   }
