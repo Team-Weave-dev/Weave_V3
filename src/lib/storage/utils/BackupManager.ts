@@ -16,6 +16,8 @@ import type {
   StorageAdapter,
   BackupData,
   SchemaVersion,
+  RestoreOptions,
+  RestoreResult,
 } from '../types/base';
 import { STORAGE_KEYS, STORAGE_CONFIG } from '../config';
 
@@ -84,19 +86,24 @@ export class BackupManager {
   /**
    * Restore storage from a backup
    *
-   * WARNING: This will overwrite all current data!
-   *
    * @param backup - Backup data to restore
-   * @param clearFirst - Whether to clear existing data first (default: true)
+   * @param options - Restore options
+   * @returns Restore result with success status and counts
    */
   async restoreBackup(
     backup: BackupData,
-    clearFirst: boolean = true
-  ): Promise<void> {
+    options: RestoreOptions = {}
+  ): Promise<RestoreResult> {
+    const {
+      clearFirst = false, // Safer default
+      dryRun = false,
+      validateFirst = true,
+    } = options;
+
     console.log('Restoring from backup...');
 
     // Validate backup format
-    if (!this.isValidBackup(backup)) {
+    if (validateFirst && !this.isValidBackup(backup)) {
       throw new Error('Invalid backup format');
     }
 
@@ -107,38 +114,56 @@ export class BackupManager {
       );
     }
 
+    // Dry run mode - just validate
+    if (dryRun) {
+      console.log('[DRY RUN] Would restore', Object.keys(backup.data).length, 'entries');
+      return {
+        success: true,
+        restoredCount: Object.keys(backup.data).length,
+        errorCount: 0,
+      };
+    }
+
     // Clear existing data if requested
     if (clearFirst) {
       console.log('Clearing existing data...');
       await this.adapter.clear();
     }
 
+    // Restore schema version first to ensure consistency
+    await this.adapter.set(STORAGE_KEYS.VERSION, backup.schemaVersion);
+
     // Restore all data
     const entries = Object.entries(backup.data);
     console.log(`Restoring ${entries.length} entries...`);
 
     let successCount = 0;
-    let errorCount = 0;
+    const errors: Array<{ key: string; error: string }> = [];
 
     for (const [key, value] of entries) {
       try {
         await this.adapter.set(key, value);
         successCount++;
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         console.error(`Error restoring key "${key}":`, error);
-        errorCount++;
+        errors.push({ key, error: errorMessage });
       }
     }
 
-    // Restore schema version
-    await this.adapter.set(
-      STORAGE_KEYS.VERSION,
-      backup.schemaVersion
-    );
+    const result: RestoreResult = {
+      success: errors.length === 0,
+      restoredCount: successCount,
+      errorCount: errors.length,
+      errors: errors.length > 0 ? errors : undefined,
+    };
 
     console.log(
-      `Restore completed: ${successCount} succeeded, ${errorCount} failed`
+      `Restore completed: ${successCount} succeeded, ${errors.length} failed`
     );
+
+    return result;
   }
 
   /**

@@ -11,7 +11,7 @@
  * - Centralized settings management
  */
 
-import type { StorageAdapter, Migration } from '../types/base';
+import type { StorageAdapter, Migration, MigrationReport } from '../types/base';
 import { STORAGE_KEYS } from '../config';
 
 /**
@@ -72,8 +72,10 @@ export const v1ToV2Migration: Migration = {
 
   /**
    * Upgrade from V1 to V2
+   *
+   * @returns Detailed migration report
    */
-  async up(adapter: StorageAdapter): Promise<void> {
+  async up(adapter: StorageAdapter): Promise<MigrationReport> {
     console.log('Starting V1 to V2 migration...');
 
     // Step 1: Get all existing keys
@@ -89,9 +91,10 @@ export const v1ToV2Migration: Migration = {
     );
     console.log(`Identified ${v1Keys.length} V1 keys to migrate`);
 
-    // Step 3: Migrate each V1 key
+    // Step 3: Migrate each V1 key with detailed error tracking
     let migratedCount = 0;
     let skippedCount = 0;
+    const failedKeys: MigrationReport['failedKeys'] = [];
 
     for (const oldKey of v1Keys) {
       // Check if we have a mapping for this key
@@ -117,8 +120,16 @@ export const v1ToV2Migration: Migration = {
             skippedCount++;
           }
         } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
           console.error(`✗ Error migrating ${oldKey}:`, error);
-          // Continue with other keys even if one fails
+
+          failedKeys.push({
+            key: oldKey,
+            newKey,
+            error: errorMessage,
+            timestamp: new Date().toISOString(),
+          });
         }
       } else {
         console.log(`⊘ Skipped: ${oldKey} (no mapping defined)`);
@@ -136,7 +147,33 @@ export const v1ToV2Migration: Migration = {
       }
     }
 
-    console.log(`Migration completed: ${migratedCount} migrated, ${skippedCount} skipped`);
+    // Step 5: Generate migration report
+    const warnings: string[] = [];
+
+    if (failedKeys.length > 0) {
+      warnings.push(
+        `${failedKeys.length} key(s) failed to migrate. Check failedKeys for details.`
+      );
+    }
+
+    if (skippedCount > v1Keys.length * 0.5) {
+      warnings.push(
+        `High skip rate: ${skippedCount} out of ${v1Keys.length} keys were skipped.`
+      );
+    }
+
+    const report: MigrationReport = {
+      migratedCount,
+      skippedCount,
+      failedKeys,
+      warnings,
+    };
+
+    console.log(
+      `Migration completed: ${migratedCount} migrated, ${skippedCount} skipped, ${failedKeys.length} failed`
+    );
+
+    return report;
   },
 
   /**

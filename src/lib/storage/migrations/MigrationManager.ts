@@ -29,6 +29,11 @@ export class MigrationManager {
   private migrations: Map<number, Migration>;
 
   /**
+   * Flag to prevent concurrent migration execution
+   */
+  private isRunning = false;
+
+  /**
    * Create a new MigrationManager
    *
    * @param adapter - Storage adapter to use
@@ -106,8 +111,34 @@ export class MigrationManager {
    *
    * @param targetVersion - Target schema version (defaults to latest)
    * @returns Migration results
+   * @throws Error if migration is already in progress
    */
   async migrate(targetVersion?: number): Promise<MigrationResult[]> {
+    // Prevent concurrent migration execution
+    if (this.isRunning) {
+      throw new Error(
+        'Migration is already in progress. Please wait for the current migration to complete.'
+      );
+    }
+
+    this.isRunning = true;
+
+    try {
+      return await this.executeMigrate(targetVersion);
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
+  /**
+   * Internal migration execution logic
+   *
+   * @param targetVersion - Target schema version
+   * @returns Migration results
+   */
+  private async executeMigrate(
+    targetVersion?: number
+  ): Promise<MigrationResult[]> {
     const currentVersion = await this.getCurrentVersion();
 
     // Determine target version (latest if not specified)
@@ -185,8 +216,34 @@ export class MigrationManager {
    *
    * @param targetVersion - Target version to rollback to
    * @returns Rollback results
+   * @throws Error if migration is already in progress
    */
   async rollback(targetVersion: number): Promise<MigrationResult[]> {
+    // Prevent concurrent migration execution
+    if (this.isRunning) {
+      throw new Error(
+        'Migration is already in progress. Cannot rollback while migrating.'
+      );
+    }
+
+    this.isRunning = true;
+
+    try {
+      return await this.executeRollback(targetVersion);
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
+  /**
+   * Internal rollback execution logic
+   *
+   * @param targetVersion - Target version to rollback to
+   * @returns Rollback results
+   */
+  private async executeRollback(
+    targetVersion: number
+  ): Promise<MigrationResult[]> {
     const currentVersion = await this.getCurrentVersion();
 
     if (targetVersion >= currentVersion) {
@@ -221,7 +278,7 @@ export class MigrationManager {
         );
       }
 
-      const result = await this.executeRollback(migration);
+      const result = await this.rollbackMigration(migration);
       results.push(result);
 
       if (!result.success) {
@@ -333,12 +390,12 @@ export class MigrationManager {
   }
 
   /**
-   * Execute a single rollback
+   * Execute a single rollback for one migration
    *
    * @param migration - Migration to rollback
    * @returns Rollback result
    */
-  private async executeRollback(
+  private async rollbackMigration(
     migration: Migration
   ): Promise<MigrationResult> {
     const startTime = Date.now();

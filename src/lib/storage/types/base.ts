@@ -427,8 +427,8 @@ export interface Migration {
   name: string;
   /** Human-readable description of what this migration does */
   description?: string;
-  /** Migration function to apply changes */
-  up: (adapter: StorageAdapter) => Promise<void>;
+  /** Migration function to apply changes - can optionally return detailed report */
+  up: (adapter: StorageAdapter) => Promise<void | MigrationReport>;
   /** Optional rollback function to revert changes */
   down?: (adapter: StorageAdapter) => Promise<void>;
   /** Optional validation function to verify migration success */
@@ -465,6 +465,66 @@ export interface BackupData {
   data: Record<string, JsonValue>;
   /** Schema version at backup time */
   schemaVersion: SchemaVersion;
+}
+
+/**
+ * Options for restoring a backup
+ */
+export interface RestoreOptions {
+  /**
+   * Whether to clear existing data before restore
+   * @default false - Safer default to prevent accidental data loss
+   */
+  clearFirst?: boolean;
+
+  /**
+   * Dry run mode - validate backup without actually restoring
+   * @default false
+   */
+  dryRun?: boolean;
+
+  /**
+   * Validate backup data before restoring
+   * @default true
+   */
+  validateFirst?: boolean;
+}
+
+/**
+ * Result of a restore operation
+ */
+export interface RestoreResult {
+  /** Whether the restore was successful */
+  success: boolean;
+  /** Number of entries restored */
+  restoredCount: number;
+  /** Number of entries that failed to restore */
+  errorCount: number;
+  /** Errors that occurred during restore */
+  errors?: Array<{ key: string; error: string }>;
+}
+
+/**
+ * Detailed report of a migration execution
+ */
+export interface MigrationReport {
+  /** Number of successfully migrated keys */
+  migratedCount: number;
+  /** Number of skipped keys (no mapping or empty value) */
+  skippedCount: number;
+  /** Keys that failed to migrate with error details */
+  failedKeys: Array<{
+    /** Original V1 key */
+    key: string;
+    /** Target V2 key */
+    newKey: string;
+    /** Error message */
+    error: string;
+    /** Timestamp of failure */
+    timestamp: string;
+  }>;
+  /** Warning messages */
+  warnings: string[];
 }
 
 // ============================================================================
