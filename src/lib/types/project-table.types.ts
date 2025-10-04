@@ -26,7 +26,7 @@ export interface ProjectTableRow {
   status: ProjectStatus;
   dueDate: string;
   modifiedDate: string;
-  paymentProgress?: PaymentStatus;   // 수금상태 (배지로 표시)
+  paymentProgress?: number;              // 결제 진행률 (0-100)
   // 새로운 필드 추가
   settlementMethod?: SettlementMethod;  // 정산방식
   paymentStatus?: PaymentStatus;        // 수금상태
@@ -106,23 +106,23 @@ export type WBSTemplateType =
 export interface ContractInfo {
   totalAmount?: number;       // 계약서 총 금액
   content?: string;           // 계약서 내용
-  contractorInfo: {
+  contractorInfo?: {
     name: string;
     position: string;
   };
-  reportInfo: {
+  reportInfo?: {
     type: string;
   };
-  estimateInfo: {
+  estimateInfo?: {
     type: string;
   };
-  documentIssue: {
+  documentIssue?: {
     taxInvoice: string;
     receipt: string;
     cashReceipt: string;
     businessReceipt: string;
   };
-  other: {
+  other?: {
     date: string;
   };
 }
@@ -156,6 +156,7 @@ export interface DocumentInfo {
   type: 'contract' | 'invoice' | 'report' | 'estimate' | 'etc';
   name: string;
   createdAt: string;
+  savedAt?: string;  // Storage API 호환성을 위한 필드
   status: 'draft' | 'sent' | 'approved' | 'completed';
   content?: string;
   templateId?: string;

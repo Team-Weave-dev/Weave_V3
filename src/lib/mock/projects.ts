@@ -4,7 +4,8 @@ import type {
   ProjectDocumentStatus,
   ProjectTableRow,
   PaymentStatus,
-  WBSTask
+  WBSTask,
+  Currency
 } from '@/lib/types/project-table.types';
 import { projectService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
@@ -151,10 +152,16 @@ function toProject(row: ProjectTableRow): Project {
     hasDocuments: row.hasDocuments || false,
 
     // Detailed info
-    contract: row.contract as any,  // Type mismatch between ProjectTableRow.ContractInfo and Project.ContractInfo
+    contract: row.contract,
     estimate: row.estimate,
     billing: row.billing,
-    documents: row.documents as any,  // Type mismatch between DocumentInfo types
+    documents: row.documents?.map(doc => ({
+      id: doc.id,
+      name: doc.name,
+      type: doc.type,
+      status: doc.status as 'draft' | 'sent' | 'approved' | 'completed' | 'archived',
+      savedAt: doc.savedAt || doc.createdAt, // savedAt을 required로 만듦
+    })),
     documentStatus: row.documentStatus,
 
     // Timestamps
@@ -177,20 +184,27 @@ function toProjectTableRow(project: Project): ProjectTableRow {
     dueDate: project.endDate || '',
     status: project.status,
     progress: project.progress,
-    paymentProgress: project.paymentStatus,
+    paymentProgress: project.paymentProgress || 0,
     settlementMethod: project.settlementMethod,
     paymentStatus: project.paymentStatus,
     totalAmount: project.totalAmount,
-    currency: project.currency as any,  // Type mismatch: string vs Currency
+    currency: project.currency as Currency | undefined,
     projectContent: project.projectContent,
     wbsTasks: project.wbsTasks,
     hasContract: project.hasContract,
     hasBilling: project.hasBilling,
     hasDocuments: project.hasDocuments,
-    contract: project.contract as any,  // Type mismatch between ContractInfo types
+    contract: project.contract,
     estimate: project.estimate,
     billing: project.billing,
-    documents: project.documents as any,  // Type mismatch between DocumentInfo types
+    documents: project.documents?.map(doc => ({
+      id: doc.id,
+      name: doc.name,
+      type: doc.type,
+      createdAt: doc.savedAt, // Storage의 savedAt을 UI의 createdAt으로 사용
+      savedAt: doc.savedAt,
+      status: doc.status as 'draft' | 'sent' | 'approved' | 'completed',
+    })),
     documentStatus: project.documentStatus,
   };
 }

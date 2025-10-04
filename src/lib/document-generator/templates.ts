@@ -580,7 +580,7 @@ export function createTemporaryProject(formData: Partial<ProjectCreateFormData>)
     modifiedDate: now.toISOString(),
     status: 'planning',
     progress: 0,
-    paymentProgress: 'not_started',
+    paymentProgress: 0,
     settlementMethod: 'not_set',
     paymentStatus: 'not_started',
     projectContent: formData.projectContent,

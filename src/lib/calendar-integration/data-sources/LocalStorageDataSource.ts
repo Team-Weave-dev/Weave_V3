@@ -48,6 +48,11 @@ export class LocalStorageDataSource implements IDataSource {
    * 세무 일정 조회
    */
   async getTaxDeadlines(): Promise<TaxDeadline[]> {
+    // SSR 안전성: 서버 사이드에서는 빈 배열 반환
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
     try {
       const data = localStorage.getItem(STORAGE_KEYS.TAX_DEADLINES);
       if (!data) return [];
@@ -99,6 +104,11 @@ export class LocalStorageDataSource implements IDataSource {
    * 세무 일정 저장
    */
   async saveTaxDeadlines(deadlines: TaxDeadline[]): Promise<void> {
+    // SSR 안전성: 서버 사이드에서는 무시
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     try {
       // TaxDeadlineWidget 형식으로 저장
       const data = { deadlines };

@@ -181,7 +181,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
         progress: 0, // 초기 진행률 0% (WBS 기반 자동 계산됨)
         settlementMethod: data.settlementMethod,
         paymentStatus: data.paymentStatus,
-        paymentProgress: data.paymentStatus, // 표시용 필드
+        paymentProgress: 0, // 초기 결제 진행률 0%
         projectContent: data.projectContent || undefined,
         totalAmount: data.totalAmount,
         hasContract: false,
