@@ -372,7 +372,7 @@ export default function DetailView({
     setEditState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const success = updateCustomProject(currentProject.no, editState.editingData);
+      const success = await updateCustomProject(currentProject.no, editState.editingData);
 
       if (success) {
         console.log('✅ 프로젝트 편집 성공:', {
@@ -423,7 +423,7 @@ export default function DetailView({
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     const selectedProject = projects.find(p => p.id === selectedProjectId);
     if (!selectedProject) {
       console.log('⚠️ 삭제할 프로젝트를 찾을 수 없음:', selectedProjectId);
@@ -433,7 +433,7 @@ export default function DetailView({
 
     try {
       // localStorage에서 프로젝트 삭제
-      const deleted = removeCustomProject(selectedProject.no);
+      const deleted = await removeCustomProject(selectedProject.no);
 
       if (deleted) {
         console.log('✅ DetailView 프로젝트 삭제 성공:', {
@@ -493,12 +493,12 @@ export default function DetailView({
   };
 
   // 단계 초기화 핸들러
-  const handleResetStatus = () => {
+  const handleResetStatus = async () => {
     const currentProject = selectedProject;
     if (!currentProject) return;
 
     try {
-      const success = updateCustomProject(currentProject.no, {
+      const success = await updateCustomProject(currentProject.no, {
         status: 'planning',
         paymentStatus: 'not_started'
       });

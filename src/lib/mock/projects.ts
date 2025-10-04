@@ -6,6 +6,8 @@ import type {
   PaymentStatus,
   WBSTask
 } from '@/lib/types/project-table.types';
+import { projectService } from '@/lib/storage';
+import type { Project } from '@/lib/storage/types/entities/project';
 
 /**
  * ============================================================================
@@ -25,93 +27,172 @@ import type {
 
 /**
  * Get a single project by ID or No (Clean Slate 시스템)
- * localStorage의 사용자 생성 프로젝트에서만 검색
+ * Storage API에서 프로젝트 검색
  */
-export function getMockProjectById(id: string): ProjectTableRow | null {
+export async function getMockProjectById(id: string): Promise<ProjectTableRow | null> {
   console.log('🔍 getMockProjectById 호출됨. 검색할 ID:', id);
 
-  // localStorage의 사용자 생성 프로젝트에서만 찾기 (Clean Slate 시스템)
-  const customProjects = getCustomProjects();
-  console.log('📋 사용자 생성 프로젝트 개수:', customProjects.length);
+  try {
+    // Storage API에서 검색
+    await migrateLegacyProjects();  // 마이그레이션 확인
 
-  if (customProjects.length > 0) {
-    console.log('📝 사용자 생성 프로젝트 목록:', customProjects.map(p => ({ id: p.id, no: p.no, name: p.name })));
+    const project = await projectService.getById(id);
+
+    if (!project) {
+      // ID로 못 찾으면 no 필드로 검색
+      const allProjects = await projectService.getAll();
+      const foundByNo = allProjects.find(p => p.no === id);
+
+      if (foundByNo) {
+        const row = toProjectTableRow(foundByNo);
+        console.log('✅ 프로젝트 발견 (by no):', { id: row.id, no: row.no, name: row.name });
+        return row;
+      }
+
+      console.log('❌ 프로젝트를 찾을 수 없음:', id);
+      return null;
+    }
+
+    const row = toProjectTableRow(project);
+    console.log('✅ 프로젝트 발견:', { id: row.id, no: row.no, name: row.name });
+    return row;
+  } catch (error) {
+    console.error('❌ 프로젝트 조회 중 오류:', error);
+    return null;
   }
-
-  const customProject = customProjects.find(p => p.id === id || p.no === id);
-  if (customProject) {
-    console.log('✅ 프로젝트 발견:', { id: customProject.id, no: customProject.no, name: customProject.name });
-    return customProject;
-  }
-
-  console.log('❌ 프로젝트를 찾을 수 없음:', id);
-  return null;
 }
 
 // localStorage 키 상수
 const CUSTOM_PROJECTS_KEY = 'weave_custom_projects';
 
 /**
- * localStorage에서 사용자가 생성한 프로젝트들 가져오기
+ * Storage API에서 사용자가 생성한 프로젝트들 가져오기 (내부 헬퍼)
  * SSR 환경에서는 빈 배열 반환
  *
  * @description
- * - localStorage에서 프로젝트 로드
- * - 자동 WBS 마이그레이션 수행
- * - 마이그레이션이 발생하면 localStorage에 다시 저장
+ * - Storage API에서 프로젝트 로드
+ * - Legacy 마이그레이션 자동 수행
+ * - ProjectTableRow 형식으로 반환
  */
-function getCustomProjects(): ProjectTableRow[] {
-  // SSR 환경에서는 localStorage 접근 불가
+async function getCustomProjects(): Promise<ProjectTableRow[]> {
+  // SSR 환경에서는 빈 배열 반환
   if (typeof window === 'undefined') {
     return [];
   }
 
   try {
-    const stored = localStorage.getItem(CUSTOM_PROJECTS_KEY);
-    if (!stored) {
-      return [];
-    }
+    // Legacy 마이그레이션 확인 및 수행
+    await migrateLegacyProjects();
 
-    const projects: ProjectTableRow[] = JSON.parse(stored);
+    // Storage API에서 모든 프로젝트 조회
+    const projects = await projectService.getAll();
 
-    // WBS 마이그레이션 수행
-    const migratedProjects = migrateAllProjectsToWBS(projects);
+    // Project → ProjectTableRow 변환
+    const rows = projects.map(toProjectTableRow);
 
-    // 마이그레이션이 발생했는지 확인 (배열 길이 또는 내용 변경)
-    const migrationOccurred = migratedProjects.some((migrated, index) => {
-      const original = projects[index];
-      return migrated.wbsTasks && migrated.wbsTasks.length > 0 &&
-             (!original.wbsTasks || original.wbsTasks.length === 0);
-    });
+    console.log('📋 getCustomProjects: 로드된 프로젝트 수:', rows.length);
 
-    // 마이그레이션이 발생했으면 localStorage에 다시 저장
-    if (migrationOccurred) {
-      console.log('💾 마이그레이션된 프로젝트를 localStorage에 저장합니다.');
-      localStorage.setItem(CUSTOM_PROJECTS_KEY, JSON.stringify(migratedProjects));
-    }
-
-    return migratedProjects;
+    return rows;
   } catch (error) {
-    console.error('Error reading custom projects from localStorage:', error);
+    console.error('Error reading projects from Storage API:', error);
     return [];
   }
 }
 
 /**
- * localStorage에 사용자가 생성한 프로젝트 저장
- * SSR 환경에서는 아무것도 하지 않음
+ * ============================================================================
+ * 타입 변환 함수 (Type Conversion Functions)
+ * ============================================================================
+ *
+ * ProjectTableRow와 Project 엔티티 간의 변환을 처리합니다.
  */
-function saveCustomProjects(projects: ProjectTableRow[]): void {
-  // SSR 환경에서는 localStorage 접근 불가
-  if (typeof window === 'undefined') {
-    return;
-  }
 
-  try {
-    localStorage.setItem(CUSTOM_PROJECTS_KEY, JSON.stringify(projects));
-  } catch (error) {
-    console.error('Error saving custom projects to localStorage:', error);
-  }
+/**
+ * ProjectTableRow를 Project 엔티티로 변환
+ */
+function toProject(row: ProjectTableRow): Project {
+  const now = new Date().toISOString();
+
+  return {
+    // Identity
+    id: row.id,
+    userId: 'user-1',  // 현재 단일 사용자 시스템
+    clientId: row.client || undefined,
+
+    // Basic info
+    no: row.no,
+    name: row.name,
+    description: row.projectContent,
+    projectContent: row.projectContent,
+
+    // Status
+    status: row.status,
+    progress: row.progress || 0,
+    paymentProgress: typeof row.paymentProgress === 'number' ? row.paymentProgress : undefined,
+
+    // Schedule
+    registrationDate: row.registrationDate,
+    modifiedDate: row.modifiedDate,
+    endDate: row.dueDate || undefined,
+    startDate: undefined,
+
+    // Payment
+    settlementMethod: row.settlementMethod,
+    paymentStatus: row.paymentStatus,
+    totalAmount: row.totalAmount,
+    currency: row.currency,
+
+    // WBS
+    wbsTasks: row.wbsTasks || [],
+
+    // Flags
+    hasContract: row.hasContract || false,
+    hasBilling: row.hasBilling || false,
+    hasDocuments: row.hasDocuments || false,
+
+    // Detailed info
+    contract: row.contract as any,  // Type mismatch between ProjectTableRow.ContractInfo and Project.ContractInfo
+    estimate: row.estimate,
+    billing: row.billing,
+    documents: row.documents as any,  // Type mismatch between DocumentInfo types
+    documentStatus: row.documentStatus,
+
+    // Timestamps
+    createdAt: row.registrationDate || now,
+    updatedAt: row.modifiedDate || now,
+  };
+}
+
+/**
+ * Project 엔티티를 ProjectTableRow로 변환 (표시용)
+ */
+function toProjectTableRow(project: Project): ProjectTableRow {
+  return {
+    id: project.id,
+    no: project.no,
+    name: project.name,
+    client: project.clientId || '',
+    registrationDate: project.registrationDate,
+    modifiedDate: project.modifiedDate,
+    dueDate: project.endDate || '',
+    status: project.status,
+    progress: project.progress,
+    paymentProgress: project.paymentStatus,
+    settlementMethod: project.settlementMethod,
+    paymentStatus: project.paymentStatus,
+    totalAmount: project.totalAmount,
+    currency: project.currency as any,  // Type mismatch: string vs Currency
+    projectContent: project.projectContent,
+    wbsTasks: project.wbsTasks,
+    hasContract: project.hasContract,
+    hasBilling: project.hasBilling,
+    hasDocuments: project.hasDocuments,
+    contract: project.contract as any,  // Type mismatch between ContractInfo types
+    estimate: project.estimate,
+    billing: project.billing,
+    documents: project.documents as any,  // Type mismatch between DocumentInfo types
+    documentStatus: project.documentStatus,
+  };
 }
 
 /**
@@ -196,17 +277,83 @@ function migrateAllProjectsToWBS(projects: ProjectTableRow[]): ProjectTableRow[]
 }
 
 /**
+ * ============================================================================
+ * Storage API 마이그레이션 (Migration to Storage API)
+ * ============================================================================
+ *
+ * Legacy localStorage 데이터를 Storage API로 자동 마이그레이션합니다.
+ */
+
+let migrationAttempted = false;
+
+/**
+ * Legacy localStorage 데이터를 Storage API로 마이그레이션
+ *
+ * @description
+ * - 'weave_custom_projects' 키의 데이터를 Storage API로 이전
+ * - WBS 마이그레이션 자동 적용
+ * - 마이그레이션 후 legacy 키 제거
+ * - 중복 실행 방지 (앱 실행당 1회만)
+ */
+async function migrateLegacyProjects(): Promise<void> {
+  // SSR 환경에서는 실행하지 않음
+  if (typeof window === 'undefined') return;
+
+  // 이미 마이그레이션 시도했으면 스킵
+  if (migrationAttempted) return;
+
+  migrationAttempted = true;
+
+  try {
+    // 1. Storage API에 이미 데이터가 있는지 확인
+    const existingProjects = await projectService.getAll();
+    if (existingProjects.length > 0) {
+      console.log('✅ Projects already in Storage API:', existingProjects.length);
+      return;
+    }
+
+    // 2. Legacy localStorage 키 확인
+    const legacyData = localStorage.getItem(CUSTOM_PROJECTS_KEY);
+    if (!legacyData) {
+      console.log('ℹ️ No legacy projects to migrate');
+      return;
+    }
+
+    console.log('🔄 Migrating legacy projects to Storage API...');
+
+    // 3. 파싱 및 WBS 마이그레이션
+    const legacyProjects: ProjectTableRow[] = JSON.parse(legacyData);
+    const migratedRows = migrateAllProjectsToWBS(legacyProjects);
+
+    // 4. Project 엔티티로 변환
+    const projects: Project[] = migratedRows.map(toProject);
+
+    // 5. Storage API에 저장
+    for (const project of projects) {
+      await projectService.create(project);
+    }
+
+    // 6. Legacy 키 제거
+    localStorage.removeItem(CUSTOM_PROJECTS_KEY);
+
+    console.log(`✅ Migrated ${projects.length} projects to Storage API`);
+    console.log('   - Legacy key removed:', CUSTOM_PROJECTS_KEY);
+  } catch (error) {
+    console.error('❌ Legacy project migration failed:', error);
+    migrationAttempted = false; // 실패 시 다시 시도 가능하도록
+  }
+}
+
+/**
  * 새 프로젝트 추가
  *
  * @description
  * - wbsTasks가 없는 경우 빈 배열로 초기화
  * - 새 프로젝트는 항상 WBS 시스템을 포함
+ * - Storage API를 사용하여 저장
  */
-export function addCustomProject(project: ProjectTableRow): void {
+export async function addCustomProject(project: ProjectTableRow): Promise<void> {
   console.log('💾 addCustomProject 호출됨:', { id: project.id, no: project.no, name: project.name });
-
-  const existingProjects = getCustomProjects();
-  console.log('📋 기존 프로젝트 개수:', existingProjects.length);
 
   // wbsTasks가 없으면 빈 배열로 초기화 (새 프로젝트는 WBS 시스템 사용)
   const projectWithWBS: ProjectTableRow = {
@@ -214,80 +361,107 @@ export function addCustomProject(project: ProjectTableRow): void {
     wbsTasks: project.wbsTasks || []
   };
 
-  const updatedProjects = [projectWithWBS, ...existingProjects];
-  console.log('📝 업데이트된 프로젝트 개수:', updatedProjects.length);
+  // ProjectTableRow → Project 변환
+  const projectEntity = toProject(projectWithWBS);
 
-  saveCustomProjects(updatedProjects);
+  // Storage API에 저장
+  await projectService.create(projectEntity);
 
-  // 저장 후 검증
-  const verifyProjects = getCustomProjects();
-  const savedProject = verifyProjects.find(p => p.id === project.id || p.no === project.no);
-  if (savedProject) {
-    console.log('✅ 프로젝트 저장 성공:', { id: savedProject.id, no: savedProject.no, name: savedProject.name });
-  } else {
-    console.log('❌ 프로젝트 저장 실패!');
-  }
+  console.log('✅ 프로젝트 Storage API에 저장 성공:', { id: projectEntity.id, no: projectEntity.no, name: projectEntity.name });
 }
 
 /**
  * 프로젝트 업데이트 (ID 또는 번호로)
+ *
+ * @description
+ * - Storage API를 사용하여 프로젝트 업데이트
+ * - 수정일 자동 갱신
  */
-export function updateCustomProject(idOrNo: string, updates: Partial<ProjectTableRow>): boolean {
-  const existingProjects = getCustomProjects();
-  const projectIndex = existingProjects.findIndex(p => p.id === idOrNo || p.no === idOrNo);
-
-  if (projectIndex !== -1) {
-    // 기존 프로젝트를 업데이트하고 수정일 갱신
-    const updatedProject = {
-      ...existingProjects[projectIndex],
-      ...updates,
-      modifiedDate: new Date().toISOString()
+export async function updateCustomProject(idOrNo: string, updates: Partial<ProjectTableRow>): Promise<boolean> {
+  try {
+    // Project 엔티티 updates로 변환 (필드 매핑)
+    const projectUpdates: Partial<Project> = {
+      ...updates.no && { no: updates.no },
+      ...updates.name && { name: updates.name },
+      ...updates.status && { status: updates.status },
+      ...updates.progress !== undefined && { progress: updates.progress },
+      ...updates.projectContent && { projectContent: updates.projectContent, description: updates.projectContent },
+      ...updates.dueDate && { endDate: updates.dueDate },
+      ...updates.settlementMethod && { settlementMethod: updates.settlementMethod },
+      ...updates.paymentStatus && { paymentStatus: updates.paymentStatus },
+      ...updates.totalAmount !== undefined && { totalAmount: updates.totalAmount },
+      ...updates.currency && { currency: updates.currency },
+      ...updates.wbsTasks && { wbsTasks: updates.wbsTasks },
+      ...updates.hasContract !== undefined && { hasContract: updates.hasContract },
+      ...updates.hasBilling !== undefined && { hasBilling: updates.hasBilling },
+      ...updates.hasDocuments !== undefined && { hasDocuments: updates.hasDocuments },
+      ...updates.contract && { contract: updates.contract as any },
+      ...updates.estimate && { estimate: updates.estimate },
+      ...updates.billing && { billing: updates.billing },
+      ...updates.documents && { documents: updates.documents as any },
+      ...updates.documentStatus && { documentStatus: updates.documentStatus },
+      modifiedDate: new Date().toISOString(),
     };
 
-    existingProjects[projectIndex] = updatedProject;
-    saveCustomProjects(existingProjects);
+    // Storage API 업데이트
+    const updatedProject = await projectService.update(idOrNo, projectUpdates);
 
-    console.log('✅ 프로젝트 업데이트 성공:', {
-      id: updatedProject.id,
-      no: updatedProject.no,
-      name: updatedProject.name
-    });
+    if (updatedProject) {
+      console.log('✅ 프로젝트 업데이트 성공:', {
+        id: updatedProject.id,
+        no: updatedProject.no,
+        name: updatedProject.name
+      });
+      return true;
+    }
 
-    return true;
+    console.log('⚠️ 프로젝트 업데이트 실패: 프로젝트를 찾을 수 없음', idOrNo);
+    return false;
+  } catch (error) {
+    console.error('❌ 프로젝트 업데이트 중 오류:', error);
+    return false;
   }
-
-  console.log('⚠️ 프로젝트 업데이트 실패: 프로젝트를 찾을 수 없음', idOrNo);
-  return false;
 }
 
 /**
  * 프로젝트 삭제 (ID 또는 번호로)
+ *
+ * @description
+ * - Storage API를 사용하여 프로젝트 삭제
  */
-export function removeCustomProject(idOrNo: string): boolean {
-  const existingProjects = getCustomProjects();
-  const filteredProjects = existingProjects.filter(
-    p => p.id !== idOrNo && p.no !== idOrNo
-  );
-
-  if (filteredProjects.length !== existingProjects.length) {
-    saveCustomProjects(filteredProjects);
-    return true;
+export async function removeCustomProject(idOrNo: string): Promise<boolean> {
+  try {
+    const success = await projectService.delete(idOrNo);
+    if (success) {
+      console.log('✅ 프로젝트 삭제 성공:', idOrNo);
+    } else {
+      console.log('⚠️ 프로젝트 삭제 실패: 프로젝트를 찾을 수 없음', idOrNo);
+    }
+    return success;
+  } catch (error) {
+    console.error('❌ 프로젝트 삭제 중 오류:', error);
+    return false;
   }
-  return false;
 }
 
 /**
  * 모든 사용자 생성 프로젝트 삭제
- * SSR 환경에서는 아무것도 하지 않음
+ *
+ * @description
+ * - Storage API를 사용하여 모든 프로젝트 삭제
  */
-export function clearCustomProjects(): void {
-  // SSR 환경에서는 localStorage 접근 불가
+export async function clearCustomProjects(): Promise<void> {
+  // SSR 환경에서는 아무것도 하지 않음
   if (typeof window === 'undefined') {
     return;
   }
 
   try {
-    localStorage.removeItem(CUSTOM_PROJECTS_KEY);
+    const allProjects = await projectService.getAll();
+    for (const project of allProjects) {
+      await projectService.delete(project.id);
+    }
+    console.log('✅ 모든 프로젝트 삭제 완료');
   } catch (error) {
     console.error('Error clearing custom projects:', error);
   }
@@ -295,7 +469,7 @@ export function clearCustomProjects(): void {
 
 /**
  * Simulate async data fetching
- * Clean Slate 접근법: localStorage의 사용자 생성 프로젝트만 반환
+ * Clean Slate 접근법: Storage API의 사용자 생성 프로젝트만 반환
  */
 export async function fetchMockProjects(): Promise<ProjectTableRow[]> {
   console.log('🚀 fetchMockProjects 호출됨 (Clean Slate 시스템)');
@@ -303,8 +477,8 @@ export async function fetchMockProjects(): Promise<ProjectTableRow[]> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 300));
 
-  // 빈 상태에서 시작 - localStorage 프로젝트만 반환
-  const customProjects = getCustomProjects();
+  // Storage API에서 프로젝트 로드
+  const customProjects = await getCustomProjects();
   console.log('📋 fetchMockProjects: 로드된 프로젝트 수:', customProjects.length);
 
   if (customProjects.length > 0) {
@@ -325,7 +499,7 @@ export async function fetchMockProject(id: string): Promise<ProjectTableRow | nu
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 200));
 
-  const project = getMockProjectById(id);
+  const project = await getMockProjectById(id);
 
   if (project) {
     console.log('✅ fetchMockProject 성공:', { id: project.id, no: project.no, name: project.name });
@@ -341,17 +515,17 @@ export async function fetchMockProject(id: string): Promise<ProjectTableRow | nu
 // ============================================================================
 
 /**
- * localStorage의 모든 프로젝트와 마감일 정보를 상세히 출력
+ * Storage API의 모든 프로젝트와 마감일 정보를 상세히 출력
  * 브라우저 콘솔에서 debugDeadlineProjects()로 호출 가능
  */
-export function debugDeadlineProjects(): void {
+export async function debugDeadlineProjects(): Promise<void> {
   console.log('🔍 [DEBUG] === 마감일 디버깅 시작 ===');
 
-  const projects = getCustomProjects();
+  const projects = await getCustomProjects();
   console.log(`📊 총 프로젝트 수: ${projects.length}`);
 
   if (projects.length === 0) {
-    console.log('ℹ️ localStorage에 저장된 프로젝트가 없습니다.');
+    console.log('ℹ️ Storage API에 저장된 프로젝트가 없습니다.');
     return;
   }
 
@@ -410,8 +584,8 @@ export function debugDeadlineProjects(): void {
 /**
  * 특정 프로젝트의 마감일 정보만 출력
  */
-export function debugProjectDeadline(projectIdOrNo: string): void {
-  const project = getMockProjectById(projectIdOrNo);
+export async function debugProjectDeadline(projectIdOrNo: string): Promise<void> {
+  const project = await getMockProjectById(projectIdOrNo);
 
   if (!project) {
     console.log(`❌ 프로젝트를 찾을 수 없습니다: ${projectIdOrNo}`);

@@ -207,13 +207,8 @@ export default function ProjectDetail({
   const [documentSubTab, setDocumentSubTab] = useState<DocumentTabValue>('contract');
   const [taxSubTab, setTaxSubTab] = useState('taxInvoice');
   const [isStatusHelpOpen, setIsStatusHelpOpen] = useState(false);
-  const [documents, setDocuments] = useState<DocumentInfo[]>(() => {
-    // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
-    const storedDocuments = getProjectDocuments(project.no);
-    return storedDocuments.length > 0
-      ? storedDocuments
-      : (project.documents ?? []).map((doc) => ({ ...doc }));
-  });
+  // 문서 상태 초기화 (빈 배열로 시작, useEffect에서 로드)
+  const [documents, setDocuments] = useState<DocumentInfo[]>([]);
 
   // Project detail states
   const [settlementMethod, setSettlementMethod] = useState(project.settlementMethod || 'not_set');
@@ -246,9 +241,9 @@ export default function ProjectDetail({
   // 단계 초기화 확인 모달 상태
   const [showResetStatusDialog, setShowResetStatusDialog] = useState(false);
 
-  // 🔄 문서 상태를 새로고침하는 함수 (localStorage 변경 감지용)
-  const refreshDocuments = useCallback(() => {
-    const storedDocuments = getProjectDocuments(project.no);
+  // 🔄 문서 상태를 새로고침하는 함수 (Storage API 변경 감지용)
+  const refreshDocuments = useCallback(async () => {
+    const storedDocuments = await getProjectDocuments(project.no);
     const documentsToUse = storedDocuments.length > 0
       ? storedDocuments
       : (project.documents ?? []).map((doc) => ({ ...doc }));
@@ -258,7 +253,7 @@ export default function ProjectDetail({
   }, [project.no, project.documents]);
 
   useEffect(() => {
-    // localStorage에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
+    // Storage API에서 문서 데이터를 먼저 가져오고, 없으면 프로젝트 기본 데이터 사용
     refreshDocuments();
   }, [refreshDocuments]);
 
@@ -528,16 +523,19 @@ export default function ProjectDetail({
     openDocumentDialog(doc, true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     const { mode, targetDoc, targetType } = deleteDialogState;
 
     if (mode === 'single' && targetDoc) {
-      const updatedDocs = deleteProjectDocument(project.no, targetDoc.id);
-      setDocuments(updatedDocs);
-      toast({
-        title: '문서를 삭제했습니다',
-        description: `${targetDoc.name} 문서를 제거했습니다.`
-      });
+      const deleted = await deleteProjectDocument(project.no, targetDoc.id);
+      if (deleted) {
+        // 문서 목록 새로고침
+        await refreshDocuments();
+        toast({
+          title: '문서를 삭제했습니다',
+          description: `${targetDoc.name} 문서를 제거했습니다.`
+        });
+      }
     } else {
       const docs = documentsByType[targetType];
       if (docs.length === 0) {
@@ -546,11 +544,12 @@ export default function ProjectDetail({
           description: '현재 탭에는 삭제할 문서가 존재하지 않습니다.'
         });
       } else {
-        const updatedDocs = deleteProjectDocumentsByType(project.no, targetType);
-        setDocuments(updatedDocs);
+        const deletedCount = await deleteProjectDocumentsByType(project.no, targetType);
+        // 문서 목록 새로고침
+        await refreshDocuments();
         toast({
           title: '문서를 삭제했습니다',
-          description: '선택한 카테고리의 문서를 제거했습니다.'
+          description: `선택한 카테고리의 ${deletedCount}개 문서를 제거했습니다.`
         });
       }
     }
@@ -708,7 +707,7 @@ export default function ProjectDetail({
     return category;
   };
 
-  const handleDocumentGenerated = (payload: GeneratedDocumentPayload) => {
+  const handleDocumentGenerated = async (payload: GeneratedDocumentPayload) => {
     const targetSubTab = generatorState.targetSubTab;
     const documentType = mapCategoryToDocumentType(payload.category);
     const newDocument: DocumentInfo = {
@@ -722,12 +721,13 @@ export default function ProjectDetail({
       source: 'generated'
     };
 
-    const updatedDocs = addProjectDocument(project.no, newDocument);
-    setDocuments(updatedDocs);
+    const savedDocument = await addProjectDocument(project.no, newDocument);
+    // 문서 목록 새로고침
+    await refreshDocuments();
     setGeneratorState((prev) => ({ ...prev, open: false }));
     setMainTab('documentManagement');
     setDocumentSubTab(targetSubTab);
-    setPreviewDocument(newDocument);
+    setPreviewDocument(savedDocument);
     toast({
       title: '문서가 생성되었습니다',
       description: `${payload.name} 문서를 추가했습니다.`
@@ -1743,7 +1743,7 @@ export default function ProjectDetail({
                   {getProjectPageText.cancel('ko')}
                 </Button>
                 <Button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!previewDocument) {
                       return;
                     }
@@ -1753,18 +1753,21 @@ export default function ProjectDetail({
                       createdAt: new Date().toISOString(),
                       status: 'draft'
                     };
-                    const updatedDocs = updateProjectDocument(project.no, previewDocument.id, {
+                    const success = await updateProjectDocument(project.no, previewDocument.id, {
                       content: editingContent,
                       createdAt: new Date().toISOString(),
                       status: 'draft'
                     });
-                    setDocuments(updatedDocs);
-                    setPreviewDocument(updatedDocument);
-                    setIsDocumentEditing(false);
-                    toast({
-                      title: '문서를 업데이트했습니다',
-                      description: '수정한 내용이 저장되고 문서 현황에 반영되었습니다.'
-                    });
+
+                    if (success) {
+                      await refreshDocuments();
+                      setPreviewDocument(updatedDocument);
+                      setIsDocumentEditing(false);
+                      toast({
+                        title: '문서를 업데이트했습니다',
+                        description: '수정한 내용이 저장되고 문서 현황에 반영되었습니다.'
+                      });
+                    }
                   }}
                 >
                   {getProjectPageText.save('ko')}

@@ -326,7 +326,7 @@ export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsC
     setSelectedItems([]);
   }, []);
 
-  const handleDeleteSelected = useCallback(() => {
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedItems.length === 0) return;
 
     const projectsToDelete = data.filter(project => selectedItems.includes(project.id));
@@ -337,10 +337,10 @@ export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsC
       삭제할프로젝트: projectsToDelete.map(p => ({ id: p.id, no: p.no, name: p.name }))
     });
 
-    // 각 프로젝트를 개별적으로 삭제
-    projectsToDelete.forEach(project => {
+    // 각 프로젝트를 개별적으로 삭제 (forEach를 for...of로 변경)
+    for (const project of projectsToDelete) {
       try {
-        const deleted = removeCustomProject(project.no);
+        const deleted = await removeCustomProject(project.no);
         if (deleted) {
           deletedCount++;
           console.log(`✅ 프로젝트 삭제 성공: ${project.no} - ${project.name}`);
@@ -350,7 +350,7 @@ export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsC
       } catch (error) {
         console.error(`❌ 프로젝트 삭제 중 오류: ${project.no}`, error);
       }
-    });
+    }
 
     console.log(`🎯 ListView 벌크 삭제 완료: ${deletedCount}/${projectsToDelete.length}개 삭제됨`);
 

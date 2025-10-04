@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useLocalStorage } from './useLocalStorage';
 import { useDragAndDrop } from './useDragAndDrop';
 import type { TodoTask, TodoSection, TodoPriority, ViewMode } from '../types';
+import type { TodoTask as DashboardTodoTask } from '@/types/dashboard';
 import {
   STORAGE_KEY,
   SECTIONS_KEY,
@@ -11,6 +12,59 @@ import {
 } from '../constants';
 import { generateInitialData } from '../constants/mock-data';
 import { notifyCalendarDataChanged, addCalendarDataChangedListener } from '@/lib/calendar-integration/events';
+import {
+  getTodoTasks,
+  addTodoTask,
+  updateTodoTask,
+  deleteTodoTask,
+  saveTodoTasks
+} from '@/lib/mock/tasks';
+
+// ============================================================================
+// Type Conversion: Widget TodoTask ↔ Dashboard TodoTask
+// ============================================================================
+
+/**
+ * Convert Dashboard TodoTask to Widget TodoTask
+ */
+function dashboardToWidgetTask(dashboardTask: DashboardTodoTask): TodoTask {
+  return {
+    id: dashboardTask.id,
+    title: dashboardTask.title,
+    completed: dashboardTask.completed,
+    priority: dashboardTask.priority,
+    depth: dashboardTask.depth,
+    children: dashboardTask.children?.map(dashboardToWidgetTask),
+    sectionId: dashboardTask.sectionId,
+    parentId: dashboardTask.parentId,
+    order: dashboardTask.order,
+    isExpanded: dashboardTask.isExpanded,
+    createdAt: dashboardTask.createdAt, // Dashboard has required createdAt
+    completedAt: dashboardTask.completedAt,
+    dueDate: dashboardTask.dueDate,
+  };
+}
+
+/**
+ * Convert Widget TodoTask to Dashboard TodoTask
+ */
+function widgetToDashboardTask(widgetTask: TodoTask): DashboardTodoTask {
+  return {
+    id: widgetTask.id,
+    title: widgetTask.title,
+    completed: widgetTask.completed,
+    priority: widgetTask.priority,
+    depth: widgetTask.depth,
+    children: widgetTask.children?.map(widgetToDashboardTask),
+    sectionId: widgetTask.sectionId,
+    parentId: widgetTask.parentId,
+    order: widgetTask.order,
+    isExpanded: widgetTask.isExpanded,
+    createdAt: widgetTask.createdAt || new Date(), // Ensure createdAt is always set
+    completedAt: widgetTask.completedAt,
+    dueDate: widgetTask.dueDate,
+  };
+}
 
 export function useTodoState(props?: {
   tasks?: TodoTask[],
@@ -21,48 +75,39 @@ export function useTodoState(props?: {
 }) {
   const { tasks: propsTasks, onTaskAdd, onTaskToggle, onTaskDelete, onTaskUpdate } = props || {};
   
-  // Load initial data from localStorage or generate mock data
-  const loadInitialData = useCallback(() => {
+  // Load initial data from Storage API or generate mock data
+  const loadInitialData = useCallback(async () => {
     // SSR check - return initial data on server
     if (typeof window === 'undefined') {
       console.log('SSR detected, returning initial data');
       return generateInitialData();
     }
-    
+
     try {
-      const savedTasks = localStorage.getItem(STORAGE_KEY);
+      // Storage API에서 tasks 로드 (Dashboard TodoTask[])
+      const savedDashboardTasks = await getTodoTasks();
+
+      // Dashboard TodoTask[] → Widget TodoTask[] 변환
+      const savedTasks = savedDashboardTasks.map(dashboardToWidgetTask);
+
+      // Sections는 여전히 localStorage에서 로드 (UI state)
       const savedSections = localStorage.getItem(SECTIONS_KEY);
-      
-      console.log('LocalStorage savedTasks:', savedTasks);
+
+      console.log('Storage API savedTasks:', savedTasks);
       console.log('LocalStorage savedSections:', savedSections);
-      
-      if (savedTasks && savedSections && savedTasks !== '[]') {
+
+      if (savedTasks && savedTasks.length > 0 && savedSections) {
         // Use saved data if available
-        const parsedTasks = JSON.parse(savedTasks);
         const parsedSections = JSON.parse(savedSections);
 
         // Validate parsed data is array
-        if (!Array.isArray(parsedTasks) || !Array.isArray(parsedSections)) {
-          console.warn('Invalid data format in localStorage, generating initial data');
+        if (!Array.isArray(parsedSections)) {
+          console.warn('Invalid sections format in localStorage, generating initial data');
           return generateInitialData();
         }
 
-        // Restore Date objects
-        parsedTasks.forEach((task: any) => {
-          task.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
-          task.completedAt = task.completedAt ? new Date(task.completedAt) : undefined;
-          task.dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
-          if (task.children) {
-            task.children.forEach((child: any) => {
-              child.createdAt = child.createdAt ? new Date(child.createdAt) : new Date();
-              child.completedAt = child.completedAt ? new Date(child.completedAt) : undefined;
-              child.dueDate = child.dueDate ? new Date(child.dueDate) : undefined;
-            });
-          }
-        });
-
         console.log('Returning saved data');
-        return { tasks: parsedTasks, sections: parsedSections };
+        return { tasks: savedTasks, sections: parsedSections };
       } else {
         // Generate initial data
         console.log('Generating initial data');
@@ -71,20 +116,20 @@ export function useTodoState(props?: {
         return initialData;
       }
     } catch (error) {
-      console.error('Failed to load todo data from localStorage:', error);
+      console.error('Failed to load todo data from Storage API:', error);
       const initialData = generateInitialData();
       console.log('Generated initial data after error:', initialData);
       return initialData;
     }
   }, []);
 
-  // Get initial data - prefer localStorage over props
-  const getInitialData = useCallback(() => {
+  // Get initial data - prefer props over Storage API
+  const getInitialData = useCallback(async () => {
     // If props tasks are provided and not empty, use them
     if (propsTasks && propsTasks.length > 0) {
       console.log('Using tasks from props:', propsTasks);
-      const sectionsFromTasks = Array.from(new Set(propsTasks.map(t => t.sectionId)))
-        .filter(Boolean)
+      const sectionsFromTasks: TodoSection[] = Array.from(new Set(propsTasks.map(t => t.sectionId)))
+        .filter((id): id is string => Boolean(id)) // Type guard to filter out undefined
         .map((sectionId, index) => ({
           id: sectionId,
           name: sectionId,
@@ -93,53 +138,38 @@ export function useTodoState(props?: {
         }));
       return { tasks: propsTasks, sections: sectionsFromTasks };
     }
-    
-    // Otherwise, load from localStorage or generate initial data
-    return loadInitialData();
+
+    // Otherwise, load from Storage API or generate initial data
+    return await loadInitialData();
   }, [propsTasks, loadInitialData]);
 
-  // Initialize data once
-  const initialData = useMemo(() => getInitialData(), []);
-
-  // Custom serialization for Date objects
-  const dateSerializer = {
-    serialize: (value: TodoTask[]) => {
-      console.log('[useTodoState] Serializing tasks:', value);
-      return JSON.stringify(value);
-    },
-    deserialize: (value: string) => {
-      const parsed = JSON.parse(value);
-      // Convert date strings back to Date objects
-      if (Array.isArray(parsed)) {
-        parsed.forEach((task: any) => {
-          if (task.createdAt) task.createdAt = new Date(task.createdAt);
-          if (task.completedAt) task.completedAt = new Date(task.completedAt);
-          if (task.dueDate) task.dueDate = new Date(task.dueDate);
-          if (task.children) {
-            task.children.forEach((child: any) => {
-              if (child.createdAt) child.createdAt = new Date(child.createdAt);
-              if (child.completedAt) child.completedAt = new Date(child.completedAt);
-              if (child.dueDate) child.dueDate = new Date(child.dueDate);
-            });
-          }
-        });
-      }
-      console.log('[useTodoState] Deserialized tasks:', parsed);
-      return parsed;
-    }
-  };
-
   // React 상태 직접 관리 (useLocalStorage 대신 useState 사용)
-  const [localTasks, setLocalTasksState] = useState<TodoTask[]>(initialData.tasks);
-  const [sectionsRaw, setSectionsRaw] = useState<TodoSection[]>(initialData.sections);
+  const [localTasks, setLocalTasksState] = useState<TodoTask[]>([]);
+  const [sectionsRaw, setSectionsRaw] = useState<TodoSection[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // localStorage 동기화를 위한 헬퍼 함수
+  // Initial data 비동기 로드
+  useEffect(() => {
+    const initializeData = async () => {
+      const data = await getInitialData();
+      setLocalTasksState(data.tasks);
+      setSectionsRaw(data.sections);
+      setIsInitialized(true);
+    };
+
+    initializeData();
+  }, []); // 한 번만 실행
+
+  // Storage API 동기화를 위한 헬퍼 함수
   const setLocalTasks = useCallback((tasks: TodoTask[] | ((prev: TodoTask[]) => TodoTask[])) => {
     setLocalTasksState((prevTasks) => {
       const newTasks = typeof tasks === 'function' ? tasks(prevTasks) : tasks;
-      // localStorage에 저장
+      // Widget TodoTask[] → Dashboard TodoTask[] 변환 후 Storage API에 저장 (비동기)
       if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newTasks));
+        const dashboardTasks = newTasks.map(widgetToDashboardTask);
+        saveTodoTasks(dashboardTasks).catch((error) => {
+          console.error('Failed to save tasks to Storage API:', error);
+        });
       }
       return newTasks;
     });
@@ -158,7 +188,7 @@ export function useTodoState(props?: {
   }, []);
 
   // Ensure sections is always an array (defensive programming)
-  const sections = Array.isArray(sectionsRaw) ? sectionsRaw : initialData.sections;
+  const sections = Array.isArray(sectionsRaw) ? sectionsRaw : [];
   
   // viewMode도 useState로 변경
   const [viewMode, setViewModeState] = useState<ViewMode>(() => {
@@ -519,50 +549,21 @@ export function useTodoState(props?: {
   // 실시간 동기화: 다른 위젯(캘린더)에서의 변경사항 감지
 
   useEffect(() => {
-    const handleStorageChange = () => {
-      // localStorage에서 최신 데이터 다시 로드
+    const handleStorageChange = async () => {
+      // Storage API에서 최신 데이터 다시 로드
       console.log('[TodoListWidget] handleStorageChange called');
       try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        console.log('[TodoListWidget] Raw localStorage data:', data);
-        if (data) {
-          const parsed = JSON.parse(data);
-          if (Array.isArray(parsed)) {
-            // 새 배열을 만들어서 React가 변경을 감지하도록 함
-            const updatedTasks = parsed.map((task: any) => {
-              console.log('[TodoListWidget] Before date conversion - Task:', task.id, 'DueDate:', task.dueDate);
+        const updatedTasks = await getTodoTasks();
+        console.log('[TodoListWidget] Storage API data:', updatedTasks);
 
-              // 새 객체를 만들어서 불변성 유지
-              const newTask = { ...task };
-              newTask.createdAt = task.createdAt ? new Date(task.createdAt) : new Date();
-              newTask.completedAt = task.completedAt ? new Date(task.completedAt) : undefined;
-              newTask.dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
-
-              console.log('[TodoListWidget] After date conversion - Task:', newTask.id, 'DueDate:', newTask.dueDate);
-
-              if (task.children && task.children.length > 0) {
-                newTask.children = task.children.map((child: any) => ({
-                  ...child,
-                  createdAt: child.createdAt ? new Date(child.createdAt) : new Date(),
-                  completedAt: child.completedAt ? new Date(child.completedAt) : undefined,
-                  dueDate: child.dueDate ? new Date(child.dueDate) : undefined
-                }));
-              }
-
-              return newTask;
-            });
-
-            // 상태 업데이트 (useState의 setter 직접 사용)
-            console.log('[TodoListWidget] Updating local tasks with fresh data from localStorage:', updatedTasks);
-
-            // React 상태 직접 업데이트 (localStorage 저장 없이)
-            setLocalTasksState([...updatedTasks]);
-
-            console.log('[TodoListWidget] Local tasks updated successfully');
-          }
+        if (Array.isArray(updatedTasks)) {
+          // React 상태 직접 업데이트 (Storage API 저장 없이)
+          console.log('[TodoListWidget] Updating local tasks with fresh data from Storage API:', updatedTasks);
+          setLocalTasksState([...updatedTasks]);
+          console.log('[TodoListWidget] Local tasks updated successfully');
         }
       } catch (error) {
-        console.error('Failed to sync todo data from storage change:', error);
+        console.error('Failed to sync todo data from Storage API:', error);
       }
     };
 

@@ -6,10 +6,10 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { devtools } from 'zustand/middleware';
-import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { ImprovedWidget, DashboardConfig, DashboardEditState } from '@/types/improved-dashboard';
 import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout, optimizeLayout, checkCollision } from '@/lib/dashboard/grid-utils';
+import { dashboardService } from '@/lib/storage';
 
 interface ImprovedDashboardStore {
   // 위젯 상태
@@ -95,12 +95,11 @@ const initialEditState: DashboardEditState = {
   dragOverWidgetId: null,
 };
 
-// Zustand 스토어 생성 (localStorage 연동)
+// Zustand 스토어 생성 (Storage API 연동)
 export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
   subscribeWithSelector(
     devtools(
-      persist(
-        immer((set, get) => ({
+      immer((set, get) => ({
         // 초기 상태
         widgets: [],
         config: initialConfig,
@@ -804,43 +803,6 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
           }
         }),
       })),
-        {
-          name: 'weave-dashboard-layout', // localStorage 키 이름
-          version: 2, // 스토리지 버전 (v2: maxRows 제거로 세로 무한 확장 지원)
-          partialize: (state) => ({
-            // localStorage에 저장할 상태만 선택
-            widgets: state.widgets,
-            config: state.config,
-            // editState는 임시 상태이므로 저장하지 않음
-          }),
-          migrate: (persistedState: any, version: number) => {
-            // 버전 1에서 2로 마이그레이션: maxRows 제거
-            if (version === 1) {
-              console.log('📦 대시보드 v1 → v2 마이그레이션: 세로 무한 확장 활성화');
-              if (persistedState?.config?.maxRows !== undefined) {
-                const { maxRows, ...configWithoutMaxRows } = persistedState.config;
-                persistedState.config = configWithoutMaxRows;
-                console.log('✅ maxRows 제거 완료 - 세로 무한 확장 모드 활성화');
-              }
-            }
-            return persistedState;
-          },
-          onRehydrateStorage: (state) => {
-            console.log('🔄 대시보드 레이아웃 복원 시작...');
-            return (state, error) => {
-              if (error) {
-                console.error('❌ 대시보드 레이아웃 복원 실패:', error);
-              } else if (state) {
-                console.log('✅ 대시보드 레이아웃 복원 완료:', {
-                  widgetCount: state.widgets.length,
-                  cols: state.config.cols,
-                  verticalExpansion: state.config.maxRows === undefined ? '무한' : state.config.maxRows
-                });
-              }
-            };
-          },
-        }
-      ),
       {
         name: 'improved-dashboard-store',
       }
@@ -858,3 +820,85 @@ export const selectSelectedWidget = (state: ImprovedDashboardStore) =>
 
 // shallow 비교 export
 export { shallow } from 'zustand/shallow';
+
+// ============================================================================
+// Storage Integration
+// ============================================================================
+
+/**
+ * Initialize dashboard store from storage
+ * This should be called once when the app starts
+ */
+export async function initializeDashboardStore(): Promise<void> {
+  try {
+    console.log('🔄 Loading dashboard layout from storage...');
+    const data = await dashboardService.load();
+
+    if (data) {
+      const { widgets, config } = data;
+      useImprovedDashboardStore.setState({
+        widgets,
+        config,
+      });
+      console.log('✅ Dashboard layout loaded:', {
+        widgetCount: widgets.length,
+        cols: config.cols,
+      });
+    } else {
+      console.log('ℹ️ No saved dashboard layout found, using defaults');
+    }
+  } catch (error) {
+    console.error('❌ Failed to load dashboard layout:', error);
+  }
+}
+
+/**
+ * Save dashboard data to storage (debounced)
+ */
+let saveTimeout: NodeJS.Timeout | null = null;
+const SAVE_DEBOUNCE_MS = 300;
+
+function debouncedSave() {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+
+  saveTimeout = setTimeout(async () => {
+    const state = useImprovedDashboardStore.getState();
+    try {
+      await dashboardService.save(state.widgets, state.config);
+      console.log('💾 Dashboard layout saved');
+    } catch (error) {
+      console.error('❌ Failed to save dashboard layout:', error);
+    }
+  }, SAVE_DEBOUNCE_MS);
+}
+
+/**
+ * Setup auto-save subscription
+ * This should be called once when the app starts (after initialization)
+ */
+export function setupDashboardAutoSave(): () => void {
+  // Subscribe to widgets changes
+  const unsubscribeWidgets = useImprovedDashboardStore.subscribe(
+    (state) => state.widgets,
+    () => debouncedSave(),
+    { fireImmediately: false }
+  );
+
+  // Subscribe to config changes
+  const unsubscribeConfig = useImprovedDashboardStore.subscribe(
+    (state) => state.config,
+    () => debouncedSave(),
+    { fireImmediately: false }
+  );
+
+  // Return cleanup function
+  return () => {
+    unsubscribeWidgets();
+    unsubscribeConfig();
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+  };
+}

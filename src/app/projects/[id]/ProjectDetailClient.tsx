@@ -142,14 +142,14 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
             };
 
             // 개별 문서 저장 (커스텀 이벤트 자동 발생)
-            addProjectDocument(projectWithId.no, newDocument);
+            await addProjectDocument(projectWithId.no, newDocument);
 
-            // 🚀 실제 저장 검증: localStorage에서 문서가 실제로 저장되었는지 확인
+            // 🚀 실제 저장 검증: Storage API에서 문서가 실제로 저장되었는지 확인
             let verificationAttempts = 0;
             const maxAttempts = 10;
 
             while (verificationAttempts < maxAttempts) {
-              const storedDocs = getProjectDocuments(projectWithId.no);
+              const storedDocs = await getProjectDocuments(projectWithId.no);
               const isDocumentSaved = storedDocs.some(doc => doc.id === newDocument.id);
 
               if (isDocumentSaved) {
@@ -169,8 +169,8 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
           }
 
           // 🔍 최종 검증: 모든 문서가 실제로 저장되었는지 확인
-          const finalStoredDocs = getProjectDocuments(projectWithId.no);
-          console.log(`🔍 최종 검증: localStorage에 ${finalStoredDocs.length}개 문서 저장됨 (예상: ${newProject.generatedDocuments.length}개)`);
+          const finalStoredDocs = await getProjectDocuments(projectWithId.no);
+          console.log(`🔍 최종 검증: Storage API에 ${finalStoredDocs.length}개 문서 저장됨 (예상: ${newProject.generatedDocuments.length}개)`);
 
           if (finalStoredDocs.length !== newProject.generatedDocuments.length) {
             throw new Error(`문서 개수 불일치: 저장됨 ${finalStoredDocs.length}개, 예상 ${newProject.generatedDocuments.length}개`);
@@ -200,7 +200,7 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
 
       // 🔍 페이지 이동 전 최종 상태 확인 및 추가 동기화 시간
       console.log('🔄 페이지 이동 전 최종 상태 확인...');
-      const finalVerificationDocs = getProjectDocuments(projectWithId.no);
+      const finalVerificationDocs = await getProjectDocuments(projectWithId.no);
       console.log(`📊 최종 확인: 프로젝트 ${projectWithId.no}에 ${finalVerificationDocs.length}개 문서 저장 확인`);
 
       // 더 안전한 동기화 대기 시간 (localStorage 완전 동기화)
@@ -487,7 +487,7 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
     setEditState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const success = updateCustomProject(project.no, editState.editingData);
+      const success = await updateCustomProject(project.no, editState.editingData);
 
       if (success) {
         console.log('✅ 프로젝트 편집 성공:', {
@@ -535,12 +535,12 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!project) return;
 
     try {
       // localStorage에서 프로젝트 삭제
-      const deleted = removeCustomProject(project.no);
+      const deleted = await removeCustomProject(project.no);
 
       if (deleted) {
         console.log('✅ 프로젝트 삭제 성공:', { id: project.id, no: project.no, name: project.name });
@@ -585,11 +585,11 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
   };
 
   // 단계 초기화 핸들러
-  const handleResetStatus = () => {
+  const handleResetStatus = async () => {
     if (!project) return;
 
     try {
-      const success = updateCustomProject(project.no, {
+      const success = await updateCustomProject(project.no, {
         status: 'planning',
         paymentStatus: 'not_started'
       });

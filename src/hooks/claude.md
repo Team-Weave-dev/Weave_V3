@@ -8,7 +8,10 @@
 
 ```
 hooks/
-└── use-toast.ts      # 🍞 토스트 알림 관리 훅
+├── use-toast.ts            # 🍞 토스트 알림 관리 훅
+├── useStorageSync.ts       # 🔄 실시간 스토리지 동기화 훅 (Phase 7.4)
+├── use-color-palette.ts    # 🎨 컬러 팔레트 관리 훅
+└── useIntegratedCalendar.ts # 📅 통합 캘린더 관리 훅
 ```
 
 ## 🍞 use-toast.ts - 토스트 알림 시스템
@@ -185,6 +188,219 @@ export const toastPatterns = {
 toast(toastPatterns.success("데이터가 업데이트되었습니다."))
 toast(toastPatterns.error("네트워크 연결을 확인해주세요."))
 ```
+
+## 🔄 useStorageSync - 실시간 스토리지 동기화 훅 (Phase 7.4)
+
+### 개요
+Storage 시스템과 React 상태를 실시간으로 동기화하는 훅 모음입니다. **멀티탭 동기화** 및 **낙관적 업데이트**를 지원합니다.
+
+### 주요 기능
+- **실시간 동기화**: StorageManager 구독 시스템 기반 자동 동기화
+- **타입 안전성**: 완전한 TypeScript 타입 지원
+- **로딩/에러 상태**: React 패턴에 맞는 상태 관리
+- **낙관적 업데이트**: 자동 롤백 지원
+- **멀티탭 동기화**: localStorage 이벤트 기반 크로스탭 동기화
+
+### 제공되는 훅
+
+#### 1. useStorageSync - 단일 키 동기화
+```typescript
+import { useStorageSync } from '@/hooks/useStorageSync'
+
+function ProjectList() {
+  const { data, isLoading, error, refresh } = useStorageSync<Project[]>('projects', [])
+
+  if (isLoading) return <div>Loading...</div>
+  if (error) return <div>Error: {error.message}</div>
+
+  return (
+    <div>
+      {data.map(project => (
+        <ProjectCard key={project.id} project={project} />
+      ))}
+      <Button onClick={refresh}>새로고침</Button>
+    </div>
+  )
+}
+```
+
+#### 2. useStorageSyncMulti - 다중 키 동기화
+```typescript
+import { useStorageSyncMulti } from '@/hooks/useStorageSync'
+
+function Dashboard() {
+  const { data, isLoading, errors, refresh } = useStorageSyncMulti([
+    'projects',
+    'tasks',
+    'events'
+  ])
+
+  if (isLoading) return <div>Loading...</div>
+
+  const projects = data.get('projects') as Project[]
+  const tasks = data.get('tasks') as Task[]
+  const events = data.get('events') as CalendarEvent[]
+
+  return (
+    <DashboardView
+      projects={projects}
+      tasks={tasks}
+      events={events}
+    />
+  )
+}
+```
+
+#### 3. useStorageSyncEntity - 엔티티 ID 기반 동기화
+```typescript
+import { useStorageSyncEntity } from '@/hooks/useStorageSync'
+import { projectService } from '@/lib/storage'
+
+function ProjectDetail({ projectId }: { projectId: string }) {
+  const { data: project, isLoading, error, refresh } = useStorageSyncEntity(
+    () => projectService,
+    projectId,
+    null
+  )
+
+  if (isLoading) return <div>Loading project...</div>
+  if (!project) return <div>Project not found</div>
+
+  return <ProjectInfo project={project} onRefresh={refresh} />
+}
+```
+
+#### 4. useStorageSyncOptimistic - 낙관적 업데이트
+```typescript
+import { useStorageSyncOptimistic } from '@/hooks/useStorageSync'
+
+function TaskList() {
+  const { data: tasks, update, isLoading, error } = useStorageSyncOptimistic<Task[]>(
+    'tasks',
+    []
+  )
+
+  const handleToggleTask = async (taskId: string) => {
+    try {
+      await update(async (currentTasks) => {
+        // UI는 즉시 업데이트됨 (낙관적 업데이트)
+        return currentTasks.map(task =>
+          task.id === taskId
+            ? { ...task, completed: !task.completed }
+            : task
+        )
+      })
+      // 성공 시 자동으로 storage에 저장
+    } catch (error) {
+      // 실패 시 자동 롤백
+      console.error('Failed to update task:', error)
+    }
+  }
+
+  return (
+    <div>
+      {tasks.map(task => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          onToggle={() => handleToggleTask(task.id)}
+        />
+      ))}
+    </div>
+  )
+}
+```
+
+### 반환 값
+
+**useStorageSync & useStorageSyncOptimistic**:
+```typescript
+{
+  data: T                    // 현재 데이터
+  isLoading: boolean         // 로딩 상태
+  error: Error | null        // 에러 상태
+  refresh: () => Promise<void> // 수동 새로고침
+  update?: (updater) => Promise<void> // 낙관적 업데이트 (Optimistic만)
+}
+```
+
+**useStorageSyncMulti**:
+```typescript
+{
+  data: Map<string, unknown>    // 키별 데이터 맵
+  isLoading: boolean            // 로딩 상태
+  errors: Map<string, Error>    // 키별 에러 맵
+  refresh: () => Promise<void>  // 수동 새로고침
+}
+```
+
+**useStorageSyncEntity**:
+```typescript
+{
+  data: T | null             // 엔티티 데이터
+  isLoading: boolean         // 로딩 상태
+  error: Error | null        // 에러 상태
+  refresh: () => Promise<void> // 수동 새로고침
+}
+```
+
+### 사용 패턴
+
+#### 프로젝트 상세 페이지
+```typescript
+function ProjectDetailPage({ params }: { params: { id: string } }) {
+  const { data: project } = useStorageSyncEntity(
+    () => projectService,
+    params.id,
+    null
+  )
+
+  const { data: tasks } = useStorageSync<Task[]>('tasks', [])
+  const projectTasks = tasks.filter(t => t.projectId === params.id)
+
+  return <ProjectDetail project={project} tasks={projectTasks} />
+}
+```
+
+#### 대시보드 위젯
+```typescript
+function DashboardWidgets() {
+  const { data, isLoading } = useStorageSyncMulti([
+    'projects',
+    'tasks',
+    'events',
+    'settings'
+  ])
+
+  if (isLoading) return <DashboardSkeleton />
+
+  return (
+    <Dashboard
+      projects={data.get('projects')}
+      tasks={data.get('tasks')}
+      events={data.get('events')}
+      settings={data.get('settings')}
+    />
+  )
+}
+```
+
+### 기술 세부사항
+
+**구독 메커니즘**:
+- StorageManager의 subscribe 메서드 사용
+- StorageEvent 타입 기반 이벤트 처리
+- 컴포넌트 언마운트 시 자동 구독 해제
+
+**에러 처리**:
+- try-catch로 모든 에러 캡처
+- 에러 상태를 React state로 관리
+- 사용자에게 명확한 에러 메시지 제공
+
+**성능 최적화**:
+- 불필요한 리렌더링 방지 (useCallback, useMemo)
+- 병렬 데이터 로딩 (Promise.all)
+- 자동 cleanup으로 메모리 누수 방지
 
 ## 🚀 새로운 훅 추가 가이드
 

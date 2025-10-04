@@ -1,41 +1,269 @@
+/**
+ * Document Mock Data and Type Converters
+ *
+ * This file provides utilities for managing documents and converting between
+ * DocumentInfo (UI type) and Document (Storage API entity type).
+ */
+
 import type { DocumentInfo } from '../types/project-table.types';
 import type { GeneratedDocument } from '../document-generator/templates';
+import type { Document, DocumentCreate, DocumentStatus as StorageDocumentStatus } from '@/lib/storage/types/entities/document';
+import { documentService } from '@/lib/storage';
 
-const PROJECT_DOCUMENTS_KEY = 'weave_project_documents';
+// ============================================================================
+// Type Conversion Functions
+// ============================================================================
 
-// localStorage에서 프로젝트별 문서 데이터 조회
-export function getProjectDocuments(projectId: string): DocumentInfo[] {
-  if (typeof window === 'undefined') return [];
+/**
+ * Status 매핑: DocumentInfo status → Document status
+ */
+const UI_TO_STORAGE_STATUS: Record<DocumentInfo['status'], StorageDocumentStatus> = {
+  'draft': 'draft',
+  'sent': 'sent',
+  'approved': 'approved',
+  'completed': 'completed',
+};
 
+/**
+ * Status 매핑: Document status → DocumentInfo status
+ */
+const STORAGE_TO_UI_STATUS: Record<StorageDocumentStatus, DocumentInfo['status']> = {
+  'draft': 'draft',
+  'sent': 'sent',
+  'approved': 'approved',
+  'completed': 'completed',
+  'archived': 'completed', // archived는 UI에서 completed로 표시
+};
+
+/**
+ * Convert DocumentInfo (UI type) to Document (Storage API entity)
+ *
+ * @param documentInfo - UI type DocumentInfo
+ * @param projectId - Project ID
+ * @param userId - Current user ID (default: '1')
+ * @returns Document entity for Storage API
+ */
+export function documentInfoToDocument(
+  documentInfo: DocumentInfo,
+  projectId: string,
+  userId: string = '1'
+): Document {
+  const status = UI_TO_STORAGE_STATUS[documentInfo.status] || 'draft';
+
+  const document: Document = {
+    id: documentInfo.id,
+    projectId,
+    userId,
+    name: documentInfo.name,
+    type: documentInfo.type,
+    status,
+    content: documentInfo.content,
+    templateId: documentInfo.templateId,
+    source: documentInfo.source,
+    savedAt: documentInfo.createdAt || new Date().toISOString(),
+    createdAt: documentInfo.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  return document;
+}
+
+/**
+ * Convert Document (Storage API entity) to DocumentInfo (UI type)
+ *
+ * @param document - Storage API Document entity
+ * @returns UI type DocumentInfo
+ */
+export function documentToDocumentInfo(document: Document): DocumentInfo {
+  const status = STORAGE_TO_UI_STATUS[document.status] || 'draft';
+
+  const documentInfo: DocumentInfo = {
+    id: document.id,
+    type: document.type,
+    name: document.name,
+    createdAt: document.savedAt || document.createdAt,
+    status,
+    content: document.content,
+    templateId: document.templateId,
+    source: document.source,
+  };
+
+  return documentInfo;
+}
+
+// ============================================================================
+// Legacy Migration
+// ============================================================================
+
+const LEGACY_DOCUMENTS_KEY = 'weave_project_documents';
+
+/**
+ * Migrate legacy documents from localStorage to Storage API
+ *
+ * Old keys:
+ * - 'weave_project_documents' → STORAGE_KEYS.DOCUMENTS (via DocumentService)
+ */
+export async function migrateLegacyDocuments(): Promise<void> {
   try {
-    const stored = localStorage.getItem(PROJECT_DOCUMENTS_KEY);
-    if (!stored) return [];
+    // 이미 마이그레이션 되었는지 확인
+    const existingDocs = await documentService.getAll();
+    if (existingDocs.length > 0) {
+      console.log('✅ Documents already migrated, skipping legacy migration');
+      return;
+    }
 
-    const allDocuments = JSON.parse(stored) as Record<string, DocumentInfo[]>;
-    return allDocuments[projectId] || [];
+    // Legacy documents 읽기
+    if (typeof window === 'undefined') {
+      console.log('ℹ️ Server-side environment, skipping migration');
+      return;
+    }
+
+    const legacyDocsStr = localStorage.getItem(LEGACY_DOCUMENTS_KEY);
+    if (!legacyDocsStr) {
+      console.log('ℹ️ No legacy documents found');
+      return;
+    }
+
+    const legacyDocsByProject = JSON.parse(legacyDocsStr) as Record<string, DocumentInfo[]>;
+    let totalMigrated = 0;
+
+    console.log(`📦 Migrating legacy documents from ${Object.keys(legacyDocsByProject).length} projects...`);
+
+    // 프로젝트별 문서 마이그레이션
+    for (const [projectId, documents] of Object.entries(legacyDocsByProject)) {
+      for (const documentInfo of documents) {
+        const document = documentInfoToDocument(documentInfo, projectId);
+        await documentService.create(document);
+        totalMigrated++;
+      }
+    }
+
+    console.log(`✅ Successfully migrated ${totalMigrated} documents`);
+
   } catch (error) {
-    console.error('Error reading project documents from localStorage:', error);
-    return [];
+    console.error('❌ Failed to migrate legacy documents:', error);
   }
 }
 
-// localStorage에 프로젝트별 문서 데이터 저장
-export function saveProjectDocuments(projectId: string, documents: DocumentInfo[]): void {
-  if (typeof window === 'undefined') return;
+// ============================================================================
+// Storage API Wrapper Functions (async)
+// ============================================================================
 
-  try {
-    const stored = localStorage.getItem(PROJECT_DOCUMENTS_KEY);
-    const allDocuments = stored ? JSON.parse(stored) : {};
+/**
+ * Get all documents for a project (converts Document[] to DocumentInfo[])
+ */
+export async function getProjectDocuments(projectId: string): Promise<DocumentInfo[]> {
+  // Legacy migration (once)
+  await migrateLegacyDocuments();
 
-    allDocuments[projectId] = documents;
-    localStorage.setItem(PROJECT_DOCUMENTS_KEY, JSON.stringify(allDocuments));
-  } catch (error) {
-    console.error('Error saving project documents to localStorage:', error);
+  const documents = await documentService.getDocumentsByProject(projectId);
+  return documents.map(documentToDocumentInfo);
+}
+
+/**
+ * Add a new document to a project
+ */
+export async function addProjectDocument(projectId: string, documentInfo: DocumentInfo): Promise<DocumentInfo> {
+  const document = documentInfoToDocument(documentInfo, projectId);
+  const created = await documentService.create(document);
+
+  // 🔔 이벤트 발생
+  notifyDocumentChange(projectId, 'added', { documentId: created.id, documentName: created.name });
+
+  return documentToDocumentInfo(created);
+}
+
+/**
+ * Update an existing document
+ */
+export async function updateProjectDocument(
+  projectId: string,
+  documentId: string,
+  updates: Partial<DocumentInfo>
+): Promise<boolean> {
+  const docUpdates: Partial<Document> = {};
+
+  if (updates.name !== undefined) docUpdates.name = updates.name;
+  if (updates.status !== undefined) {
+    docUpdates.status = UI_TO_STORAGE_STATUS[updates.status];
+  }
+  if (updates.content !== undefined) docUpdates.content = updates.content;
+  if (updates.templateId !== undefined) docUpdates.templateId = updates.templateId;
+  if (updates.source !== undefined) docUpdates.source = updates.source;
+
+  const updated = await documentService.update(documentId, docUpdates);
+
+  // 🔔 이벤트 발생
+  if (updated) {
+    notifyDocumentChange(projectId, 'updated', { documentId, updates: Object.keys(updates) });
+  }
+
+  return updated !== null;
+}
+
+/**
+ * Delete a document
+ */
+export async function deleteProjectDocument(projectId: string, documentId: string): Promise<boolean> {
+  // Get document info before deletion for event
+  const document = await documentService.getById(documentId);
+  const deleted = await documentService.delete(documentId);
+
+  // 🔔 이벤트 발생
+  if (deleted && document) {
+    const remaining = await documentService.getDocumentsByProject(projectId);
+    notifyDocumentChange(projectId, 'deleted', {
+      documentId,
+      documentName: document.name,
+      remainingCount: remaining.length
+    });
+  }
+
+  return deleted;
+}
+
+/**
+ * Delete all documents of a specific type from a project
+ */
+export async function deleteProjectDocumentsByType(
+  projectId: string,
+  documentType: DocumentInfo['type']
+): Promise<number> {
+  const projectDocs = await documentService.getDocumentsByProject(projectId);
+  const docsToDelete = projectDocs.filter(doc => doc.type === documentType);
+
+  let deletedCount = 0;
+  for (const doc of docsToDelete) {
+    const deleted = await documentService.delete(doc.id);
+    if (deleted) deletedCount++;
+  }
+
+  // 🔔 이벤트 발생
+  if (deletedCount > 0) {
+    const remaining = await documentService.getDocumentsByProject(projectId);
+    notifyDocumentChange(projectId, 'bulk-deleted', {
+      documentType,
+      deletedCount,
+      remainingCount: remaining.length
+    });
+  }
+
+  return deletedCount;
+}
+
+/**
+ * Clear all documents for a project
+ */
+export async function clearProjectDocuments(projectId: string): Promise<void> {
+  const projectDocs = await documentService.getDocumentsByProject(projectId);
+
+  for (const doc of projectDocs) {
+    await documentService.delete(doc.id);
   }
 }
 
 // 🔔 문서 변경 이벤트를 발생시키는 헬퍼 함수
-function notifyDocumentChange(projectId: string, action: 'added' | 'updated' | 'deleted' | 'bulk-deleted', details?: any): void {
+function notifyDocumentChange(projectId: string, action: 'added' | 'updated' | 'deleted' | 'bulk-deleted' | 'created', details?: any): void {
   if (typeof window !== 'undefined') {
     const event = new CustomEvent('weave-documents-changed', {
       detail: { projectId, action, ...details }
@@ -43,66 +271,6 @@ function notifyDocumentChange(projectId: string, action: 'added' | 'updated' | '
     window.dispatchEvent(event);
     console.log(`🔔 [EVENT] 문서 ${action} 이벤트 발생 - 프로젝트: ${projectId}`);
   }
-}
-
-// 프로젝트에 새 문서 추가
-export function addProjectDocument(projectId: string, document: DocumentInfo): DocumentInfo[] {
-  const existingDocs = getProjectDocuments(projectId);
-  const updatedDocs = [...existingDocs, document];
-  saveProjectDocuments(projectId, updatedDocs);
-
-  // 이벤트 발생
-  notifyDocumentChange(projectId, 'added', { documentId: document.id, documentName: document.name });
-
-  return updatedDocs;
-}
-
-// 프로젝트 문서 업데이트
-export function updateProjectDocument(projectId: string, documentId: string, updates: Partial<DocumentInfo>): DocumentInfo[] {
-  const existingDocs = getProjectDocuments(projectId);
-  const updatedDocs = existingDocs.map(doc =>
-    doc.id === documentId ? { ...doc, ...updates } : doc
-  );
-  saveProjectDocuments(projectId, updatedDocs);
-
-  // 이벤트 발생
-  notifyDocumentChange(projectId, 'updated', { documentId, updates: Object.keys(updates) });
-
-  return updatedDocs;
-}
-
-// 프로젝트 문서 삭제
-export function deleteProjectDocument(projectId: string, documentId: string): DocumentInfo[] {
-  const existingDocs = getProjectDocuments(projectId);
-  const deletedDoc = existingDocs.find(doc => doc.id === documentId);
-  const updatedDocs = existingDocs.filter(doc => doc.id !== documentId);
-  saveProjectDocuments(projectId, updatedDocs);
-
-  // 이벤트 발생
-  notifyDocumentChange(projectId, 'deleted', {
-    documentId,
-    documentName: deletedDoc?.name,
-    remainingCount: updatedDocs.length
-  });
-
-  return updatedDocs;
-}
-
-// 프로젝트의 특정 타입 문서들 삭제
-export function deleteProjectDocumentsByType(projectId: string, documentType: DocumentInfo['type']): DocumentInfo[] {
-  const existingDocs = getProjectDocuments(projectId);
-  const deletedDocs = existingDocs.filter(doc => doc.type === documentType);
-  const updatedDocs = existingDocs.filter(doc => doc.type !== documentType);
-  saveProjectDocuments(projectId, updatedDocs);
-
-  // 이벤트 발생
-  notifyDocumentChange(projectId, 'bulk-deleted', {
-    documentType,
-    deletedCount: deletedDocs.length,
-    remainingCount: updatedDocs.length
-  });
-
-  return updatedDocs;
 }
 
 // GeneratedDocument를 DocumentInfo로 변환하는 헬퍼 함수
@@ -128,213 +296,42 @@ export function convertGeneratedDocumentToDocumentInfo(generatedDoc: GeneratedDo
   };
 }
 
-// 프로젝트 생성 시 생성된 문서들을 documents 시스템에 저장
-export function saveGeneratedDocumentsToProject(projectId: string, generatedDocuments: GeneratedDocument[]): DocumentInfo[] {
+/**
+ * Save generated documents to a project
+ */
+export async function saveGeneratedDocumentsToProject(
+  projectId: string,
+  generatedDocuments: GeneratedDocument[]
+): Promise<DocumentInfo[]> {
   // GeneratedDocument를 DocumentInfo로 변환
   const documentInfos = generatedDocuments.map(convertGeneratedDocumentToDocumentInfo);
 
   // 프로젝트에 문서들 저장
-  saveProjectDocuments(projectId, documentInfos);
+  const savedDocs: DocumentInfo[] = [];
+  for (const docInfo of documentInfos) {
+    const saved = await addProjectDocument(projectId, docInfo);
+    savedDocs.push(saved);
+  }
 
-  console.log(`✅ 프로젝트 ${projectId}에 ${documentInfos.length}개의 생성된 문서를 저장했습니다.`, documentInfos.map(d => d.name));
+  console.log(`✅ 프로젝트 ${projectId}에 ${savedDocs.length}개의 생성된 문서를 저장했습니다.`, savedDocs.map(d => d.name));
 
   // 🔔 문서 변경 알림 이벤트 발생 (실시간 동기화용)
-  if (typeof window !== 'undefined') {
-    const event = new CustomEvent('weave-documents-changed', {
-      detail: { projectId, documentCount: documentInfos.length, action: 'created' }
-    });
-    window.dispatchEvent(event);
-    console.log(`🔔 [EVENT] 문서 변경 이벤트 발생 - 프로젝트: ${projectId}, 문서수: ${documentInfos.length}`);
-  }
+  notifyDocumentChange(projectId, 'created', { documentCount: savedDocs.length });
 
-  return documentInfos;
-}
-
-// 프로젝트의 모든 문서 삭제
-export function clearProjectDocuments(projectId: string): void {
-  if (typeof window === 'undefined') return;
-
-  try {
-    const stored = localStorage.getItem(PROJECT_DOCUMENTS_KEY);
-    if (!stored) return;
-
-    const allDocuments = JSON.parse(stored);
-    delete allDocuments[projectId];
-    localStorage.setItem(PROJECT_DOCUMENTS_KEY, JSON.stringify(allDocuments));
-  } catch (error) {
-    console.error('Error clearing project documents from localStorage:', error);
-  }
+  return savedDocs;
 }
 
 // ========================================
-// 🐛 디버깅 및 캐시 문제 해결 함수들
+// 🐛 디버깅 및 레거시 정리 함수들
 // ========================================
 
 /**
- * 브라우저 캐싱 vs localStorage 불일치 문제 디버깅 함수
- * 시크릿 모드에서는 작동하지만 일반 모드에서 작동하지 않는 문제 해결용
+ * Debug project documents (Storage API version)
  */
-
-// localStorage의 모든 데이터를 로그로 출력하여 상태 확인
-export function debugLocalStorageState(): void {
-  if (typeof window === 'undefined') {
-    console.log('🔍 [DEBUG] 서버사이드에서는 localStorage에 접근할 수 없습니다.');
-    return;
-  }
-
-  console.log('🔍 [DEBUG] === localStorage 상태 전체 점검 ===');
-  console.log(`총 localStorage 키 개수: ${localStorage.length}`);
-
-  // 모든 localStorage 키를 순회하며 출력
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key) {
-      const value = localStorage.getItem(key);
-      console.log(`🗝️  ${key}:`, value);
-
-      // Weave 관련 데이터인지 확인
-      if (key.includes('weave') || key.includes('project') || key.includes('document')) {
-        console.log(`🎯 [WEAVE 관련] ${key}:`, JSON.parse(value || '{}'));
-      }
-    }
-  }
-
-  // 우리 시스템의 프로젝트 문서 키 특별히 확인
-  const projectDocuments = localStorage.getItem(PROJECT_DOCUMENTS_KEY);
-  console.log('📊 [WEAVE DOCS] 프로젝트 문서 데이터:', projectDocuments);
-  if (projectDocuments) {
-    try {
-      const parsed = JSON.parse(projectDocuments);
-      console.log('📊 [WEAVE DOCS] 파싱된 데이터:', parsed);
-      console.log('📊 [WEAVE DOCS] 프로젝트 키 목록:', Object.keys(parsed));
-
-      // 각 프로젝트별 문서 개수 확인
-      Object.entries(parsed).forEach(([projectId, documents]) => {
-        console.log(`📁 프로젝트 ${projectId}: ${Array.isArray(documents) ? documents.length : 0}개 문서`);
-      });
-    } catch (error) {
-      console.error('❌ [ERROR] 프로젝트 문서 데이터 파싱 실패:', error);
-    }
-  }
-  console.log('🔍 [DEBUG] =================================');
-}
-
-// 오래된/잘못된 데이터 구조를 감지하고 정리
-export function clearStaleDocumentData(): void {
-  if (typeof window === 'undefined') return;
-
-  console.log('🧹 [CLEANUP] 오래된 문서 데이터 정리 시작...');
-
-  let cleanupCount = 0;
-  const keysToRemove: string[] = [];
-
-  // localStorage를 순회하며 정리할 키들 찾기
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key) {
-      // 이전 버전에서 사용했을 가능성이 있는 키 패턴들
-      const isOldDocumentKey = (
-        key.includes('document') &&
-        key !== PROJECT_DOCUMENTS_KEY &&
-        (key.includes('project') || key.includes('weave'))
-      );
-
-      // 잘못된 형식의 프로젝트 문서 키
-      const isInvalidProjectKey = (
-        key.startsWith('project-') && key.includes('documents')
-      );
-
-      if (isOldDocumentKey || isInvalidProjectKey) {
-        keysToRemove.push(key);
-        cleanupCount++;
-        console.log(`🗑️  정리 대상: ${key}`);
-      }
-    }
-  }
-
-  // 찾은 키들 삭제
-  keysToRemove.forEach(key => {
-    localStorage.removeItem(key);
-    console.log(`✅ 삭제 완료: ${key}`);
-  });
-
-  // 현재 프로젝트 문서 데이터도 검증하고 정리
-  const currentDocuments = localStorage.getItem(PROJECT_DOCUMENTS_KEY);
-  if (currentDocuments) {
-    try {
-      const parsed = JSON.parse(currentDocuments);
-      let needsUpdate = false;
-      const cleanedData: Record<string, DocumentInfo[]> = {};
-
-      Object.entries(parsed).forEach(([projectId, documents]) => {
-        if (Array.isArray(documents)) {
-          // 유효한 문서 데이터인지 검증
-          const validDocuments = documents.filter(doc =>
-            doc &&
-            typeof doc === 'object' &&
-            doc.id &&
-            doc.name &&
-            doc.type
-          );
-
-          if (validDocuments.length !== documents.length) {
-            console.log(`🔧 프로젝트 ${projectId}: ${documents.length - validDocuments.length}개 잘못된 문서 데이터 정리`);
-            needsUpdate = true;
-          }
-
-          if (validDocuments.length > 0) {
-            cleanedData[projectId] = validDocuments;
-          }
-        } else {
-          console.log(`🗑️  잘못된 문서 데이터 형식 제거: 프로젝트 ${projectId}`);
-          needsUpdate = true;
-        }
-      });
-
-      if (needsUpdate) {
-        localStorage.setItem(PROJECT_DOCUMENTS_KEY, JSON.stringify(cleanedData));
-        console.log('✅ 프로젝트 문서 데이터 정리 및 업데이트 완료');
-      }
-    } catch (error) {
-      console.error('❌ 현재 프로젝트 문서 데이터 정리 중 오류:', error);
-      // 완전히 깨진 데이터라면 초기화
-      localStorage.removeItem(PROJECT_DOCUMENTS_KEY);
-      console.log('🆕 프로젝트 문서 데이터 초기화 완료');
-    }
-  }
-
-  console.log(`🧹 [CLEANUP] 정리 완료! ${cleanupCount}개 항목 정리됨`);
-}
-
-// 강제로 모든 프로젝트 문서 데이터를 초기화 (핵옵션)
-export function resetAllDocumentData(): void {
-  if (typeof window === 'undefined') return;
-
-  console.log('💣 [RESET] 모든 문서 데이터 초기화...');
-
-  // 문서 관련 모든 localStorage 키 제거
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && (key.includes('document') || key.includes('weave_project'))) {
-      keysToRemove.push(key);
-    }
-  }
-
-  keysToRemove.forEach(key => {
-    localStorage.removeItem(key);
-    console.log(`🗑️  제거: ${key}`);
-  });
-
-  console.log(`💣 [RESET] ${keysToRemove.length}개 항목 초기화 완료!`);
-  console.log('🔄 페이지를 새로고침하여 깨끗한 상태로 시작하세요.');
-}
-
-// 특정 프로젝트의 문서 데이터 상태 확인
-export function debugProjectDocuments(projectId: string): void {
+export async function debugProjectDocuments(projectId: string): Promise<void> {
   console.log(`🔍 [PROJECT DEBUG] 프로젝트 ${projectId} 문서 상태 확인`);
 
-  const documents = getProjectDocuments(projectId);
+  const documents = await getProjectDocuments(projectId);
   console.log(`📊 현재 문서 개수: ${documents.length}`);
   console.log('📄 문서 목록:', documents);
 
@@ -353,50 +350,76 @@ export function debugProjectDocuments(projectId: string): void {
     console.log('📭 해당 프로젝트에는 저장된 문서가 없습니다.');
   }
 
-  // localStorage에서 직접 확인
-  const rawData = localStorage.getItem(PROJECT_DOCUMENTS_KEY);
-  if (rawData) {
-    try {
-      const allDocs = JSON.parse(rawData);
-      const projectDocs = allDocs[projectId];
-      console.log(`🗄️  localStorage 직접 조회 결과:`, projectDocs);
-    } catch (error) {
-      console.error('❌ localStorage 데이터 파싱 오류:', error);
+  // Storage API에서 직접 확인
+  const allDocs = await documentService.getDocumentsByProject(projectId);
+  console.log(`🗄️  Storage API 직접 조회 결과 (${allDocs.length}개):`, allDocs);
+}
+
+/**
+ * Clean up legacy document data from localStorage
+ */
+export function cleanupLegacyDocumentData(): void {
+  if (typeof window === 'undefined') return;
+
+  console.log('🧹 [CLEANUP] 레거시 문서 데이터 정리 시작...');
+
+  let cleanupCount = 0;
+  const keysToRemove: string[] = [];
+
+  // localStorage를 순회하며 정리할 키들 찾기
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) {
+      // 레거시 문서 키 패턴
+      const isLegacyDocumentKey = (
+        key === LEGACY_DOCUMENTS_KEY ||
+        (key.includes('document') && key.includes('weave'))
+      );
+
+      if (isLegacyDocumentKey) {
+        keysToRemove.push(key);
+        cleanupCount++;
+        console.log(`🗑️  정리 대상: ${key}`);
+      }
     }
   }
+
+  // 찾은 키들 삭제
+  keysToRemove.forEach(key => {
+    localStorage.removeItem(key);
+    console.log(`✅ 삭제 완료: ${key}`);
+  });
+
+  console.log(`🧹 [CLEANUP] 정리 완료! ${cleanupCount}개 항목 정리됨`);
 }
 
-// 캐시 문제 해결을 위한 원스톱 함수
-export function fixCacheIssues(): void {
-  console.log('🚑 [CACHE FIX] 브라우저 캐싱 문제 해결 시작...');
+/**
+ * Reset all documents (Storage API version)
+ */
+export async function resetAllDocuments(): Promise<void> {
+  console.log('💣 [RESET] 모든 문서 데이터 초기화...');
 
-  // 1단계: 현재 상태 진단
-  console.log('1️⃣ 현재 상태 진단');
-  debugLocalStorageState();
+  const allDocs = await documentService.getAll();
+  let deletedCount = 0;
 
-  // 2단계: 오래된 데이터 정리
-  console.log('2️⃣ 오래된 데이터 정리');
-  clearStaleDocumentData();
+  for (const doc of allDocs) {
+    const deleted = await documentService.delete(doc.id);
+    if (deleted) deletedCount++;
+  }
 
-  // 3단계: 정리 후 상태 확인
-  console.log('3️⃣ 정리 후 상태 확인');
-  debugLocalStorageState();
+  // 레거시 데이터도 정리
+  cleanupLegacyDocumentData();
 
-  console.log('🚑 [CACHE FIX] 캐시 문제 해결 완료!');
-  console.log('🔄 이제 프로젝트 생성 모달에서 문서를 생성해보세요.');
+  console.log(`💣 [RESET] ${deletedCount}개 문서 초기화 완료!`);
+  console.log('🔄 페이지를 새로고침하여 깨끗한 상태로 시작하세요.');
 }
-
-// localStorage 키 export (디버깅 용도)
-export { PROJECT_DOCUMENTS_KEY };
 
 // 개발 환경에서 디버깅 함수들을 전역으로 노출
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   (window as any).debugWeaveDocuments = {
-    debugLocalStorageState,
-    clearStaleDocumentData,
-    resetAllDocumentData,
     debugProjectDocuments,
-    fixCacheIssues
+    cleanupLegacyDocumentData,
+    resetAllDocuments,
   };
   console.log('🛠️  개발 모드: window.debugWeaveDocuments 디버깅 도구 사용 가능');
 }
