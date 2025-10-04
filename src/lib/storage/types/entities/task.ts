@@ -6,6 +6,12 @@
  */
 
 import type { JsonObject } from '../base';
+import {
+  isValidISODate,
+  isValidDateRange,
+  isStringArray,
+  isNonNegativeNumber,
+} from '../validators';
 
 /**
  * Task status
@@ -192,26 +198,52 @@ export function isTaskRecurring(data: unknown): data is TaskRecurring {
  * Type guard for Task
  */
 export function isTask(data: unknown): data is Task {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    typeof (data as Task).id === 'string' &&
-    'userId' in data &&
-    typeof (data as Task).userId === 'string' &&
-    'title' in data &&
-    typeof (data as Task).title === 'string' &&
-    'status' in data &&
-    ['pending', 'in_progress', 'completed', 'cancelled'].includes(
-      (data as Task).status
-    ) &&
-    'priority' in data &&
-    ['low', 'medium', 'high', 'urgent'].includes((data as Task).priority) &&
-    'createdAt' in data &&
-    typeof (data as Task).createdAt === 'string' &&
-    'updatedAt' in data &&
-    typeof (data as Task).updatedAt === 'string'
-  );
+  if (typeof data !== 'object' || data === null) return false;
+
+  const t = data as Task;
+
+  // Required fields
+  if (!t.id || typeof t.id !== 'string') return false;
+  if (!t.userId || typeof t.userId !== 'string') return false;
+  if (!t.title || typeof t.title !== 'string') return false;
+  if (!['pending', 'in_progress', 'completed', 'cancelled'].includes(t.status)) return false;
+  if (!['low', 'medium', 'high', 'urgent'].includes(t.priority)) return false;
+  if (!isValidISODate(t.createdAt)) return false;
+  if (!isValidISODate(t.updatedAt)) return false;
+
+  // Optional fields
+  if (t.projectId !== undefined && typeof t.projectId !== 'string') return false;
+  if (t.description !== undefined && typeof t.description !== 'string') return false;
+  if (t.assigneeId !== undefined && typeof t.assigneeId !== 'string') return false;
+  if (t.parentTaskId !== undefined && typeof t.parentTaskId !== 'string') return false;
+
+  // Optional date validation
+  if (t.dueDate !== undefined && !isValidISODate(t.dueDate)) return false;
+  if (t.startDate !== undefined && !isValidISODate(t.startDate)) return false;
+  if (t.completedAt !== undefined && !isValidISODate(t.completedAt)) return false;
+
+  // Date range validation
+  if (t.startDate && t.dueDate && !isValidDateRange(t.startDate, t.dueDate)) return false;
+
+  // Optional number validation (must be non-negative)
+  if (t.estimatedHours !== undefined && !isNonNegativeNumber(t.estimatedHours)) return false;
+  if (t.actualHours !== undefined && !isNonNegativeNumber(t.actualHours)) return false;
+
+  // Optional array validation
+  if (t.subtasks !== undefined && !isStringArray(t.subtasks)) return false;
+  if (t.dependencies !== undefined && !isStringArray(t.dependencies)) return false;
+  if (t.tags !== undefined && !isStringArray(t.tags)) return false;
+
+  // Optional attachments validation
+  if (t.attachments !== undefined) {
+    if (!Array.isArray(t.attachments)) return false;
+    if (!t.attachments.every(isTaskAttachment)) return false;
+  }
+
+  // Optional recurring validation
+  if (t.recurring !== undefined && !isTaskRecurring(t.recurring)) return false;
+
+  return true;
 }
 
 // ============================================================================

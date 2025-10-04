@@ -5,6 +5,8 @@
  * Manages user preferences, dashboard layout, calendar config, and more.
  */
 
+import { isValidISODate, isStringArray, isPositiveNumber } from '../validators';
+
 /**
  * Theme option
  */
@@ -269,27 +271,164 @@ export function isDashboardWidget(data: unknown): data is DashboardWidget {
 }
 
 /**
+ * Type guard for DashboardLayout
+ */
+export function isDashboardLayout(data: unknown): data is DashboardLayout {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const layout = data as DashboardLayout;
+
+  if (!Array.isArray(layout.widgets)) return false;
+  if (!layout.widgets.every(isDashboardWidget)) return false;
+  if (!isPositiveNumber(layout.columns)) return false;
+  if (!isPositiveNumber(layout.rowHeight)) return false;
+  if (typeof layout.gap !== 'number' || layout.gap < 0) return false;
+
+  return true;
+}
+
+/**
+ * Type guard for DashboardSettings
+ */
+export function isDashboardSettings(data: unknown): data is DashboardSettings {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const dashboard = data as DashboardSettings;
+
+  if (!isDashboardLayout(dashboard.layout)) return false;
+  if (dashboard.theme !== undefined && !['light', 'dark', 'auto'].includes(dashboard.theme)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Type guard for WorkingHours
+ */
+export function isWorkingHours(data: unknown): data is WorkingHours {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const hours = data as WorkingHours;
+
+  // Basic validation for HH:mm format
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  return typeof hours.start === 'string' && timeRegex.test(hours.start) &&
+         typeof hours.end === 'string' && timeRegex.test(hours.end);
+}
+
+/**
+ * Type guard for CalendarSettings
+ */
+export function isCalendarSettings(data: unknown): data is CalendarSettings {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const calendar = data as CalendarSettings;
+
+  if (!['month', 'week', 'day', 'list'].includes(calendar.defaultView)) return false;
+  if (![0, 1].includes(calendar.weekStartsOn)) return false;
+
+  // Optional fields
+  if (calendar.workingHours !== undefined && !isWorkingHours(calendar.workingHours)) return false;
+  if (calendar.holidays !== undefined && !isStringArray(calendar.holidays)) return false;
+  if (calendar.defaultReminders !== undefined) {
+    if (!Array.isArray(calendar.defaultReminders)) return false;
+    if (!calendar.defaultReminders.every((reminder) => typeof reminder === 'number')) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Type guard for ProjectSettings
+ */
+export function isProjectSettings(data: unknown): data is ProjectSettings {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const projects = data as ProjectSettings;
+
+  if (!['list', 'grid', 'kanban'].includes(projects.defaultView)) return false;
+
+  // Optional fields
+  if (
+    projects.sortBy !== undefined &&
+    !['name', 'date', 'status', 'priority'].includes(projects.sortBy)
+  ) {
+    return false;
+  }
+
+  if (projects.sortOrder !== undefined && !['asc', 'desc'].includes(projects.sortOrder)) {
+    return false;
+  }
+
+  if (projects.itemsPerPage !== undefined && !isPositiveNumber(projects.itemsPerPage)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Type guard for NotificationSettings
+ */
+export function isNotificationSettings(data: unknown): data is NotificationSettings {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const notifications = data as NotificationSettings;
+
+  // All fields are optional booleans
+  if (notifications.email !== undefined && typeof notifications.email !== 'boolean') return false;
+  if (notifications.push !== undefined && typeof notifications.push !== 'boolean') return false;
+  if (notifications.desktop !== undefined && typeof notifications.desktop !== 'boolean') return false;
+  if (notifications.sound !== undefined && typeof notifications.sound !== 'boolean') return false;
+  if (notifications.taskReminders !== undefined && typeof notifications.taskReminders !== 'boolean') return false;
+  if (notifications.eventReminders !== undefined && typeof notifications.eventReminders !== 'boolean') return false;
+  if (notifications.projectDeadlines !== undefined && typeof notifications.projectDeadlines !== 'boolean') return false;
+
+  return true;
+}
+
+/**
+ * Type guard for UserPreferences
+ */
+export function isUserPreferences(data: unknown): data is UserPreferences {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const prefs = data as UserPreferences;
+
+  // Required fields
+  if (!['ko', 'en'].includes(prefs.language)) return false;
+  if (typeof prefs.timezone !== 'string' || !prefs.timezone) return false;
+
+  // Optional fields
+  if (prefs.dateFormat !== undefined && typeof prefs.dateFormat !== 'string') return false;
+  if (prefs.timeFormat !== undefined && !['12', '24'].includes(prefs.timeFormat)) return false;
+  if (prefs.currency !== undefined && typeof prefs.currency !== 'string') return false;
+  if (prefs.numberFormat !== undefined && typeof prefs.numberFormat !== 'string') return false;
+
+  return true;
+}
+
+/**
  * Type guard for Settings
  */
 export function isSettings(data: unknown): data is Settings {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'userId' in data &&
-    typeof (data as Settings).userId === 'string' &&
-    'dashboard' in data &&
-    typeof (data as Settings).dashboard === 'object' &&
-    'calendar' in data &&
-    typeof (data as Settings).calendar === 'object' &&
-    'projects' in data &&
-    typeof (data as Settings).projects === 'object' &&
-    'notifications' in data &&
-    typeof (data as Settings).notifications === 'object' &&
-    'preferences' in data &&
-    typeof (data as Settings).preferences === 'object' &&
-    'updatedAt' in data &&
-    typeof (data as Settings).updatedAt === 'string'
-  );
+  if (typeof data !== 'object' || data === null) return false;
+
+  const s = data as Settings;
+
+  // Required fields
+  if (!s.userId || typeof s.userId !== 'string') return false;
+  if (!isValidISODate(s.updatedAt)) return false;
+
+  // Required nested objects with full validation
+  if (!isDashboardSettings(s.dashboard)) return false;
+  if (!isCalendarSettings(s.calendar)) return false;
+  if (!isProjectSettings(s.projects)) return false;
+  if (!isNotificationSettings(s.notifications)) return false;
+  if (!isUserPreferences(s.preferences)) return false;
+
+  return true;
 }
 
 // ============================================================================

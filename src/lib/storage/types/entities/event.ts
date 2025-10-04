@@ -6,6 +6,7 @@
  */
 
 import type { JsonObject } from '../base';
+import { isValidISODate, isValidDateRange, isStringArray } from '../validators';
 
 /**
  * Event type
@@ -234,28 +235,66 @@ export function isEventRecurring(data: unknown): data is EventRecurring {
  * Type guard for CalendarEvent
  */
 export function isCalendarEvent(data: unknown): data is CalendarEvent {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    typeof (data as CalendarEvent).id === 'string' &&
-    'userId' in data &&
-    typeof (data as CalendarEvent).userId === 'string' &&
-    'title' in data &&
-    typeof (data as CalendarEvent).title === 'string' &&
-    'startDate' in data &&
-    typeof (data as CalendarEvent).startDate === 'string' &&
-    'endDate' in data &&
-    typeof (data as CalendarEvent).endDate === 'string' &&
-    'type' in data &&
-    ['meeting', 'deadline', 'milestone', 'reminder', 'other'].includes(
-      (data as CalendarEvent).type
-    ) &&
-    'createdAt' in data &&
-    typeof (data as CalendarEvent).createdAt === 'string' &&
-    'updatedAt' in data &&
-    typeof (data as CalendarEvent).updatedAt === 'string'
-  );
+  if (typeof data !== 'object' || data === null) return false;
+
+  const e = data as CalendarEvent;
+
+  // Required fields
+  if (!e.id || typeof e.id !== 'string') return false;
+  if (!e.userId || typeof e.userId !== 'string') return false;
+  if (!e.title || typeof e.title !== 'string') return false;
+  if (!isValidISODate(e.startDate)) return false;
+  if (!isValidISODate(e.endDate)) return false;
+  if (!['meeting', 'deadline', 'milestone', 'reminder', 'other'].includes(e.type)) return false;
+  if (!isValidISODate(e.createdAt)) return false;
+  if (!isValidISODate(e.updatedAt)) return false;
+
+  // Date range validation (startDate must be before endDate)
+  if (!isValidDateRange(e.startDate, e.endDate)) return false;
+
+  // Optional fields
+  if (e.projectId !== undefined && typeof e.projectId !== 'string') return false;
+  if (e.clientId !== undefined && typeof e.clientId !== 'string') return false;
+  if (e.description !== undefined && typeof e.description !== 'string') return false;
+  if (e.location !== undefined && typeof e.location !== 'string') return false;
+  if (e.timezone !== undefined && typeof e.timezone !== 'string') return false;
+  if (e.color !== undefined && typeof e.color !== 'string') return false;
+
+  // Optional boolean
+  if (e.allDay !== undefined && typeof e.allDay !== 'boolean') return false;
+
+  // Optional enum validation
+  if (
+    e.category !== undefined &&
+    !['work', 'personal', 'project', 'client'].includes(e.category)
+  ) {
+    return false;
+  }
+
+  if (
+    e.status !== undefined &&
+    !['confirmed', 'tentative', 'cancelled'].includes(e.status)
+  ) {
+    return false;
+  }
+
+  // Optional array validation
+  if (e.attendees !== undefined) {
+    if (!Array.isArray(e.attendees)) return false;
+    if (!e.attendees.every(isEventAttendee)) return false;
+  }
+
+  if (e.reminders !== undefined) {
+    if (!Array.isArray(e.reminders)) return false;
+    if (!e.reminders.every(isEventReminder)) return false;
+  }
+
+  if (e.tags !== undefined && !isStringArray(e.tags)) return false;
+
+  // Optional recurring validation
+  if (e.recurring !== undefined && !isEventRecurring(e.recurring)) return false;
+
+  return true;
 }
 
 // ============================================================================

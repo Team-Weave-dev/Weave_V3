@@ -6,6 +6,7 @@
  */
 
 import type { JsonObject } from '../base';
+import { isValidISODate, isStringArray, isPositiveNumber } from '../validators';
 
 /**
  * Document type
@@ -133,32 +134,47 @@ export function isDocumentSignature(data: unknown): data is DocumentSignature {
  * Type guard for Document
  */
 export function isDocument(data: unknown): data is Document {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    typeof (data as Document).id === 'string' &&
-    'projectId' in data &&
-    typeof (data as Document).projectId === 'string' &&
-    'userId' in data &&
-    typeof (data as Document).userId === 'string' &&
-    'name' in data &&
-    typeof (data as Document).name === 'string' &&
-    'type' in data &&
-    ['contract', 'invoice', 'estimate', 'report', 'etc'].includes(
-      (data as Document).type
-    ) &&
-    'status' in data &&
-    ['draft', 'sent', 'approved', 'completed', 'archived'].includes(
-      (data as Document).status
-    ) &&
-    'savedAt' in data &&
-    typeof (data as Document).savedAt === 'string' &&
-    'createdAt' in data &&
-    typeof (data as Document).createdAt === 'string' &&
-    'updatedAt' in data &&
-    typeof (data as Document).updatedAt === 'string'
-  );
+  if (typeof data !== 'object' || data === null) return false;
+
+  const d = data as Document;
+
+  // Required fields
+  if (!d.id || typeof d.id !== 'string') return false;
+  if (!d.projectId || typeof d.projectId !== 'string') return false;
+  if (!d.userId || typeof d.userId !== 'string') return false;
+  if (!d.name || typeof d.name !== 'string') return false;
+  if (!['contract', 'invoice', 'estimate', 'report', 'etc'].includes(d.type)) return false;
+  if (!['draft', 'sent', 'approved', 'completed', 'archived'].includes(d.status)) return false;
+  if (!isValidISODate(d.savedAt)) return false;
+  if (!isValidISODate(d.createdAt)) return false;
+  if (!isValidISODate(d.updatedAt)) return false;
+
+  // Optional fields
+  if (d.content !== undefined && typeof d.content !== 'string') return false;
+  if (d.templateId !== undefined && typeof d.templateId !== 'string') return false;
+
+  // Optional source validation
+  if (
+    d.source !== undefined &&
+    !['generated', 'uploaded', 'imported'].includes(d.source)
+  ) {
+    return false;
+  }
+
+  // Optional number validation
+  if (d.version !== undefined && !isPositiveNumber(d.version)) return false;
+  if (d.size !== undefined && !isPositiveNumber(d.size)) return false;
+
+  // Optional array validation
+  if (d.tags !== undefined && !isStringArray(d.tags)) return false;
+
+  // Optional signatures validation
+  if (d.signatures !== undefined) {
+    if (!Array.isArray(d.signatures)) return false;
+    if (!d.signatures.every(isDocumentSignature)) return false;
+  }
+
+  return true;
 }
 
 // ============================================================================

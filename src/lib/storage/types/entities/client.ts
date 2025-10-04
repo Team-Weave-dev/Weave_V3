@@ -6,6 +6,13 @@
  */
 
 import type { JsonObject } from '../base';
+import {
+  isValidEmail,
+  isValidURL,
+  isValidISODate,
+  isNumberInRange,
+  isStringArray,
+} from '../validators';
 
 /**
  * Client address information
@@ -167,20 +174,45 @@ export function isClientContact(data: unknown): data is ClientContact {
  * Type guard for Client
  */
 export function isClient(data: unknown): data is Client {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    typeof (data as Client).id === 'string' &&
-    'userId' in data &&
-    typeof (data as Client).userId === 'string' &&
-    'name' in data &&
-    typeof (data as Client).name === 'string' &&
-    'createdAt' in data &&
-    typeof (data as Client).createdAt === 'string' &&
-    'updatedAt' in data &&
-    typeof (data as Client).updatedAt === 'string'
-  );
+  if (typeof data !== 'object' || data === null) return false;
+
+  const c = data as Client;
+
+  // Required fields
+  if (!c.id || typeof c.id !== 'string') return false;
+  if (!c.userId || typeof c.userId !== 'string') return false;
+  if (!c.name || typeof c.name !== 'string') return false;
+  if (!isValidISODate(c.createdAt)) return false;
+  if (!isValidISODate(c.updatedAt)) return false;
+
+  // Optional fields with format validation
+  if (c.company !== undefined && typeof c.company !== 'string') return false;
+  if (c.email !== undefined && !isValidEmail(c.email)) return false;
+  if (c.phone !== undefined && typeof c.phone !== 'string') return false;
+  if (c.website !== undefined && !isValidURL(c.website)) return false;
+
+  // Optional address validation
+  if (c.address !== undefined && !isClientAddress(c.address)) return false;
+
+  // Optional business fields
+  if (c.businessNumber !== undefined && typeof c.businessNumber !== 'string') return false;
+  if (c.taxId !== undefined && typeof c.taxId !== 'string') return false;
+  if (c.industry !== undefined && typeof c.industry !== 'string') return false;
+
+  // Optional contacts array validation
+  if (c.contacts !== undefined) {
+    if (!Array.isArray(c.contacts)) return false;
+    if (!c.contacts.every(isClientContact)) return false;
+  }
+
+  // Optional metadata
+  if (c.tags !== undefined && !isStringArray(c.tags)) return false;
+  if (c.notes !== undefined && typeof c.notes !== 'string') return false;
+
+  // Rating validation (1-5 range)
+  if (c.rating !== undefined && !isNumberInRange(c.rating, 1, 5)) return false;
+
+  return true;
 }
 
 // ============================================================================

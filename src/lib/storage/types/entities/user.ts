@@ -5,6 +5,8 @@
  * Designed for Supabase compatibility and localStorage storage.
  */
 
+import { isValidEmail, isValidISODate } from '../validators';
+
 /**
  * User metadata
  */
@@ -47,20 +49,22 @@ export interface User {
  * @returns True if data conforms to User interface
  */
 export function isUser(data: unknown): data is User {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    typeof (data as User).id === 'string' &&
-    'email' in data &&
-    typeof (data as User).email === 'string' &&
-    'name' in data &&
-    typeof (data as User).name === 'string' &&
-    'createdAt' in data &&
-    typeof (data as User).createdAt === 'string' &&
-    'updatedAt' in data &&
-    typeof (data as User).updatedAt === 'string'
-  );
+  if (typeof data !== 'object' || data === null) return false;
+
+  const u = data as User;
+
+  // Required fields with format validation
+  if (!u.id || typeof u.id !== 'string') return false;
+  if (!isValidEmail(u.email)) return false;
+  if (!u.name || typeof u.name !== 'string') return false;
+  if (!isValidISODate(u.createdAt)) return false;
+  if (!isValidISODate(u.updatedAt)) return false;
+
+  // Optional fields validation
+  if (u.avatar !== undefined && typeof u.avatar !== 'string') return false;
+  if (u.metadata !== undefined && !isUserMetadata(u.metadata)) return false;
+
+  return true;
 }
 
 /**

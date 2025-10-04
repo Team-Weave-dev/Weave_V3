@@ -6,6 +6,12 @@
  */
 
 import type { JsonObject } from '../base';
+import {
+  isValidISODate,
+  isValidDateRange,
+  isNumberInRange,
+  isStringArray,
+} from '../validators';
 
 // ============================================================================
 // Payment & Settlement Types
@@ -410,56 +416,134 @@ export interface Project extends JsonObject {
  * Type guard for WBSTask
  */
 export function isWBSTask(data: unknown): data is WBSTask {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    typeof (data as WBSTask).id === 'string' &&
-    'name' in data &&
-    typeof (data as WBSTask).name === 'string' &&
-    'status' in data &&
-    ['pending', 'in_progress', 'completed'].includes((data as WBSTask).status) &&
-    'order' in data &&
-    typeof (data as WBSTask).order === 'number' &&
-    'createdAt' in data &&
-    typeof (data as WBSTask).createdAt === 'string'
-  );
+  if (typeof data !== 'object' || data === null) return false;
+
+  const task = data as WBSTask;
+
+  // Required fields
+  if (!task.id || typeof task.id !== 'string') return false;
+  if (!task.name || typeof task.name !== 'string') return false;
+  if (!['pending', 'in_progress', 'completed'].includes(task.status)) return false;
+  if (typeof task.order !== 'number') return false;
+  if (!isValidISODate(task.createdAt)) return false;
+
+  // Optional fields
+  if (task.description !== undefined && typeof task.description !== 'string') return false;
+  if (task.assignee !== undefined && typeof task.assignee !== 'string') return false;
+  if (task.startedAt !== undefined && !isValidISODate(task.startedAt)) return false;
+  if (task.completedAt !== undefined && !isValidISODate(task.completedAt)) return false;
+
+  // Date logic validation
+  if (task.startedAt && task.completedAt && !isValidDateRange(task.startedAt, task.completedAt)) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
  * Type guard for Project
  */
 export function isProject(data: unknown): data is Project {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    typeof (data as Project).id === 'string' &&
-    'userId' in data &&
-    typeof (data as Project).userId === 'string' &&
-    'no' in data &&
-    typeof (data as Project).no === 'string' &&
-    'name' in data &&
-    typeof (data as Project).name === 'string' &&
-    'status' in data &&
-    ['planning', 'in_progress', 'review', 'completed', 'on_hold', 'cancelled'].includes(
-      (data as Project).status
-    ) &&
-    'progress' in data &&
-    typeof (data as Project).progress === 'number' &&
-    'wbsTasks' in data &&
-    Array.isArray((data as Project).wbsTasks) &&
-    'hasContract' in data &&
-    typeof (data as Project).hasContract === 'boolean' &&
-    'hasBilling' in data &&
-    typeof (data as Project).hasBilling === 'boolean' &&
-    'hasDocuments' in data &&
-    typeof (data as Project).hasDocuments === 'boolean' &&
-    'createdAt' in data &&
-    typeof (data as Project).createdAt === 'string' &&
-    'updatedAt' in data &&
-    typeof (data as Project).updatedAt === 'string'
-  );
+  if (typeof data !== 'object' || data === null) return false;
+
+  const p = data as Project;
+
+  // Required identity fields
+  if (!p.id || typeof p.id !== 'string') return false;
+  if (!p.userId || typeof p.userId !== 'string') return false;
+
+  // Required basic information
+  if (!p.no || typeof p.no !== 'string') return false;
+  if (!p.name || typeof p.name !== 'string') return false;
+
+  // Status validation
+  if (
+    !['planning', 'in_progress', 'review', 'completed', 'on_hold', 'cancelled'].includes(p.status)
+  ) {
+    return false;
+  }
+
+  // Progress validation (0-100 range)
+  if (!isNumberInRange(p.progress, 0, 100)) return false;
+
+  // WBS Tasks validation (array and each element)
+  if (!Array.isArray(p.wbsTasks)) return false;
+  if (!p.wbsTasks.every(isWBSTask)) return false;
+
+  // Lazy loading flags
+  if (typeof p.hasContract !== 'boolean') return false;
+  if (typeof p.hasBilling !== 'boolean') return false;
+  if (typeof p.hasDocuments !== 'boolean') return false;
+
+  // Timestamps validation
+  if (!isValidISODate(p.createdAt)) return false;
+  if (!isValidISODate(p.updatedAt)) return false;
+  if (!isValidISODate(p.registrationDate)) return false;
+  if (!isValidISODate(p.modifiedDate)) return false;
+
+  // Optional fields validation
+  if (p.clientId !== undefined && typeof p.clientId !== 'string') return false;
+  if (p.description !== undefined && typeof p.description !== 'string') return false;
+  if (p.projectContent !== undefined && typeof p.projectContent !== 'string') return false;
+
+  // Optional progress validation
+  if (p.paymentProgress !== undefined && !isNumberInRange(p.paymentProgress, 0, 100)) {
+    return false;
+  }
+
+  // Optional date validation
+  if (p.startDate !== undefined && !isValidISODate(p.startDate)) return false;
+  if (p.endDate !== undefined && !isValidISODate(p.endDate)) return false;
+
+  // Date range validation
+  if (p.startDate && p.endDate && !isValidDateRange(p.startDate, p.endDate)) return false;
+
+  // Optional number validation
+  if (p.budget !== undefined && typeof p.budget !== 'number') return false;
+  if (p.actualCost !== undefined && typeof p.actualCost !== 'number') return false;
+  if (p.totalAmount !== undefined && typeof p.totalAmount !== 'number') return false;
+
+  // Optional string validation
+  if (p.currency !== undefined && typeof p.currency !== 'string') return false;
+
+  // Optional enum validation
+  if (
+    p.settlementMethod !== undefined &&
+    !['not_set', 'advance_final', 'advance_interim_final', 'post_payment'].includes(
+      p.settlementMethod
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    p.paymentStatus !== undefined &&
+    !['advance_completed', 'interim_completed', 'final_completed', 'not_started'].includes(
+      p.paymentStatus
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    p.priority !== undefined &&
+    !['low', 'medium', 'high', 'urgent'].includes(p.priority)
+  ) {
+    return false;
+  }
+
+  if (
+    p.visibility !== undefined &&
+    !['private', 'team', 'public'].includes(p.visibility)
+  ) {
+    return false;
+  }
+
+  // Optional array validation
+  if (p.tags !== undefined && !isStringArray(p.tags)) return false;
+
+  return true;
 }
 
 // ============================================================================
