@@ -295,6 +295,13 @@ export class TaskService extends BaseService<Task> {
       throw new Error(`Parent task ${parentTaskId} not found`);
     }
 
+    // Check for circular subtask relationships
+    if (subtaskData.subtasks && subtaskData.subtasks.length > 0) {
+      if (await this.wouldCreateCircularSubtask(parentTaskId, subtaskData.subtasks)) {
+        throw new Error('Circular subtask relationship detected: adding this subtask would create a cycle');
+      }
+    }
+
     const subtask = await this.create({
       ...subtaskData,
       parentTaskId,
@@ -351,6 +358,11 @@ export class TaskService extends BaseService<Task> {
     const task = await this.getById(taskId);
     if (!task) return null;
 
+    // Prevent self-reference
+    if (taskId === dependencyId) {
+      throw new Error('Task cannot depend on itself');
+    }
+
     // Check if dependency exists
     const dependency = await this.getById(dependencyId);
     if (!dependency) {
@@ -360,6 +372,11 @@ export class TaskService extends BaseService<Task> {
     const dependencies = task.dependencies || [];
     if (dependencies.includes(dependencyId)) {
       return task; // Already exists
+    }
+
+    // Check for circular dependencies
+    if (await this.hasCircularDependency(taskId, dependencyId)) {
+      throw new Error('Circular dependency detected: adding this dependency would create a cycle');
     }
 
     return this.update(taskId, {
@@ -400,5 +417,73 @@ export class TaskService extends BaseService<Task> {
   async canStartTask(taskId: string): Promise<boolean> {
     const dependencies = await this.getDependenciesWithData(taskId);
     return dependencies.every((dep) => dep.status === 'completed');
+  }
+
+  // ============================================================================
+  // Private Helper Methods
+  // ============================================================================
+
+  /**
+   * Check if adding a dependency would create a circular dependency
+   * Uses breadth-first search to detect cycles
+   */
+  private async hasCircularDependency(taskId: string, newDependencyId: string): Promise<boolean> {
+    const visited = new Set<string>();
+    const queue = [newDependencyId];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+
+      // If we encounter the original task, we have a cycle
+      if (currentId === taskId) {
+        return true;
+      }
+
+      // Skip if already visited
+      if (visited.has(currentId)) {
+        continue;
+      }
+      visited.add(currentId);
+
+      // Get the current task and its dependencies
+      const currentTask = await this.getById(currentId);
+      if (currentTask?.dependencies) {
+        queue.push(...currentTask.dependencies);
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if adding a subtask would create a circular subtask relationship
+   * Uses breadth-first search to detect cycles
+   */
+  private async wouldCreateCircularSubtask(parentId: string, subtaskIds: string[]): Promise<boolean> {
+    const visited = new Set<string>();
+    const queue = [...subtaskIds];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+
+      // If we encounter the parent, we have a cycle
+      if (currentId === parentId) {
+        return true;
+      }
+
+      // Skip if already visited
+      if (visited.has(currentId)) {
+        continue;
+      }
+      visited.add(currentId);
+
+      // Get the current task and its subtasks
+      const currentTask = await this.getById(currentId);
+      if (currentTask?.subtasks) {
+        queue.push(...currentTask.subtasks);
+      }
+    }
+
+    return false;
   }
 }

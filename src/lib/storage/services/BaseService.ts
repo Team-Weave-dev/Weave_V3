@@ -313,8 +313,15 @@ export abstract class BaseService<T extends BaseEntity> {
 
   /**
    * Generate unique ID (UUID v4)
+   * Uses crypto.randomUUID() if available, falls back to custom implementation
    */
   protected generateId(): string {
+    // Use native crypto.randomUUID() if available (Node.js 14.17+ and modern browsers)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    // Fallback implementation for older environments
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
       const r = (Math.random() * 16) | 0;
       const v = c === 'x' ? r : (r & 0x3) | 0x8;

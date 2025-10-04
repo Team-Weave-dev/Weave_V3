@@ -110,6 +110,9 @@ export const STORAGE_KEYS = {
   /** All calendar events list */
   EVENTS: 'events',
 
+  /** All documents list */
+  DOCUMENTS: 'documents',
+
   /** User settings */
   SETTINGS: 'settings',
 

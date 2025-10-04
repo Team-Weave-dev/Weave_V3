@@ -15,7 +15,7 @@ import { STORAGE_KEYS, buildKey } from '../config';
  * Manages documents with project associations
  */
 export class DocumentService extends BaseService<Document> {
-  protected entityKey = STORAGE_KEYS.PROJECTS; // Documents are stored with projects
+  protected entityKey = STORAGE_KEYS.DOCUMENTS;
 
   constructor(storage: StorageManager) {
     super(storage);

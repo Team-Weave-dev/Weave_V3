@@ -314,16 +314,18 @@ export class CalendarService extends BaseService<CalendarEvent> {
           const currentDay = current.getDay();
           const sortedDays = [...recurring.daysOfWeek].sort((a, b) => a - b);
 
-          // Find next matching day
+          // Find next matching day in the same week
           let nextDay = sortedDays.find((day) => day > currentDay);
-          if (nextDay === undefined) {
-            // Wrap to next week
-            nextDay = sortedDays[0];
-            current.setDate(current.getDate() + 7);
-          }
 
-          const daysToAdd = nextDay - current.getDay();
-          current.setDate(current.getDate() + daysToAdd);
+          if (nextDay !== undefined) {
+            // Next occurrence is in the same week
+            const daysToAdd = nextDay - currentDay;
+            current.setDate(current.getDate() + daysToAdd);
+          } else {
+            // Wrap to next week's first occurrence
+            const daysUntilNextWeek = 7 - currentDay + sortedDays[0];
+            current.setDate(current.getDate() + daysUntilNextWeek);
+          }
         } else {
           current.setDate(current.getDate() + 7 * interval);
         }
