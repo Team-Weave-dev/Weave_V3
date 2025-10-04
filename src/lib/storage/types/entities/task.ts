@@ -5,6 +5,8 @@
  * Supports hierarchical tasks, dependencies, and recurring tasks.
  */
 
+import type { JsonObject } from '../base';
+
 /**
  * Task status
  */
@@ -23,7 +25,7 @@ export type RecurringPattern = 'daily' | 'weekly' | 'monthly' | 'yearly';
 /**
  * Task attachment information
  */
-export interface TaskAttachment {
+export interface TaskAttachment extends JsonObject {
   /** Attachment filename */
   name: string;
 
@@ -57,7 +59,7 @@ export interface TaskRecurring {
 /**
  * Task entity
  */
-export interface Task {
+export interface Task extends JsonObject {
   // ========================================
   // Identity
   // ========================================

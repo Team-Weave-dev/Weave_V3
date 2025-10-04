@@ -13,6 +13,9 @@ import type {
   CacheStats,
   CacheOptions,
   EvictionPolicy,
+  JsonValue,
+  LRUCacheEntry,
+  LFUCacheEntry,
 } from '../types/base';
 
 export class CacheLayer {
@@ -69,7 +72,7 @@ export class CacheLayer {
    * @param key - Cache key
    * @returns Cached value or null if not found/expired
    */
-  get<T>(key: string): T | null {
+  get<T extends JsonValue>(key: string): T | null {
     this.updateStats('request');
 
     const entry = this.cache.get(key);
@@ -102,7 +105,7 @@ export class CacheLayer {
    * @param value - Value to cache
    * @param ttl - Optional TTL override (milliseconds)
    */
-  set<T>(key: string, value: T, ttl?: number): void {
+  set<T extends JsonValue>(key: string, value: T, ttl?: number): void {
     // Check if cache is full and eviction is needed
     if (this.cache.size >= this.options.maxSize && !this.cache.has(key)) {
       this.evict();
@@ -115,7 +118,7 @@ export class CacheLayer {
       ttl: ttl ?? this.options.defaultTTL,
       accessCount: 1,
       lastAccess: now,
-    };
+    } as CacheEntry<T>;
 
     this.cache.set(key, entry);
     this.updateStats('size');
@@ -227,7 +230,7 @@ export class CacheLayer {
     let oldestTime = Infinity;
 
     for (const [key, entry] of this.cache.entries()) {
-      const lastAccess = entry.lastAccess ?? entry.timestamp;
+      const lastAccess = ('lastAccess' in entry ? entry.lastAccess : entry.timestamp);
       if (lastAccess < oldestTime) {
         oldestTime = lastAccess;
         oldestKey = key;
@@ -248,7 +251,7 @@ export class CacheLayer {
     let minAccessCount = Infinity;
 
     for (const [key, entry] of this.cache.entries()) {
-      const accessCount = entry.accessCount ?? 1;
+      const accessCount = ('accessCount' in entry ? entry.accessCount : 1);
       if (accessCount < minAccessCount) {
         minAccessCount = accessCount;
         lfuKey = key;
@@ -377,10 +380,14 @@ export class CacheLayer {
     const now = Date.now();
 
     // Update access count for LFU
-    entry.accessCount = (entry.accessCount ?? 0) + 1;
+    if ('accessCount' in entry) {
+      (entry as LFUCacheEntry<any>).accessCount = (entry.accessCount ?? 0) + 1;
+    }
 
     // Update last access time for LRU
-    entry.lastAccess = now;
+    if ('lastAccess' in entry) {
+      (entry as LRUCacheEntry<any>).lastAccess = now;
+    }
 
     // Re-set the entry to maintain reference
     this.cache.set(key, entry);

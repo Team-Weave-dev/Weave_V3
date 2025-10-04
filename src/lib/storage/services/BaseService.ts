@@ -6,12 +6,13 @@
  */
 
 import type { StorageManager } from '../core/StorageManager';
+import type { JsonObject } from '../types/base';
 
 /**
  * Base entity interface
  * All entities must have these required fields
  */
-export interface BaseEntity {
+export interface BaseEntity extends JsonObject {
   id: string;
   createdAt: string;
   updatedAt: string;

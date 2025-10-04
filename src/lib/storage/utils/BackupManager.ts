@@ -373,7 +373,8 @@ export class BackupManager {
    * @returns Value or null
    */
   getFromBackup<T>(backup: BackupData, key: string): T | null {
-    return backup.data[key] || null;
+    const value = backup.data[key];
+    return value !== undefined ? (value as T) : null;
   }
 
   /**

@@ -5,6 +5,8 @@
  * Supports contracts, invoices, estimates, reports, and other documents.
  */
 
+import type { JsonObject } from '../base';
+
 /**
  * Document type
  */
@@ -23,7 +25,7 @@ export type DocumentSource = 'generated' | 'uploaded' | 'imported';
 /**
  * Document signature information
  */
-export interface DocumentSignature {
+export interface DocumentSignature extends JsonObject {
   /** Signer name */
   name: string;
 
@@ -37,7 +39,7 @@ export interface DocumentSignature {
 /**
  * Document entity
  */
-export interface Document {
+export interface Document extends JsonObject {
   // ========================================
   // Identity
   // ========================================

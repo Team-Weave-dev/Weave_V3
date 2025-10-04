@@ -7,6 +7,35 @@
  */
 
 // ============================================================================
+// JSON Type Definitions
+// ============================================================================
+
+/**
+ * JSON primitive types that can be safely serialized
+ */
+export type JsonPrimitive = string | number | boolean | null;
+
+/**
+ * JSON object type
+ * Note: Using 'any' for index signature to allow nested objects of any shape
+ * All objects are JSON-serializable as long as they don't contain functions or symbols
+ */
+export interface JsonObject {
+  [key: string]: any;
+}
+
+/**
+ * JSON array type
+ */
+export interface JsonArray extends Array<JsonValue> {}
+
+/**
+ * Union type representing all valid JSON values
+ * Only these types can be safely stored and retrieved from storage
+ */
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+
+// ============================================================================
 // Storage Operation Types
 // ============================================================================
 
@@ -18,7 +47,7 @@ export type StorageOperation = 'set' | 'remove' | 'clear' | 'batch' | 'rollback'
 /**
  * Storage event emitted when data changes
  */
-export interface StorageEvent<T = any> {
+export interface StorageEvent<T extends JsonValue = JsonValue> {
   /** Storage key that changed */
   key: string;
   /** New value (undefined for remove/clear operations) */
@@ -34,7 +63,7 @@ export interface StorageEvent<T = any> {
 /**
  * Subscriber callback function for storage events
  */
-export type Subscriber<T = any> = (event: StorageEvent<T>) => void;
+export type Subscriber<T extends JsonValue = JsonValue> = (event: StorageEvent<T>) => void;
 
 /**
  * Unsubscribe function returned by subscribe()
@@ -57,14 +86,14 @@ export interface StorageAdapter {
    * @param key - Storage key
    * @returns The stored value or null if not found
    */
-  get<T>(key: string): Promise<T | null>;
+  get<T extends JsonValue>(key: string): Promise<T | null>;
 
   /**
    * Set a value in storage
    * @param key - Storage key
-   * @param value - Value to store
+   * @param value - Value to store (must be JSON-serializable)
    */
-  set<T>(key: string, value: T): Promise<void>;
+  set<T extends JsonValue>(key: string, value: T): Promise<void>;
 
   /**
    * Remove a value from storage
@@ -107,8 +136,8 @@ export type TransactionFunction = (adapter: StorageAdapter) => Promise<void>;
  * Transaction context for rollback support
  */
 export interface TransactionContext {
-  /** Original values before transaction started */
-  snapshot: Map<string, any>;
+  /** Original values before transaction started (JSON-serializable values only) */
+  snapshot: Map<string, JsonValue | null>;
   /** Keys that were modified during transaction */
   modifiedKeys: Set<string>;
   /** Transaction start timestamp */
@@ -169,6 +198,11 @@ export interface BatchOperationResult {
 }
 
 /**
+ * Retry backoff strategy for batch operations
+ */
+export type RetryBackoffStrategy = 'linear' | 'exponential';
+
+/**
  * Batch configuration options
  */
 export interface BatchOptions {
@@ -180,8 +214,14 @@ export interface BatchOptions {
   enableStats?: boolean;
   /** Retry failed operations */
   retryOnError?: boolean;
-  /** Maximum retry attempts */
+  /** Maximum retry attempts per operation */
   maxRetries?: number;
+  /** Delay between retry attempts in milliseconds */
+  retryDelay?: number;
+  /** Backoff strategy for retries (linear or exponential) */
+  retryBackoff?: RetryBackoffStrategy;
+  /** Overall timeout for batch operation in milliseconds */
+  timeout?: number;
 }
 
 // ============================================================================
@@ -229,17 +269,40 @@ export interface CompressionOptions {
 // ============================================================================
 
 /**
- * Cache entry with TTL support
+ * Base cache entry with TTL support
  */
-export interface CacheEntry<T = any> {
+export interface BaseCacheEntry<T extends JsonValue = JsonValue> {
   value: T;
   timestamp: number;
   ttl?: number;
-  /** Access count for LFU eviction policy */
-  accessCount?: number;
-  /** Last access timestamp for LRU eviction policy */
-  lastAccess?: number;
 }
+
+/**
+ * LRU cache entry (Least Recently Used)
+ */
+export interface LRUCacheEntry<T extends JsonValue = JsonValue> extends BaseCacheEntry<T> {
+  /** Last access timestamp for LRU eviction policy (required for LRU) */
+  lastAccess: number;
+}
+
+/**
+ * LFU cache entry (Least Frequently Used)
+ */
+export interface LFUCacheEntry<T extends JsonValue = JsonValue> extends BaseCacheEntry<T> {
+  /** Access count for LFU eviction policy (required for LFU) */
+  accessCount: number;
+}
+
+/**
+ * Cache entry type based on eviction policy
+ * - LRU: requires lastAccess
+ * - LFU: requires accessCount
+ * - TTL: only requires basic fields
+ */
+export type CacheEntry<T extends JsonValue = JsonValue, P extends EvictionPolicy = EvictionPolicy> =
+  P extends 'lru' ? LRUCacheEntry<T> :
+  P extends 'lfu' ? LFUCacheEntry<T> :
+  BaseCacheEntry<T>;
 
 /**
  * Cache statistics for monitoring performance
@@ -331,7 +394,7 @@ export interface IndexLookupResult<T> {
 /**
  * Schema version metadata
  */
-export interface SchemaVersion {
+export interface SchemaVersion extends JsonObject {
   version: number;
   appliedAt: string;
   migrations: string[];
@@ -343,12 +406,16 @@ export interface SchemaVersion {
 export interface Migration {
   /** Migration version (target version) */
   version: number;
-  /** Migration name/description */
+  /** Migration name (short identifier) */
   name: string;
-  /** Migration function */
+  /** Human-readable description of what this migration does */
+  description?: string;
+  /** Migration function to apply changes */
   up: (adapter: StorageAdapter) => Promise<void>;
-  /** Optional rollback function */
+  /** Optional rollback function to revert changes */
   down?: (adapter: StorageAdapter) => Promise<void>;
+  /** Optional validation function to verify migration success */
+  validate?: (adapter: StorageAdapter) => Promise<boolean>;
 }
 
 /**
@@ -377,8 +444,8 @@ export interface BackupData {
   version: number;
   /** Backup timestamp */
   timestamp: number;
-  /** All storage data */
-  data: Record<string, any>;
+  /** All storage data (JSON-serializable values only) */
+  data: Record<string, JsonValue>;
   /** Schema version at backup time */
   schemaVersion: SchemaVersion;
 }
@@ -431,23 +498,57 @@ export type StorageErrorCode =
   | 'ROLLBACK_ERROR';
 
 /**
+ * Error severity levels
+ */
+export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+/**
  * Custom error class for storage operations
  */
 export class StorageError extends Error {
+  /** Error severity level */
+  public readonly severity: ErrorSeverity;
+  /** User-friendly error message for display */
+  public readonly userMessage?: string;
+
   constructor(
     message: string,
     public readonly code: StorageErrorCode,
-    public readonly key?: string,
-    public readonly cause?: Error
+    options?: {
+      key?: string;
+      cause?: Error;
+      severity?: ErrorSeverity;
+      userMessage?: string;
+    }
   ) {
     super(message);
     this.name = 'StorageError';
+    this.severity = options?.severity ?? 'medium';
+    this.userMessage = options?.userMessage;
+
+    // Make key and cause accessible as properties
+    Object.defineProperty(this, 'key', {
+      value: options?.key,
+      enumerable: true,
+      writable: false,
+    });
+
+    Object.defineProperty(this, 'cause', {
+      value: options?.cause,
+      enumerable: true,
+      writable: false,
+    });
 
     // Maintain proper stack trace for debugging
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, StorageError);
     }
   }
+
+  /** Storage key that caused the error (if applicable) */
+  public readonly key?: string;
+  /** Original error that caused this error (if applicable) */
+  public readonly cause?: Error;
 }
 
 // ============================================================================

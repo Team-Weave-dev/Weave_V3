@@ -5,6 +5,8 @@
  * Includes WBS system, payment tracking, and document management.
  */
 
+import type { JsonObject } from '../base';
+
 // ============================================================================
 // Payment & Settlement Types
 // ============================================================================
@@ -39,7 +41,7 @@ export type WBSTaskStatus = 'pending' | 'in_progress' | 'completed';
 /**
  * WBS task item
  */
-export interface WBSTask {
+export interface WBSTask extends JsonObject {
   /** Unique task ID */
   id: string;
 
@@ -92,7 +94,7 @@ export interface DocumentStatus {
 /**
  * Project document status (comprehensive)
  */
-export interface ProjectDocumentStatus {
+export interface ProjectDocumentStatus extends JsonObject {
   /** Contract documents */
   contract: DocumentStatus;
 
@@ -112,7 +114,7 @@ export interface ProjectDocumentStatus {
 /**
  * Document basic information
  */
-export interface DocumentInfo {
+export interface DocumentInfo extends JsonObject {
   /** Document ID */
   id: string;
 
@@ -249,7 +251,7 @@ export type ProjectVisibility = 'private' | 'team' | 'public';
 /**
  * Project entity
  */
-export interface Project {
+export interface Project extends JsonObject {
   // ========================================
   // Identity
   // ========================================

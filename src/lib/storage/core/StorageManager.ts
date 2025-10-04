@@ -21,6 +21,7 @@ import type {
   BatchOperationResult,
   BatchOptions,
   SetOptions,
+  JsonValue,
 } from '../types/base';
 import { StorageError, STORAGE_CONSTANTS } from '../types/base';
 import { STORAGE_CONFIG, CACHE_OPTIONS, BATCH_OPTIONS } from '../config';
@@ -89,7 +90,7 @@ export class StorageManager {
    * @param key - Storage key
    * @returns The stored value or null if not found
    */
-  async get<T>(key: string): Promise<T | null> {
+  async get<T extends JsonValue>(key: string): Promise<T | null> {
     // Check cache first
     const cached = this.getCached<T>(key);
     if (cached !== null) {
@@ -111,10 +112,10 @@ export class StorageManager {
    * Set a value in storage
    *
    * @param key - Storage key
-   * @param value - Value to store
+   * @param value - Value to store (must be JSON-serializable)
    * @param options - Optional set configuration
    */
-  async set<T>(key: string, value: T, options?: SetOptions): Promise<void> {
+  async set<T extends JsonValue>(key: string, value: T, options?: SetOptions): Promise<void> {
     try {
       let oldValue: T | undefined;
 
@@ -143,8 +144,10 @@ export class StorageManager {
       throw new StorageError(
         `Failed to set key "${key}"`,
         'SET_ERROR',
-        key,
-        error as Error
+        {
+          key,
+          cause: error as Error,
+        }
       );
     }
   }
@@ -171,8 +174,10 @@ export class StorageManager {
       throw new StorageError(
         `Failed to remove key "${key}"`,
         'REMOVE_ERROR',
-        key,
-        error as Error
+        {
+          key,
+          cause: error as Error,
+        }
       );
     }
   }
@@ -194,8 +199,9 @@ export class StorageManager {
       throw new StorageError(
         'Failed to clear storage',
         'CLEAR_ERROR',
-        undefined,
-        error as Error
+        {
+          cause: error as Error,
+        }
       );
     }
   }
@@ -243,7 +249,7 @@ export class StorageManager {
    * @param oldValue - Previous value
    * @param operation - Type of operation
    */
-  private notify<T>(
+  private notify<T extends JsonValue = JsonValue>(
     key: string,
     value: T | undefined,
     oldValue: T | undefined,
@@ -300,7 +306,7 @@ export class StorageManager {
    * // Map { 'project:1' => {...}, 'project:2' => {...} }
    * ```
    */
-  async getBatch<T>(
+  async getBatch<T extends JsonValue>(
     keys: string[],
     options?: BatchOptions
   ): Promise<Map<string, T>> {
@@ -343,7 +349,7 @@ export class StorageManager {
    * // { success: true, successCount: 2, failureCount: 0, executionTime: 45 }
    * ```
    */
-  async setBatch<T = any>(
+  async setBatch<T extends JsonValue>(
     items: Map<string, T>,
     options?: BatchOptions & { notifyOldValues?: boolean }
   ): Promise<BatchOperationResult> {
@@ -388,8 +394,9 @@ export class StorageManager {
       throw new StorageError(
         'Failed to set batch items',
         'SET_ERROR',
-        undefined,
-        error as Error
+        {
+          cause: error as Error,
+        }
       );
     }
   }
@@ -450,8 +457,9 @@ export class StorageManager {
         throw new StorageError(
           'Transaction failed and was rolled back',
           'TRANSACTION_ERROR',
-          undefined,
-          error as Error
+          {
+            cause: error as Error,
+          }
         );
       }
     } catch (error) {
@@ -461,8 +469,9 @@ export class StorageManager {
       throw new StorageError(
         'Transaction initialization failed',
         'TRANSACTION_ERROR',
-        undefined,
-        error as Error
+        {
+          cause: error as Error,
+        }
       );
     }
   }
@@ -564,8 +573,9 @@ export class StorageManager {
       throw new StorageError(
         'Rollback failed',
         'ROLLBACK_ERROR',
-        undefined,
-        error as Error
+        {
+          cause: error as Error,
+        }
       );
     }
   }
@@ -580,7 +590,7 @@ export class StorageManager {
    * @param key - Storage key
    * @returns Cached value or null
    */
-  private getCached<T>(key: string): T | null {
+  private getCached<T extends JsonValue>(key: string): T | null {
     if (!this.config.enableCache) return null;
     return this.cacheLayer.get<T>(key);
   }
@@ -592,7 +602,7 @@ export class StorageManager {
    * @param value - Value to cache
    * @param ttl - Optional TTL override
    */
-  private setCached<T>(key: string, value: T, ttl?: number): void {
+  private setCached<T extends JsonValue>(key: string, value: T, ttl?: number): void {
     if (!this.config.enableCache) return;
     this.cacheLayer.set(key, value, ttl);
   }

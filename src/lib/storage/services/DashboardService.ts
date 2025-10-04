@@ -9,12 +9,13 @@
 
 import type { StorageManager } from '../core/StorageManager';
 import type { ImprovedWidget, DashboardConfig } from '@/types/improved-dashboard';
+import type { JsonObject } from '../types/base';
 import { STORAGE_KEYS } from '../config';
 
 /**
  * Dashboard data structure
  */
-export interface DashboardData {
+export interface DashboardData extends JsonObject {
   /** Widget list */
   widgets: ImprovedWidget[];
   /** Dashboard configuration */

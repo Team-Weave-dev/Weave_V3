@@ -104,7 +104,7 @@ export class ProjectService extends BaseService<Project> {
       id: this.generateId(),
       createdAt: now,
       order: project.wbsTasks.length, // Add to end
-    };
+    } as WBSTask;
 
     const updatedWBSTasks = [...project.wbsTasks, newTask];
 

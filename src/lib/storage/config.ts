@@ -75,8 +75,17 @@ export const BATCH_OPTIONS: BatchOptions = {
   /** Retry failed operations once */
   retryOnError: true,
 
-  /** Maximum retry attempts */
+  /** Maximum retry attempts per operation */
   maxRetries: 1,
+
+  /** Delay between retry attempts (100ms) */
+  retryDelay: 100,
+
+  /** Use exponential backoff for retries */
+  retryBackoff: 'exponential',
+
+  /** Overall batch operation timeout (30 seconds) */
+  timeout: 30 * 1000,
 };
 
 /**
@@ -118,25 +127,47 @@ export const STORAGE_KEYS = {
 } as const;
 
 /**
+ * Validate and sanitize ID for storage key
+ * @param id - The ID to validate
+ * @param context - Context for error message (e.g., 'project', 'client')
+ * @throws {Error} If ID is invalid
+ * @returns Sanitized ID
+ */
+function validateId(id: string, context: string): string {
+  if (!id || typeof id !== 'string') {
+    throw new Error(`Invalid ${context} ID: must be a non-empty string`);
+  }
+
+  const trimmed = id.trim();
+  if (!trimmed) {
+    throw new Error(`Invalid ${context} ID: cannot be empty or whitespace`);
+  }
+
+  // Encode URI component to prevent key injection attacks
+  return encodeURIComponent(trimmed);
+}
+
+/**
  * Storage key builder functions
  *
  * These functions help build composite keys for related data.
+ * All IDs are validated and sanitized to prevent key injection attacks.
  */
 export const buildKey = {
   /** Build key for a specific project: project:{id} */
-  project: (id: string) => `project:${id}`,
+  project: (id: string) => `project:${validateId(id, 'project')}`,
 
   /** Build key for project documents: documents:project:{projectId} */
-  projectDocuments: (projectId: string) => `documents:project:${projectId}`,
+  projectDocuments: (projectId: string) => `documents:project:${validateId(projectId, 'project')}`,
 
   /** Build key for project tasks: tasks:project:{projectId} */
-  projectTasks: (projectId: string) => `tasks:project:${projectId}`,
+  projectTasks: (projectId: string) => `tasks:project:${validateId(projectId, 'project')}`,
 
   /** Build key for client events: events:client:{clientId} */
-  clientEvents: (clientId: string) => `events:client:${clientId}`,
+  clientEvents: (clientId: string) => `events:client:${validateId(clientId, 'client')}`,
 
   /** Build key for project events: events:project:{projectId} */
-  projectEvents: (projectId: string) => `events:project:${projectId}`,
+  projectEvents: (projectId: string) => `events:project:${validateId(projectId, 'project')}`,
 } as const;
 
 /**
@@ -180,3 +211,123 @@ export const STORAGE_LIMITS = {
   /** Maximum size for a single entry */
   MAX_ENTRY_SIZE: 1 * 1024 * 1024, // 1MB
 } as const;
+
+// ============================================================================
+// Configuration Validation
+// ============================================================================
+
+/**
+ * Validate storage configuration
+ *
+ * @param config - Storage configuration to validate
+ * @throws {Error} If configuration is invalid
+ * @returns true if configuration is valid
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   validateConfig(STORAGE_CONFIG);
+ *   console.log('Configuration is valid');
+ * } catch (error) {
+ *   console.error('Invalid configuration:', error.message);
+ * }
+ * ```
+ */
+export function validateConfig(config: StorageConfig): boolean {
+  // Validate version
+  if (config.version < 1 || !Number.isInteger(config.version)) {
+    throw new Error('Storage version must be a positive integer (>= 1)');
+  }
+
+  // Validate prefix
+  if (!config.prefix || typeof config.prefix !== 'string') {
+    throw new Error('Storage prefix must be a non-empty string');
+  }
+
+  // Validate compressionThreshold if provided
+  if (config.compressionThreshold !== undefined) {
+    if (config.compressionThreshold < 0) {
+      throw new Error('Compression threshold must be non-negative');
+    }
+  }
+
+  // Validate cacheTTL if provided
+  if (config.cacheTTL !== undefined) {
+    if (config.cacheTTL < 0) {
+      throw new Error('Cache TTL must be non-negative');
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Validate cache options
+ *
+ * @param options - Cache options to validate
+ * @throws {Error} If options are invalid
+ * @returns true if options are valid
+ */
+export function validateCacheOptions(options: CacheOptions): boolean {
+  // Validate maxSize
+  if (options.maxSize !== undefined) {
+    if (options.maxSize <= 0 || !Number.isInteger(options.maxSize)) {
+      throw new Error('Cache maxSize must be a positive integer');
+    }
+  }
+
+  // Validate defaultTTL
+  if (options.defaultTTL !== undefined) {
+    if (options.defaultTTL < 0) {
+      throw new Error('Cache defaultTTL must be non-negative');
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Validate batch options
+ *
+ * @param options - Batch options to validate
+ * @throws {Error} If options are invalid
+ * @returns true if options are valid
+ */
+export function validateBatchOptions(options: BatchOptions): boolean {
+  // Validate chunkSize
+  if (options.chunkSize !== undefined) {
+    if (options.chunkSize <= 0 || !Number.isInteger(options.chunkSize)) {
+      throw new Error('Batch chunkSize must be a positive integer');
+    }
+  }
+
+  // Validate maxParallel
+  if (options.maxParallel !== undefined) {
+    if (options.maxParallel <= 0 || !Number.isInteger(options.maxParallel)) {
+      throw new Error('Batch maxParallel must be a positive integer');
+    }
+  }
+
+  // Validate maxRetries
+  if (options.maxRetries !== undefined) {
+    if (options.maxRetries < 0 || !Number.isInteger(options.maxRetries)) {
+      throw new Error('Batch maxRetries must be a non-negative integer');
+    }
+  }
+
+  // Validate retryDelay
+  if (options.retryDelay !== undefined) {
+    if (options.retryDelay < 0) {
+      throw new Error('Batch retryDelay must be non-negative');
+    }
+  }
+
+  // Validate timeout
+  if (options.timeout !== undefined) {
+    if (options.timeout <= 0) {
+      throw new Error('Batch timeout must be positive');
+    }
+  }
+
+  return true;
+}

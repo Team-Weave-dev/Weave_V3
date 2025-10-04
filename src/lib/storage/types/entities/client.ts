@@ -5,6 +5,8 @@
  * Designed for business client/customer management.
  */
 
+import type { JsonObject } from '../base';
+
 /**
  * Client address information
  */
@@ -28,7 +30,7 @@ export interface ClientAddress {
 /**
  * Client contact person
  */
-export interface ClientContact {
+export interface ClientContact extends JsonObject {
   /** Contact person name */
   name: string;
 
@@ -48,7 +50,7 @@ export interface ClientContact {
 /**
  * Client entity
  */
-export interface Client {
+export interface Client extends JsonObject {
   // ========================================
   // Identity
   // ========================================

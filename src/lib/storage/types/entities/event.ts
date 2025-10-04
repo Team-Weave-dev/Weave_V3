@@ -5,6 +5,8 @@
  * Supports meetings, deadlines, recurring events, and attendees.
  */
 
+import type { JsonObject } from '../base';
+
 /**
  * Event type
  */
@@ -38,7 +40,7 @@ export type EventRecurringPattern = 'daily' | 'weekly' | 'monthly' | 'yearly';
 /**
  * Event attendee
  */
-export interface EventAttendee {
+export interface EventAttendee extends JsonObject {
   /** Attendee name */
   name: string;
 
@@ -63,7 +65,7 @@ export interface EventReminder {
 /**
  * Recurring event configuration
  */
-export interface EventRecurring {
+export interface EventRecurring extends JsonObject {
   /** Recurring pattern */
   pattern: EventRecurringPattern;
 
@@ -83,7 +85,7 @@ export interface EventRecurring {
 /**
  * CalendarEvent entity
  */
-export interface CalendarEvent {
+export interface CalendarEvent extends JsonObject {
   // ========================================
   // Identity
   // ========================================

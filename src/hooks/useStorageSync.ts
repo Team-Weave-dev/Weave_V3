@@ -9,6 +9,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { storage } from '@/lib/storage';
+import type { JsonValue } from '@/lib/storage/types/base';
 
 /**
  * Hook for real-time storage synchronization
@@ -32,7 +33,7 @@ import { storage } from '@/lib/storage';
  * }
  * ```
  */
-export function useStorageSync<T>(
+export function useStorageSync<T extends JsonValue>(
   key: string,
   initialValue: T
 ): {
@@ -190,7 +191,7 @@ export function useStorageSyncMulti(
  * }
  * ```
  */
-export function useStorageSyncEntity<T extends { id: string }>(
+export function useStorageSyncEntity<T extends JsonValue & { id: string }>(
   serviceGetter: () => { getById: (id: string) => Promise<T | null> },
   id: string,
   initialValue: T | null
@@ -256,7 +257,7 @@ export function useStorageSyncEntity<T extends { id: string }>(
  * }
  * ```
  */
-export function useStorageSyncOptimistic<T>(
+export function useStorageSyncOptimistic<T extends JsonValue>(
   key: string,
   initialValue: T
 ): {
