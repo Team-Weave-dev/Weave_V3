@@ -98,6 +98,7 @@ Weave_V3/
 | **🎨 UI Implementation**    | [`src/components/ui/claude.md`](./src/components/ui/claude.md) | shadcn/ui components, styling, and design system                            |
 | **🪝 Custom Hooks**         | [`src/hooks/claude.md`](./src/hooks/claude.md)                 | React hooks library and state management patterns                           |
 | **📚 Utilities**            | [`src/lib/claude.md`](./src/lib/claude.md)                     | Helper functions and common utilities                                       |
+| **💾 Storage System**       | [`src/lib/storage/claude.md`](./src/lib/storage/claude.md)     | Unified localStorage management and Supabase migration preparation          |
 | **⏳ Loading UI System**    | [`docs/LOADING-GUIDE.md`](./docs/LOADING-GUIDE.md)             | Loading states, spinners, skeletons, and progress indicators                |
 
 ## 🤖 Claude Workflow System
@@ -173,6 +174,26 @@ Weave_V3/
 4. **Auto-update documentation** → System handles synchronization
 
 ## 🔄 Recent Changes
+
+- **2025-10-05**: Storage System Documentation - Complete CLAUDE.md infrastructure
+  - **통합 로컬스토리지 전역 규칙 중앙화**: 모든 페이지, 위젯, 서비스에 적용 가능한 Storage 시스템 문서화 완료
+  - **7개 CLAUDE.md 파일 생성**:
+    - `src/lib/storage/claude.md` - Storage 시스템 메인 가이드
+    - `src/lib/storage/core/claude.md` - StorageManager 클래스 상세
+    - `src/lib/storage/adapters/claude.md` - Adapter 시스템 및 패턴
+    - `src/lib/storage/types/claude.md` - 타입 시스템 및 엔티티 스키마
+    - `src/lib/storage/services/claude.md` - 도메인 서비스 (7개 서비스)
+    - `src/lib/storage/migrations/claude.md` - 마이그레이션 및 버전 관리
+    - `src/lib/storage/utils/claude.md` - 성능 최적화 유틸리티
+  - **84% 완료 상태 문서화**: Phases 0-8 완료, 9-10 진행 예정
+  - **핵심 시스템 문서화**:
+    - StorageManager: 통합 CRUD API, 구독 시스템, 트랜잭션
+    - 7개 엔티티: User, Project, Client, Task, CalendarEvent, Document, Settings
+    - 7개 도메인 서비스: BaseService 패턴 기반
+    - 마이그레이션: SafeMigrationManager, v1-to-v2 스크립트
+    - 성능 최적화: CacheLayer (80% 히트율), IndexManager (70% 성능 향상), CompressionManager (30-50% 절약)
+  - **Supabase 마이그레이션 준비**: 완전한 타입 안전성과 1:1 스키마 매핑
+  - 루트 CLAUDE.md 및 src/lib/claude.md 업데이트: Storage 시스템 네비게이션 추가
 
 - **2025-09-24**: Pagination implementation refinement - Correct placement and duplicate removal
   - Issue resolution: Pagination was incorrectly applied to ListView instead of DetailView

@@ -192,7 +192,9 @@ toast(toastPatterns.error("네트워크 연결을 확인해주세요."))
 ## 🔄 useStorageSync - 실시간 스토리지 동기화 훅 (Phase 7.4)
 
 ### 개요
-Storage 시스템과 React 상태를 실시간으로 동기화하는 훅 모음입니다. **멀티탭 동기화** 및 **낙관적 업데이트**를 지원합니다.
+**Storage 시스템**과 React 상태를 실시간으로 동기화하는 훅 모음입니다. **멀티탭 동기화** 및 **낙관적 업데이트**를 지원합니다.
+
+**📚 관련 문서**: [`src/lib/storage/claude.md`](../lib/storage/claude.md) - Storage 시스템 완전 가이드
 
 ### 주요 기능
 - **실시간 동기화**: StorageManager 구독 시스템 기반 자동 동기화
