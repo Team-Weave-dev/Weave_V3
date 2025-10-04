@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { storage } from '@/lib/storage';
 import type { JsonValue } from '@/lib/storage/types/base';
 
@@ -42,9 +42,13 @@ export function useStorageSync<T extends JsonValue>(
   error: Error | null;
   refresh: () => Promise<void>;
 } {
-  const [data, setData] = useState<T>(initialValue);
+  // Use initialValue only for initial state, not in dependencies
+  const [data, setData] = useState<T>(() => initialValue);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Store initialValue in a ref to avoid recreating loadData on every render
+  const initialValueRef = useRef(initialValue);
 
   // Load initial data
   const loadData = useCallback(async () => {
@@ -52,14 +56,14 @@ export function useStorageSync<T extends JsonValue>(
       setIsLoading(true);
       setError(null);
       const value = await storage.get<T>(key);
-      setData(value ?? initialValue);
+      setData(value ?? initialValueRef.current);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load data'));
-      setData(initialValue);
+      setData(initialValueRef.current);
     } finally {
       setIsLoading(false);
     }
-  }, [key, initialValue]);
+  }, [key]); // Removed initialValue from dependencies to prevent infinite loops
 
   // Subscribe to changes
   useEffect(() => {
@@ -68,12 +72,12 @@ export function useStorageSync<T extends JsonValue>(
 
     // Subscribe to updates
     const unsubscribe = storage.subscribe(key, (event) => {
-      setData((event.value as T) ?? initialValue);
+      setData((event.value as T) ?? initialValueRef.current);
     });
 
     // Cleanup subscription
     return unsubscribe;
-  }, [key, initialValue, loadData]);
+  }, [key, loadData]); // Removed initialValue from dependencies
 
   return {
     data,
@@ -267,34 +271,38 @@ export function useStorageSyncOptimistic<T extends JsonValue>(
   update: (updater: (current: T) => Promise<T>) => Promise<void>;
   refresh: () => Promise<void>;
 } {
-  const [data, setData] = useState<T>(initialValue);
+  // Use initialValue only for initial state, not in dependencies
+  const [data, setData] = useState<T>(() => initialValue);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Store initialValue in a ref to avoid recreating loadData on every render
+  const initialValueRef = useRef(initialValue);
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const value = await storage.get<T>(key);
-      setData(value ?? initialValue);
+      setData(value ?? initialValueRef.current);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load data'));
-      setData(initialValue);
+      setData(initialValueRef.current);
     } finally {
       setIsLoading(false);
     }
-  }, [key, initialValue]);
+  }, [key]); // Removed initialValue from dependencies to prevent infinite loops
 
   // Subscribe to changes
   useEffect(() => {
     loadData();
 
     const unsubscribe = storage.subscribe(key, (event) => {
-      setData((event.value as T) ?? initialValue);
+      setData((event.value as T) ?? initialValueRef.current);
     });
 
     return unsubscribe;
-  }, [key, initialValue, loadData]);
+  }, [key, loadData]); // Removed initialValue from dependencies
 
   // Optimistic update with rollback
   const update = useCallback(

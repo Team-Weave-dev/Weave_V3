@@ -19,6 +19,7 @@ import type {
 } from '../types/entities/project';
 import { isProject } from '../types/entities/project';
 import type { CalendarEvent } from '../types/entities/event';
+import type { DeleteRelationsOptions, DeleteRelationsResult, DeleteError } from '../types/base';
 import { STORAGE_KEYS } from '../config';
 
 /**
@@ -399,52 +400,184 @@ export class ProjectService extends BaseService<Project> {
 
   /**
    * Delete project with all related data
+   *
+   * This method deletes a project along with its related entities (tasks, events, documents)
+   * using parallel deletion for improved performance. It provides detailed error reporting
+   * and allows partial failures without rolling back successful deletions.
+   *
    * @param projectId - Project ID to delete
    * @param options - Options for handling related data
+   * @returns Detailed result including success status, deletion counts, and errors
+   *
+   * @example
+   * ```typescript
+   * const result = await projectService.deleteProjectWithRelations('project-123', {
+   *   deleteTasks: true,
+   *   deleteEvents: true,
+   *   deleteDocuments: false  // Keep documents for archival
+   * });
+   *
+   * if (result.success) {
+   *   console.log(`Deleted ${result.deleted.tasks} tasks, ${result.deleted.events} events`);
+   * } else {
+   *   console.error(`Errors:`, result.errors);
+   * }
+   * ```
    */
   async deleteProjectWithRelations(
     projectId: string,
-    options?: {
-      deleteTasks?: boolean; // Default: true
-      deleteEvents?: boolean; // Default: true
-      deleteDocuments?: boolean; // Default: false (keep documents)
-    }
-  ): Promise<boolean> {
+    options?: DeleteRelationsOptions
+  ): Promise<DeleteRelationsResult> {
+    const startTime = performance.now();
     const { deleteTasks = true, deleteEvents = true, deleteDocuments = false } = options || {};
 
-    // Import services dynamically to avoid circular dependencies at module level
-    const { taskService, calendarService, documentService } = await import('../index');
+    // Initialize result
+    const result: DeleteRelationsResult = {
+      success: true,
+      deleted: {
+        project: false,
+        tasks: 0,
+        events: 0,
+        documents: 0,
+      },
+      errors: [],
+    };
 
     try {
-      // Delete related tasks
+      // Import services dynamically to avoid circular dependencies at module level
+      const { taskService, calendarService, documentService } = await import('../index');
+
+      // Delete related tasks (parallel)
       if (deleteTasks) {
         const tasks = await taskService.getTasksByProject(projectId);
-        for (const task of tasks) {
-          await taskService.delete(task.id);
-        }
+        const taskDeletePromises = tasks.map((task) =>
+          taskService
+            .delete(task.id)
+            .then(() => ({ success: true as const, id: task.id }))
+            .catch((error) => ({
+              success: false as const,
+              id: task.id,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }))
+        );
+
+        const taskResults = await Promise.all(taskDeletePromises);
+
+        taskResults.forEach((taskResult) => {
+          if (taskResult.success) {
+            result.deleted.tasks++;
+          } else {
+            result.success = false;
+            result.errors.push({
+              type: 'task',
+              id: taskResult.id,
+              error: taskResult.error,
+              timestamp: this.getCurrentTimestamp(),
+            });
+          }
+        });
       }
 
-      // Delete related events
+      // Delete related events (parallel)
       if (deleteEvents) {
         const events = await calendarService.getEventsByProject(projectId);
-        for (const event of events) {
-          await calendarService.delete(event.id);
-        }
+        const eventDeletePromises = events.map((event) =>
+          calendarService
+            .delete(event.id)
+            .then(() => ({ success: true as const, id: event.id }))
+            .catch((error) => ({
+              success: false as const,
+              id: event.id,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }))
+        );
+
+        const eventResults = await Promise.all(eventDeletePromises);
+
+        eventResults.forEach((eventResult) => {
+          if (eventResult.success) {
+            result.deleted.events++;
+          } else {
+            result.success = false;
+            result.errors.push({
+              type: 'event',
+              id: eventResult.id,
+              error: eventResult.error,
+              timestamp: this.getCurrentTimestamp(),
+            });
+          }
+        });
       }
 
-      // Delete related documents
+      // Delete related documents (parallel)
       if (deleteDocuments) {
         const documents = await documentService.getDocumentsByProject(projectId);
-        for (const document of documents) {
-          await documentService.delete(document.id);
-        }
+        const documentDeletePromises = documents.map((document) =>
+          documentService
+            .delete(document.id)
+            .then(() => ({ success: true as const, id: document.id }))
+            .catch((error) => ({
+              success: false as const,
+              id: document.id,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }))
+        );
+
+        const documentResults = await Promise.all(documentDeletePromises);
+
+        documentResults.forEach((documentResult) => {
+          if (documentResult.success) {
+            result.deleted.documents++;
+          } else {
+            result.success = false;
+            result.errors.push({
+              type: 'document',
+              id: documentResult.id,
+              error: documentResult.error,
+              timestamp: this.getCurrentTimestamp(),
+            });
+          }
+        });
       }
 
-      // Finally, delete the project
-      return this.delete(projectId);
+      // Finally, delete the project itself
+      try {
+        result.deleted.project = await this.delete(projectId);
+        if (!result.deleted.project) {
+          result.success = false;
+          result.errors.push({
+            type: 'project',
+            id: projectId,
+            error: 'Project deletion returned false',
+            timestamp: this.getCurrentTimestamp(),
+          });
+        }
+      } catch (error) {
+        result.success = false;
+        result.deleted.project = false;
+        result.errors.push({
+          type: 'project',
+          id: projectId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: this.getCurrentTimestamp(),
+        });
+      }
+
+      // Calculate execution time
+      result.executionTime = Math.round(performance.now() - startTime);
+
+      return result;
     } catch (error) {
-      console.error(`Failed to delete project with relations: ${projectId}`, error);
-      return false;
+      // Critical error - could not even start deletion process
+      result.success = false;
+      result.errors.push({
+        type: 'project',
+        id: projectId,
+        error: error instanceof Error ? error.message : 'Critical error during deletion',
+        timestamp: this.getCurrentTimestamp(),
+      });
+      result.executionTime = Math.round(performance.now() - startTime);
+      return result;
     }
   }
 

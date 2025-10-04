@@ -645,6 +645,59 @@ export interface SetOptions {
 }
 
 // ============================================================================
+// Relationship Management Types
+// ============================================================================
+
+/**
+ * Options for deleting entities with relations
+ */
+export interface DeleteRelationsOptions {
+  /** Delete related tasks (default: true) */
+  deleteTasks?: boolean;
+  /** Delete related events (default: true) */
+  deleteEvents?: boolean;
+  /** Delete related documents (default: false - preserve documents) */
+  deleteDocuments?: boolean;
+}
+
+/**
+ * Individual deletion error information
+ */
+export interface DeleteError {
+  /** Type of entity that failed to delete */
+  type: 'task' | 'event' | 'document' | 'project';
+  /** ID of the entity */
+  id: string;
+  /** Error message */
+  error: string;
+  /** Timestamp of the error */
+  timestamp: string;
+}
+
+/**
+ * Result of deleting an entity with its relations
+ */
+export interface DeleteRelationsResult {
+  /** Overall success status */
+  success: boolean;
+  /** Deletion counts by entity type */
+  deleted: {
+    /** Whether the main project was deleted */
+    project: boolean;
+    /** Number of tasks deleted */
+    tasks: number;
+    /** Number of events deleted */
+    events: number;
+    /** Number of documents deleted */
+    documents: number;
+  };
+  /** List of errors encountered during deletion */
+  errors: DeleteError[];
+  /** Total execution time in milliseconds */
+  executionTime?: number;
+}
+
+// ============================================================================
 // Storage Constants
 // ============================================================================
 
