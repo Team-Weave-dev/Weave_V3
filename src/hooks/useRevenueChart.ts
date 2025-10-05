@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { projectService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
 
@@ -152,7 +152,7 @@ export function useRevenueChart(): UseRevenueChartReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadRevenueData = async () => {
+  const loadRevenueData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -174,7 +174,7 @@ export function useRevenueChart(): UseRevenueChartReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadRevenueData();
@@ -188,7 +188,7 @@ export function useRevenueChart(): UseRevenueChartReturn {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [loadRevenueData]);
 
   return {
     monthlyData,

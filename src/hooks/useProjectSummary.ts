@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { projectService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
 import type { ProjectReview } from '@/types/dashboard';
@@ -88,7 +88,7 @@ export function useProjectSummary() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -106,20 +106,18 @@ export function useProjectSummary() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadProjects();
 
     // Storage 구독 (프로젝트 변경 시 자동 리로드)
-    const unsubscribe = projectService['storage'].subscribe('projects', () => {
-      loadProjects();
-    });
+    const unsubscribe = projectService['storage'].subscribe('projects', loadProjects);
 
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [loadProjects]);
 
   return {
     projects,

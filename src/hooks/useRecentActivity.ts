@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { projectService, taskService, documentService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
 import type { Task } from '@/lib/storage/types/entities/task';
@@ -152,7 +152,7 @@ export function useRecentActivity(): UseRecentActivityReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadActivities = async () => {
+  const loadActivities = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -165,7 +165,7 @@ export function useRecentActivity(): UseRecentActivityReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadActivities();
@@ -189,7 +189,7 @@ export function useRecentActivity(): UseRecentActivityReturn {
       unsubscribeTasks();
       unsubscribeDocuments();
     };
-  }, []);
+  }, [loadActivities]);
 
   return {
     activities,

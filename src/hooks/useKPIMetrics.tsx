@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { projectService } from '@/lib/storage';
 import { taskService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
@@ -203,7 +203,7 @@ export function useKPIMetrics(): UseKPIMetricsReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const loadMetrics = async () => {
+  const loadMetrics = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -226,7 +226,7 @@ export function useKPIMetrics(): UseKPIMetricsReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadMetrics();
@@ -245,7 +245,7 @@ export function useKPIMetrics(): UseKPIMetricsReturn {
       unsubscribeProjects();
       unsubscribeTasks();
     };
-  }, []);
+  }, [loadMetrics]);
 
   return {
     monthlyMetrics,
