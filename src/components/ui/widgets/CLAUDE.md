@@ -189,21 +189,219 @@ export interface YourWidgetProps {
 - [ ] 접근성 속성 (aria-label)
 - [ ] 다크모드 지원
 
+## 🔗 Storage API 통합 가이드
+
+**데이터 통합 완료**: 모든 대시보드 위젯이 Storage API 기반 실시간 동기화로 동작합니다.
+
+### Self-Loading Widget 패턴
+
+모든 위젯은 **Custom Hook**을 통해 자체적으로 데이터를 로드합니다.
+
+```tsx
+// 1. 커스텀 훅 생성 (src/hooks/useYourWidgetData.tsx)
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { yourService } from '@/lib/storage';
+import type { YourEntity } from '@/lib/storage/types/entities/your-entity';
+import type { WidgetDataType } from '@/types/dashboard';
+
+interface UseYourWidgetDataReturn {
+  data: WidgetDataType[];
+  loading: boolean;
+  error: Error | null;
+  refresh: () => Promise<void>;
+}
+
+export function useYourWidgetData(): UseYourWidgetDataReturn {
+  const [data, setData] = useState<WidgetDataType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Storage Service에서 데이터 로드
+      const entities = await yourService.getAll();
+
+      // 위젯 타입으로 변환
+      const converted = entities.map(convertToWidgetType);
+      setData(converted);
+    } catch (err) {
+      console.error('Failed to load widget data:', err);
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+
+    // Storage 구독: 데이터 변경 시 자동 리로드
+    const unsubscribe = yourService['storage'].subscribe(
+      'your_storage_key',
+      loadData
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  return { data, loading, error, refresh: loadData };
+}
+```
+
+```tsx
+// 2. 위젯 컴포넌트에서 훅 사용
+export function YourWidget({ title }: YourWidgetProps) {
+  const displayTitle = title || getWidgetText.yourWidget.title('ko');
+
+  // Self-loading: 훅이 모든 데이터 로딩 담당
+  const { data, loading, error } = useYourWidgetData();
+
+  // 로딩 상태
+  if (loading) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner size="md" text={getLoadingText.data('ko')} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-destructive">
+            <XCircle className="h-12 w-12 mb-4 opacity-50" />
+            <p className={typography.text.small}>데이터를 불러오는 중 오류가 발생했습니다</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 정상 상태: 데이터 표시
+  return (
+    <Card className="h-full flex flex-col overflow-hidden">
+      <CardHeader>
+        <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        <CardDescription className={typography.text.description}>
+          {getWidgetText.yourWidget.description('ko')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 overflow-auto min-h-0 px-1 pb-2">
+        {/* 데이터 렌더링 */}
+        {data.map(item => (
+          <YourWidgetItem key={item.id} data={item} />
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### Storage API 통합 체크리스트
+
+- [ ] **커스텀 훅 생성**: `src/hooks/useYourWidgetData.tsx`
+- [ ] **Storage Service 연결**: `yourService.getAll()` 또는 `getById()`
+- [ ] **실시간 구독**: `yourService['storage'].subscribe()`
+- [ ] **타입 변환**: Storage 엔티티 → Widget 타입
+- [ ] **로딩/에러/빈 상태**: 3가지 상태 UI 구현
+- [ ] **Props 제거**: `data` prop 제거, self-loading으로 전환
+- [ ] **ImprovedDashboard 수정**: `data: undefined` 설정
+- [ ] **빌드 검증**: `npm run type-check && npm run build`
+
+### 다중 Service 통합 예시
+
+일부 위젯은 여러 Service의 데이터를 통합해야 합니다.
+
+```tsx
+// 예시: KPIWidget (프로젝트 + 작업)
+export function useKPIMetrics() {
+  const [monthlyMetrics, setMonthlyMetrics] = useState<KPIMetric[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const loadMetrics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 여러 Service에서 데이터 로드
+      const [allProjects, allTasks] = await Promise.all([
+        projectService.getAll(),
+        taskService.getAll(),
+      ]);
+
+      // 통합 집계 로직
+      const monthly = calculateMonthlyMetrics(allProjects, allTasks);
+      setMonthlyMetrics(monthly);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMetrics();
+
+    // 다중 구독: 두 Service 모두 감시
+    const unsubscribeProjects = projectService['storage'].subscribe('projects', loadMetrics);
+    const unsubscribeTasks = taskService['storage'].subscribe('tasks', loadMetrics);
+
+    return () => {
+      unsubscribeProjects();
+      unsubscribeTasks();
+    };
+  }, []);
+
+  return { monthlyMetrics, loading, error, refresh: loadMetrics };
+}
+```
+
+### 실시간 동기화 동작 원리
+
+1. **초기 로드**: 컴포넌트 마운트 시 `useEffect`가 실행되어 데이터 로드
+2. **Storage 구독**: `subscribe()` 메서드로 Storage 이벤트 리스닝
+3. **자동 리로드**: Storage 데이터 변경 시 콜백 함수 자동 실행
+4. **UI 업데이트**: 새 데이터로 React state 업데이트 → 자동 리렌더링
+5. **Cleanup**: 컴포넌트 언마운트 시 `unsubscribe()` 호출로 메모리 누수 방지
+
 ## 📝 현재 위젯 목록
 
-| 위젯 | 파일 | 설명 |
-|------|------|------|
-| 캘린더 | CalendarWidget.tsx | 월간 일정 관리 |
-| 할 일 | TodoListWidget.tsx | 드래그 앤 드롭 |
-| 프로젝트 | ProjectSummaryWidget.tsx | 프로젝트 탭 뷰 |
-| KPI | KPIWidget.tsx | 성과 지표 |
-| 세무 | TaxDeadlineWidget.tsx | D-day 알림 |
+| 위젯 | 파일 | 설명 | Storage API | Custom Hook |
+|------|------|------|-------------|-------------|
+| 캘린더 | CalendarWidget.tsx | 월간 일정 관리 | ✅ | useIntegratedCalendar |
+| 할 일 | TodoListWidget.tsx | 드래그 앤 드롭 | ✅ | useIntegratedCalendar |
+| 프로젝트 | ProjectSummaryWidget.tsx | 프로젝트 탭 뷰 | ✅ | useProjectSummary |
+| KPI | KPIWidget.tsx | 성과 지표 | ✅ | useKPIMetrics |
+| 매출 | RevenueChartWidget.tsx | 매출 차트 | ✅ | useRevenueChart |
+| 활동 | RecentActivityWidget.tsx | 최근 활동 | ✅ | useRecentActivity |
+| 세무 | TaxDeadlineWidget.tsx | D-day 알림 | ⏳ | 예정 |
+
+**마지막 업데이트**: 2025-01-06 (Phase 7-1 완료)
 
 ### 위젯 타입
 ```typescript
-export type ImprovedWidget['type'] = 
+export type ImprovedWidget['type'] =
   | 'calendar' | 'todoList' | 'projectSummary'
-  | 'kpiMetrics' | 'taxDeadline' | 'custom'
+  | 'kpiMetrics' | 'revenueChart' | 'recentActivity'
+  | 'taxDeadline' | 'custom'
 ```
 
 ## 🚨 주의사항

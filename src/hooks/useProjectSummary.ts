@@ -1,0 +1,130 @@
+/**
+ * useProjectSummary Hook
+ *
+ * Project Storage에서 프로젝트 목록을 로드하고,
+ * ProjectReview 타입으로 변환하여 ProjectSummaryWidget에서 사용
+ */
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { projectService } from '@/lib/storage';
+import type { Project } from '@/lib/storage/types/entities/project';
+import type { ProjectReview } from '@/types/dashboard';
+
+/**
+ * Project → ProjectReview 변환 함수
+ * Storage의 Project 타입을 Dashboard의 ProjectReview 타입으로 매핑
+ */
+function convertProjectToReview(project: Project): ProjectReview {
+  // 상태 매핑: Storage → Dashboard
+  const statusMap: Record<Project['status'], ProjectReview['status']> = {
+    'planning': 'normal',
+    'in_progress': 'normal',
+    'review': 'normal',
+    'completed': 'completed',
+    'on_hold': 'warning',
+    'cancelled': 'critical',
+  };
+
+  const statusLabelMap: Record<Project['status'], string> = {
+    'planning': '기획',
+    'in_progress': '진행중',
+    'review': '검토',
+    'completed': '완료',
+    'on_hold': '보류',
+    'cancelled': '취소',
+  };
+
+  // 마감일 계산 (endDate가 없으면 등록일 기준)
+  const deadline = project.endDate
+    ? new Date(project.endDate)
+    : new Date(project.registrationDate);
+
+  // D-day 계산
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  deadline.setHours(0, 0, 0, 0);
+  const diffTime = deadline.getTime() - now.getTime();
+  const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  // 예산 정보 (totalAmount 기준)
+  const totalBudget = project.totalAmount || project.budget || 0;
+  const spentBudget = project.actualCost || 0;
+  const currency = project.currency || 'KRW';
+
+  // 현재 상태 메시지 (WBS 작업 기반)
+  const currentStatus = project.wbsTasks.length > 0
+    ? `진행 중인 작업: ${project.wbsTasks.filter(t => t.status === 'in_progress').length}개`
+    : '작업이 없습니다';
+
+  return {
+    id: project.id,
+    projectId: project.no,
+    projectName: project.name,
+    client: project.clientId || '클라이언트 미지정',  // TODO: ClientService 통합
+    pm: project.userId,  // TODO: UserService 통합하여 이름 가져오기
+    status: statusMap[project.status],
+    statusLabel: statusLabelMap[project.status],
+    progress: Math.round(project.progress),
+    deadline,
+    daysRemaining,
+    budget: {
+      total: totalBudget,
+      spent: spentBudget,
+      currency,
+    },
+    currentStatus,
+  };
+}
+
+/**
+ * useProjectSummary Hook
+ *
+ * @returns 프로젝트 목록, 로딩 상태, 에러, 새로고침 함수
+ */
+export function useProjectSummary() {
+  const [projects, setProjects] = useState<ProjectReview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // ProjectService에서 모든 프로젝트 조회
+      const allProjects = await projectService.getAll();
+
+      // Project → ProjectReview 변환
+      const reviews = allProjects.map(convertProjectToReview);
+
+      setProjects(reviews);
+    } catch (err) {
+      console.error('Failed to load projects:', err);
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProjects();
+
+    // Storage 구독 (프로젝트 변경 시 자동 리로드)
+    const unsubscribe = projectService['storage'].subscribe('projects', () => {
+      loadProjects();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  return {
+    projects,
+    loading,
+    error,
+    refresh: loadProjects,
+  };
+}

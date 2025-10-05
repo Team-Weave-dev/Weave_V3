@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   Building2,
   CheckCircle2,
   AlertTriangle,
@@ -18,25 +19,26 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProjectReview } from '@/types/dashboard';
-import { getWidgetText } from '@/config/brand';
+import { getWidgetText, getLoadingText } from '@/config/brand';
 import { typography } from '@/config/constants';
+import { useProjectSummary } from '@/hooks/useProjectSummary';
 
 interface ProjectSummaryWidgetProps {
-  projects: ProjectReview[];
   title?: string;
   lang?: 'ko' | 'en';
   onProjectClick?: (project: ProjectReview) => void;
   maxProjects?: number;
+  defaultSize?: { w: number; h: number };
 }
 
-export function ProjectSummaryWidget({ 
-  projects, 
+export function ProjectSummaryWidget({
   title,
   lang = 'ko',
   onProjectClick,
   maxProjects = 3,
   defaultSize = { w: 4, h: 4 }
-}: ProjectSummaryWidgetProps & { defaultSize?: { w: number; h: number } }) {
+}: ProjectSummaryWidgetProps) {
+  const { projects, loading, error } = useProjectSummary();
   const widgetText = getWidgetText.projectSummary;
   const displayTitle = title ?? widgetText.title(lang);
   
@@ -55,6 +57,40 @@ export function ProjectSummaryWidget({
     critical: projects.filter(p => p.status === 'critical').length,
   };
 
+  // 로딩 상태
+  if (loading) {
+    return (
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner size="md" text={getLoadingText.data('ko')} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-destructive">
+            <XCircle className="h-12 w-12 mb-4 opacity-50" />
+            <p className={typography.text.small}>프로젝트 데이터를 불러오는 중 오류가 발생했습니다</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 빈 상태
   if (sortedProjects.length === 0) {
     return (
       <Card className="h-full">

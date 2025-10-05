@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Select,
   SelectContent,
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
+import {
   TrendingUp,
   TrendingDown,
   Minus,
@@ -20,114 +21,21 @@ import {
   Briefcase,
   CheckCircle2,
   Activity,
-  Calendar
+  Calendar,
+  XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getWidgetText } from '@/config/brand';
+import { getWidgetText, getLoadingText } from '@/config/brand';
 import { typography } from '@/config/constants';
-
-// KPI 데이터 타입 정의
-interface KPIMetric {
-  id: string;
-  label: string;
-  value: string | number;
-  unit?: string;
-  target?: string | number;
-  trend?: 'up' | 'down' | 'stable';
-  trendValue?: string;
-  progress?: number;
-  icon: React.ReactNode;
-  color: 'default' | 'success' | 'warning' | 'error' | 'info';
-}
+import { useKPIMetrics, type KPIMetric } from '@/hooks/useKPIMetrics';
 
 interface KPIWidgetProps {
-  metrics?: KPIMetric[];
   title?: string;
   lang?: 'ko' | 'en';
   variant?: 'compact' | 'detailed';
   periodType?: 'monthly' | 'yearly';
   onPeriodChange?: (period: 'monthly' | 'yearly') => void;
 }
-
-// 월간 KPI 데이터
-const monthlyMetrics: KPIMetric[] = [
-  {
-    id: 'revenue',
-    label: getWidgetText.kpiMetrics.monthlyRevenue('ko'),
-    value: '4,250',
-    unit: '만원',
-    target: '5,000',
-    trend: 'up',
-    trendValue: '+12%',
-    progress: 85,
-    icon: <DollarSign className="h-4 w-4" />,
-    color: 'success'
-  },
-  {
-    id: 'projects',
-    label: getWidgetText.kpiMetrics.activeProjects('ko'),
-    value: 7,
-    unit: '건',
-    target: 10,
-    trend: 'stable',
-    trendValue: '0%',
-    progress: 70,
-    icon: <Briefcase className="h-4 w-4" />,
-    color: 'info'
-  },
-  {
-    id: 'tasks',
-    label: getWidgetText.kpiMetrics.completedTasks('ko'),
-    value: 43,
-    unit: '건',
-    target: 50,
-    trend: 'up',
-    trendValue: '+8%',
-    progress: 86,
-    icon: <CheckCircle2 className="h-4 w-4" />,
-    color: 'success'
-  }
-];
-
-// 연간 KPI 데이터
-const yearlyMetrics: KPIMetric[] = [
-  {
-    id: 'revenue',
-    label: getWidgetText.kpiMetrics.yearlyRevenue?.('ko') || '연간 매출',
-    value: '5.1',
-    unit: '억원',
-    target: '6',
-    trend: 'up',
-    trendValue: '+18%',
-    progress: 85,
-    icon: <DollarSign className="h-4 w-4" />,
-    color: 'success'
-  },
-  {
-    id: 'projects',
-    label: getWidgetText.kpiMetrics.totalProjects?.('ko') || '총 프로젝트',
-    value: 84,
-    unit: '건',
-    target: 120,
-    trend: 'up',
-    trendValue: '+15%',
-    progress: 70,
-    icon: <Briefcase className="h-4 w-4" />,
-    color: 'info'
-  },
-  {
-    id: 'tasks',
-    label: getWidgetText.kpiMetrics.yearlyTasks?.('ko') || '연간 작업',
-    value: 516,
-    unit: '건',
-    target: 600,
-    trend: 'up',
-    trendValue: '+23%',
-    progress: 86,
-    icon: <CheckCircle2 className="h-4 w-4" />,
-    color: 'success'
-  }
-];
 
 // 트렌드 아이콘 컴포넌트
 const TrendIcon = ({ trend, className }: { trend?: 'up' | 'down' | 'stable'; className?: string }) => {
@@ -188,8 +96,7 @@ const getProgressColor = (progress?: number) => {
   return 'bg-destructive';
 };
 
-export function KPIWidget({ 
-  metrics,
+export function KPIWidget({
   title,
   lang = 'ko',
   variant = 'detailed',
@@ -199,10 +106,17 @@ export function KPIWidget({
 }: KPIWidgetProps & { defaultSize?: { w: number; h: number } }) {
   const displayTitle = title || getWidgetText.kpiMetrics.title(lang);
   const [currentPeriod, setCurrentPeriod] = useState<'monthly' | 'yearly'>(periodType);
-  
-  // 기본 메트릭스 선택
-  const defaultMetrics = currentPeriod === 'monthly' ? monthlyMetrics : yearlyMetrics;
-  const displayMetrics = metrics || defaultMetrics;
+
+  // useKPIMetrics 훅으로 실제 데이터 로드
+  const {
+    monthlyMetrics,
+    yearlyMetrics,
+    loading,
+    error,
+  } = useKPIMetrics();
+
+  // 기간에 따른 메트릭스 선택
+  const displayMetrics = currentPeriod === 'monthly' ? monthlyMetrics : yearlyMetrics;
   
   // 기간 변경 핸들러
   const handlePeriodChange = (value: string) => {
@@ -214,10 +128,60 @@ export function KPIWidget({
   // 반응형 그리드 컬럼 계산
   const gridCols = useMemo(() => {
     // 작은 위젯(w<=3): 1열
-    // 중간 위젯(w=4-5): 2열  
+    // 중간 위젯(w=4-5): 2열
     // 큰 위젯(w>=6): 3열
     return variant === 'compact' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
   }, [variant]);
+
+  // 로딩 상태
+  if (loading) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner size="md" text={getLoadingText.data('ko')} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-destructive">
+            <XCircle className="h-12 w-12 mb-4 opacity-50" />
+            <p className={typography.text.small}>KPI 데이터를 불러오는 중 오류가 발생했습니다</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 빈 상태
+  if (displayMetrics.length === 0) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <Activity className="h-12 w-12 mb-4 opacity-30" />
+            <p className={typography.text.small}>KPI 데이터가 없습니다</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">

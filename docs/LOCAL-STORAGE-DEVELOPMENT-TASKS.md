@@ -1060,6 +1060,137 @@ private async wouldCreateCircularSubtask(parentId: string, subtaskIds: string[])
 
 ---
 
+## [x] Phase 7-1: 대시보드 위젯 Storage API 통합
+
+**목표**: 나머지 4개 위젯의 목 데이터 제거 및 Storage API 연결
+- **입력**: 위젯 컴포넌트 (ProjectSummaryWidget, KPIWidget, RevenueChartWidget, RecentActivityWidget)
+- **출력**: Storage API 기반 실시간 데이터 동기화 위젯
+- **완료 기준**: 모든 위젯이 Storage API에서 데이터를 로드하고 실시간 구독
+- **구현 완료**: 2025-01-06
+
+### [x] 7-1.0 ProjectSummaryWidget Storage API 통합
+**작업 내용**:
+- **생성 파일**: `src/hooks/useProjectSummary.tsx`
+  - `convertProjectToReview()`: Project 엔티티를 ProjectReview 타입으로 변환
+  - `useProjectSummary()`: ProjectService를 구독하여 실시간 동기화
+  - 프로젝트 필터링: 활성 프로젝트만 반환
+- **수정 파일**: `src/components/ui/widgets/ProjectSummaryWidget.tsx`
+  - `projects` prop 제거
+  - useProjectSummary 훅 사용으로 self-loading 구현
+  - loading/error/empty 상태 UI 추가 (LoadingSpinner, XCircle)
+  - mock 데이터 완전 제거
+- **수정 파일**: `src/components/dashboard/ImprovedDashboard.tsx`
+  - ProjectSummaryWidget 초기화에서 `data: mockProjects` → `data: undefined` 변경
+  - ProjectSummaryWidget 렌더링에서 `projects` prop 제거
+
+**구현 결과**:
+- 활성 프로젝트 자동 로드 및 상태별 탭 표시
+- storage 구독으로 프로젝트 변경 시 실시간 업데이트
+- ProjectReview 타입 변환으로 위젯 UI와 완벽한 타입 호환성
+
+### [x] 7-1.1 KPIWidget Storage API 통합
+**작업 내용**:
+- **생성 파일**: `src/hooks/useKPIMetrics.ts`
+  - `calculateMonthlyMetrics()`: 프로젝트와 작업 데이터를 집계하여 월간 KPI 계산
+  - `calculateYearlyMetrics()`: 프로젝트와 작업 데이터를 집계하여 연간 KPI 계산
+  - `useKPIMetrics()`: ProjectService와 TaskService를 구독하여 실시간 동기화
+  - 이중 서비스 통합: projects + tasks 동시 구독
+- **수정 파일**: `src/components/ui/widgets/KPIWidget.tsx`
+  - `metrics` prop 제거
+  - useKPIMetrics 훅 사용으로 self-loading 구현
+  - loading/error/empty 상태 UI 추가 (LoadingSpinner, XCircle)
+  - mock 데이터 완전 제거
+- **수정 파일**: `src/components/dashboard/ImprovedDashboard.tsx`
+  - KPIWidget 초기화에서 `data: mockKPIMetrics` → `data: undefined` 변경
+  - KPIWidget 렌더링에서 `metrics` prop 제거
+
+**구현 결과**:
+- 프로젝트 개수, 진행률, 작업 완료율 등 5개 KPI 자동 집계
+- storage 구독으로 프로젝트/작업 변경 시 실시간 업데이트
+- 월간/연간 뷰 전환 지원
+
+### [x] 7-1.2 RevenueChartWidget Storage API 통합
+**작업 내용**:
+- **생성 파일**: `src/hooks/useRevenueChart.ts`
+  - `calculateMonthlyRevenue()`: 현재 연도 프로젝트 매출을 월별로 집계 (만원 단위)
+  - `calculateQuarterlyRevenue()`: 현재 연도 프로젝트 매출을 분기별로 집계
+  - `calculateYearlyRevenue()`: 최근 4년간 프로젝트 매출을 연도별로 집계
+  - `useRevenueChart()`: ProjectService를 구독하여 실시간 동기화
+- **수정 파일**: `src/components/ui/widgets/RevenueChartWidget.tsx`
+  - `data` prop 제거
+  - useRevenueChart 훅 사용으로 self-loading 구현
+  - loading/error/empty 상태 UI 추가
+  - mock 데이터 (monthlyData, quarterlyData, yearlyData) 완전 제거
+- **수정 파일**: `src/components/dashboard/ImprovedDashboard.tsx`
+  - RevenueChartWidget 렌더링에서 `data` prop 제거
+
+**구현 결과**:
+- 프로젝트 totalAmount/budget 기반 매출 집계
+- 월별(1월~현재월), 분기별(1분기~현재분기), 연간(최근 4년) 데이터 생성
+- 기간 변경 시 자동 리렌더링
+
+### [x] 7-1.3 RecentActivityWidget Storage API 통합
+**작업 내용**:
+- **생성 파일**: `src/hooks/useRecentActivity.ts`
+  - `projectToActivities()`: 프로젝트 생성/완료 활동 변환
+  - `taskToActivities()`: 작업 생성/완료 활동 변환
+  - `documentToActivities()`: 문서 업로드 활동 변환
+  - `aggregateActivities()`: 모든 서비스 데이터 통합 및 시간순 정렬
+  - `useRecentActivity()`: ProjectService, TaskService, DocumentService 트리플 구독
+- **수정 파일**: `src/components/ui/widgets/RecentActivityWidget.tsx`
+  - `activities` prop 제거
+  - useRecentActivity 훅 사용으로 self-loading 구현
+  - loading/error/empty 상태 UI 추가
+  - mock 데이터 (mockActivities) 완전 제거
+- **수정 파일**: `src/components/dashboard/ImprovedDashboard.tsx`
+  - RecentActivityWidget 렌더링에서 `activities` prop 제거
+
+**구현 결과**:
+- 프로젝트, 작업, 문서의 생성/완료/업로드 활동 통합
+- ActivityType별 아이콘 및 색상 매핑
+- 최신순 정렬로 사용자 활동 타임라인 제공
+- 3개 storage 키 동시 구독으로 완전한 실시간 동기화
+
+### 통합 효과
+- **Self-Loading Pattern**: 모든 위젯이 props 없이 자체 데이터 로드
+- **Real-time Sync**: Storage 구독 시스템으로 즉각적인 UI 반영
+- **Consistent UI**: LoadingSpinner, Error State, Empty State 표준화
+- **Type Safety**: 100% TypeScript 타입 안전성 유지
+- **Data Aggregation**: Raw storage 데이터 → Dashboard 타입 변환 로직 체계화
+
+**기술 패턴**:
+```typescript
+// Custom Hook Pattern
+export function useWidgetData(): UseWidgetDataReturn {
+  const [data, setData] = useState<DataType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await someService.getAll();
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    const unsubscribe = someService['storage'].subscribe('key', loadData);
+    return () => unsubscribe();
+  }, []);
+
+  return { data, loading, error, refresh: loadData };
+}
+```
+
+---
+
 ## [x] Phase 8: 성능 최적화
 
 ### [x] 8.1 캐싱 시스템 구현

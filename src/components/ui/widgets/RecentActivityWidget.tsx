@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Select,
@@ -13,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
+import {
   Clock,
   User,
   FileText,
@@ -26,9 +27,10 @@ import {
   Filter
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getWidgetText } from '@/config/brand';
+import { getWidgetText, getLoadingText } from '@/config/brand';
 import { typography } from '@/config/constants';
 import type { RecentActivityWidgetProps, ActivityItem, ActivityType } from '@/types/dashboard';
+import { useRecentActivity } from '@/hooks/useRecentActivity';
 
 // 활동 타입별 색상 및 아이콘 매핑
 const activityConfig: Record<ActivityType, { 
@@ -75,63 +77,7 @@ const activityConfig: Record<ActivityType, {
   }
 };
 
-// 현재 사용자 정보 (실제로는 인증 시스템에서 가져옴)
-const currentUser = { id: 'current-user', name: '나', initials: '나' };
-
-// 기본 활동 목데이터 - 현재 사용자 기준
-const mockActivities: ActivityItem[] = [
-  {
-    id: 'activity-1',
-    type: 'complete',
-    user: currentUser,
-    action: '프로젝트 A 개발 완료',
-    target: '프로젝트 A',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5분 전
-    description: '모든 기능 구현 및 테스트 완료'
-  },
-  {
-    id: 'activity-2',
-    type: 'create',
-    user: currentUser,
-    action: '새 태스크 생성',
-    target: 'UI 디자인 리뷰',
-    timestamp: new Date(Date.now() - 15 * 60 * 1000), // 15분 전
-  },
-  {
-    id: 'activity-3',
-    type: 'update',
-    user: currentUser,
-    action: '프로젝트 상태 업데이트',
-    target: '클라이언트 B 프로젝트',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30분 전
-    description: '진행률 75%로 업데이트'
-  },
-  {
-    id: 'activity-4',
-    type: 'comment',
-    user: currentUser,
-    action: '피드백 댓글 작성',
-    target: '홈페이지 디자인',
-    timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45분 전
-    description: '로고 크기 조정 요청'
-  },
-  {
-    id: 'activity-5',
-    type: 'document',
-    user: currentUser,
-    action: '문서 업로드',
-    target: '기술 명세서 v2.1',
-    timestamp: new Date(Date.now() - 60 * 60 * 1000), // 1시간 전
-  },
-  {
-    id: 'activity-6',
-    type: 'delete',
-    user: currentUser,
-    action: '불필요한 파일 삭제',
-    target: '임시 디자인 파일들',
-    timestamp: new Date(Date.now() - 90 * 60 * 1000), // 1시간 30분 전
-  }
-];
+// Mock 데이터 제거 - useRecentActivity 훅에서 실제 데이터 로드
 
 // 시간 포맷 헬퍼
 const formatTimeAgo = (timestamp: Date): string => {
@@ -148,7 +94,6 @@ const formatTimeAgo = (timestamp: Date): string => {
 };
 
 export function RecentActivityWidget({
-  activities = mockActivities,
   title,
   maxItems = 10,
   showFilter = true,
@@ -161,6 +106,9 @@ export function RecentActivityWidget({
   const [selectedUserFilter, setSelectedUserFilter] = useState<string>('all');
 
   const displayTitle = title || getWidgetText.recentActivity.title(lang);
+
+  // useRecentActivity 훅으로 실제 데이터 로드
+  const { activities, loading, error } = useRecentActivity();
 
   // 필터링된 활동 목록
   const filteredActivities = activities
@@ -178,6 +126,39 @@ export function RecentActivityWidget({
   // const uniqueUsers = Array.from(
   //   new Map(activities.map(activity => [activity.user.id, activity.user])).values()
   // );
+
+  // 로딩 상태
+  if (loading) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner size="md" text={getLoadingText.data('ko')} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-destructive">
+            <XCircle className="h-12 w-12 mb-4 opacity-50" />
+            <p className={typography.text.small}>활동 데이터를 불러오는 중 오류가 발생했습니다</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">

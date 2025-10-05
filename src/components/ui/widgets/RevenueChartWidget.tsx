@@ -1,30 +1,23 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingUp, TrendingDown, Calendar, ChartBar, ChartLine } from 'lucide-react';
-import { getWidgetText } from '@/config/brand';
+import { TrendingUp, TrendingDown, Calendar, ChartBar, ChartLine, XCircle } from 'lucide-react';
+import { getWidgetText, getLoadingText } from '@/config/brand';
 import { typography, chart as chartConfig } from '@/config/constants';
+import { useRevenueChart, type RevenueData } from '@/hooks/useRevenueChart';
 
 // 차트 뷰 타입
 type ChartView = 'bar' | 'line';
 type PeriodType = 'monthly' | 'quarterly' | 'yearly';
 
-interface RevenueData {
-  period: string;
-  revenue: number;
-  expenses?: number;
-  profit?: number;
-  previousYear?: number;
-}
-
 interface RevenueChartWidgetProps {
   title?: string;
   lang?: 'ko' | 'en';
-  data?: RevenueData[];
   periodType?: PeriodType;
   chartView?: ChartView;
   showExpenses?: boolean;
@@ -32,32 +25,6 @@ interface RevenueChartWidgetProps {
   showPreviousYear?: boolean;
   onPeriodChange?: (period: PeriodType) => void;
 }
-
-// 월별 샘플 데이터
-const monthlyData: RevenueData[] = [
-  { period: '1월', revenue: 2450, expenses: 1800, profit: 650, previousYear: 2100 },
-  { period: '2월', revenue: 2780, expenses: 2000, profit: 780, previousYear: 2300 },
-  { period: '3월', revenue: 3120, expenses: 2200, profit: 920, previousYear: 2800 },
-  { period: '4월', revenue: 3450, expenses: 2400, profit: 1050, previousYear: 3200 },
-  { period: '5월', revenue: 3890, expenses: 2600, profit: 1290, previousYear: 3500 },
-  { period: '6월', revenue: 4250, expenses: 2850, profit: 1400, previousYear: 3900 },
-];
-
-// 분기별 샘플 데이터
-const quarterlyData: RevenueData[] = [
-  { period: '1분기', revenue: 8350, expenses: 6000, profit: 2350, previousYear: 7200 },
-  { period: '2분기', revenue: 11590, expenses: 7850, profit: 3740, previousYear: 10600 },
-  { period: '3분기', revenue: 13200, expenses: 8900, profit: 4300, previousYear: 11800 },
-  { period: '4분기', revenue: 14800, expenses: 9500, profit: 5300, previousYear: 13500 },
-];
-
-// 연간 샘플 데이터
-const yearlyData: RevenueData[] = [
-  { period: '2021', revenue: 35000, expenses: 25000, profit: 10000 },
-  { period: '2022', revenue: 42000, expenses: 28000, profit: 14000 },
-  { period: '2023', revenue: 47940, expenses: 32250, profit: 15690 },
-  { period: '2024', revenue: 54000, expenses: 36000, profit: 18000 },
-];
 
 // 차트 색상 설정
 const CHART_COLORS = {
@@ -118,7 +85,6 @@ const calculateGrowthRate = (current: number, previous?: number) => {
 export function RevenueChartWidget({
   title,
   lang = 'ko',
-  data,
   periodType = 'monthly',
   chartView = 'bar',
   showExpenses = true,
@@ -129,10 +95,18 @@ export function RevenueChartWidget({
   const displayTitle = title || getWidgetText.revenueChart.title(lang);
   const [currentPeriod, setCurrentPeriod] = useState<PeriodType>(periodType);
   const [currentView, setCurrentView] = useState<ChartView>(chartView);
-  
+
+  // useRevenueChart 훅으로 실제 데이터 로드
+  const {
+    monthlyData,
+    quarterlyData,
+    yearlyData,
+    loading,
+    error,
+  } = useRevenueChart();
+
   // 기간별 데이터 선택
   const displayData = useMemo(() => {
-    if (data) return data;
     switch (currentPeriod) {
       case 'quarterly':
         return quarterlyData;
@@ -141,7 +115,7 @@ export function RevenueChartWidget({
       default:
         return monthlyData;
     }
-  }, [data, currentPeriod]);
+  }, [currentPeriod, monthlyData, quarterlyData, yearlyData]);
   
   // 총 매출 계산
   const totalRevenue = useMemo(() => {
@@ -170,6 +144,55 @@ export function RevenueChartWidget({
   const handleViewChange = (value: string) => {
     setCurrentView(value as ChartView);
   };
+
+  // Legend formatter 메모화 (무한 루프 방지)
+  const legendFormatter = useCallback((value: string) => {
+    switch(value) {
+      case 'revenue':
+        return getWidgetText.revenueChart.revenue(lang);
+      case 'expenses':
+        return getWidgetText.revenueChart.expenses(lang);
+      case 'profit':
+        return getWidgetText.revenueChart.profit(lang);
+      case 'previousYear':
+        return getWidgetText.revenueChart.previousYear(lang);
+      default:
+        return value;
+    }
+  }, [lang]);
+
+  // 로딩 상태
+  if (loading) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner size="md" text={getLoadingText.data('ko')} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-destructive">
+            <XCircle className="h-12 w-12 mb-4 opacity-50" />
+            <p className={typography.text.small}>매출 데이터를 불러오는 중 오류가 발생했습니다</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">
@@ -266,22 +289,9 @@ export function RevenueChartWidget({
                       tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend 
+                    <Legend
                       wrapperStyle={{ fontSize: '12px' }}
-                      formatter={(value) => {
-                        switch(value) {
-                          case 'revenue':
-                            return getWidgetText.revenueChart.revenue(lang);
-                          case 'expenses':
-                            return getWidgetText.revenueChart.expenses(lang);
-                          case 'profit':
-                            return getWidgetText.revenueChart.profit(lang);
-                          case 'previousYear':
-                            return getWidgetText.revenueChart.previousYear(lang);
-                          default:
-                            return value;
-                        }
-                      }}
+                      formatter={legendFormatter}
                     />
                     <Bar dataKey="revenue" fill={CHART_COLORS.revenue} radius={[4, 4, 0, 0]} />
                     {showExpenses && <Bar dataKey="expenses" fill={CHART_COLORS.expenses} radius={[4, 4, 0, 0]} />}
@@ -301,22 +311,9 @@ export function RevenueChartWidget({
                       tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend 
+                    <Legend
                       wrapperStyle={{ fontSize: '12px' }}
-                      formatter={(value) => {
-                        switch(value) {
-                          case 'revenue':
-                            return getWidgetText.revenueChart.revenue(lang);
-                          case 'expenses':
-                            return getWidgetText.revenueChart.expenses(lang);
-                          case 'profit':
-                            return getWidgetText.revenueChart.profit(lang);
-                          case 'previousYear':
-                            return getWidgetText.revenueChart.previousYear(lang);
-                          default:
-                            return value;
-                        }
-                      }}
+                      formatter={legendFormatter}
                     />
                     <Line type="monotone" dataKey="revenue" stroke={CHART_COLORS.revenue} strokeWidth={2} dot={{ r: 3 }} />
                     {showExpenses && <Line type="monotone" dataKey="expenses" stroke={CHART_COLORS.expenses} strokeWidth={2} dot={{ r: 3 }} />}

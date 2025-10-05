@@ -57,82 +57,6 @@ interface ImprovedDashboardProps {
 // 테스트 데이터
 
 
-// 프로젝트 요약 위젯 목업 데이터
-const mockProjects = [
-  {
-    id: 'proj_1',
-    projectId: 'W-101',
-    projectName: '모바일 앱 리뉴얼',
-    client: 'Acme Corp',
-    pm: '김프로',
-    status: 'warning',
-    statusLabel: '주의',
-    progress: 62,
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
-    daysRemaining: 10,
-    budget: { total: 80000000, spent: 42000000, currency: 'KRW' },
-    currentStatus: '핵심 모듈 통합 테스트 진행 중',
-    issues: ['푸시 알림 간헐적 실패', 'iOS 빌드 스크립트 수정 필요'],
-  },
-  {
-    id: 'proj_2',
-    projectId: 'W-102',
-    projectName: '데이터 대시보드 고도화',
-    client: 'Globex',
-    pm: '이매니저',
-    status: 'normal',
-    statusLabel: '정상',
-    progress: 78,
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 18),
-    daysRemaining: 18,
-    budget: { total: 60000000, spent: 35000000, currency: 'KRW' },
-    currentStatus: '새 위젯 시스템 성능 개선 확인',
-  },
-  {
-    id: 'proj_3',
-    projectId: 'W-103',
-    projectName: '파트너 포털 구축',
-    client: 'Initech',
-    pm: '박리더',
-    status: 'critical',
-    statusLabel: '긴급',
-    progress: 35,
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),
-    daysRemaining: 3,
-    budget: { total: 90000000, spent: 70000000, currency: 'KRW' },
-    currentStatus: '권한 매트릭스 설계 재검토 필요',
-    issues: ['인증 전략 충돌', '권한 동기화 지연'],
-  },
-  {
-    id: 'proj_4',
-    projectId: 'W-104',
-    projectName: 'ERP 시스템 통합',
-    client: 'TechFlow',
-    pm: '최기획',
-    status: 'normal',
-    statusLabel: '정상',
-    progress: 45,
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25),
-    daysRemaining: 25,
-    budget: { total: 120000000, spent: 48000000, currency: 'KRW' },
-    currentStatus: 'API 연동 테스트 진행 중',
-  },
-  {
-    id: 'proj_5',
-    projectId: 'W-105',
-    projectName: 'AI 챗봇 개발',
-    client: 'Smart Solutions',
-    pm: '정리드',
-    status: 'normal',
-    statusLabel: '정상',
-    progress: 90,
-    deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-    daysRemaining: 7,
-    budget: { total: 55000000, spent: 48000000, currency: 'KRW' },
-    currentStatus: '최종 QA 테스트 및 문서화 작업',
-  },
-];
-
 // 캘린더 이벤트는 CalendarWidget에서 자체적으로 로컴스토리지에서 로드
 const mockCalendarEvents = undefined; // CalendarWidget이 자체적으로 로컴스토리지에서 로드
 
@@ -335,54 +259,6 @@ const mockTodoData = [
   }
 ];
 
-// KPI 메트릭 목 데이터
-const mockKPIMetrics = [
-  {
-    id: 'kpi-1',
-    title: '월간 매출',
-    value: 285000000,
-    unit: 'KRW',
-    change: 12.5,
-    changeType: 'increase' as const,
-    period: '전월 대비',
-    icon: 'TrendingUp',
-    color: 'success' as const,
-  },
-  {
-    id: 'kpi-2',
-    title: '진행중 프로젝트',
-    value: 8,
-    unit: '개',
-    change: 2,
-    changeType: 'increase' as const,
-    period: '지난주 대비',
-    icon: 'Briefcase',
-    color: 'primary' as const,
-  },
-  {
-    id: 'kpi-3',
-    title: '팀 효율성',
-    value: 94,
-    unit: '%',
-    change: 3.2,
-    changeType: 'increase' as const,
-    period: '전주 대비',
-    icon: 'TrendingUp',
-    color: 'success' as const,
-  },
-  {
-    id: 'kpi-4',
-    title: '고객 만족도',
-    value: 4.8,
-    unit: '/ 5.0',
-    change: 0.3,
-    changeType: 'increase' as const,
-    period: '전분기 대비',
-    icon: 'Star',
-    color: 'warning' as const,
-  },
-];
-
 // 세무 일정 목 데이터 (TaxDeadlineWidget 내부에 하드코딩되어 있어 별도 데이터 불필요)
 
 export function ImprovedDashboard({
@@ -530,9 +406,7 @@ export function ImprovedDashboard({
         const normalized: ImprovedWidget = {
           ...w,
           position: defaultPos[w.type] ?? w.position ?? { x: 0, y: 0, w: 4, h: 2 },
-          data:
-            w.type === 'projectSummary' ? (w.data ?? mockProjects) :
-            w.data,
+          data: w.data, // ProjectSummaryWidget uses useProjectSummary hook for self-loading
         };
         selected.push(normalized);
       }
@@ -549,7 +423,7 @@ export function ImprovedDashboard({
         type: 'projectSummary',
         title: '프로젝트 현황',
         position: defaultPos.projectSummary,
-        data: mockProjects,
+        data: undefined, // ProjectSummaryWidget uses useProjectSummary hook for self-loading
         minW: 3,
         minH: 2,
       });
@@ -587,7 +461,7 @@ export function ImprovedDashboard({
         type: 'kpiMetrics',
         title: '핵심 성과 지표',
         position: defaultPos.kpiMetrics,
-        data: mockKPIMetrics,
+        data: undefined, // KPIWidget이 useKPIMetrics 훅으로 자체 로드
         minW: 4,
         minH: 2,
         maxW: 9,
@@ -616,12 +490,12 @@ export function ImprovedDashboard({
           id: 'widget_project_1',
           type: 'projectSummary',
           title: '프로젝트 현황',
-          position: { 
-            x: 3, y: 0, 
+          position: {
+            x: 3, y: 0,
             w: getDefaultWidgetSize('projectSummary').width,
             h: getDefaultWidgetSize('projectSummary').height
           },
-          data: mockProjects,
+          data: undefined, // ProjectSummaryWidget uses useProjectSummary hook for self-loading
           minW: getDefaultWidgetSize('projectSummary').minWidth || 2,
           minH: getDefaultWidgetSize('projectSummary').minHeight || 2,
         },
@@ -629,12 +503,12 @@ export function ImprovedDashboard({
           id: 'widget_kpi_1',
           type: 'kpiMetrics',
           title: '핵심 성과 지표',
-          position: { 
-            x: 5, y: 0, 
+          position: {
+            x: 5, y: 0,
             w: getDefaultWidgetSize('kpiMetrics').width,
             h: getDefaultWidgetSize('kpiMetrics').height
           },
-          data: mockKPIMetrics,
+          data: undefined, // KPIWidget uses useKPIMetrics hook for self-loading
           minW: getDefaultWidgetSize('kpiMetrics').minWidth || 1,
           minH: getDefaultWidgetSize('kpiMetrics').minHeight || 2,
         },
@@ -986,7 +860,7 @@ export function ImprovedDashboard({
         type: 'projectSummary',
         title: '프로젝트 현황',
         position: defaultPos.projectSummary,
-        data: mockProjects,
+        data: undefined, // ProjectSummaryWidget uses useProjectSummary hook for self-loading
         minW: 3,
         minH: 2,
       },
@@ -995,7 +869,7 @@ export function ImprovedDashboard({
         type: 'kpiMetrics',
         title: '핵심 성과 지표',
         position: defaultPos.kpiMetrics,
-        data: mockKPIMetrics,
+        data: undefined, // KPIWidget uses useKPIMetrics hook for self-loading
         minW: 4,
         minH: 2,
         maxW: 9,
@@ -1136,10 +1010,10 @@ export function ImprovedDashboard({
   const renderWidget = useCallback((widget: ImprovedWidget) => {
     switch (widget.type) {
       case 'projectSummary':
-        return <ProjectSummaryWidget 
-          title={widget.title} 
-          projects={widget.data || mockProjects}
+        return <ProjectSummaryWidget
+          title={widget.title}
           lang="ko"
+          // projects prop 제거 - useProjectSummary 훅으로 자체 데이터 로드
         />;
       case 'todoList':
         return <TodoListWidget 
@@ -1157,9 +1031,9 @@ export function ImprovedDashboard({
       case 'kpiMetrics':
         return <KPIWidget
           title={widget.title}
-          metrics={widget.data}
           lang="ko"
           variant={widget.position.w <= 3 ? 'compact' : 'detailed'}
+          // metrics prop 제거 - useKPIMetrics 훅으로 자체 데이터 로드
         />;
       case 'taxDeadline':
         return <TaxDeadlineWidget
@@ -1180,17 +1054,15 @@ export function ImprovedDashboard({
         return <RevenueChartWidget
           title={widget.title}
           lang="ko"
-          data={widget.data}
-          periodType={widget.data?.periodType || 'monthly'}
-          chartView={widget.data?.chartView || 'bar'}
+          // RevenueChartWidget uses useRevenueChart hook for self-loading
         />;
       case 'recentActivity':
         return <RecentActivityWidget
           title={widget.title}
-          activities={widget.data}
           lang="ko"
           maxItems={10}
           showFilter={true}
+          // RecentActivityWidget uses useRecentActivity hook for self-loading
         />;
       case 'weather':
         return <WeatherWidget
