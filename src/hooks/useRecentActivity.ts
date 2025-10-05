@@ -13,6 +13,7 @@ import type { Project } from '@/lib/storage/types/entities/project';
 import type { Task } from '@/lib/storage/types/entities/task';
 import type { Document } from '@/lib/storage/types/entities/document';
 import type { ActivityItem, ActivityType } from '@/types/dashboard';
+import { getWidgetText } from '@/config/brand';
 
 interface UseRecentActivityReturn {
   activities: ActivityItem[];
@@ -36,10 +37,10 @@ function projectToActivities(projects: Project[]): ActivityItem[] {
       id: `project-create-${project.id}`,
       type: 'create' as ActivityType,
       user: currentUser,
-      action: '프로젝트를 생성했습니다',
+      action: getWidgetText.hooks.activityActions.projectCreated('ko'),
       target: project.name,
       timestamp: new Date(project.registrationDate),
-      description: project.clientName ? `클라이언트: ${project.clientName}` : undefined,
+      description: project.clientName ? `${getWidgetText.hooks.activityDescriptions.clientPrefix('ko')}${project.clientName}` : undefined,
     });
 
     // 프로젝트 완료 활동 (completed 상태인 경우)
@@ -48,7 +49,7 @@ function projectToActivities(projects: Project[]): ActivityItem[] {
         id: `project-complete-${project.id}`,
         type: 'complete' as ActivityType,
         user: currentUser,
-        action: '프로젝트를 완료했습니다',
+        action: getWidgetText.hooks.activityActions.projectCompleted('ko'),
         target: project.name,
         timestamp: new Date(project.completedAt),
       });
@@ -70,7 +71,7 @@ function taskToActivities(tasks: Task[]): ActivityItem[] {
       id: `task-create-${task.id}`,
       type: 'create' as ActivityType,
       user: currentUser,
-      action: '작업을 생성했습니다',
+      action: getWidgetText.hooks.activityActions.taskCreated('ko'),
       target: task.title,
       timestamp: new Date(task.createdAt),
     });
@@ -81,7 +82,7 @@ function taskToActivities(tasks: Task[]): ActivityItem[] {
         id: `task-complete-${task.id}`,
         type: 'complete' as ActivityType,
         user: currentUser,
-        action: '작업을 완료했습니다',
+        action: getWidgetText.hooks.activityActions.taskCompleted('ko'),
         target: task.title,
         timestamp: new Date(task.completedAt),
       });
@@ -103,10 +104,10 @@ function documentToActivities(documents: Document[]): ActivityItem[] {
       id: `document-create-${doc.id}`,
       type: 'document' as ActivityType,
       user: currentUser,
-      action: '문서를 업로드했습니다',
+      action: getWidgetText.hooks.activityActions.documentUploaded('ko'),
       target: doc.title || doc.fileName,
       timestamp: new Date(doc.uploadedAt),
-      description: doc.type ? `문서 유형: ${doc.type}` : undefined,
+      description: doc.type ? `${getWidgetText.hooks.activityDescriptions.documentTypePrefix('ko')}${doc.type}` : undefined,
     });
   });
 

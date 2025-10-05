@@ -2270,6 +2270,60 @@ export const getWidgetText = {
       days: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '일' : 'days'
     }
   },
+  // 위젯 훅 전용 텍스트 (useProjectSummary, useKPIMetrics, useRevenueChart, useRecentActivity)
+  hooks: {
+    // 프로젝트 상태 라벨
+    projectStatus: {
+      planning: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '기획' : 'Planning',
+      inProgress: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행중' : 'In Progress',
+      review: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '검토' : 'Review',
+      completed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료' : 'Completed',
+      onHold: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '보류' : 'On Hold',
+      cancelled: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '취소' : 'Cancelled'
+    },
+    // 기본 텍스트 (fallback)
+    fallback: {
+      noClient: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '클라이언트 미지정' : 'Client Not Assigned',
+      noTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업이 없습니다' : 'No tasks',
+      tasksInProgress: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 중인 작업' : 'Tasks in progress',
+      tasksCount: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '개' : ' tasks'
+    },
+    // 활동 액션 텍스트
+    activityActions: {
+      projectCreated: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트를 생성했습니다' : 'created a project',
+      projectCompleted: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트를 완료했습니다' : 'completed a project',
+      taskCreated: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업을 생성했습니다' : 'created a task',
+      taskCompleted: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업을 완료했습니다' : 'completed a task',
+      documentUploaded: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '문서를 업로드했습니다' : 'uploaded a document'
+    },
+    // 활동 설명 (description)
+    activityDescriptions: {
+      clientPrefix: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '클라이언트: ' : 'Client: ',
+      documentTypePrefix: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '문서 유형: ' : 'Document Type: '
+    },
+    // 월 이름
+    monthNames: {
+      january: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '1월' : 'January',
+      february: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '2월' : 'February',
+      march: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '3월' : 'March',
+      april: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '4월' : 'April',
+      may: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '5월' : 'May',
+      june: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '6월' : 'June',
+      july: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '7월' : 'July',
+      august: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '8월' : 'August',
+      september: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '9월' : 'September',
+      october: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '10월' : 'October',
+      november: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '11월' : 'November',
+      december: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '12월' : 'December'
+    },
+    // 분기 이름
+    quarterNames: {
+      q1: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '1분기' : 'Q1',
+      q2: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '2분기' : 'Q2',
+      q3: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '3분기' : 'Q3',
+      q4: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '4분기' : 'Q4'
+    }
+  },
   revenueChart: {
     title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '매출 차트' : 'Revenue Chart',
     description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월별/분기별 수익을 차트로 표시' : 'Display monthly/quarterly revenue in charts',

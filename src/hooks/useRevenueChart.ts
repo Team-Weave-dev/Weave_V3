@@ -10,6 +10,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { projectService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
+import { getWidgetText } from '@/config/brand';
 
 export interface RevenueData {
   period: string;
@@ -54,7 +55,20 @@ function calculateMonthlyRevenue(projects: Project[]): RevenueData[] {
 
   // 1월부터 현재 월까지 데이터 생성
   const currentMonth = now.getMonth();
-  const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+  const monthNames = [
+    getWidgetText.hooks.monthNames.january('ko'),
+    getWidgetText.hooks.monthNames.february('ko'),
+    getWidgetText.hooks.monthNames.march('ko'),
+    getWidgetText.hooks.monthNames.april('ko'),
+    getWidgetText.hooks.monthNames.may('ko'),
+    getWidgetText.hooks.monthNames.june('ko'),
+    getWidgetText.hooks.monthNames.july('ko'),
+    getWidgetText.hooks.monthNames.august('ko'),
+    getWidgetText.hooks.monthNames.september('ko'),
+    getWidgetText.hooks.monthNames.october('ko'),
+    getWidgetText.hooks.monthNames.november('ko'),
+    getWidgetText.hooks.monthNames.december('ko')
+  ];
 
   const result: RevenueData[] = [];
   for (let i = 0; i <= currentMonth; i++) {
@@ -95,7 +109,12 @@ function calculateQuarterlyRevenue(projects: Project[]): RevenueData[] {
   // 현재까지의 분기 데이터 생성
   const currentMonth = now.getMonth();
   const currentQuarter = Math.floor(currentMonth / 3);
-  const quarterNames = ['1분기', '2분기', '3분기', '4분기'];
+  const quarterNames = [
+    getWidgetText.hooks.quarterNames.q1('ko'),
+    getWidgetText.hooks.quarterNames.q2('ko'),
+    getWidgetText.hooks.quarterNames.q3('ko'),
+    getWidgetText.hooks.quarterNames.q4('ko')
+  ];
 
   const result: RevenueData[] = [];
   for (let i = 0; i <= currentQuarter; i++) {

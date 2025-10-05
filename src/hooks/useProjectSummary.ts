@@ -11,6 +11,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { projectService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
 import type { ProjectReview } from '@/types/dashboard';
+import { getWidgetText } from '@/config/brand';
 
 /**
  * Project → ProjectReview 변환 함수
@@ -28,12 +29,12 @@ function convertProjectToReview(project: Project): ProjectReview {
   };
 
   const statusLabelMap: Record<Project['status'], string> = {
-    'planning': '기획',
-    'in_progress': '진행중',
-    'review': '검토',
-    'completed': '완료',
-    'on_hold': '보류',
-    'cancelled': '취소',
+    'planning': getWidgetText.hooks.projectStatus.planning('ko'),
+    'in_progress': getWidgetText.hooks.projectStatus.inProgress('ko'),
+    'review': getWidgetText.hooks.projectStatus.review('ko'),
+    'completed': getWidgetText.hooks.projectStatus.completed('ko'),
+    'on_hold': getWidgetText.hooks.projectStatus.onHold('ko'),
+    'cancelled': getWidgetText.hooks.projectStatus.cancelled('ko'),
   };
 
   // 마감일 계산 (endDate가 없으면 등록일 기준)
@@ -55,14 +56,14 @@ function convertProjectToReview(project: Project): ProjectReview {
 
   // 현재 상태 메시지 (WBS 작업 기반)
   const currentStatus = project.wbsTasks.length > 0
-    ? `진행 중인 작업: ${project.wbsTasks.filter(t => t.status === 'in_progress').length}개`
-    : '작업이 없습니다';
+    ? `${getWidgetText.hooks.fallback.tasksInProgress('ko')}: ${project.wbsTasks.filter(t => t.status === 'in_progress').length}${getWidgetText.hooks.fallback.tasksCount('ko')}`
+    : getWidgetText.hooks.fallback.noTasks('ko');
 
   return {
     id: project.id,
     projectId: project.no,
     projectName: project.name,
-    client: project.clientId || '클라이언트 미지정',  // TODO: ClientService 통합
+    client: project.clientId || getWidgetText.hooks.fallback.noClient('ko'),  // TODO: ClientService 통합
     pm: project.userId,  // TODO: UserService 통합하여 이름 가져오기
     status: statusMap[project.status],
     statusLabel: statusLabelMap[project.status],
