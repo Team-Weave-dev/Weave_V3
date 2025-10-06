@@ -290,8 +290,11 @@ export default function FullScreenCalendarModal({
           const calendarEventId = event.id.replace('calendar-event-', '');
           console.log('[FullScreenCalendarModal] Updating calendar event via Storage API:', calendarEventId, 'to', format(newDate, 'yyyy-MM-dd'));
 
+          // CalendarEvent 엔티티는 startDate와 endDate를 사용
+          const isoDate = newDate.toISOString();
           calendarService.update(calendarEventId, {
-            date: newDate.toISOString(),
+            startDate: isoDate,
+            endDate: isoDate, // 단일 날짜 이벤트는 startDate === endDate
             updatedAt: new Date().toISOString()
           }).then(() => {
             console.log('[FullScreenCalendarModal] Calendar event date updated successfully via Storage API');
