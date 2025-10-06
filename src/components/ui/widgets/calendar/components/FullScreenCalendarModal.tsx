@@ -30,7 +30,9 @@ import { ko } from 'date-fns/locale';
 import { getWidgetText } from '@/config/brand';
 import type { CalendarEvent } from '@/types/dashboard';
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
-import { taskService, calendarService } from '@/lib/storage';
+import { taskService } from '@/lib/storage';
+import { useCalendarEvents } from '../hooks/useCalendarEvents';
+import { updateCalendarEvent } from '@/lib/mock/calendar-events';
 import {
   MonthView,
   WeekView,
@@ -83,6 +85,16 @@ export default function FullScreenCalendarModal({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Custom hooks
+  // Calendar events hook (same as CalendarWidget) - for local calendar events
+  const {
+    events: localCalendarEvents,
+    addEvent: addLocalEvent,
+    updateEvent: updateLocalEvent,
+    deleteEvent: deleteLocalEvent,
+    refreshEvents: refreshLocalEvents,
+  } = useCalendarEvents();
+
+  // Integrated calendar hook for multi-source data (todo, tax)
   const {
     items: integratedItems,
     refresh: refreshIntegratedItems,
@@ -95,24 +107,28 @@ export default function FullScreenCalendarModal({
 
   // Convert UnifiedCalendarItem to CalendarEvent
   const convertToCalendarEvents = React.useCallback((items: typeof integratedItems): CalendarEvent[] => {
-    return items.map(item => {
-      // Map CalendarItemType to CalendarEvent type
-      let eventType: CalendarEvent['type'] = 'other';
-      if (item.type === 'event') eventType = 'other';
-      else if (item.type === 'deadline') eventType = 'deadline';
-      else if (item.type === 'task') eventType = 'task';
+    // Filter out 'calendar' items to prevent duplicates with localCalendarEvents
+    // Only convert 'todo' and 'tax' items from other widgets
+    return items
+      .filter(item => item.source !== 'calendar')
+      .map(item => {
+        // Map CalendarItemType to CalendarEvent type
+        let eventType: CalendarEvent['type'] = 'other';
+        if (item.type === 'event') eventType = 'other';
+        else if (item.type === 'deadline') eventType = 'deadline';
+        else if (item.type === 'task') eventType = 'task';
 
-      return {
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        date: item.date,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        allDay: item.allDay,
-        type: eventType,
-      };
-    });
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          date: item.date,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          allDay: item.allDay,
+          type: eventType,
+        };
+      });
   }, []);
 
   // Handle task date updates via Storage API
@@ -187,9 +203,27 @@ export default function FullScreenCalendarModal({
   };
 
   const handleEventSave = (eventData: Partial<CalendarEvent>) => {
-    // FullScreenCalendarModal은 통합 캘린더만 표시하므로
-    // 이벤트 추가/수정은 지원하지 않음
-    console.warn('[FullScreenCalendarModal] Event save not supported in integrated view');
+    // Save to local calendar events using the same method as CalendarWidget
+    if (eventData.id) {
+      // Update existing event
+      updateLocalEvent(eventData as CalendarEvent);
+    } else {
+      // Add new event
+      const newEvent: CalendarEvent = {
+        id: `calendar-event-${Date.now()}`,
+        title: eventData.title || '',
+        date: eventData.date || selectedDate || new Date(),
+        type: eventData.type || 'meeting',
+        allDay: eventData.allDay ?? true,
+        startTime: eventData.startTime,
+        endTime: eventData.endTime,
+        location: eventData.location,
+        description: eventData.description,
+      };
+      addLocalEvent(newEvent);
+      refreshLocalEvents();
+    }
+
     setShowEventPopover(false);
     setEditingEvent(null);
   };
@@ -202,7 +236,16 @@ export default function FullScreenCalendarModal({
   };
 
   const handleEventDelete = (event: CalendarEvent) => {
-    console.warn('[FullScreenCalendarModal] Event delete not supported in integrated view');
+    // Only delete local calendar events (not integrated items from other widgets)
+    const isLocalEvent = localCalendarEvents.some(e => e.id === event.id);
+
+    if (isLocalEvent) {
+      deleteLocalEvent(event.id);
+      refreshLocalEvents();
+    } else {
+      console.warn('[FullScreenCalendarModal] Can only delete local calendar events, not integrated items');
+    }
+
     setShowEventDetail(false);
     setSelectedEvent(null);
   };
@@ -227,16 +270,27 @@ export default function FullScreenCalendarModal({
 
   // Filtered events (must be before handleDragEnd)
   const filteredEvents = React.useMemo(() => {
-    // Convert integrated items to CalendarEvent format
+    // 1. Local calendar events (from useCalendarEvents - same as CalendarWidget)
+    const localEvents = localCalendarEvents;
+
+    // 2. Convert integrated items to CalendarEvent format (todo, tax from other widgets)
     const convertedEvents = convertToCalendarEvents(integratedItems);
 
-    // Apply search filter
-    if (!searchQuery) return convertedEvents;
-    return convertedEvents.filter(event =>
+    // 3. Combine all events
+    const allEvents = [...localEvents, ...convertedEvents];
+
+    // 4. Remove duplicates by ID (in case of overlap)
+    const uniqueEvents = Array.from(
+      new Map(allEvents.map(event => [event.id, event])).values()
+    );
+
+    // 5. Apply search filter
+    if (!searchQuery) return uniqueEvents;
+    return uniqueEvents.filter(event =>
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [integratedItems, searchQuery, convertToCalendarEvents]);
+  }, [localCalendarEvents, integratedItems, searchQuery, convertToCalendarEvents]);
 
   // Handle drag end for event rescheduling
   const handleDragEnd = React.useCallback((result: DropResult) => {
@@ -262,7 +316,7 @@ export default function FullScreenCalendarModal({
       const isIntegratedItem =
         event.id.startsWith('todo-') ||
         event.id.startsWith('tax-') ||
-        event.id.startsWith('calendar-event-');
+        (event.id.startsWith('calendar-event-') && !localCalendarEvents.some(e => e.id === event.id));
 
       if (isIntegratedItem) {
         // Handle integrated items (todo, tax, etc.)
@@ -280,37 +334,50 @@ export default function FullScreenCalendarModal({
           return; // Exit after handling todo items
         }
 
+        // 세금 이벤트는 드래그 불가능하므로 여기에 오지 않아야 함
         if (event.id.startsWith('tax-')) {
           console.warn('Tax events should not be draggable');
           return;
         }
 
-        if (event.id.startsWith('calendar-event-')) {
-          // Update calendar event date through Storage API
-          const calendarEventId = event.id.replace('calendar-event-', '');
-          console.log('[FullScreenCalendarModal] Updating calendar event via Storage API:', calendarEventId, 'to', format(newDate, 'yyyy-MM-dd'));
-
-          // CalendarEvent 엔티티는 startDate와 endDate를 사용
-          const isoDate = newDate.toISOString();
-          calendarService.update(calendarEventId, {
-            startDate: isoDate,
-            endDate: isoDate, // 단일 날짜 이벤트는 startDate === endDate
-            updatedAt: new Date().toISOString()
-          }).then(() => {
-            console.log('[FullScreenCalendarModal] Calendar event date updated successfully via Storage API');
-            refreshIntegratedItems();
-          }).catch((error: Error) => {
-            console.error('[FullScreenCalendarModal] Failed to update calendar event date:', error);
-          });
-
-          console.log('[FullScreenCalendarModal] Calendar event date update initiated via drag:', calendarEventId, 'to', format(newDate, 'yyyy-MM-dd'));
-          return;
+        // calendar-event- 로 시작하는 이벤트는 일반 캘린더 이벤트처럼 처리
+        if (!event.id.startsWith('calendar-event-')) {
+          return; // Unknown integrated item type
         }
       }
 
-      console.warn('[FullScreenCalendarModal] Unknown event type:', event.id);
+      // For local calendar events, update directly (same as CalendarWidget)
+      const updatedEvent: CalendarEvent = {
+        ...event,
+        date: newDate,
+      };
+
+      // If time is included in droppableId (WeekView, DayView)
+      if (parts.length >= 6) {
+        const hour = parseInt(parts[4]);
+        const minute = parseInt(parts[5]);
+
+        // Calculate duration from original event
+        let duration = 60; // default 1 hour
+        if (event.startTime && event.endTime) {
+          const [startHour, startMin] = event.startTime.split(':').map(Number);
+          const [endHour, endMin] = event.endTime.split(':').map(Number);
+          duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+        }
+
+        // Set new start time
+        updatedEvent.startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+        // Calculate new end time
+        const endMinutes = hour * 60 + minute + duration;
+        const endHour = Math.floor(endMinutes / 60);
+        const endMin = endMinutes % 60;
+        updatedEvent.endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+      }
+
+      updateLocalEvent(updatedEvent);
     }
-  }, [filteredEvents, handleTaskDateUpdate, refreshIntegratedItems]);
+  }, [filteredEvents, localCalendarEvents, handleTaskDateUpdate, updateLocalEvent]);
 
   // View title generation
   const getViewTitle = () => {
