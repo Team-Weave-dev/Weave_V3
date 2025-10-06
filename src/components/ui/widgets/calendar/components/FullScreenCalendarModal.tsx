@@ -30,7 +30,7 @@ import { ko } from 'date-fns/locale';
 import { getWidgetText } from '@/config/brand';
 import type { CalendarEvent } from '@/types/dashboard';
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
-import { taskService } from '@/lib/storage';
+import { taskService, calendarService } from '@/lib/storage';
 import {
   MonthView,
   WeekView,
@@ -285,16 +285,29 @@ export default function FullScreenCalendarModal({
           return;
         }
 
-        if (!event.id.startsWith('calendar-event-')) {
+        if (event.id.startsWith('calendar-event-')) {
+          // Update calendar event date through Storage API
+          const calendarEventId = event.id.replace('calendar-event-', '');
+          console.log('[FullScreenCalendarModal] Updating calendar event via Storage API:', calendarEventId, 'to', format(newDate, 'yyyy-MM-dd'));
+
+          calendarService.update(calendarEventId, {
+            date: newDate.toISOString(),
+            updatedAt: new Date().toISOString()
+          }).then(() => {
+            console.log('[FullScreenCalendarModal] Calendar event date updated successfully via Storage API');
+            refreshIntegratedItems();
+          }).catch((error: Error) => {
+            console.error('[FullScreenCalendarModal] Failed to update calendar event date:', error);
+          });
+
+          console.log('[FullScreenCalendarModal] Calendar event date update initiated via drag:', calendarEventId, 'to', format(newDate, 'yyyy-MM-dd'));
           return;
         }
       }
 
-      // FullScreenCalendarModal은 통합 캘린더만 표시
-      // 독립 캘린더 이벤트 드래그는 지원하지 않음
-      console.warn('[FullScreenCalendarModal] Local calendar event drag not supported in integrated view');
+      console.warn('[FullScreenCalendarModal] Unknown event type:', event.id);
     }
-  }, [filteredEvents, handleTaskDateUpdate]);
+  }, [filteredEvents, handleTaskDateUpdate, refreshIntegratedItems]);
 
   // View title generation
   const getViewTitle = () => {
