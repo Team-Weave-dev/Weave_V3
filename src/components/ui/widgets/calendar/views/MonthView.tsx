@@ -12,6 +12,7 @@ import {
   startOfMonth,
   endOfMonth,
   getDay,
+  getWeek,
 } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 
 interface MonthViewProps extends CalendarViewProps {
   defaultSize?: { w: number; h: number };
+  showWeekNumbers?: boolean;
 }
 
 /**
@@ -39,7 +41,8 @@ const MonthView = React.memo(({
   containerWidth,
   gridSize,
   defaultSize = { w: 5, h: 4 },
-  weekStartsOn = 0
+  weekStartsOn = 0,
+  showWeekNumbers = false
 }: MonthViewProps) => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -116,7 +119,12 @@ const MonthView = React.memo(({
   return (
     <div className="flex flex-col h-full">
       {/* 요일 헤더 - 컴팩트 */}
-      <div className="grid grid-cols-7 border-b flex-shrink-0" style={{ height: `${headerHeight}px` }}>
+      <div className={cn("grid border-b flex-shrink-0", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")} style={{ height: `${headerHeight}px` }}>
+        {showWeekNumbers && (
+          <div className="flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+            #
+          </div>
+        )}
         {weekDays.map((day, index) => (
           <div
             key={day}
@@ -133,8 +141,17 @@ const MonthView = React.memo(({
       
       {/* 날짜 그리드 - 정확한 높이 할당 */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} className="grid grid-cols-7 border-b last:border-0 flex-1">
+        {weeks.map((week, weekIndex) => {
+          // 주 번호 계산 (첫 번째 날짜 기준)
+          const weekNumber = getWeek(week[0], { weekStartsOn, locale: ko });
+
+          return (
+          <div key={weekIndex} className={cn("grid border-b last:border-0 flex-1", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")}>
+            {showWeekNumbers && (
+              <div className="border-r flex items-center justify-center text-[10px] font-medium text-muted-foreground bg-muted/30">
+                {weekNumber}
+              </div>
+            )}
             {week.map((day) => {
               const dayEvents = events.filter(event => 
                 isSameDay(new Date(event.date), day)
@@ -305,16 +322,9 @@ const MonthView = React.memo(({
                                     {...provided.dragHandleProps}
                                     style={{
                                       ...provided.draggableProps.style,
-                                      ...(snapshot.isDragging ? {
-                                        // 드래그 중: 커서 위치 정확히 추적
-                                        cursor: 'grabbing',
-                                      } : {
-                                        // 드래그 아닐 때: transform 초기화
-                                        transform: 'translate(0px, 0px)',
-                                      }),
                                     }}
                                     className={cn(
-                                      snapshot.isDragging && "opacity-90 shadow-lg z-[9999] scale-105",
+                                      snapshot.isDragging && "opacity-90 shadow-lg z-[9999]",
                                       !snapshot.isDragging && "opacity-100",
                                       isDragDisabled ? "cursor-default" : "cursor-grab active:cursor-grabbing"
                                     )}
@@ -346,7 +356,8 @@ const MonthView = React.memo(({
               );
             })}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

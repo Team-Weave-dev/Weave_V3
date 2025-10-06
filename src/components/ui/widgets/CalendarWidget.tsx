@@ -83,9 +83,15 @@ export function CalendarWidget({
   gridSize,
   defaultSize = { w: 5, h: 4 }
 }: CalendarWidgetProps & { gridSize?: { w: number; h: number }; defaultSize?: { w: number; h: number } }) {
-  // States
+  // Custom hooks - 설정을 먼저 로드
+  const {
+    settings,
+    saveSettings,
+  } = useCalendarSettings();
+
+  // States - 설정이 로드된 후 defaultView 적용
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate || new Date());
-  const [currentView, setCurrentView] = useState<ViewMode>(view);
+  const [currentView, setCurrentView] = useState<ViewMode>(settings.defaultView || view);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [showEventPopover, setShowEventPopover] = useState(false);
@@ -110,11 +116,6 @@ export function CalendarWidget({
     refreshEvents,
   } = useCalendarEvents(propEvents);
 
-  const {
-    settings,
-    saveSettings,
-  } = useCalendarSettings();
-
   // Integrated calendar hook for multi-source data
   const {
     filteredItems: integratedItems,
@@ -130,6 +131,13 @@ export function CalendarWidget({
   // Effective values
   const effectiveGridSize = gridSize || defaultSize;
   const displayTitle = title || getWidgetText.calendar.title('ko');
+
+  // 설정이 변경되면 currentView 업데이트 (초기 로드 및 설정 저장 시)
+  useEffect(() => {
+    if (settings.defaultView && settings.defaultView !== currentView) {
+      setCurrentView(settings.defaultView);
+    }
+  }, [settings.defaultView]);
 
   // Convert UnifiedCalendarItem to CalendarEvent
   const convertToCalendarEvents = (items: UnifiedCalendarItem[]): CalendarEvent[] => {
@@ -220,7 +228,7 @@ export function CalendarWidget({
     return () => {
       unsubscribe();
     };
-  }, [refreshEvents]);
+  }, [refreshEvents, refreshIntegratedItems]);
 
   // Merged and filtered events with memoization
   const filteredEvents = useMemo(() => {
@@ -831,6 +839,7 @@ export function CalendarWidget({
                   containerWidth={containerSize.width}
                   gridSize={effectiveGridSize}
                   weekStartsOn={settings.weekStartsOn}
+                  showWeekNumbers={settings.showWeekNumbers}
                 />
               )}
               
