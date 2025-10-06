@@ -9,17 +9,18 @@ import { eventTypeConfig, type MiniEventProps } from '../types';
  * 캘린더 내에서 이벤트를 표시하는 컴팩트한 컴포넌트
  * Google Calendar 스타일의 반응형 디자인
  */
-const MiniEvent = React.memo(({ 
-  event, 
-  onClick, 
-  displayMode = 'bar' 
+const MiniEvent = React.memo(({
+  event,
+  onClick,
+  displayMode = 'bar',
+  isDragging = false // 드래그 중일 때 transition 비활성화
 }: MiniEventProps) => {
   const config = eventTypeConfig[event.type || 'other'];
-  
+
   // 점 표시 모드 (아주 작은 높이)
   if (displayMode === 'dot') {
     return (
-      <div 
+      <div
         className="inline-flex items-center"
         onClick={(e) => {
           e.stopPropagation();
@@ -31,13 +32,14 @@ const MiniEvent = React.memo(({
       </div>
     );
   }
-  
+
   // 컴팩트 모드 (작은 높이)
   if (displayMode === 'compact') {
     return (
       <div
         className={cn(
-          "text-[9px] leading-none px-0.5 py-[1px] rounded-sm truncate cursor-pointer hover:opacity-80 transition-opacity",
+          "text-[9px] leading-none px-0.5 py-[1px] rounded-sm truncate cursor-pointer hover:opacity-80",
+          !isDragging && "transition-opacity", // 드래그 중이 아닐 때만 transition
           config.color,
           "text-white"
         )}
@@ -51,13 +53,14 @@ const MiniEvent = React.memo(({
       </div>
     );
   }
-  
+
   // 바 모드 (중간 높이 - 기본값)
   if (displayMode === 'bar') {
     return (
       <div
         className={cn(
-          "text-[10px] px-0.5 py-[1px] rounded-sm truncate cursor-pointer hover:opacity-80 transition-opacity",
+          "text-[10px] px-0.5 py-[1px] rounded-sm truncate cursor-pointer hover:opacity-80",
+          !isDragging && "transition-opacity", // 드래그 중이 아닐 때만 transition
           config.color,
           "text-white"
         )}
@@ -74,12 +77,13 @@ const MiniEvent = React.memo(({
       </div>
     );
   }
-  
+
   // 풀 모드 (큰 높이)
   return (
     <div
       className={cn(
-        "text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity",
+        "text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80",
+        !isDragging && "transition-opacity", // 드래그 중이 아닐 때만 transition
         config.color,
         "text-white"
       )}

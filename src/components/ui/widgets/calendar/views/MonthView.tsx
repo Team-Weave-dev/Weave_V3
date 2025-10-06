@@ -281,15 +281,21 @@ const MonthView = React.memo(({
                               isDragDisabled={isDragDisabled}
                             >
                               {(provided, snapshot) => {
+                                // 드래그 중일 때와 아닐 때의 스타일을 분리하여 애니메이션 개선
+                                const draggableStyle = {
+                                  ...provided.draggableProps.style,
+                                  // 드래그 중이 아닐 때는 transform을 제거하여 멈칫거림 방지
+                                  ...(snapshot.isDragging ? {} : { transform: 'none' }),
+                                };
+
                                 return (
                                   <div
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    style={{
-                                      ...provided.draggableProps.style,
-                                    }}
+                                    style={draggableStyle}
                                     className={cn(
+                                      "transition-none", // CSS transition 비활성화하여 드래그 중 충돌 방지
                                       snapshot.isDragging && "opacity-90 shadow-lg z-[9999]",
                                       !snapshot.isDragging && "opacity-100",
                                       isDragDisabled ? "cursor-default" : "cursor-grab active:cursor-grabbing"
@@ -299,6 +305,7 @@ const MonthView = React.memo(({
                                       event={event}
                                       onClick={() => onEventClick?.(event)}
                                       displayMode={displayMode as 'compact' | 'bar' | 'full'}
+                                      isDragging={snapshot.isDragging}
                                     />
                                   </div>
                                 );

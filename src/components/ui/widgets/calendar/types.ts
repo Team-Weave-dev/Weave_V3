@@ -105,6 +105,7 @@ export interface MiniEventProps {
   event: CalendarEvent;
   onClick?: () => void;
   displayMode?: 'dot' | 'compact' | 'bar' | 'full';
+  isDragging?: boolean; // 드래그 중일 때 transition 비활성화
 }
 
 export interface EventDetailModalProps {
