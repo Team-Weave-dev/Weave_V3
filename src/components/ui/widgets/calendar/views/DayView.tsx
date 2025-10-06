@@ -6,6 +6,7 @@ import { ko } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MiniEvent from '../components/MiniEvent';
 import type { CalendarViewProps } from '../types';
+import { getDayViewText } from '@/config/brand';
 
 /**
  * DayView Component
@@ -49,7 +50,7 @@ const DayView = React.memo(({
           style={{ minHeight: `${allDayHeight}px` }}
           onDoubleClick={() => onDateDoubleClick?.(currentDate)}
         >
-          <div className="text-xs text-muted-foreground mb-1">종일</div>
+          <div className="text-xs text-muted-foreground mb-1">{getDayViewText.allDay('ko')}</div>
           <div className="space-y-1">
             {allDayEvents.map((event) => (
               <MiniEvent

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { MapPin } from 'lucide-react';
 import type { CalendarEvent } from '@/types/dashboard';
+import { getEventFormText } from '@/config/brand';
 
 interface EventFormProps {
   event?: CalendarEvent | null;
@@ -77,7 +78,7 @@ const EventForm = React.memo(({
 
   const handleSubmit = () => {
     const eventData: Partial<CalendarEvent> = {
-      title: formData.title || '제목 없음',
+      title: formData.title || getEventFormText.defaultTitle('ko'),
       date: new Date(formData.date),
       type: formData.type,
       allDay: formData.allDay,
@@ -118,15 +119,15 @@ const EventForm = React.memo(({
   return (
     <div className="space-y-4" onKeyDown={handleKeyDown}>
       <h4 className="font-medium text-sm">
-        {event ? '일정 수정' : '새 일정 만들기'}
+        {event ? getEventFormText.titleEdit('ko') : getEventFormText.titleNew('ko')}
       </h4>
 
       {/* 제목 */}
       <div className="space-y-2">
-        <Label htmlFor="event-title" className="text-xs">제목</Label>
+        <Label htmlFor="event-title" className="text-xs">{getEventFormText.labelTitle('ko')}</Label>
         <Input
           id="event-title"
-          placeholder="일정 제목 (엔터로 저장)"
+          placeholder={getEventFormText.placeholderTitle('ko')}
           className="h-8"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -136,31 +137,31 @@ const EventForm = React.memo(({
 
       {/* 일정 타입 */}
       <div className="space-y-2">
-        <Label htmlFor="event-type" className="text-xs">유형</Label>
-        <Select 
-          value={formData.type} 
-          onValueChange={(value) => setFormData({ ...formData, type: value as any })}
+        <Label htmlFor="event-type" className="text-xs">{getEventFormText.labelType('ko')}</Label>
+        <Select
+          value={formData.type}
+          onValueChange={(value) => setFormData({ ...formData, type: value as CalendarEvent['type'] })}
         >
           <SelectTrigger id="event-type" className="h-8">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="meeting">회의</SelectItem>
-            <SelectItem value="task">작업</SelectItem>
-            <SelectItem value="reminder">알림</SelectItem>
-            <SelectItem value="deadline">마감</SelectItem>
-            <SelectItem value="holiday">휴일</SelectItem>
-            <SelectItem value="other">기타</SelectItem>
+            <SelectItem value="meeting">{getEventFormText.typeMeeting('ko')}</SelectItem>
+            <SelectItem value="task">{getEventFormText.typeTask('ko')}</SelectItem>
+            <SelectItem value="reminder">{getEventFormText.typeReminder('ko')}</SelectItem>
+            <SelectItem value="deadline">{getEventFormText.typeDeadline('ko')}</SelectItem>
+            <SelectItem value="holiday">{getEventFormText.typeHoliday('ko')}</SelectItem>
+            <SelectItem value="other">{getEventFormText.typeOther('ko')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* 날짜 */}
       <div className="space-y-2">
-        <Label htmlFor="event-date" className="text-xs">날짜</Label>
-        <Input 
+        <Label htmlFor="event-date" className="text-xs">{getEventFormText.labelDate('ko')}</Label>
+        <Input
           id="event-date"
-          type="date" 
+          type="date"
           className="h-8"
           value={formData.date}
           onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -169,7 +170,7 @@ const EventForm = React.memo(({
 
       {/* 종일 일정 토글 */}
       <div className="flex items-center justify-between">
-        <Label htmlFor="all-day" className="text-xs">종일 일정</Label>
+        <Label htmlFor="all-day" className="text-xs">{getEventFormText.labelAllDay('ko')}</Label>
         <Switch
           id="all-day"
           checked={formData.allDay}
@@ -181,7 +182,7 @@ const EventForm = React.memo(({
       {!formData.allDay && (
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
-            <Label htmlFor="start-time" className="text-xs">시작 시간</Label>
+            <Label htmlFor="start-time" className="text-xs">{getEventFormText.labelStartTime('ko')}</Label>
             <Input
               id="start-time"
               type="time"
@@ -191,7 +192,7 @@ const EventForm = React.memo(({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="end-time" className="text-xs">종료 시간</Label>
+            <Label htmlFor="end-time" className="text-xs">{getEventFormText.labelEndTime('ko')}</Label>
             <Input
               id="end-time"
               type="time"
@@ -207,11 +208,11 @@ const EventForm = React.memo(({
       <div className="space-y-2">
         <Label htmlFor="event-location" className="text-xs">
           <MapPin className="inline h-3 w-3 mr-1" />
-          장소
+          {getEventFormText.labelLocation('ko')}
         </Label>
-        <Input 
+        <Input
           id="event-location"
-          placeholder="장소 입력 (선택사항)" 
+          placeholder={getEventFormText.placeholderLocation('ko')}
           className="h-8"
           value={formData.location}
           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -220,10 +221,10 @@ const EventForm = React.memo(({
 
       {/* 설명 */}
       <div className="space-y-2">
-        <Label htmlFor="event-description" className="text-xs">설명</Label>
+        <Label htmlFor="event-description" className="text-xs">{getEventFormText.labelDescription('ko')}</Label>
         <Textarea
           id="event-description"
-          placeholder="설명 입력 (선택사항, Shift+Enter로 줄바꿈)"
+          placeholder={getEventFormText.placeholderDescription('ko')}
           className="min-h-[60px] text-sm resize-none"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -246,14 +247,14 @@ const EventForm = React.memo(({
             onCancel();
           }}
         >
-          취소
+          {getEventFormText.buttonCancel('ko')}
         </Button>
         <Button
           size="sm"
           onClick={handleSubmit}
           disabled={!formData.title}
         >
-          {event ? '수정' : '저장'}
+          {event ? getEventFormText.buttonUpdate('ko') : getEventFormText.buttonSave('ko')}
         </Button>
       </div>
     </div>

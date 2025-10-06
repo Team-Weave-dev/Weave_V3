@@ -1237,6 +1237,50 @@ export const uiText = {
       ko: "프로젝트의 현재 진행 상태를 나타냅니다",
       en: "Indicates the current progress status of the project"
     }
+  },
+
+  // 캘린더 위젯 텍스트 (Calendar Widget Text)
+  calendarWidget: {
+    eventForm: {
+      titleNew: { ko: "새 일정 만들기", en: "Create New Event" },
+      titleEdit: { ko: "일정 수정", en: "Edit Event" },
+      labelTitle: { ko: "제목", en: "Title" },
+      labelType: { ko: "유형", en: "Type" },
+      labelDate: { ko: "날짜", en: "Date" },
+      labelAllDay: { ko: "종일 일정", en: "All Day" },
+      labelStartTime: { ko: "시작 시간", en: "Start Time" },
+      labelEndTime: { ko: "종료 시간", en: "End Time" },
+      labelLocation: { ko: "장소", en: "Location" },
+      labelDescription: { ko: "설명", en: "Description" },
+      placeholderTitle: { ko: "일정 제목 (엔터로 저장)", en: "Event title (Enter to save)" },
+      placeholderLocation: { ko: "장소 입력 (선택사항)", en: "Enter location (optional)" },
+      placeholderDescription: { ko: "설명 입력 (선택사항, Shift+Enter로 줄바꿈)", en: "Enter description (optional, Shift+Enter for new line)" },
+      typeMeeting: { ko: "회의", en: "Meeting" },
+      typeTask: { ko: "작업", en: "Task" },
+      typeReminder: { ko: "알림", en: "Reminder" },
+      typeDeadline: { ko: "마감", en: "Deadline" },
+      typeHoliday: { ko: "휴일", en: "Holiday" },
+      typeOther: { ko: "기타", en: "Other" },
+      buttonCancel: { ko: "취소", en: "Cancel" },
+      buttonSave: { ko: "저장", en: "Save" },
+      buttonUpdate: { ko: "수정", en: "Update" },
+      defaultTitle: { ko: "제목 없음", en: "Untitled" },
+    },
+    eventDetail: {
+      deleteTitle: { ko: "일정 삭제", en: "Delete Event" },
+      deleteConfirm: { ko: "이 일정을 삭제하시겠습니까?", en: "Are you sure you want to delete this event?" },
+      buttonDelete: { ko: "삭제", en: "Delete" },
+      buttonCancel: { ko: "취소", en: "Cancel" },
+      buttonClose: { ko: "닫기", en: "Close" },
+      allDay: { ko: "종일", en: "All Day" },
+    },
+    agendaView: {
+      noEvents: { ko: "일정이 없습니다", en: "No events" },
+      today: { ko: "오늘", en: "Today" },
+    },
+    dayView: {
+      allDay: { ko: "종일", en: "All Day" },
+    }
   }
 } as const
 
@@ -2450,4 +2494,52 @@ export const getLoadingText = {
   contract: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.contractLoading[lang],
   billing: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.billingLoading[lang],
   documents: (lang: 'ko' | 'en' = defaultLanguage) => uiText.componentDemo.projectPage.messages.documentsLoading[lang],
+}
+
+// 캘린더 이벤트 폼 헬퍼 함수
+export const getEventFormText = {
+  titleNew: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.titleNew[lang],
+  titleEdit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.titleEdit[lang],
+  labelTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.labelTitle[lang],
+  labelType: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.labelType[lang],
+  labelDate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.labelDate[lang],
+  labelAllDay: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.labelAllDay[lang],
+  labelStartTime: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.labelStartTime[lang],
+  labelEndTime: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.labelEndTime[lang],
+  labelLocation: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.labelLocation[lang],
+  labelDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.labelDescription[lang],
+  placeholderTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.placeholderTitle[lang],
+  placeholderLocation: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.placeholderLocation[lang],
+  placeholderDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.placeholderDescription[lang],
+  typeMeeting: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.typeMeeting[lang],
+  typeTask: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.typeTask[lang],
+  typeReminder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.typeReminder[lang],
+  typeDeadline: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.typeDeadline[lang],
+  typeHoliday: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.typeHoliday[lang],
+  typeOther: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.typeOther[lang],
+  buttonCancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.buttonCancel[lang],
+  buttonSave: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.buttonSave[lang],
+  buttonUpdate: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.buttonUpdate[lang],
+  defaultTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventForm.defaultTitle[lang],
+}
+
+// 캘린더 이벤트 상세 헬퍼 함수
+export const getEventDetailText = {
+  deleteTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventDetail.deleteTitle[lang],
+  deleteConfirm: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventDetail.deleteConfirm[lang],
+  buttonDelete: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventDetail.buttonDelete[lang],
+  buttonCancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventDetail.buttonCancel[lang],
+  buttonClose: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventDetail.buttonClose[lang],
+  allDay: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.eventDetail.allDay[lang],
+}
+
+// 캘린더 아젠다 뷰 헬퍼 함수
+export const getAgendaViewText = {
+  noEvents: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.agendaView.noEvents[lang],
+  today: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.agendaView.today[lang],
+}
+
+// 캘린더 데이 뷰 헬퍼 함수
+export const getDayViewText = {
+  allDay: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.dayView.allDay[lang],
 }

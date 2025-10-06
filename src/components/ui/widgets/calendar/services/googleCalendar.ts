@@ -6,7 +6,9 @@ import type { GoogleCalendarEvent, GoogleCalendarConfig } from '../types';
  * 구글 캘린더 API와 통합을 위한 서비스
  */
 export class GoogleCalendarService {
-  private gapi: any;
+  // Google API 클라이언트 라이브러리 타입 (공식 타입 정의 없음)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private gapi: any | null = null;
   private isInitialized = false;
   private config: GoogleCalendarConfig = {
     apiKey: '',

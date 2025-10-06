@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { eventTypeConfig } from '../types';
 import type { CalendarEvent } from '@/types/dashboard';
+import { getAgendaViewText } from '@/config/brand';
 
 const iconMap = {
   Users,
@@ -59,7 +60,7 @@ const AgendaView = React.memo(({
       <div className="p-4 space-y-4">
         {sortedDates.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
-            일정이 없습니다
+            {getAgendaViewText.noEvents('ko')}
           </div>
         ) : (
           sortedDates.map((dateKey) => {
@@ -72,7 +73,7 @@ const AgendaView = React.memo(({
                   <h3 className="text-sm font-semibold text-muted-foreground">
                     {format(date, 'M월 d일 EEEE', { locale: ko })}
                     {isToday(date) && (
-                      <Badge variant="status-soft-info" className="ml-2 text-xs">오늘</Badge>
+                      <Badge variant="status-soft-info" className="ml-2 text-xs">{getAgendaViewText.today('ko')}</Badge>
                     )}
                   </h3>
                 </div>

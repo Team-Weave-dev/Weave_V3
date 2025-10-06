@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { eventTypeConfig, type EventDetailModalProps } from '../types';
+import { getEventDetailText } from '@/config/brand';
 
 const iconMap = {
   Users,
@@ -104,7 +105,7 @@ const EventDetailModal = React.memo(({
                 {format(new Date(event.date), 'yyyy년 M월 d일 EEEE', { locale: ko })}
               </p>
               {event.allDay ? (
-                <p className="text-sm text-muted-foreground">종일</p>
+                <p className="text-sm text-muted-foreground">{getEventDetailText.allDay('ko')}</p>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   {event.startTime}
@@ -152,7 +153,7 @@ const EventDetailModal = React.memo(({
         
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            닫기
+            {getEventDetailText.buttonClose('ko')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -161,10 +162,10 @@ const EventDetailModal = React.memo(({
       {onDelete && (
         <DeleteDialog
           open={showDeleteDialog}
-          title="일정 삭제"
-          description="이 일정을 삭제하시겠습니까?"
-          confirmLabel="삭제"
-          cancelLabel="취소"
+          title={getEventDetailText.deleteTitle('ko')}
+          description={getEventDetailText.deleteConfirm('ko')}
+          confirmLabel={getEventDetailText.buttonDelete('ko')}
+          cancelLabel={getEventDetailText.buttonCancel('ko')}
           icon={<CalendarIcon className="h-6 w-6" />}
           onOpenChange={setShowDeleteDialog}
           onConfirm={() => {
