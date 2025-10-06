@@ -17,7 +17,6 @@ import {
   addStorageListener,
   type CalendarDataChangedDetail,
 } from './events';
-import { taskService } from '@/lib/storage';
 
 /**
  * 구독 콜백 함수 타입
@@ -63,7 +62,6 @@ export class IntegratedCalendarManager {
   private unsubscribeStorageCalendar?: () => void;
   private unsubscribeStorageTax?: () => void;
   private unsubscribeStorageTodo?: () => void;
-  private unsubscribeStorageTodoAPI?: () => void; // Storage API 구독
 
   constructor(dataSource?: IDataSource) {
     // 기본값으로 LocalStorageDataSource 사용
@@ -103,14 +101,8 @@ export class IntegratedCalendarManager {
       () => this.handleStorageChange('todo')
     );
 
-    // Storage API 직접 구독 (taskService 변경 감지)
-    this.unsubscribeStorageTodoAPI = taskService['storage'].subscribe(
-      'tasks',
-      () => {
-        console.log('[IntegratedCalendarManager] Storage API tasks changed');
-        this.handleStorageChange('todo');
-      }
-    );
+    // Storage API의 StorageEvent를 감지하기 위해 calendarDataChanged 이벤트 사용
+    // TodoListWidget이 Storage API 업데이트 시 이벤트를 발생시킴
   }
 
   /**
@@ -150,7 +142,6 @@ export class IntegratedCalendarManager {
     this.unsubscribeStorageCalendar?.();
     this.unsubscribeStorageTax?.();
     this.unsubscribeStorageTodo?.();
-    this.unsubscribeStorageTodoAPI?.(); // Storage API 구독 해제
 
     // 구독자 정리
     this.subscribers.clear();

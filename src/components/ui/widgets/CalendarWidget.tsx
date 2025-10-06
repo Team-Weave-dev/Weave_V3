@@ -36,7 +36,7 @@ import { typography } from '@/config/constants';
 import { useIntegratedCalendar } from '@/hooks/useIntegratedCalendar';
 import { integratedCalendarManager } from '@/lib/calendar-integration';
 import type { CalendarItemSource, UnifiedCalendarItem } from '@/types/integrated-calendar';
-import { addCalendarDataChangedListener } from '@/lib/calendar-integration/events';
+import { addCalendarDataChangedListener, notifyCalendarDataChanged } from '@/lib/calendar-integration/events';
 import { cn } from '@/lib/utils';
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
 import { taskService } from '@/lib/storage';
@@ -518,6 +518,14 @@ export function CalendarWidget({
           // Use handleTaskDateUpdate for consistency
           handleTaskDateUpdate(todoId, newDate).catch(error => {
             console.error('[CalendarWidget] Failed to update todo date:', error);
+          });
+
+          // Emit event with correct source for FullScreenCalendarModal real-time sync
+          notifyCalendarDataChanged({
+            source: 'todo',
+            changeType: 'update',
+            itemId: event.id,
+            timestamp: Date.now(),
           });
 
           console.log('[CalendarWidget] Todo date update initiated via drag:', todoId, 'to', format(newDate, 'yyyy-MM-dd'));

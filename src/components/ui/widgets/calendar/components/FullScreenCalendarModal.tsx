@@ -46,6 +46,7 @@ import {
   type ViewMode,
 } from '../index';
 import { useIntegratedCalendar } from '@/hooks/useIntegratedCalendar';
+import { notifyCalendarDataChanged, addCalendarDataChangedListener } from '@/lib/calendar-integration/events';
 
 interface FullScreenCalendarModalProps {
   isOpen: boolean;
@@ -104,6 +105,22 @@ export default function FullScreenCalendarModal({
     settings,
     saveSettings,
   } = useCalendarSettings();
+
+  // Listen to todo/tax changes from widgets and refresh integrated items
+  React.useEffect(() => {
+    const handleCalendarDataChanged = (event: CustomEvent) => {
+      const { source } = event.detail;
+
+      // Refresh when todo or tax data changes (from widgets)
+      if (source === 'todo' || source === 'tax') {
+        console.log('[FullScreenCalendarModal] Integrated data changed, refreshing:', event.detail);
+        refreshIntegratedItems();
+      }
+    };
+
+    const unsubscribe = addCalendarDataChangedListener(handleCalendarDataChanged);
+    return () => unsubscribe();
+  }, [refreshIntegratedItems]);
 
   // Convert UnifiedCalendarItem to CalendarEvent
   const convertToCalendarEvents = React.useCallback((items: typeof integratedItems): CalendarEvent[] => {
@@ -328,6 +345,14 @@ export default function FullScreenCalendarModal({
           // Use handleTaskDateUpdate for consistency
           handleTaskDateUpdate(todoId, newDate).catch(error => {
             console.error('[FullScreenCalendarModal] Failed to update todo date:', error);
+          });
+
+          // Emit event with correct source for TodoListWidget real-time sync
+          notifyCalendarDataChanged({
+            source: 'todo',
+            changeType: 'update',
+            itemId: event.id,
+            timestamp: Date.now(),
           });
 
           console.log('[FullScreenCalendarModal] Todo date update initiated via drag:', todoId, 'to', format(newDate, 'yyyy-MM-dd'));
