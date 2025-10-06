@@ -30,6 +30,7 @@ import { ko } from 'date-fns/locale';
 import { getWidgetText } from '@/config/brand';
 import type { CalendarEvent } from '@/types/dashboard';
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
+import { taskService } from '@/lib/storage';
 import {
   MonthView,
   WeekView,
@@ -38,11 +39,11 @@ import {
   EventDetailModal,
   EventForm,
   CalendarSettingsModal,
-  useCalendarEvents,
   useCalendarSettings,
   viewModes,
   type ViewMode,
 } from '../index';
+import { useIntegratedCalendar } from '@/hooks/useIntegratedCalendar';
 
 interface FullScreenCalendarModalProps {
   isOpen: boolean;
@@ -83,16 +84,55 @@ export default function FullScreenCalendarModal({
 
   // Custom hooks
   const {
-    events,
-    addEvent,
-    updateEvent,
-    deleteEvent,
-  } = useCalendarEvents(initialEvents);
+    items: integratedItems,
+    refresh: refreshIntegratedItems,
+  } = useIntegratedCalendar();
 
   const {
     settings,
     saveSettings,
   } = useCalendarSettings();
+
+  // Convert UnifiedCalendarItem to CalendarEvent
+  const convertToCalendarEvents = React.useCallback((items: typeof integratedItems): CalendarEvent[] => {
+    return items.map(item => {
+      // Map CalendarItemType to CalendarEvent type
+      let eventType: CalendarEvent['type'] = 'other';
+      if (item.type === 'event') eventType = 'other';
+      else if (item.type === 'deadline') eventType = 'deadline';
+      else if (item.type === 'task') eventType = 'task';
+
+      return {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        date: item.date,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        allDay: item.allDay,
+        type: eventType,
+      };
+    });
+  }, []);
+
+  // Handle task date updates via Storage API
+  const handleTaskDateUpdate = React.useCallback(async (taskId: string, newDate: Date) => {
+    try {
+      console.log('[FullScreenCalendarModal] Updating task date via Storage API:', taskId, newDate);
+
+      await taskService.update(taskId, {
+        dueDate: newDate.toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      console.log('[FullScreenCalendarModal] Task date updated successfully via Storage API');
+
+      // Refresh integrated calendar data
+      refreshIntegratedItems();
+    } catch (error) {
+      console.error('[FullScreenCalendarModal] Failed to update task date:', error);
+    }
+  }, [refreshIntegratedItems]);
 
   // Event handlers
   const handleDateSelect = (date: Date | undefined) => {
@@ -147,28 +187,11 @@ export default function FullScreenCalendarModal({
   };
 
   const handleEventSave = (eventData: Partial<CalendarEvent>) => {
-    if (editingEvent && editingEvent.id) {
-      // Update existing event (only if it has an ID)
-      const updatedEvent = { ...editingEvent, ...eventData } as CalendarEvent;
-      updateEvent(updatedEvent);
-    } else {
-      // Create new event
-      const newEvent = {
-        id: `event-${Date.now()}`,
-        ...eventData,
-      } as CalendarEvent;
-      addEvent(newEvent);
-      // Note: addEvent already saves to localStorage and notifies other widgets
-    }
-
+    // FullScreenCalendarModal은 통합 캘린더만 표시하므로
+    // 이벤트 추가/수정은 지원하지 않음
+    console.warn('[FullScreenCalendarModal] Event save not supported in integrated view');
     setShowEventPopover(false);
     setEditingEvent(null);
-
-    // Notify parent of event changes (if provided)
-    if (onEventUpdate) {
-      // Wait for state to update
-      setTimeout(() => onEventUpdate(events), 0);
-    }
   };
 
   const handleEventEdit = (event: CalendarEvent) => {
@@ -179,12 +202,9 @@ export default function FullScreenCalendarModal({
   };
 
   const handleEventDelete = (event: CalendarEvent) => {
-    if (window.confirm('이 일정을 삭제하시겠습니까?')) {
-      deleteEvent(event.id);
-      setShowEventDetail(false);
-      setSelectedEvent(null);
-      onEventUpdate?.(events);
-    }
+    console.warn('[FullScreenCalendarModal] Event delete not supported in integrated view');
+    setShowEventDetail(false);
+    setSelectedEvent(null);
   };
 
   const handleDateDoubleClick = (date: Date, time?: string) => {
@@ -205,8 +225,21 @@ export default function FullScreenCalendarModal({
     }
   };
 
+  // Filtered events (must be before handleDragEnd)
+  const filteredEvents = React.useMemo(() => {
+    // Convert integrated items to CalendarEvent format
+    const convertedEvents = convertToCalendarEvents(integratedItems);
+
+    // Apply search filter
+    if (!searchQuery) return convertedEvents;
+    return convertedEvents.filter(event =>
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [integratedItems, searchQuery, convertToCalendarEvents]);
+
   // Handle drag end for event rescheduling
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = React.useCallback((result: DropResult) => {
     if (!result.destination) return;
 
     // Extract event ID from draggableId (format: "event-{id}")
@@ -214,19 +247,7 @@ export default function FullScreenCalendarModal({
     const event = filteredEvents.find(e => e.id === eventId);
     if (!event) return;
 
-    // Check if event is from integrated calendar (other widgets)
-    // Integrated items cannot be rescheduled from calendar widget
-    const isIntegratedItem =
-      event.id.startsWith('todo-') ||
-      event.id.startsWith('tax-') ||
-      event.id.startsWith('calendar-event-');
-
-    if (isIntegratedItem) {
-      console.warn('Integrated calendar items cannot be rescheduled from calendar widget');
-      return;
-    }
-
-    // Parse new date from droppableId
+    // Parse new date from droppableId first (needed for all event types)
     // Format: "date-YYYY-MM-DD" or "date-YYYY-MM-DD-HH:MM"
     const droppableId = result.destination.droppableId;
     const parts = droppableId.split('-');
@@ -237,47 +258,43 @@ export default function FullScreenCalendarModal({
       const day = parseInt(parts[3]);
       const newDate = new Date(year, month, day);
 
-      // For local calendar events, update directly
-      const updatedEvent: CalendarEvent = {
-        ...event,
-        date: newDate,
-      };
+      // Check if event is from integrated calendar (other widgets)
+      const isIntegratedItem =
+        event.id.startsWith('todo-') ||
+        event.id.startsWith('tax-') ||
+        event.id.startsWith('calendar-event-');
 
-      // If time is included in droppableId (WeekView, DayView)
-      if (parts.length >= 6) {
-        const hour = parseInt(parts[4]);
-        const minute = parseInt(parts[5]);
+      if (isIntegratedItem) {
+        // Handle integrated items (todo, tax, etc.)
+        if (event.id.startsWith('todo-')) {
+          // Update todo item's due date through Storage API
+          const todoId = event.id.replace('todo-', '');
+          console.log('[FullScreenCalendarModal] Updating todo via Storage API:', todoId, 'to', format(newDate, 'yyyy-MM-dd'));
 
-        // Calculate duration from original event
-        let duration = 60; // default 1 hour
-        if (event.startTime && event.endTime) {
-          const [startHour, startMin] = event.startTime.split(':').map(Number);
-          const [endHour, endMin] = event.endTime.split(':').map(Number);
-          duration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+          // Use handleTaskDateUpdate for consistency
+          handleTaskDateUpdate(todoId, newDate).catch(error => {
+            console.error('[FullScreenCalendarModal] Failed to update todo date:', error);
+          });
+
+          console.log('[FullScreenCalendarModal] Todo date update initiated via drag:', todoId, 'to', format(newDate, 'yyyy-MM-dd'));
+          return; // Exit after handling todo items
         }
 
-        // Set new start time
-        updatedEvent.startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        if (event.id.startsWith('tax-')) {
+          console.warn('Tax events should not be draggable');
+          return;
+        }
 
-        // Calculate new end time
-        const endMinutes = hour * 60 + minute + duration;
-        const endHour = Math.floor(endMinutes / 60);
-        const endMin = endMinutes % 60;
-        updatedEvent.endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+        if (!event.id.startsWith('calendar-event-')) {
+          return;
+        }
       }
 
-      updateEvent(updatedEvent);
+      // FullScreenCalendarModal은 통합 캘린더만 표시
+      // 독립 캘린더 이벤트 드래그는 지원하지 않음
+      console.warn('[FullScreenCalendarModal] Local calendar event drag not supported in integrated view');
     }
-  };
-
-  // Filtered events
-  const filteredEvents = React.useMemo(() => {
-    if (!searchQuery) return events;
-    return events.filter(event =>
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [events, searchQuery]);
+  }, [filteredEvents, handleTaskDateUpdate]);
 
   // View title generation
   const getViewTitle = () => {
@@ -461,6 +478,7 @@ export default function FullScreenCalendarModal({
                     containerHeight={800}
                     containerWidth={1200}
                     gridSize={{ w: 5, h: 5 }}
+                    onTaskDateUpdate={handleTaskDateUpdate}
                   />
                 )}
 
