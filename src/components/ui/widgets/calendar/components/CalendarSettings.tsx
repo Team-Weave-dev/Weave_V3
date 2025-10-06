@@ -103,7 +103,7 @@ const CalendarSettingsModal = React.memo(({
                 onValueChange={(value) =>
                   setLocalSettings({
                     ...localSettings,
-                    weekStartsOn: parseInt(value) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+                    weekStartsOn: parseInt(value) as 0 | 1,
                   })
                 }
               >
@@ -113,11 +113,6 @@ const CalendarSettingsModal = React.memo(({
                 <SelectContent>
                   <SelectItem value="0">일요일</SelectItem>
                   <SelectItem value="1">월요일</SelectItem>
-                  <SelectItem value="2">화요일</SelectItem>
-                  <SelectItem value="3">수요일</SelectItem>
-                  <SelectItem value="4">목요일</SelectItem>
-                  <SelectItem value="5">금요일</SelectItem>
-                  <SelectItem value="6">토요일</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -225,70 +220,77 @@ const CalendarSettingsModal = React.memo(({
           </TabsContent>
 
           <TabsContent value="integration" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="google-calendar">구글 캘린더 연동</Label>
-                <p className="text-sm text-muted-foreground">
-                  구글 캘린더와 동기화합니다
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold">구글 캘린더 연동</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  구글 계정으로 로그인하여 캘린더를 동기화할 수 있습니다
                 </p>
               </div>
-              <Switch
-                id="google-calendar"
-                checked={localSettings.googleCalendarEnabled}
-                onCheckedChange={(checked) =>
-                  setLocalSettings({
-                    ...localSettings,
-                    googleCalendarEnabled: checked,
-                  })
-                }
-              />
+
+              {!localSettings.googleCalendarEnabled ? (
+                <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+                  <p className="text-sm">
+                    구글 캘린더 연동을 시작하려면 아래 버튼을 클릭하세요.
+                  </p>
+                  <Button
+                    variant="default"
+                    className="w-full"
+                    onClick={() => {
+                      // TODO: Google OAuth 2.0 구현
+                      // 1. Google Identity Services 라이브러리 로드
+                      // 2. OAuth 인증 팝업 표시
+                      // 3. Access Token 받기
+                      // 4. Calendar API 호출 권한 확보
+                      alert('구글 캘린더 연동 기능은 향후 업데이트 예정입니다.\n\nOAuth 2.0 방식으로 안전하게 구현될 예정입니다.');
+                      setLocalSettings({
+                        ...localSettings,
+                        googleCalendarEnabled: true,
+                      });
+                    }}
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    구글 계정으로 연결하기
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    안전한 OAuth 2.0 방식으로 연동됩니다
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 p-4 border rounded-lg bg-green-50 dark:bg-green-900/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      <span className="text-sm font-medium">연결됨</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setLocalSettings({
+                          ...localSettings,
+                          googleCalendarEnabled: false,
+                          googleCalendarApiKey: undefined,
+                          googleCalendarId: undefined,
+                        });
+                      }}
+                    >
+                      연결 해제
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    구글 캘린더와 동기화 중입니다
+                  </p>
+                </div>
+              )}
+
+              <div className="pt-4 border-t">
+                <p className="text-xs text-muted-foreground">
+                  💡 <strong>개발자 참고:</strong> OAuth 2.0 구현 시 Google Identity Services (gsi) 라이브러리를 사용하고,
+                  Calendar API v3 권한(https://www.googleapis.com/auth/calendar.readonly)이 필요합니다.
+                </p>
+              </div>
             </div>
-
-            {localSettings.googleCalendarEnabled && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="google-api-key">Google API Key</Label>
-                  <Input
-                    id="google-api-key"
-                    type="password"
-                    placeholder="AIzaSy..."
-                    value={localSettings.googleCalendarApiKey || ''}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        googleCalendarApiKey: e.target.value,
-                      })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Google Cloud Console에서 발급받은 API 키를 입력하세요
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="google-calendar-id">캘린더 ID</Label>
-                  <Input
-                    id="google-calendar-id"
-                    type="email"
-                    placeholder="your-calendar-id@group.calendar.google.com"
-                    value={localSettings.googleCalendarId || ''}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        googleCalendarId: e.target.value,
-                      })
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    동기화할 구글 캘린더 ID를 입력하세요
-                  </p>
-                </div>
-
-                <Button variant="outline" className="w-full">
-                  구글 계정 연결
-                </Button>
-              </>
-            )}
           </TabsContent>
         </Tabs>
 

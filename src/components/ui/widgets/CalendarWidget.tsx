@@ -830,6 +830,7 @@ export function CalendarWidget({
                   containerHeight={containerSize.height}
                   containerWidth={containerSize.width}
                   gridSize={effectiveGridSize}
+                  weekStartsOn={settings.weekStartsOn}
                 />
               )}
               
@@ -841,6 +842,7 @@ export function CalendarWidget({
                   onEventClick={handleEventClick}
                   onDateDoubleClick={handleDateDoubleClick}
                   containerHeight={containerSize.height}
+                  weekStartsOn={settings.weekStartsOn}
                 />
               )}
               

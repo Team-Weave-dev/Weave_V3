@@ -19,16 +19,17 @@ import type { CalendarViewProps } from '../types';
  * WeekView Component
  * 주간 캘린더 뷰 - 시간대별 그리드 표시
  */
-const WeekView = React.memo(({ 
-  currentDate, 
-  events, 
+const WeekView = React.memo(({
+  currentDate,
+  events,
   onDateSelect,
   onEventClick,
   onDateDoubleClick,
-  containerHeight
+  containerHeight,
+  weekStartsOn = 0
 }: CalendarViewProps) => {
-  const weekStart = startOfWeek(currentDate, { locale: ko });
-  const weekEnd = endOfWeek(currentDate, { locale: ko });
+  const weekStart = startOfWeek(currentDate, { weekStartsOn, locale: ko });
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn, locale: ko });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
   
   // 시간대 생성 (0시 ~ 23시)

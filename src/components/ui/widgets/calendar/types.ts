@@ -56,7 +56,7 @@ export const viewModes = [
 
 // Calendar settings interface
 export interface CalendarSettings {
-  weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  weekStartsOn: 0 | 1; // 0: 일요일, 1: 월요일
   defaultView: 'month' | 'week' | 'day' | 'agenda';
   showWeekNumbers: boolean;
   eventColors?: Record<string, string>;
@@ -125,6 +125,7 @@ export interface CalendarViewProps {
   containerWidth?: number;
   selectedDate?: Date;
   gridSize?: { w: number; h: number };
+  weekStartsOn?: 0 | 1; // 주 시작일 설정
 }
 
 export type ViewMode = 'month' | 'week' | 'day' | 'agenda';

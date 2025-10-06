@@ -38,12 +38,13 @@ const MonthView = React.memo(({
   containerHeight,
   containerWidth,
   gridSize,
-  defaultSize = { w: 5, h: 4 }
+  defaultSize = { w: 5, h: 4 },
+  weekStartsOn = 0
 }: MonthViewProps) => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart, { locale: ko });
-  const calendarEnd = endOfWeek(monthEnd, { locale: ko });
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn, locale: ko });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn, locale: ko });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   // HTML5 드래그 오버 상태 추적
@@ -51,9 +52,12 @@ const MonthView = React.memo(({
   
   // 그리드 크기가 없으면 기본값 사용
   const effectiveGridSize = gridSize || defaultSize;
-  
-  // 요일 배열
-  const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+
+  // 요일 배열 (주 시작일에 따라 동적 생성)
+  const allWeekDays = ['일', '월', '화', '수', '목', '금', '토'];
+  const weekDays = weekStartsOn === 1
+    ? [...allWeekDays.slice(1), allWeekDays[0]] // 월요일 시작: ['월', '화', '수', '목', '금', '토', '일']
+    : allWeekDays; // 일요일 시작: ['일', '월', '화', '수', '목', '금', '토']
   
   // 주 단위로 날짜 그룹핑
   const weeks = [];
@@ -294,26 +298,23 @@ const MonthView = React.memo(({
                               isDragDisabled={isDragDisabled}
                             >
                               {(provided, snapshot) => {
-                                // 드래그 중일 때와 아닐 때의 스타일 분리
-                                const style = snapshot.isDragging
-                                  ? {
-                                      ...provided.draggableProps.style,
-                                      // 드래그 중: transform 그대로 사용 (커서 따라다님)
-                                    }
-                                  : {
-                                      ...provided.draggableProps.style,
-                                      // 드래그 아닐 때: transform 초기화
-                                      transform: 'translate(0px, 0px)',
-                                    };
-
                                 return (
                                   <div
                                     ref={provided.innerRef}
                                     {...provided.draggableProps}
                                     {...provided.dragHandleProps}
-                                    style={style}
+                                    style={{
+                                      ...provided.draggableProps.style,
+                                      ...(snapshot.isDragging ? {
+                                        // 드래그 중: 커서 위치 정확히 추적
+                                        cursor: 'grabbing',
+                                      } : {
+                                        // 드래그 아닐 때: transform 초기화
+                                        transform: 'translate(0px, 0px)',
+                                      }),
+                                    }}
                                     className={cn(
-                                      snapshot.isDragging && "opacity-90 shadow-lg z-50 scale-105",
+                                      snapshot.isDragging && "opacity-90 shadow-lg z-[9999] scale-105",
                                       !snapshot.isDragging && "opacity-100",
                                       isDragDisabled ? "cursor-default" : "cursor-grab active:cursor-grabbing"
                                     )}
