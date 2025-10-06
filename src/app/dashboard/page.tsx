@@ -10,7 +10,7 @@ import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner'
 import Typography from '@/components/ui/typography'
 import { Settings, Save, Layers, Grid3x3, LayoutDashboard, PanelRightOpen, ArrowUp, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useImprovedDashboardStore, selectIsEditMode } from '@/lib/stores/useImprovedDashboardStore'
+import { useImprovedDashboardStore, selectIsEditMode, initializeDashboardStore, setupDashboardAutoSave } from '@/lib/stores/useImprovedDashboardStore'
 import { WidgetSelectorModal } from '@/components/dashboard/WidgetSelectorModal'
 import { WidgetSidebar } from '@/components/dashboard/WidgetSidebar'
 import { ImprovedWidget } from '@/types/improved-dashboard'
@@ -184,7 +184,7 @@ export default function DashboardPage() {
       try {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
-        
+
         if (!user) {
           router.push('/login')
         }
@@ -194,9 +194,20 @@ export default function DashboardPage() {
       }
       setLoading(false)
     }
-    
+
     checkUser()
   }, [router])
+
+  // 스토어 초기화 및 자동 저장 설정
+  useEffect(() => {
+    // localStorage에서 대시보드 레이아웃 로드
+    initializeDashboardStore()
+
+    // 자동 저장 구독 설정
+    const cleanup = setupDashboardAutoSave()
+
+    return cleanup
+  }, [])
 
   if (loading) {
     return <FullPageLoadingSpinner text={getLoadingText.data('ko')} />
