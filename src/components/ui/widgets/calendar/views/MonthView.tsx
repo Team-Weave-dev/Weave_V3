@@ -24,6 +24,7 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 interface MonthViewProps extends CalendarViewProps {
   defaultSize?: { w: number; h: number };
   showWeekNumbers?: boolean;
+  onTaskDateUpdate?: (taskId: string, newDate: Date) => void;
 }
 
 /**
@@ -42,7 +43,8 @@ const MonthView = React.memo(({
   gridSize,
   defaultSize = { w: 5, h: 4 },
   weekStartsOn = 0,
-  showWeekNumbers = false
+  showWeekNumbers = false,
+  onTaskDateUpdate
 }: MonthViewProps) => {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -211,7 +213,7 @@ const MonthView = React.memo(({
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'copy';
                       }}
-                      onDrop={(e) => {
+                      onDrop={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
 
@@ -227,45 +229,9 @@ const MonthView = React.memo(({
 
                               console.log('[CalendarWidget] Todo task dropped on date:', format(targetDate, 'yyyy-MM-dd'), todoTask);
 
-                              // localStorage에서 투두 데이터 업데이트
-                              const todosStr = localStorage.getItem('weave_dashboard_todo_tasks');
-                              if (todosStr) {
-                                const todos = JSON.parse(todosStr);
-
-                                // 재귀적으로 투두 찾기 및 업데이트
-                                const updateTodoDate = (todoList: any[]): boolean => {
-                                  for (let todo of todoList) {
-                                    if (todo.id === todoTask.id) {
-                                      todo.dueDate = targetDate.toISOString();
-                                      return true;
-                                    }
-                                    if (todo.children && todo.children.length > 0) {
-                                      if (updateTodoDate(todo.children)) {
-                                        return true;
-                                      }
-                                    }
-                                  }
-                                  return false;
-                                };
-
-                                if (updateTodoDate(todos)) {
-                                  // localStorage에 저장
-                                  localStorage.setItem('weave_dashboard_todo_tasks', JSON.stringify(todos));
-
-                                  // 다른 위젯에 변경 사항 알림
-                                  const event = new CustomEvent('calendarDataChanged', {
-                                    detail: {
-                                      source: 'todo',  // 'calendar'가 아닌 'todo'로 변경
-                                      changeType: 'todo-date-update',
-                                      itemId: todoTask.id,
-                                      newDate: targetDate.toISOString(),
-                                      timestamp: Date.now()
-                                    }
-                                  });
-                                  window.dispatchEvent(event);
-
-                                  console.log('[CalendarWidget] Todo date updated successfully');
-                                }
+                              // Storage API를 통해 날짜 업데이트
+                              if (onTaskDateUpdate) {
+                                await onTaskDateUpdate(todoTask.id, targetDate);
                               }
                             }
                           }
