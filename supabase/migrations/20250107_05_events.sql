@@ -1,3 +1,6 @@
+-- btree_gist 확장 활성화 (UUID에 GiST 인덱스 사용을 위해 필요)
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
 -- Events 테이블 생성 (캘린더 이벤트)
 CREATE TABLE IF NOT EXISTS events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
