@@ -522,7 +522,7 @@ export default function StorageTestPage() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            "전체 테스트 실행" 버튼을 클릭하여 테스트를 시작하세요.
+            &quot;전체 테스트 실행&quot; 버튼을 클릭하여 테스트를 시작하세요.
           </AlertDescription>
         </Alert>
       )}

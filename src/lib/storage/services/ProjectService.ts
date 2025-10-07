@@ -222,7 +222,7 @@ export class ProjectService extends BaseService<Project> {
     const totalProgress = completedTasks * 100 + inProgressTasks * 50;
     const maxProgress = tasks.length * 100;
 
-    return Math.round(totalProgress / maxProgress);
+    return Math.round((totalProgress / maxProgress) * 100);
   }
 
   // ============================================================================
