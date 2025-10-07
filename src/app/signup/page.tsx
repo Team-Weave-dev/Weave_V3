@@ -55,25 +55,22 @@ export default function SignupPage() {
     }
 
     try {
-      // API 라우트를 통한 회원가입
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Supabase 클라이언트를 직접 사용하여 회원가입
+      const supabase = createClient()
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
         },
-        body: JSON.stringify({
-          email,
-          password,
-          name: fullName,
-        }),
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || '회원가입에 실패했습니다.')
+      if (error) {
+        setError(error.message || '회원가입에 실패했습니다.')
       } else {
-        // 회원가입 성공
+        // 회원가입 성공 - 이메일 확인 필요
         router.push('/login?message=회원가입이 완료되었습니다. 이메일을 확인해주세요.')
       }
     } catch (err) {

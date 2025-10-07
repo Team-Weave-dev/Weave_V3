@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   // 이미 로그인된 사용자를 대시보드로 리다이렉트
@@ -33,6 +34,13 @@ export default function LoginPage() {
     }
 
     checkAuth()
+
+    // URL에서 메시지 파라미터 확인
+    const searchParams = new URLSearchParams(window.location.search)
+    const message = searchParams.get('message')
+    if (message) {
+      setSuccessMessage(decodeURIComponent(message))
+    }
   }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -41,24 +49,17 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // API 라우트를 통한 로그인
-      const response = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      // Supabase 클라이언트를 직접 사용하여 로그인
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || '로그인에 실패했습니다.')
+      if (error) {
+        setError(error.message || '로그인에 실패했습니다.')
       } else {
-        // 로그인 성공
+        // 로그인 성공 - 대시보드로 이동
         router.push('/dashboard')
         router.refresh()
       }
@@ -90,6 +91,11 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {successMessage && (
+            <Alert className="bg-green-50 text-green-900 border-green-200">
+              <AlertDescription>{successMessage}</AlertDescription>
+            </Alert>
+          )}
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
