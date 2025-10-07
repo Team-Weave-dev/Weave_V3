@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Header } from '@/components/ui/header'
 import { getSettingsText } from '@/config/brand'
@@ -20,13 +20,22 @@ import PlanTab from './components/PlanTab'
 export default function SettingsPage() {
   const lang = 'ko' as const
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
   const tabFromUrl = searchParams.get('tab') || 'profile'
   const [activeTab, setActiveTab] = useState(tabFromUrl)
 
+  // URL 파라미터 변경 감지 (뒤로가기/앞으로가기)
   useEffect(() => {
     const tab = searchParams.get('tab') || 'profile'
     setActiveTab(tab)
   }, [searchParams])
+
+  // 탭 변경 시 URL 업데이트 (양방향 동기화)
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value)
+    router.push(`${pathname}?tab=${value}`, { scroll: false })
+  }, [router, pathname])
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,7 +62,7 @@ export default function SettingsPage() {
         </div>
 
         {/* 탭 컨텐츠 */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">{getSettingsText.tabProfile(lang)}</TabsTrigger>
             <TabsTrigger value="billing">{getSettingsText.tabBilling(lang)}</TabsTrigger>

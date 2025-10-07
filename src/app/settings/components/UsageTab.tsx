@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -16,9 +17,9 @@ export default function UsageTab() {
 
   // Mock 데이터 (실제로는 API에서 가져옴)
   const currentPlan: PlanType = 'pro'
-  const planLimits = plans[currentPlan].limits
+  const planLimits = useMemo(() => plans[currentPlan].limits, [currentPlan])
 
-  const usage: Usage = {
+  const usage: Usage = useMemo(() => ({
     projects: {
       current: 5,
       limit: planLimits.projects
@@ -35,18 +36,18 @@ export default function UsageTab() {
     aiService: {
       available: planLimits.aiService
     }
-  }
+  }), [planLimits])
 
-  const formatLimit = (limit: number) => {
+  const formatLimit = useCallback((limit: number) => {
     return limit === -1 ? uiText.settings.usage.unlimited[lang] : limit.toString()
-  }
+  }, [lang])
 
-  const formatStorage = (mb: number) => {
+  const formatStorage = useCallback((mb: number) => {
     if (mb >= 1024) {
       return `${(mb / 1024).toFixed(1)}GB`
     }
     return `${mb}MB`
-  }
+  }, [])
 
   return (
     <div className="space-y-6">

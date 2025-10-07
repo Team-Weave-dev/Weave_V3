@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { uiText } from '@/config/brand'
+import { validators } from '@/lib/utils'
 import type { UserProfile, BusinessType } from '@/lib/types/settings.types'
 
 /**
@@ -18,6 +19,7 @@ export default function ProfileTab() {
   const lang = 'ko' as const
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
+  const [errors, setErrors] = useState<Partial<Record<keyof UserProfile, string>>>({})
 
   // Mock 데이터 (실제로는 API에서 가져옴)
   const [profile, setProfile] = useState<UserProfile>({
@@ -35,23 +37,85 @@ export default function ProfileTab() {
 
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile)
 
-  const handleSave = () => {
-    // TODO: API 호출로 저장
-    setProfile(editedProfile)
-    setIsEditing(false)
-    toast({
-      title: uiText.settings.profile.messages.saveSuccess[lang],
-    })
-  }
+  /**
+   * 입력값 검증
+   */
+  const validateProfile = useCallback((): boolean => {
+    const newErrors: Partial<Record<keyof UserProfile, string>> = {}
 
-  const handleCancel = () => {
+    // 이름 검증
+    if (!validators.required(editedProfile.name)) {
+      newErrors.name = '이름을 입력해주세요'
+    }
+
+    // 이메일 검증
+    if (!validators.required(editedProfile.email)) {
+      newErrors.email = '이메일을 입력해주세요'
+    } else if (!validators.email(editedProfile.email)) {
+      newErrors.email = '유효한 이메일 주소를 입력해주세요'
+    }
+
+    // 전화번호 검증
+    if (editedProfile.phone && !validators.phone(editedProfile.phone)) {
+      newErrors.phone = '유효한 전화번호를 입력해주세요 (예: 010-1234-5678)'
+    }
+
+    // 사업자등록번호 검증
+    if (editedProfile.businessNumber && !validators.businessNumber(editedProfile.businessNumber)) {
+      newErrors.businessNumber = '유효한 사업자등록번호를 입력해주세요 (예: 123-45-67890)'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }, [editedProfile])
+
+  const handleSave = useCallback(async () => {
+    try {
+      // 입력값 검증
+      if (!validateProfile()) {
+        toast({
+          title: '입력 오류',
+          description: '입력값을 확인해주세요',
+          variant: 'destructive'
+        })
+        return
+      }
+
+      // TODO: API 호출로 저장
+      // await settingsService.updateUserPreferences(userId, editedProfile)
+
+      setProfile(editedProfile)
+      setIsEditing(false)
+      setErrors({})
+      toast({
+        title: uiText.settings.profile.messages.saveSuccess[lang],
+      })
+    } catch (error) {
+      toast({
+        title: '저장 실패',
+        description: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다',
+        variant: 'destructive'
+      })
+    }
+  }, [editedProfile, lang, toast, validateProfile])
+
+  const handleCancel = useCallback(() => {
     setEditedProfile(profile)
     setIsEditing(false)
-  }
+    setErrors({})
+  }, [profile])
 
-  const updateField = (field: keyof UserProfile, value: string) => {
+  const updateField = useCallback((field: keyof UserProfile, value: string) => {
     setEditedProfile(prev => ({ ...prev, [field]: value }))
-  }
+    // 해당 필드의 에러 제거
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+  }, [errors])
 
   return (
     <Card>
@@ -90,7 +154,11 @@ export default function ProfileTab() {
               onChange={(e) => updateField('name', e.target.value)}
               disabled={!isEditing}
               placeholder={uiText.settings.profile.placeholders.name[lang]}
+              className={errors.name ? 'border-destructive' : ''}
             />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name}</p>
+            )}
           </div>
 
           {/* 이메일 */}
@@ -103,7 +171,11 @@ export default function ProfileTab() {
               onChange={(e) => updateField('email', e.target.value)}
               disabled={!isEditing}
               placeholder={uiText.settings.profile.placeholders.email[lang]}
+              className={errors.email ? 'border-destructive' : ''}
             />
+            {errors.email && (
+              <p className="text-sm text-destructive">{errors.email}</p>
+            )}
           </div>
 
           {/* 전화번호 */}
@@ -115,7 +187,11 @@ export default function ProfileTab() {
               onChange={(e) => updateField('phone', e.target.value)}
               disabled={!isEditing}
               placeholder={uiText.settings.profile.placeholders.phone[lang]}
+              className={errors.phone ? 'border-destructive' : ''}
             />
+            {errors.phone && (
+              <p className="text-sm text-destructive">{errors.phone}</p>
+            )}
           </div>
 
           {/* 사업자등록번호 */}
@@ -127,7 +203,11 @@ export default function ProfileTab() {
               onChange={(e) => updateField('businessNumber', e.target.value)}
               disabled={!isEditing}
               placeholder={uiText.settings.profile.placeholders.businessNumber[lang]}
+              className={errors.businessNumber ? 'border-destructive' : ''}
             />
+            {errors.businessNumber && (
+              <p className="text-sm text-destructive">{errors.businessNumber}</p>
+            )}
           </div>
         </div>
 

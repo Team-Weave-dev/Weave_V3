@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,9 +20,9 @@ export default function PlanTab() {
   // Mock 데이터 (실제로는 API에서 가져옴)
   const currentPlan: PlanType = 'free'
 
-  const planOrder: PlanType[] = ['free', 'basic', 'pro']
+  const planOrder: PlanType[] = useMemo(() => ['free', 'basic', 'pro'], [])
 
-  const formatPrice = (price: number) => {
+  const formatPrice = useCallback((price: number) => {
     if (price === 0) {
       return { amount: uiText.settings.plan.free.price[lang], unit: '' }
     }
@@ -29,18 +30,18 @@ export default function PlanTab() {
       amount: `${price.toLocaleString()}원`,
       unit: '/월'
     }
-  }
+  }, [lang])
 
-  const formatLimit = (limit: number, unit: string) => {
+  const formatLimit = useCallback((limit: number, unit: string) => {
     return limit === -1 ? uiText.settings.plan.unlimited[lang] : `${limit}${unit}`
-  }
+  }, [lang])
 
-  const getFeatureText = (feature: string) => {
+  const getFeatureText = useCallback((feature: string) => {
     const featureKey = feature as keyof typeof uiText.settings.plan.features
     return uiText.settings.plan.features[featureKey]?.[lang] || feature
-  }
+  }, [lang])
 
-  const getPlanAction = (planId: PlanType) => {
+  const getPlanAction = useCallback((planId: PlanType) => {
     if (planId === currentPlan) {
       return (
         <Button variant="outline" className="w-full" disabled>
@@ -65,7 +66,7 @@ export default function PlanTab() {
         {uiText.settings.plan.actions.downgrade[lang]}
       </Button>
     )
-  }
+  }, [currentPlan, planOrder, lang])
 
   return (
     <div>
