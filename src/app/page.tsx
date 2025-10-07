@@ -1,8 +1,5 @@
 "use client"
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Header } from "@/components/ui/header"
 import { CenteredHero } from "@/components/ui/hero-section"
 import { BasicFooter } from "@/components/ui/footer"
@@ -34,21 +31,6 @@ import {
 } from 'lucide-react'
 
 export default function Home() {
-  const router = useRouter()
-
-  // 로그인된 사용자를 대시보드로 리다이렉트
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-
-      if (session) {
-        router.push('/dashboard')
-      }
-    }
-
-    checkAuth()
-  }, [router])
   const handlePrimaryAction = () => {
     window.location.href = '/dashboard'
   }

@@ -37,13 +37,20 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  // 공개 경로 정의
+  const publicPaths = [
+    '/',              // 홈 화면
+    '/login',         // 로그인
+    '/signup',        // 회원가입
+    '/auth',          // OAuth 콜백
+  ]
+
+  const isPublicPath = publicPaths.some(path =>
+    request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(path + '/')
+  )
+
+  if (!user && !isPublicPath) {
+    // 비인증 사용자를 로그인 페이지로 리다이렉트
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
