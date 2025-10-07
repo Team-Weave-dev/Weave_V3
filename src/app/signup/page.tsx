@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -22,6 +22,20 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  // 이미 로그인된 사용자를 대시보드로 리다이렉트
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (session) {
+        router.push('/dashboard')
+      }
+    }
+
+    checkAuth()
+  }, [router])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
