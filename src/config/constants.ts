@@ -392,7 +392,7 @@ export const plans = {
     limits: {
       projects: 2,
       widgets: 3,
-      storage: 100, // MB
+      storage: 200, // MB (증가: 100MB → 200MB)
       aiService: false
     },
     features: ['community-support']
@@ -405,7 +405,7 @@ export const plans = {
     limits: {
       projects: -1, // -1 = unlimited
       widgets: -1, // -1 = unlimited
-      storage: 300, // MB
+      storage: 1024, // MB (1GB, 증가: 300MB → 1GB)
       aiService: false
     },
     features: ['email-support', 'unlimited-projects', 'unlimited-widgets']
@@ -418,7 +418,7 @@ export const plans = {
     limits: {
       projects: -1, // -1 = unlimited
       widgets: -1, // -1 = unlimited
-      storage: 1024, // MB (1GB)
+      storage: 5120, // MB (5GB, 증가: 1GB → 5GB)
       aiService: true
     },
     features: ['priority-support', 'unlimited-projects', 'unlimited-widgets', 'ai-service']
