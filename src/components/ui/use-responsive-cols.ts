@@ -39,17 +39,17 @@ export function useResponsiveCols(
     const update = () => {
       const width = containerRef.current?.clientWidth ?? window.innerWidth
       const next = getColsForWidth(width, breakpoints)
-      setCols((prev) => {
-        if (prev !== next) {
-          onChange?.(next)
-        }
-        return next
-      })
+      setCols(next)
     }
     update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
-  }, [breakpoints, containerRef, onChange])
+  }, [breakpoints, containerRef])
+
+  // onChange 콜백은 별도의 useEffect에서 처리하여 렌더링 사이클 분리
+  useEffect(() => {
+    onChange?.(cols)
+  }, [cols, onChange])
 
   return cols
 }

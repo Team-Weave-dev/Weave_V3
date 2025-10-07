@@ -112,17 +112,49 @@ export function Header({ variant = 'default', className }: HeaderProps = {}) {
     return pathname.startsWith(href);
   };
 
-  // 사용자 정보 가져오기 (테스트용)
+  // 사용자 정보 가져오기
   useEffect(() => {
-    const testUser = localStorage.getItem('testUser');
-    if (testUser) {
-      setUser(JSON.parse(testUser));
+    const checkUser = async () => {
+      // 테스트 사용자 우선 확인
+      const testUser = localStorage.getItem('testUser')
+      if (testUser) {
+        setUser(JSON.parse(testUser))
+        return
+      }
+
+      // Supabase 세션 확인
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (user) {
+          setUser(user)
+        }
+      } catch (err) {
+        console.error('사용자 정보 확인 중 오류:', err)
+      }
     }
+
+    checkUser()
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('testUser');
-    router.push('/login');
+  const handleLogout = async () => {
+    // 1. localStorage 정리
+    localStorage.removeItem('testUser')
+
+    // 2. Supabase 세션 제거
+    try {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error('로그아웃 중 오류:', err)
+    }
+
+    // 3. 로그인 페이지로 이동
+    router.push('/login')
+    router.refresh()
   };
 
   const handleNavigate = (href: string) => {

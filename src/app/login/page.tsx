@@ -73,7 +73,6 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true)
-      // Google OAuth 로그인 리다이렉트
       window.location.href = '/api/auth/google'
     } catch (err) {
       setError('Google 로그인 중 오류가 발생했습니다.')

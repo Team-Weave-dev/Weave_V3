@@ -57,7 +57,7 @@ export default function SignupPage() {
     try {
       // Supabase 클라이언트를 직접 사용하여 회원가입
       const supabase = createClient()
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -69,10 +69,30 @@ export default function SignupPage() {
 
       if (error) {
         setError(error.message || '회원가입에 실패했습니다.')
-      } else {
-        // 회원가입 성공 - 이메일 확인 필요
-        router.push('/login?message=회원가입이 완료되었습니다. 이메일을 확인해주세요.')
+        return
       }
+
+      // Auth 사용자 생성 성공 시 public.users 테이블에도 레코드 생성
+      if (data.user) {
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: data.user.id,
+            email: data.user.email!,
+            name: fullName || '',
+            metadata: {
+              full_name: fullName || '',
+            },
+          })
+          .select()
+
+        if (insertError) {
+          console.error('회원가입 중 사용자 레코드 생성 실패:', insertError.message)
+        }
+      }
+
+      // 회원가입 성공 - 이메일 확인 필요
+      router.push('/login?message=회원가입이 완료되었습니다. 이메일을 확인해주세요.')
     } catch (err) {
       setError('회원가입 중 오류가 발생했습니다.')
     } finally {

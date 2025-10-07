@@ -187,10 +187,12 @@ export default function DashboardPage() {
 
         if (!user) {
           router.push('/login')
+          return
         }
-      } catch {
-        // Supabase 설정 오류 시 로그인 페이지로
+      } catch (err) {
+        console.error('사용자 인증 확인 중 오류:', err)
         router.push('/login')
+        return
       }
       setLoading(false)
     }
