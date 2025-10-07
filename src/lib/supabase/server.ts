@@ -1,16 +1,16 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+/**
+ * Creates a Supabase client for Server Components.
+ * This client automatically handles cookie-based session management.
+ */
 export async function createClient() {
   const cookieStore = await cookies()
-  
-  // 테스트 모드: Supabase URL이 없으면 더미 값 사용
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
   return createServerClient(
-    url,
-    key,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
@@ -26,8 +26,8 @@ export async function createClient() {
             // This can be ignored if you have middleware refreshing
             // user sessions.
           }
-        },
-      },
+        }
+      }
     }
   )
 }

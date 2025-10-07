@@ -23,46 +23,30 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
-    // 테스트 계정 체크 (개발 환경)
-    if (email === 'test@example.com' && password === 'test123456') {
-      // 테스트 계정으로 로그인 성공
-      localStorage.setItem('testUser', JSON.stringify({
-        email: 'test@example.com',
-        id: 'test-user-id',
-        name: '테스트 사용자'
-      }))
-      
-      setTimeout(() => {
-        router.push('/dashboard')
-        router.refresh()
-      }, 500)
-      
-      setIsLoading(false)
-      return
-    }
-
-    // 실제 Supabase 인증 (프로덕션 환경)
-    const supabase = createClient()
-
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // API 라우트를 통한 로그인
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
       })
 
-      if (error) {
-        // Supabase가 설정되지 않은 경우 테스트 계정 안내
-        if (error.message.includes('Invalid URL') || error.message.includes('not configured')) {
-          setError('테스트 계정을 사용해주세요: test@example.com / test123456')
-        } else {
-          setError(error.message)
-        }
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || '로그인에 실패했습니다.')
       } else {
+        // 로그인 성공
         router.push('/dashboard')
         router.refresh()
       }
     } catch (err) {
-      setError('테스트 계정을 사용해주세요: test@example.com / test123456')
+      setError('로그인 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
