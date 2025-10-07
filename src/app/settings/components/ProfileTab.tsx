@@ -21,18 +21,18 @@ export default function ProfileTab() {
   const [isEditing, setIsEditing] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<keyof UserProfile, string>>>({})
 
-  // Mock 데이터 (실제로는 API에서 가져옴)
+  // 빈 프로필로 시작 (실제로는 Storage에서 로드)
   const [profile, setProfile] = useState<UserProfile>({
     id: '1',
-    name: '홍길동',
-    email: 'hong@weave.com',
-    phone: '010-1234-5678',
-    businessNumber: '123-45-67890',
-    address: '서울시 강남구 테헤란로 123',
-    addressDetail: '101동 1001호',
+    name: '',
+    email: '',
+    phone: '',
+    businessNumber: '',
+    address: '',
+    addressDetail: '',
     businessType: 'freelancer',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01'
+    createdAt: new Date().toISOString().split('T')[0],
+    updatedAt: new Date().toISOString().split('T')[0]
   })
 
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile)
