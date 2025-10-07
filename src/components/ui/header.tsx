@@ -26,6 +26,9 @@ import {
   User,
   UserPlus,
   X,
+  CreditCard,
+  BarChart2,
+  Package,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,7 +54,10 @@ type IconName =
   | 'settings'
   | 'logOut'
   | 'user'
-  | 'menu';
+  | 'menu'
+  | 'creditCard'
+  | 'barChart'
+  | 'package';
 
 const iconMap: Record<IconName, React.ComponentType<{ className?: string }>> = {
   home: Home,
@@ -66,6 +72,9 @@ const iconMap: Record<IconName, React.ComponentType<{ className?: string }>> = {
   logOut: LogOut,
   user: User,
   menu: Menu,
+  creditCard: CreditCard,
+  barChart: BarChart2,
+  package: Package,
 };
 
 interface HeaderProps {

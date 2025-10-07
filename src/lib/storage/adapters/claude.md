@@ -2,7 +2,14 @@
 
 ## 📋 개요
 
-이 디렉토리는 **Adapter 패턴**을 통해 다양한 스토리지 백엔드를 지원하는 어댑터 구현체들을 포함합니다. 현재 LocalStorageAdapter가 구현되어 있으며, 향후 SupabaseAdapter, NativeAdapter 등이 추가될 예정입니다.
+이 디렉토리는 **Adapter 패턴**을 통해 다양한 스토리지 백엔드를 지원하는 어댑터 구현체들을 포함합니다.
+
+**구현 완료**:
+- ✅ LocalStorageAdapter: 브라우저 localStorage 래퍼
+- ✅ SupabaseAdapter: Supabase 데이터베이스 통합 (Phase 10.1)
+- ✅ DualWriteAdapter: 이중 쓰기 전략 (Phase 10.2)
+
+**향후 계획**: NativeAdapter (모바일 앱용)
 
 ## 🎯 Adapter 패턴
 
@@ -207,83 +214,160 @@ private calculateSize(): number {
 - ✅ CompressionManager 통합: COMPRESSION_PREFIX 상수화
 - ✅ calculateSize 최적화: Blob → TextEncoder (5배 성능 향상)
 
-## 🔮 향후 구현 예정 Adapters
+## 🆕 SupabaseAdapter (Phase 10.1 ✅)
 
-### SupabaseAdapter (Phase 10)
+### 개요
+
+Supabase 데이터베이스를 Storage 백엔드로 사용하는 어댑터입니다.
+
+### 주요 기능
+
+#### 1. 사용자 격리 (RLS)
 
 ```typescript
 class SupabaseAdapter implements StorageAdapter {
   private supabase: SupabaseClient
+  private userId: string  // 사용자별 데이터 격리
 
-  async get(key: string): Promise<any> {
-    const [entity, ...params] = key.split(':')
+  async get<T>(key: string): Promise<T | null> {
+    const { entity, id } = this.parseKey(key)
 
-    switch (entity) {
-      case 'projects':
-        const { data } = await this.supabase
-          .from('projects')
-          .select('*')
-          .eq('user_id', this.userId)
-        return data
+    // 모든 쿼리에 user_id 자동 필터링
+    const query = this.supabase
+      .from(this.getTableName(entity))
+      .select('*')
+      .eq('user_id', this.userId)
 
-      case 'project':
-        const projectId = params[0]
-        const { data: project } = await this.supabase
-          .from('projects')
-          .select('*')
-          .eq('id', projectId)
-          .single()
-        return project
-
-      // ... 다른 엔티티들
+    if (id) {
+      query.eq('id', id).single()
     }
+
+    const { data } = await query
+    return data
   }
+}
+```
 
-  async set(key: string, value: any): Promise<void> {
-    const [entity] = key.split(':')
+#### 2. 엔티티-테이블 매핑
 
-    switch (entity) {
-      case 'projects':
-        await this.supabase
-          .from('projects')
-          .upsert(value as any)
-        break
+```typescript
+const ENTITY_TABLE_MAP = {
+  projects: 'projects',
+  tasks: 'tasks',
+  events: 'calendar_events',
+  clients: 'clients',
+  documents: 'documents',
+  settings: 'user_settings',
+}
 
-      // ... 다른 엔티티들
+// 키 파싱: 'project:abc-123' → { entity: 'project', id: 'abc-123' }
+```
+
+#### 3. 재시도 로직
+
+```typescript
+// 네트워크 오류 시 자동 재시도 (지수 백오프)
+private async withRetry<T>(queryFn: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+    try {
+      return await queryFn()
+    } catch (error) {
+      if (this.isNetworkError(error) && attempt < this.maxRetries - 1) {
+        await this.delay(this.retryDelay * Math.pow(2, attempt))
+        continue
+      }
+      throw error
     }
   }
 }
 ```
 
-### DualWriteAdapter (Phase 3)
+#### 4. 타입 안전성
 
 ```typescript
-/**
- * 이중 쓰기 어댑터
- * - LocalStorage에 먼저 저장 (빠른 응답)
- * - Supabase에 비동기 동기화
- */
-class DualWriteAdapter implements StorageAdapter {
-  private local: LocalStorageAdapter
-  private supabase: SupabaseAdapter
+// TypeGuard 파라미터 지원
+const projects = await adapter.get<Project[]>('projects', isProjectArray)
+```
 
-  async set(key: string, value: any): Promise<void> {
-    // 1. LocalStorage에 먼저 저장
+## 🔄 DualWriteAdapter (Phase 10.2 ✅)
+
+### 개요
+
+LocalStorage와 Supabase를 동시에 사용하는 이중 쓰기 어댑터로, 안전한 마이그레이션을 지원합니다.
+
+### 핵심 전략
+
+1. **쓰기**: LocalStorage (즉시) → Supabase (백그라운드)
+2. **읽기**: LocalStorage (단일 진실 공급원)
+3. **동기화**: 백그라운드 워커 (5초 간격)
+4. **실패 처리**: 동기화 큐 + 재시도
+
+### 주요 기능
+
+#### 1. 이중 쓰기
+
+```typescript
+class DualWriteAdapter implements StorageAdapter {
+  async set<T>(key: string, value: T): Promise<void> {
+    // 1. LocalStorage에 즉시 저장 (차단)
     await this.local.set(key, value)
 
-    // 2. Supabase에 비동기 저장
-    this.supabase.set(key, value).catch(error => {
-      console.error('Supabase sync failed:', error)
-      // 실패 시 재시도 큐에 추가
-      this.addToRetryQueue(key, value)
+    // 2. 동기화 큐에 추가
+    this.addToSyncQueue(key, value, 'set')
+
+    // 3. Supabase 동기화 시도 (비차단)
+    this.syncToSupabase(key, value, 'set').catch(error => {
+      console.warn('Background sync failed:', error)
+      // 이미 큐에 있으므로 나중에 재시도
     })
   }
-
-  async get(key: string): Promise<any> {
-    // LocalStorage에서 먼저 읽기 (빠른 응답)
-    return this.local.get(key)
-  }
 }
+```
+
+#### 2. 동기화 큐
+
+```typescript
+interface SyncQueueEntry {
+  key: string
+  value: JsonValue
+  operation: 'set' | 'remove'
+  timestamp: number
+  retryCount: number
+}
+
+// 영구 저장 (localStorage)
+private persistSyncQueue(): void {
+  localStorage.setItem('__dual_write_sync_queue__', JSON.stringify(entries))
+}
+```
+
+#### 3. 백그라운드 워커
+
+```typescript
+// 주기적 동기화 (5초 간격)
+private startSyncWorker(): void {
+  this.syncWorkerInterval = setInterval(() => {
+    this.processSyncQueue().catch(error => {
+      console.error('Sync worker error:', error)
+    })
+  }, 5000)
+}
+```
+
+#### 4. 동기화 통계
+
+```typescript
+interface SyncStats {
+  totalAttempts: number
+  successCount: number
+  failureCount: number
+  queueSize: number
+  pendingCount: number
+  lastSyncAt: number | null
+}
+
+const stats = adapter.getSyncStats()
+console.log(`Queue size: ${stats.queueSize}, Success rate: ${stats.successCount / stats.totalAttempts}`)
 ```
 
 ## 🔧 사용 패턴
@@ -316,12 +400,17 @@ import { StorageManager, LocalStorageAdapter, SupabaseAdapter } from '@/lib/stor
 const localAdapter = new LocalStorageAdapter()
 const storage = new StorageManager(localAdapter)
 
-// Phase 3: Dual Write (LocalStorage + Supabase)
-const dualAdapter = new DualWriteAdapter(localAdapter, supabaseAdapter)
+// Phase 2: Dual Write (LocalStorage + Supabase) ✅ 구현 완료
+const supabaseAdapter = new SupabaseAdapter({ userId: 'user-123' })
+const dualAdapter = new DualWriteAdapter({
+  local: localAdapter,
+  supabase: supabaseAdapter,
+  syncInterval: 5000,
+  enableSyncWorker: true
+})
 const storage = new StorageManager(dualAdapter)
 
-// Phase 5: Supabase만 사용
-const supabaseAdapter = new SupabaseAdapter()
+// Phase 3: Supabase만 사용
 const storage = new StorageManager(supabaseAdapter)
 ```
 
@@ -395,8 +484,58 @@ if (sizeInMB > 8) {
 - **Types**: [`../types/claude.md`](../types/claude.md) - 타입 시스템
 - **Utils**: [`../utils/claude.md`](../utils/claude.md) - CompressionManager
 
+## 🚀 마이그레이션 시나리오 (Phase 10 완료)
+
+### 단계별 전환
+
+```typescript
+// 1단계: LocalStorage만 사용 (현재)
+const storage = new StorageManager(new LocalStorageAdapter())
+
+// 2단계: Dual Write 전환 (안전한 병행 운영)
+const dualAdapter = new DualWriteAdapter({
+  local: new LocalStorageAdapter(),
+  supabase: new SupabaseAdapter({ userId }),
+  enableSyncWorker: true
+})
+const storage = new StorageManager(dualAdapter)
+
+// 3단계: 검증 기간 (1-2주)
+// - DualWrite 모드로 운영
+// - 동기화 통계 모니터링
+// - 데이터 무결성 확인
+
+// 4단계: Supabase 단독 전환
+const storage = new StorageManager(new SupabaseAdapter({ userId }))
+
+// 5단계: LocalStorage 정리 (선택)
+await localAdapter.clear()
+```
+
+### 동기화 모니터링
+
+```typescript
+const dualAdapter = new DualWriteAdapter(config)
+
+// 통계 조회
+const stats = dualAdapter.getSyncStats()
+console.log(`
+  Total: ${stats.totalAttempts}
+  Success: ${stats.successCount} (${(stats.successCount / stats.totalAttempts * 100).toFixed(1)}%)
+  Failed: ${stats.failureCount}
+  Queue: ${stats.queueSize}
+`)
+
+// 강제 동기화
+await dualAdapter.forceSyncAll()
+
+// 워커 제어
+dualAdapter.stopSyncWorker()
+```
+
 ---
 
-**Adapter 시스템은 스토리지 백엔드의 완전한 추상화를 제공하며, 향후 Supabase 마이그레이션을 위한 견고한 기반입니다.**
+**Adapter 시스템은 스토리지 백엔드의 완전한 추상화를 제공하며, Phase 10 완료로 Supabase 마이그레이션을 위한 견고한 기반이 구축되었습니다.**
 
-*마지막 업데이트: 2025-10-05*
+*마지막 업데이트: 2025-01-07*
+*Phase 10.1-10.2 완료: SupabaseAdapter, DualWriteAdapter*

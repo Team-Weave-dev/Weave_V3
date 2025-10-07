@@ -7,6 +7,70 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * 입력 검증 유틸리티 함수들
+ */
+export const validators = {
+  /**
+   * 이메일 형식 검증
+   */
+  email: (value: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(value)
+  },
+
+  /**
+   * 전화번호 형식 검증 (한국)
+   * 010-1234-5678, 02-1234-5678, 031-123-4567 등
+   */
+  phone: (value: string): boolean => {
+    const phoneRegex = /^0\d{1,2}-?\d{3,4}-?\d{4}$/
+    return phoneRegex.test(value.replace(/\s/g, ''))
+  },
+
+  /**
+   * 사업자등록번호 형식 검증 (한국)
+   * 123-45-67890 형식
+   */
+  businessNumber: (value: string): boolean => {
+    const businessRegex = /^\d{3}-?\d{2}-?\d{5}$/
+    return businessRegex.test(value.replace(/\s/g, ''))
+  },
+
+  /**
+   * URL 형식 검증
+   */
+  url: (value: string): boolean => {
+    try {
+      new URL(value)
+      return true
+    } catch {
+      return false
+    }
+  },
+
+  /**
+   * 빈 문자열 검증
+   */
+  required: (value: string): boolean => {
+    return value.trim().length > 0
+  },
+
+  /**
+   * 최소 길이 검증
+   */
+  minLength: (value: string, min: number): boolean => {
+    return value.length >= min
+  },
+
+  /**
+   * 최대 길이 검증
+   */
+  maxLength: (value: string, max: number): boolean => {
+    return value.length <= max
+  }
+}
+
+/**
  * Promise에 최소 지속 시간을 보장합니다.
  * 빠르게 완료되는 작업에서 로딩 UI 깜빡임을 방지하는 데 유용합니다.
  *

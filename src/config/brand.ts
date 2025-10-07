@@ -180,6 +180,22 @@ export const uiText = {
       ko: "계정",
       en: "Account"
     },
+    profile: {
+      ko: "프로필",
+      en: "Profile"
+    },
+    billing: {
+      ko: "결제",
+      en: "Billing"
+    },
+    usage: {
+      ko: "사용량",
+      en: "Usage"
+    },
+    plan: {
+      ko: "요금제",
+      en: "Plan"
+    },
     profileMenu: {
       ko: "계정 메뉴",
       en: "Account Menu"
@@ -1281,6 +1297,146 @@ export const uiText = {
     dayView: {
       allDay: { ko: "종일", en: "All Day" },
     }
+  },
+
+  // 설정 페이지 (2025-10-07 추가)
+  settings: {
+    page: {
+      title: { ko: "설정", en: "Settings" },
+      description: { ko: "프로필, 결제, 사용량 및 요금제를 관리하세요", en: "Manage your profile, billing, usage, and plan" }
+    },
+    tabs: {
+      profile: { ko: "프로필", en: "Profile" },
+      billing: { ko: "결제", en: "Billing" },
+      usage: { ko: "사용량", en: "Usage" },
+      plan: { ko: "요금제", en: "Plan" }
+    },
+    profile: {
+      title: { ko: "프로필 정보", en: "Profile Information" },
+      description: { ko: "개인 정보 및 사업자 정보를 관리합니다", en: "Manage your personal and business information" },
+      fields: {
+        name: { ko: "이름", en: "Name" },
+        email: { ko: "이메일", en: "Email" },
+        phone: { ko: "전화번호", en: "Phone" },
+        businessNumber: { ko: "사업자등록번호", en: "Business Number" },
+        businessType: { ko: "사업자 유형", en: "Business Type" },
+        address: { ko: "주소", en: "Address" },
+        addressDetail: { ko: "상세주소", en: "Address Detail" }
+      },
+      placeholders: {
+        name: { ko: "홍길동", en: "John Doe" },
+        email: { ko: "example@weave.com", en: "example@weave.com" },
+        phone: { ko: "010-1234-5678", en: "+82-10-1234-5678" },
+        businessNumber: { ko: "123-45-67890", en: "123-45-67890" },
+        address: { ko: "서울시 강남구 테헤란로 123", en: "123 Teheran-ro, Gangnam-gu, Seoul" },
+        addressDetail: { ko: "101동 1001호", en: "Building 101, Unit 1001" }
+      },
+      businessTypes: {
+        freelancer: { ko: "프리랜서", en: "Freelancer" },
+        individual: { ko: "개인 사업자", en: "Individual Business" },
+        corporation: { ko: "법인 사업자", en: "Corporation" }
+      },
+      actions: {
+        edit: { ko: "수정", en: "Edit" },
+        save: { ko: "저장", en: "Save" },
+        cancel: { ko: "취소", en: "Cancel" }
+      },
+      messages: {
+        saveSuccess: { ko: "프로필이 저장되었습니다", en: "Profile saved successfully" },
+        saveError: { ko: "프로필 저장 중 오류가 발생했습니다", en: "Error saving profile" }
+      }
+    },
+    billing: {
+      title: { ko: "결제 정보", en: "Billing Information" },
+      description: { ko: "결제 수단 및 결제 내역을 관리합니다", en: "Manage payment methods and billing history" },
+      paymentMethod: {
+        title: { ko: "결제 수단", en: "Payment Method" },
+        cardNumber: { ko: "카드 번호", en: "Card Number" },
+        expiryDate: { ko: "유효기간", en: "Expiry Date" },
+        cardHolder: { ko: "카드 소유자", en: "Card Holder" },
+        none: { ko: "등록된 결제 수단이 없습니다", en: "No payment method registered" },
+        add: { ko: "결제 수단 추가", en: "Add Payment Method" },
+        change: { ko: "변경", en: "Change" },
+        remove: { ko: "삭제", en: "Remove" }
+      },
+      history: {
+        title: { ko: "결제 내역", en: "Billing History" },
+        date: { ko: "날짜", en: "Date" },
+        plan: { ko: "요금제", en: "Plan" },
+        amount: { ko: "금액", en: "Amount" },
+        status: { ko: "상태", en: "Status" },
+        invoice: { ko: "영수증", en: "Invoice" },
+        download: { ko: "다운로드", en: "Download" },
+        none: { ko: "결제 내역이 없습니다", en: "No billing history" }
+      },
+      status: {
+        paid: { ko: "결제 완료", en: "Paid" },
+        pending: { ko: "대기 중", en: "Pending" },
+        failed: { ko: "실패", en: "Failed" },
+        refunded: { ko: "환불됨", en: "Refunded" }
+      }
+    },
+    usage: {
+      title: { ko: "사용량 현황", en: "Usage Status" },
+      description: { ko: "현재 리소스 사용량을 확인합니다", en: "View current resource usage" },
+      currentPlan: { ko: "현재 요금제", en: "Current Plan" },
+      active: { ko: "활성", en: "Active" },
+      unlimited: { ko: "무제한", en: "Unlimited" },
+      projects: {
+        title: { ko: "프로젝트", en: "Projects" },
+        unlimited: { ko: "프로젝트를 무제한으로 생성할 수 있습니다", en: "You can create unlimited projects" }
+      },
+      widgets: {
+        title: { ko: "위젯", en: "Widgets" },
+        unlimited: { ko: "위젯을 무제한으로 생성할 수 있습니다", en: "You can create unlimited widgets" }
+      },
+      storage: {
+        title: { ko: "스토리지", en: "Storage" }
+      },
+      aiService: {
+        title: { ko: "AI 서비스", en: "AI Service" },
+        status: { ko: "이용 가능 여부", en: "Availability" },
+        available: { ko: "이용 가능", en: "Available" },
+        unavailable: { ko: "이용 불가", en: "Unavailable" }
+      }
+    },
+    plan: {
+      title: { ko: "요금제 관리", en: "Plan Management" },
+      description: { ko: "현재 요금제를 확인하고 변경하세요", en: "View and change your current plan" },
+      current: { ko: "현재 플랜", en: "Current Plan" },
+      currency: { ko: "원/월", en: "KRW/month" },
+      perMonth: { ko: "/월", en: "/month" },
+      unlimited: { ko: "무제한", en: "Unlimited" },
+      free: {
+        name: { ko: "무료", en: "Free" },
+        price: { ko: "무료", en: "Free" }
+      },
+      limits: {
+        projects: { ko: "프로젝트", en: "Projects" },
+        widgets: { ko: "위젯", en: "Widgets" },
+        storage: { ko: "스토리지", en: "Storage" },
+        unit: { ko: "개", en: "" }
+      },
+      features: {
+        'community-support': { ko: "커뮤니티 지원", en: "Community Support" },
+        'email-support': { ko: "이메일 지원", en: "Email Support" },
+        'priority-support': { ko: "우선 지원", en: "Priority Support" },
+        'unlimited-projects': { ko: "무제한 프로젝트", en: "Unlimited Projects" },
+        'unlimited-widgets': { ko: "무제한 위젯", en: "Unlimited Widgets" },
+        'ai-service': { ko: "AI 서비스", en: "AI Service" }
+      },
+      actions: {
+        upgrade: { ko: "업그레이드", en: "Upgrade" },
+        downgrade: { ko: "다운그레이드", en: "Downgrade" },
+        current: { ko: "현재 플랜", en: "Current Plan" }
+      },
+      note: {
+        title: { ko: "참고사항", en: "Notes" },
+        billing: { ko: "요금은 월 단위로 청구됩니다", en: "Billing is done on a monthly basis" },
+        upgrade: { ko: "업그레이드는 즉시 적용되며, 남은 기간은 일할 계산됩니다", en: "Upgrades are applied immediately and prorated" },
+        downgrade: { ko: "다운그레이드는 다음 결제 주기부터 적용됩니다", en: "Downgrades are applied from the next billing cycle" }
+      }
+    }
   }
 } as const
 
@@ -1314,8 +1470,10 @@ export const headerNavigation = {
       secondaryAction: { id: 'login', labelKey: 'auth.login', href: routes.login, icon: 'logIn' },
     },
     profileMenu: [
-      { id: 'account', labelKey: 'auth.account', href: routes.dashboard, icon: 'user' },
-      { id: 'settings', labelKey: 'auth.settings', href: routes.settings, icon: 'settings' },
+      { id: 'profile', labelKey: 'auth.profile', href: `${routes.settings}?tab=profile`, icon: 'user' },
+      { id: 'billing', labelKey: 'auth.billing', href: `${routes.settings}?tab=billing`, icon: 'creditCard' },
+      { id: 'usage', labelKey: 'auth.usage', href: `${routes.settings}?tab=usage`, icon: 'barChart' },
+      { id: 'plan', labelKey: 'auth.plan', href: `${routes.settings}?tab=plan`, icon: 'package' },
       { id: 'logout', labelKey: 'auth.logout', action: 'logout', icon: 'logOut' },
     ],
     menuTitleKey: 'auth.profileMenu',
@@ -1386,6 +1544,10 @@ export const getAuthText = {
   logout: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.logout[lang],
   settings: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.settings[lang],
   account: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.account[lang],
+  profile: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.profile[lang],
+  billing: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.billing[lang],
+  usage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.usage[lang],
+  plan: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.plan[lang],
   profileMenu: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.profileMenu[lang]
 }
 
@@ -2453,6 +2615,169 @@ export const getWidgetText = {
       friday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '금' : 'Fri',
       saturday: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '토' : 'Sat'
     }
+  },
+  // 설정 페이지 텍스트 (2025-10-07 추가)
+  settings: {
+    page: {
+      title: { ko: "설정", en: "Settings" },
+      description: { ko: "프로필, 결제, 사용량 및 요금제를 관리하세요", en: "Manage your profile, billing, usage, and plan" }
+    },
+    tabs: {
+      profile: { ko: "프로필", en: "Profile" },
+      billing: { ko: "결제", en: "Billing" },
+      usage: { ko: "사용량", en: "Usage" },
+      plan: { ko: "요금제", en: "Plan" }
+    },
+    // 프로필 탭
+    profile: {
+      title: { ko: "프로필 정보", en: "Profile Information" },
+      description: { ko: "사용자 정보를 관리하세요", en: "Manage your user information" },
+      fields: {
+        name: { ko: "이름", en: "Name" },
+        email: { ko: "이메일", en: "Email" },
+        phone: { ko: "전화번호", en: "Phone" },
+        businessNumber: { ko: "사업자등록번호", en: "Business Registration Number" },
+        address: { ko: "주소", en: "Address" },
+        addressDetail: { ko: "상세주소", en: "Address Detail" },
+        businessType: { ko: "사업자 유형", en: "Business Type" }
+      },
+      placeholders: {
+        name: { ko: "홍길동", en: "John Doe" },
+        email: { ko: "example@weave.com", en: "example@weave.com" },
+        phone: { ko: "010-1234-5678", en: "+82-10-1234-5678" },
+        businessNumber: { ko: "123-45-67890", en: "123-45-67890" },
+        address: { ko: "서울시 강남구 테헤란로", en: "Teheran-ro, Gangnam-gu, Seoul" },
+        addressDetail: { ko: "101동 1001호", en: "Building 101, Unit 1001" }
+      },
+      businessTypes: {
+        freelancer: { ko: "프리랜서", en: "Freelancer" },
+        individual: { ko: "개인사업자", en: "Individual Business" },
+        corporation: { ko: "법인사업자", en: "Corporation" }
+      },
+      actions: {
+        edit: { ko: "수정", en: "Edit" },
+        save: { ko: "저장", en: "Save" },
+        cancel: { ko: "취소", en: "Cancel" }
+      },
+      messages: {
+        saveSuccess: { ko: "프로필이 저장되었습니다", en: "Profile saved successfully" },
+        saveError: { ko: "저장 중 오류가 발생했습니다", en: "Error saving profile" }
+      }
+    },
+    // 결제 탭
+    billing: {
+      title: { ko: "결제 정보", en: "Billing Information" },
+      description: { ko: "결제 수단 및 결제 내역을 확인하세요", en: "View your payment methods and billing history" },
+      paymentMethod: {
+        title: { ko: "결제 수단", en: "Payment Method" },
+        none: { ko: "등록된 결제 수단이 없습니다", en: "No payment method registered" },
+        cardNumber: { ko: "카드 번호", en: "Card Number" },
+        expiryDate: { ko: "유효기간", en: "Expiry Date" },
+        cardHolder: { ko: "카드 소유자", en: "Card Holder" },
+        add: { ko: "결제 수단 추가", en: "Add Payment Method" },
+        change: { ko: "변경", en: "Change" },
+        remove: { ko: "삭제", en: "Remove" }
+      },
+      history: {
+        title: { ko: "결제 내역", en: "Billing History" },
+        none: { ko: "결제 내역이 없습니다", en: "No billing history" },
+        date: { ko: "날짜", en: "Date" },
+        amount: { ko: "금액", en: "Amount" },
+        plan: { ko: "요금제", en: "Plan" },
+        status: { ko: "상태", en: "Status" },
+        invoice: { ko: "영수증", en: "Invoice" },
+        download: { ko: "다운로드", en: "Download" }
+      },
+      status: {
+        paid: { ko: "결제 완료", en: "Paid" },
+        pending: { ko: "대기 중", en: "Pending" },
+        failed: { ko: "실패", en: "Failed" },
+        refunded: { ko: "환불됨", en: "Refunded" }
+      }
+    },
+    // 사용량 탭
+    usage: {
+      title: { ko: "사용량 현황", en: "Usage Statistics" },
+      description: { ko: "현재 사용 중인 리소스를 확인하세요", en: "Check your current resource usage" },
+      projects: {
+        title: { ko: "프로젝트", en: "Projects" },
+        current: { ko: "현재", en: "Current" },
+        limit: { ko: "제한", en: "Limit" },
+        unlimited: { ko: "무제한", en: "Unlimited" }
+      },
+      widgets: {
+        title: { ko: "위젯", en: "Widgets" },
+        current: { ko: "현재", en: "Current" },
+        limit: { ko: "제한", en: "Limit" },
+        unlimited: { ko: "무제한", en: "Unlimited" }
+      },
+      storage: {
+        title: { ko: "스토리지", en: "Storage" },
+        used: { ko: "사용 중", en: "Used" },
+        total: { ko: "전체", en: "Total" },
+        percentage: { ko: "사용률", en: "Usage" }
+      },
+      aiService: {
+        title: { ko: "AI 서비스", en: "AI Service" },
+        available: { ko: "이용 가능", en: "Available" },
+        notAvailable: { ko: "이용 불가", en: "Not Available" },
+        upgradeRequired: { ko: "Pro 요금제에서 이용 가능합니다", en: "Available in Pro plan" }
+      }
+    },
+    // 요금제 탭
+    plan: {
+      title: { ko: "요금제 관리", en: "Plan Management" },
+      description: { ko: "요금제를 변경하거나 업그레이드하세요", en: "Change or upgrade your plan" },
+      current: { ko: "현재 요금제", en: "Current Plan" },
+      free: {
+        name: { ko: "Free", en: "Free" },
+        price: { ko: "무료", en: "Free" },
+        description: { ko: "개인 프로젝트에 적합한 무료 플랜", en: "Perfect for personal projects" },
+        features: {
+          projects: { ko: "프로젝트 2개", en: "2 Projects" },
+          widgets: { ko: "위젯 3개", en: "3 Widgets" },
+          storage: { ko: "스토리지 100MB", en: "100MB Storage" },
+          support: { ko: "커뮤니티 지원", en: "Community Support" }
+        }
+      },
+      basic: {
+        name: { ko: "Basic", en: "Basic" },
+        price: { ko: "9,900원/월", en: "$9.99/month" },
+        description: { ko: "프리랜서를 위한 기본 플랜", en: "Essential plan for freelancers" },
+        features: {
+          projects: { ko: "프로젝트 무제한", en: "Unlimited Projects" },
+          widgets: { ko: "위젯 무제한", en: "Unlimited Widgets" },
+          storage: { ko: "스토리지 300MB", en: "300MB Storage" },
+          support: { ko: "이메일 지원", en: "Email Support" }
+        }
+      },
+      pro: {
+        name: { ko: "Pro", en: "Pro" },
+        price: { ko: "29,700원/월", en: "$29.99/month" },
+        description: { ko: "전문가를 위한 프리미엄 플랜", en: "Premium plan for professionals" },
+        features: {
+          projects: { ko: "프로젝트 무제한", en: "Unlimited Projects" },
+          widgets: { ko: "위젯 무제한", en: "Unlimited Widgets" },
+          storage: { ko: "스토리지 1GB", en: "1GB Storage" },
+          ai: { ko: "AI 서비스 이용", en: "AI Service Access" },
+          support: { ko: "우선 지원", en: "Priority Support" }
+        }
+      },
+      actions: {
+        upgrade: { ko: "업그레이드", en: "Upgrade" },
+        downgrade: { ko: "다운그레이드", en: "Downgrade" },
+        current: { ko: "현재 플랜", en: "Current Plan" },
+        changePlan: { ko: "플랜 변경", en: "Change Plan" },
+        confirmUpgrade: { ko: "업그레이드 확인", en: "Confirm Upgrade" },
+        confirmDowngrade: { ko: "다운그레이드 확인", en: "Confirm Downgrade" }
+      },
+      messages: {
+        upgradeSuccess: { ko: "요금제가 업그레이드되었습니다", en: "Plan upgraded successfully" },
+        downgradeSuccess: { ko: "요금제가 다운그레이드되었습니다", en: "Plan downgraded successfully" },
+        upgradeError: { ko: "업그레이드 중 오류가 발생했습니다", en: "Error upgrading plan" },
+        downgradeWarning: { ko: "다운그레이드 시 일부 기능이 제한될 수 있습니다", en: "Some features may be limited after downgrading" }
+      }
+    }
   }
 }
 
@@ -2542,4 +2867,34 @@ export const getAgendaViewText = {
 // 캘린더 데이 뷰 헬퍼 함수
 export const getDayViewText = {
   allDay: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendarWidget.dayView.allDay[lang],
+}
+
+// 설정 페이지 헬퍼 함수 (2025-10-07 추가)
+export const getSettingsText = {
+  // 페이지
+  pageTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.page.title[lang],
+  pageDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.page.description[lang],
+
+  // 탭
+  tabProfile: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.tabs.profile[lang],
+  tabBilling: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.tabs.billing[lang],
+  tabUsage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.tabs.usage[lang],
+  tabPlan: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.tabs.plan[lang],
+
+  // 프로필
+  profileTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.profile.title[lang],
+  profileDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.profile.description[lang],
+
+  // 결제
+  billingTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.billing.title[lang],
+  billingDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.billing.description[lang],
+
+  // 사용량
+  usageTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.usage.title[lang],
+  usageDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.usage.description[lang],
+
+  // 요금제
+  planTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.plan.title[lang],
+  planDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.plan.description[lang],
+  currentPlan: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.plan.current[lang],
 }
