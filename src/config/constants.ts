@@ -381,3 +381,61 @@ export const placeholderIcons = {
     status: ["Check", "AlertCircle", "Info"]
   }
 } as const
+
+// 요금제 시스템 (2025-10-07 추가)
+export const plans = {
+  free: {
+    id: 'free' as const,
+    name: 'Free',
+    price: 0,
+    priceMonthly: 0,
+    limits: {
+      projects: 2,
+      widgets: 3,
+      storage: 100, // MB
+      aiService: false
+    },
+    features: ['community-support']
+  },
+  basic: {
+    id: 'basic' as const,
+    name: 'Basic',
+    price: 9900, // 원/월
+    priceMonthly: 9900,
+    limits: {
+      projects: -1, // -1 = unlimited
+      widgets: -1, // -1 = unlimited
+      storage: 300, // MB
+      aiService: false
+    },
+    features: ['email-support', 'unlimited-projects', 'unlimited-widgets']
+  },
+  pro: {
+    id: 'pro' as const,
+    name: 'Pro',
+    price: 29700, // 원/월
+    priceMonthly: 29700,
+    limits: {
+      projects: -1, // -1 = unlimited
+      widgets: -1, // -1 = unlimited
+      storage: 1024, // MB (1GB)
+      aiService: true
+    },
+    features: ['priority-support', 'unlimited-projects', 'unlimited-widgets', 'ai-service']
+  }
+} as const
+
+// 사용량 제한 관련 상수
+export const usageLimits = {
+  defaultPlan: 'free' as const,
+  unlimited: -1,
+  storage: {
+    units: {
+      byte: 1,
+      kilobyte: 1024,
+      megabyte: 1024 * 1024,
+      gigabyte: 1024 * 1024 * 1024
+    },
+    displayUnit: 'MB' as const
+  }
+} as const
