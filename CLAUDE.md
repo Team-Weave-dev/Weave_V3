@@ -271,6 +271,174 @@ Weave_V3/
   - Document Management 탭에 템플릿 기반 문서 생성/삭제 버튼과 목록 내 보기·편집·삭제 액션을 추가하고, 생성 문서를 로컬 상태(`ProjectDetail`)에서 즉시 관리할 수 있게 했습니다.
   - `ProjectDocumentGeneratorModal` + 미리보기/편집 다이얼로그를 통해 템플릿 선택, 내용 확인, 인라인 편집·저장을 지원하며 개요 카드 상태와 동기화됩니다. 모든 삭제 흐름은 `DocumentDeleteDialog`(공통 삭제 모달)에서 brand 텍스트와 primary 테두리를 사용합니다.
 
+## ☁️ Supabase 통합 상태 및 규칙
+
+### 📊 통합 진행 상황
+
+**Supabase 마이그레이션 완료 (2025-10-09)** - Phase 11-15 모두 완료
+
+- ✅ **Phase 11**: Supabase 환경 설정 완료
+  - 11개 테이블 생성 (users, projects, tasks, events, clients, documents, user_settings, activity_logs, migration_status, file_uploads, notifications)
+  - RLS 정책 적용 (모든 테이블)
+  - 비즈니스 로직 함수 5개 구현
+  - 트리거 및 인덱스 설정
+
+- ✅ **Phase 12**: 인증 시스템 구현 완료
+  - 이메일/패스워드 인증
+  - Google OAuth 소셜 로그인
+  - 쿠키 기반 세션 관리 (SSR 호환)
+  - 보호된 라우트 자동 리다이렉션
+
+- ✅ **Phase 13**: DualWrite 모드 전환 완료
+  - LocalStorage + Supabase 병행 운영
+  - 5초 간격 백그라운드 동기화
+  - 데이터 마이그레이션 시스템 (v2-to-supabase)
+  - 모니터링 API (`/api/sync-status`)
+
+- ✅ **Phase 14**: 검증 및 모니터링 완료
+  - 데이터 무결성 검증 시스템
+  - 동기화 모니터링 대시보드 (`/sync-monitor`)
+  - 성능 메트릭 수집 (응답시간, 처리량, 에러율)
+  - 알림 시스템 (4단계 심각도)
+
+- ✅ **Phase 15**: Supabase 전환 완료
+  - 최종 데이터 검증
+  - Supabase 전용 모드 전환 시스템
+  - 롤백 및 긴급 복구 시스템
+  - 강화된 모니터링 시스템
+
+### 🔑 데이터 접근 전략 (하이브리드 방식)
+
+**RLS 직접 호출 vs API Routes 선택 기준**
+
+#### 📗 RLS 직접 호출 (단순 CRUD)
+**사용 케이스**:
+- 단일 테이블 CRUD 작업
+- 사용자 소유 데이터 조회/수정
+- 실시간 구독
+- 간단한 필터링과 정렬
+
+**예시**:
+```typescript
+// ✅ RLS 직접 호출 (권장)
+const { data, error } = await supabase
+  .from('projects')
+  .select('*')
+  .eq('user_id', userId)
+  .order('created_at', { ascending: false })
+```
+
+#### 📘 API Routes 사용 (복잡한 로직)
+**사용 케이스**:
+- 여러 테이블에 걸친 트랜잭션
+- 복잡한 비즈니스 규칙
+- 외부 API 통합
+- 파일 업로드/처리
+- 이메일 발송
+
+**예시**:
+```typescript
+// ✅ API Route 사용 (복잡한 로직)
+const response = await fetch('/api/projects/complete', {
+  method: 'POST',
+  body: JSON.stringify({ projectId })
+})
+```
+
+### 🛡️ 보안 규칙
+
+#### 1. RLS (Row Level Security) 정책
+**모든 테이블에 RLS 적용 필수**
+
+```sql
+-- ✅ 사용자별 데이터 격리
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage own projects"
+  ON projects FOR ALL
+  USING (auth.uid() = user_id);
+```
+
+**주의사항**:
+- ❌ RLS 정책 없이 테이블 생성 금지
+- ❌ 테스트 목적으로 RLS 비활성화 금지
+- ✅ Service Role Key는 서버 전용 (환경변수로 관리)
+
+#### 2. 인증 세션 관리
+```typescript
+// ✅ 세션 확인 (Server Component)
+import { requireAuth } from '@/lib/auth/session'
+
+export default async function ProtectedPage() {
+  const session = await requireAuth()  // 비인증 시 자동 리다이렉트
+  // ...
+}
+
+// ✅ 인증 확인 (API Route)
+const { data: { user } } = await supabase.auth.getUser()
+if (!user) {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+}
+```
+
+#### 3. 클라이언트 타입 분리
+```typescript
+// ✅ Browser Client (Client Component)
+import { createClient } from '@/lib/supabase/client'
+
+// ✅ Server Client (Server Component, API Route)
+import { createClient } from '@/lib/supabase/server'
+```
+
+**주의사항**:
+- ❌ Server Client를 Client Component에서 사용 금지
+- ❌ Browser Client를 Server Component에서 사용 금지
+
+### 📋 개발 체크리스트
+
+#### 새로운 테이블 추가 시
+1. ✅ SQL 마이그레이션 파일 생성 (`supabase/migrations/`)
+2. ✅ RLS 정책 정의 및 적용
+3. ✅ 인덱스 설정 (성능 최적화)
+4. ✅ TypeScript 타입 정의 (`src/lib/storage/types/entities/`)
+5. ✅ 도메인 서비스 구현 (필요시)
+
+#### 새로운 API Route 추가 시
+1. ✅ 인증 확인 구현
+2. ✅ RLS 정책으로 처리 불가능한 복잡한 로직인지 확인
+3. ✅ 트랜잭션 필요 여부 확인
+4. ✅ 에러 처리 및 로깅
+5. ✅ 타입 안전성 보장
+
+### 🔗 관련 문서
+
+| 문서 | 내용 |
+|------|------|
+| [`src/lib/supabase/claude.md`](./src/lib/supabase/claude.md) | Supabase 클라이언트 사용법 및 규칙 |
+| [`src/lib/auth/claude.md`](./src/lib/auth/claude.md) | 인증 시스템 및 세션 관리 |
+| [`src/lib/storage/claude.md`](./src/lib/storage/claude.md) | Storage 시스템 및 DualWrite 모드 |
+| [`src/app/api/claude.md`](./src/app/api/claude.md) | API Routes 개발 가이드 |
+| [`supabase/migrations/claude.md`](./supabase/migrations/claude.md) | 마이그레이션 및 스키마 관리 |
+| [`docs/SUPABASE-INTEGRATION-PLAN.md`](./docs/SUPABASE-INTEGRATION-PLAN.md) | 전체 통합 실행 계획 및 완료 결과 |
+
+### ⚠️ 마이그레이션 주의사항
+
+#### 1. 데이터 무결성
+- ✅ 모든 마이그레이션 전 자동 백업
+- ✅ 검증 및 무결성 체크 시스템 활용
+- ❌ 백업 없이 마이그레이션 실행 금지
+
+#### 2. 동기화 모니터링
+- ✅ `/sync-monitor` 대시보드 정기 확인
+- ✅ 성공률 95% 이상 유지
+- ✅ 큐 크기 100개 이하 유지
+- ⚠️ 실패율 증가 시 즉시 조치
+
+#### 3. 롤백 준비
+- ✅ 긴급 롤백 시스템 구축 완료
+- ✅ LocalStorage 폴백 시나리오 준비
+- ✅ DualWrite 모드 재활성화 가능
+
 ---
 
 **🎯 Next Steps**: Choose the relevant `claude.md` file above based on your current task. Each contains domain-specific guidance and implementation details.

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { brand } from '@/config/brand'
 import { RouteChangeProgressBar } from '@/components/ui/route-progress-bar'
+import { StorageInitializer } from '@/components/StorageInitializer'
 
 export const metadata: Metadata = {
   title: brand.metadata.title.ko,
@@ -21,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
+        <StorageInitializer />
         <RouteChangeProgressBar />
         <div className="relative flex min-h-screen flex-col">
           <div className="flex-1">{children}</div>

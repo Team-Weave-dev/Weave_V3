@@ -261,7 +261,45 @@ export class SupabaseAdapter implements StorageAdapter {
       const { entity, id } = this.parseKey(key)
       const tableName = this.getTableName(entity)
 
-      // Prepare data with user_id
+      // Special handling for settings (Record<userId, Settings> → single Settings)
+      if (entity === 'settings' && !Array.isArray(value)) {
+        const settingsRecord = value as Record<string, any>
+        const userSettings = settingsRecord[this.userId]
+
+        if (!userSettings) {
+          // No settings for current user, skip sync (not an error)
+          console.warn(`No settings found for user ${this.userId} in settings record`)
+          return
+        }
+
+        // Extract user's settings and add user_id
+        const dataToStore = {
+          dashboard: userSettings.dashboard,
+          calendar: userSettings.calendar,
+          projects: userSettings.projects,
+          notifications: userSettings.notifications,
+          preferences: userSettings.preferences,
+          user_id: this.userId,
+          updated_at: new Date().toISOString(),
+        }
+
+        await this.withRetry(async () => {
+          // user_id를 기준으로 upsert (id 자동 생성 또는 재사용)
+          const query = this.supabase
+            .from(tableName)
+            .upsert(dataToStore as any, {
+              onConflict: 'user_id'  // user_id conflict 시 기존 row 업데이트
+            })
+          const { error } = await query
+
+          if (error) {
+            throw error
+          }
+        })
+        return
+      }
+
+      // Normal handling for other entities
       const dataToStore = Array.isArray(value)
         ? value.map((item: any) => ({
             ...item,

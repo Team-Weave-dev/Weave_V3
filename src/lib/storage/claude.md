@@ -27,7 +27,8 @@
 ### 📊 현재 진행 상황
 
 - **Phase 0-8**: 완료 (84%)
-- **Phase 9-10**: 진행 예정 (테스트 및 Supabase 준비)
+- **Phase 9-10**: 완료 (100%)
+- **Phase 13**: DualWrite 모드 전환 완료
 
 **완료된 주요 기능**:
 - ✅ StorageManager 및 Adapter 시스템
@@ -35,6 +36,9 @@
 - ✅ 도메인 서비스 (ProjectService, TaskService 등 7개)
 - ✅ 마이그레이션 시스템 (v1-to-v2, SafeMigrationManager)
 - ✅ 성능 최적화 (캐싱, 배치, 압축, 인덱싱)
+- ✅ **DualWriteAdapter**: LocalStorage + Supabase 병행 운영
+- ✅ **데이터 마이그레이션**: v2-to-supabase 완료
+- ✅ **동기화 모니터링**: `/sync-monitor` 대시보드 및 `/api/sync-status` API
 
 ## 🏗️ 아키텍처 개요
 
@@ -350,6 +354,216 @@ if (!result.success) {
 - **동시성 제어**: Transaction mutex 패턴으로 race condition 방지
 - **데이터 무결성**: 순환 참조 방지 및 검증 로직 통합
 - **복원력**: 자동 백업 및 롤백 시스템
+
+## ☁️ DualWrite 모드 및 Supabase 통합 (Phase 13 완료)
+
+### 📊 DualWrite 모드 개요
+
+**LocalStorage + Supabase 병행 운영 시스템**
+
+DualWriteAdapter는 LocalStorage와 Supabase를 동시에 사용하여 안전한 데이터 마이그레이션과 실시간 동기화를 제공합니다.
+
+#### 동작 원리
+```
+사용자 데이터 쓰기 요청
+  ↓
+1. LocalStorage에 즉시 저장 (빠른 응답)
+  ↓
+2. Supabase 동기화 큐에 추가
+  ↓
+3. 백그라운드 워커가 5초마다 동기화
+  ↓
+Supabase 저장 성공/실패 처리
+```
+
+#### 읽기 전략
+```
+사용자 데이터 읽기 요청
+  ↓
+1. LocalStorage에서 먼저 읽기 (즉시 응답)
+  ↓
+2. 백그라운드에서 Supabase 동기화 확인
+  ↓
+불일치 발견 시 자동 수정
+```
+
+### 🔧 DualWrite 모드 사용 규칙
+
+#### 1. 모드 전환
+
+```typescript
+// ✅ 인증 후 자동 전환
+import { initializeStorage } from '@/lib/storage'
+
+// 사용자 로그인 시 자동으로 DualWrite 모드 활성화
+const storage = await initializeStorage()
+
+// ✅ 수동 전환 (필요시)
+import { switchToDualWriteMode } from '@/lib/storage'
+
+await switchToDualWriteMode(userId)
+```
+
+#### 2. 동기화 모니터링
+
+```typescript
+// ✅ 동기화 상태 확인
+const response = await fetch('/api/sync-status')
+const { sync, validation } = await response.json()
+
+console.log('성공률:', sync.successRate)
+console.log('큐 크기:', sync.queueSize)
+console.log('건강 상태:', sync.healthy ? '정상' : '점검 필요')
+```
+
+#### 3. 수동 동기화
+
+```typescript
+// ✅ 즉시 동기화 트리거
+const response = await fetch('/api/sync-status', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ action: 'sync_now' })
+})
+```
+
+### 📋 동기화 설정
+
+**현재 설정값 (src/lib/storage/index.ts)**:
+- **Sync Interval**: 5초
+- **Max Retries**: 3회
+- **Verification**: 비활성화 (성능 최적화)
+- **Worker**: 자동 시작/중지
+
+```typescript
+const dualAdapter = new DualWriteAdapter({
+  local: localAdapter,
+  supabase: supabaseAdapter,
+  syncInterval: 5000,           // 5초 간격
+  enableSyncWorker: true,        // 자동 워커
+  enableVerification: false      // 검증 비활성화
+})
+```
+
+### 🚨 DualWrite 모드 주의사항
+
+#### ✅ DO (권장)
+
+```typescript
+// 도메인 서비스 사용 (자동 동기화)
+import { projectService } from '@/lib/storage'
+
+await projectService.create(newProject)
+// LocalStorage + Supabase 자동 저장
+
+// 동기화 상태 정기 확인
+setInterval(async () => {
+  const status = await fetch('/api/sync-status').then(r => r.json())
+  if (!status.sync.healthy) {
+    console.warn('동기화 문제 발생')
+  }
+}, 60000) // 1분마다
+```
+
+#### ❌ DON'T (금지)
+
+```typescript
+// ❌ LocalStorage 직접 접근 (동기화 우회)
+localStorage.setItem('weave_v2_projects', JSON.stringify(projects))
+
+// ❌ 동기화 워커 수동 중지
+dualAdapter.stopSyncWorker()  // 중지 금지
+
+// ❌ 검증 모드 활성화 (성능 저하)
+new DualWriteAdapter({
+  // ...
+  enableVerification: true  // 성능 저하
+})
+```
+
+### 📊 모니터링 대시보드
+
+**`/sync-monitor` 페이지 접속**
+
+#### 표시 정보
+- **동기화 상태**: 성공률, 큐 크기, 실패 횟수
+- **건강 상태**: 정상(95%+ 성공률, 큐 <100개, 실패 <10건)
+- **데이터 무결성**: 7개 엔티티별 일치 여부
+- **실시간 업데이트**: 5초 자동 새로고침
+
+#### 주요 지표
+```typescript
+// 건강 상태 판단 기준
+const isHealthy =
+  stats.successRate > 95 &&
+  stats.queueSize < 100 &&
+  stats.failureCount < 10
+```
+
+### 🔄 마이그레이션 시스템
+
+#### v2-to-supabase 마이그레이션
+
+```typescript
+import { migrateV2ToSupabase } from '@/lib/storage/migrations/v2-to-supabase'
+
+// ✅ 안전한 마이그레이션 (자동 백업)
+const result = await migrateV2ToSupabase(userId, {
+  dryRun: false,         // 실제 마이그레이션
+  onProgress: (percent) => {
+    console.log(`진행률: ${percent}%`)
+  }
+})
+
+if (result.success) {
+  console.log('마이그레이션 완료:', result)
+} else {
+  console.error('마이그레이션 실패:', result.error)
+}
+```
+
+#### 마이그레이션 순서 (의존성 고려)
+1. **clients** (의존성 없음)
+2. **projects** (clients 참조)
+3. **tasks** (projects 참조)
+4. **events** (projects, clients 참조)
+5. **documents** (projects 참조)
+6. **settings** (사용자별)
+
+### 🛡️ 데이터 무결성 보장
+
+#### 검증 시스템
+```typescript
+import { validateDataIntegrity } from '@/lib/storage/validation'
+
+// ✅ 데이터 무결성 확인
+const validation = await validateDataIntegrity(userId)
+
+validation.results.forEach(({ entity, match, localCount, supabaseCount }) => {
+  if (!match) {
+    console.warn(`불일치: ${entity} (Local: ${localCount}, Supabase: ${supabaseCount})`)
+  }
+})
+```
+
+#### 자동 복구
+```typescript
+// 불일치 발견 시 자동 동기화
+if (!validation.projects.match) {
+  await fetch('/api/sync-status', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'sync_now' })
+  })
+}
+```
+
+### 🔗 관련 API 엔드포인트
+
+| 엔드포인트 | 메서드 | 설명 |
+|----------|--------|------|
+| `/api/sync-status` | GET | 동기화 상태 조회 |
+| `/api/sync-status` | POST | 수동 동기화 트리거 |
+| `/api/data-integrity` | GET | 데이터 무결성 검증 |
 
 ---
 

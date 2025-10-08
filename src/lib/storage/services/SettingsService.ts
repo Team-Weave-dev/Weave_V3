@@ -81,7 +81,9 @@ export class SettingsService {
     const allSettings = await this.getAllSettings();
     const existing = allSettings[userId];
 
-    if (!existing) return null;
+    if (!existing) {
+      return null;
+    }
 
     const updated: Settings = {
       ...existing,
