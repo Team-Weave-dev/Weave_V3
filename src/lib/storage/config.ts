@@ -98,6 +98,9 @@ export const STORAGE_KEYS = {
   /** Current user data */
   USER_CURRENT: 'user:current',
 
+  /** All users list (profiles) */
+  USERS: 'users',
+
   /** All projects list */
   PROJECTS: 'projects',
 
@@ -157,6 +160,9 @@ export function validateId(id: string, context: string): string {
  * All IDs are validated and sanitized to prevent key injection attacks.
  */
 export const buildKey = {
+  /** Build key for a specific user: user:{id} */
+  user: (id: string) => `user:${validateId(id, 'user')}`,
+
   /** Build key for a specific project: project:{id} */
   project: (id: string) => `project:${validateId(id, 'project')}`,
 
@@ -182,6 +188,9 @@ export const buildKey = {
 export const CACHE_TTL = {
   /** User data - rarely changes */
   USER: 30 * 60 * 1000, // 30 minutes
+
+  /** Users list - rarely changes */
+  USERS: 30 * 60 * 1000, // 30 minutes
 
   /** Projects - moderate change frequency */
   PROJECTS: 10 * 60 * 1000, // 10 minutes

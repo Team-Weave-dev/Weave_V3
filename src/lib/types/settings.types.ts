@@ -1,24 +1,8 @@
 /**
  * 설정 페이지 타입 정의
  * 2025-10-07 추가
+ * 2025-01-09 업데이트: UserProfile 제거 (User 엔티티로 통합)
  */
-
-// 사업자 유형
-export type BusinessType = 'freelancer' | 'individual' | 'corporation';
-
-// 사용자 프로필
-export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  businessNumber: string;
-  address: string;
-  addressDetail: string;
-  businessType: BusinessType;
-  createdAt: string;
-  updatedAt: string;
-}
 
 // 요금제 타입
 export type PlanType = 'free' | 'basic' | 'pro';
@@ -80,26 +64,6 @@ export interface BillingHistory {
   status: PaymentStatus;
   invoiceUrl?: string;
   description: string;
-}
-
-// 설정 페이지 전체 상태
-export interface SettingsState {
-  profile: UserProfile;
-  currentPlan: PlanType;
-  usage: Usage;
-  paymentMethod?: PaymentMethod;
-  billingHistory: BillingHistory[];
-}
-
-// 프로필 업데이트 DTO
-export interface UpdateProfileDTO {
-  name?: string;
-  email?: string;
-  phone?: string;
-  businessNumber?: string;
-  address?: string;
-  addressDetail?: string;
-  businessType?: BusinessType;
 }
 
 // 요금제 변경 DTO

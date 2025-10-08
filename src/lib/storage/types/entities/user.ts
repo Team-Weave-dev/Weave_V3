@@ -8,6 +8,11 @@
 import { isValidEmail, isValidISODate } from '../validators';
 
 /**
+ * Business type for users
+ */
+export type BusinessType = 'freelancer' | 'individual' | 'corporation';
+
+/**
  * User metadata
  */
 export interface UserMetadata {
@@ -31,6 +36,21 @@ export interface User {
 
   /** User avatar URL (optional) */
   avatar?: string;
+
+  /** Phone number (optional) */
+  phone?: string;
+
+  /** Business registration number (optional) */
+  businessNumber?: string;
+
+  /** Address (optional) */
+  address?: string;
+
+  /** Detailed address (optional) */
+  addressDetail?: string;
+
+  /** Business type (optional) */
+  businessType?: BusinessType;
 
   /** Account creation timestamp (ISO 8601) */
   createdAt: string;
@@ -62,6 +82,18 @@ export function isUser(data: unknown): data is User {
 
   // Optional fields validation
   if (u.avatar !== undefined && typeof u.avatar !== 'string') return false;
+  if (u.phone !== undefined && typeof u.phone !== 'string') return false;
+  if (u.businessNumber !== undefined && typeof u.businessNumber !== 'string') return false;
+  if (u.address !== undefined && typeof u.address !== 'string') return false;
+  if (u.addressDetail !== undefined && typeof u.addressDetail !== 'string') return false;
+  if (
+    u.businessType !== undefined &&
+    u.businessType !== 'freelancer' &&
+    u.businessType !== 'individual' &&
+    u.businessType !== 'corporation'
+  ) {
+    return false;
+  }
   if (u.metadata !== undefined && !isUserMetadata(u.metadata)) return false;
 
   return true;

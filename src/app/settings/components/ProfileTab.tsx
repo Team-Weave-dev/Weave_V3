@@ -1,29 +1,81 @@
 "use client"
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
+import { useSettings } from '@/hooks/useSettings'
+import { settingsService, userService, storage } from '@/lib/storage'
+import { createClient } from '@/lib/supabase/client'
 import { uiText } from '@/config/brand'
 import { validators } from '@/lib/utils'
-import type { UserProfile, BusinessType } from '@/lib/types/settings.types'
+import type { User, BusinessType } from '@/lib/storage/types/entities/user'
+import type { Language, TimeFormat } from '@/lib/storage/types/entities/settings'
 
 /**
  * 프로필 탭 컴포넌트
- * 사용자 정보 관리
+ * 사용자 정보 및 환경설정 관리
  */
 export default function ProfileTab() {
   const lang = 'ko' as const
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
-  const [errors, setErrors] = useState<Partial<Record<keyof UserProfile, string>>>({})
+  const [errors, setErrors] = useState<Partial<Record<keyof Pick<User, 'name' | 'email' | 'phone' | 'businessNumber'>, string>>>({})
 
-  // 빈 프로필로 시작 (실제로는 Storage에서 로드)
-  const [profile, setProfile] = useState<UserProfile>({
-    id: '1',
+  // Supabase 인증된 사용자 ID
+  const [userId, setUserId] = useState<string | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+
+  // 인증된 사용자 ID 가져오기
+  useEffect(() => {
+    const getAuthUser = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user }, error } = await supabase.auth.getUser()
+
+        if (error) {
+          console.error('Failed to get user:', error)
+          toast({
+            title: '인증 오류',
+            description: '사용자 정보를 가져올 수 없습니다',
+            variant: 'destructive'
+          })
+          return
+        }
+
+        if (user) {
+          setUserId(user.id)
+        } else {
+          toast({
+            title: '인증 필요',
+            description: '로그인이 필요합니다',
+            variant: 'destructive'
+          })
+        }
+      } catch (error) {
+        console.error('Auth error:', error)
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+
+    getAuthUser()
+  }, [toast])
+
+  // Settings 훅 (환경설정) - userId가 있을 때만 호출
+  const {
+    settings,
+    loading: settingsLoading,
+    refresh,
+  } = useSettings(userId || '')
+
+  // 빈 프로필로 시작
+  const [profile, setProfile] = useState<User>({
+    id: '',
     name: '',
     email: '',
     phone: '',
@@ -31,17 +83,84 @@ export default function ProfileTab() {
     address: '',
     addressDetail: '',
     businessType: 'freelancer',
-    createdAt: new Date().toISOString().split('T')[0],
-    updatedAt: new Date().toISOString().split('T')[0]
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   })
 
-  const [editedProfile, setEditedProfile] = useState<UserProfile>(profile)
+  const [editedProfile, setEditedProfile] = useState<User>(profile)
+  const [profileLoading, setProfileLoading] = useState(true)
+
+  // 환경설정 로컬 상태
+  const [editedPreferences, setEditedPreferences] = useState({
+    language: settings?.preferences.language || 'ko' as Language,
+    timezone: settings?.preferences.timezone || 'Asia/Seoul',
+    timeFormat: settings?.preferences.timeFormat || '24' as TimeFormat,
+    currency: settings?.preferences.currency || 'KRW',
+  })
+
+  // Storage에서 프로필 로드 (userId 있을 때만)
+  useEffect(() => {
+    if (!userId) return
+
+    const loadProfile = async () => {
+      try {
+        setProfileLoading(true)
+
+        // UserService로 프로필 조회
+        const storedProfile = await userService.getById(userId)
+
+        if (storedProfile) {
+          setProfile(storedProfile)
+          setEditedProfile(storedProfile)
+        } else {
+          // Storage에 없으면 userId로 초기화
+          const newProfile: User = {
+            id: userId,
+            name: '',
+            email: '',
+            phone: '',
+            businessNumber: '',
+            address: '',
+            addressDetail: '',
+            businessType: 'freelancer',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+          setProfile(newProfile)
+          setEditedProfile(newProfile)
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error)
+        toast({
+          title: '프로필 로드 실패',
+          description: '프로필 정보를 불러올 수 없습니다',
+          variant: 'destructive'
+        })
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+
+    loadProfile()
+  }, [userId, toast])
+
+  // Settings 로드 완료 시 editedPreferences 업데이트 (편집 중이 아닐 때만)
+  useEffect(() => {
+    if (settings && !isEditing) {
+      setEditedPreferences({
+        language: settings.preferences.language,
+        timezone: settings.preferences.timezone,
+        timeFormat: settings.preferences.timeFormat || '24',
+        currency: settings.preferences.currency || 'KRW',
+      })
+    }
+  }, [settings, isEditing])
 
   /**
    * 입력값 검증
    */
   const validateProfile = useCallback((): boolean => {
-    const newErrors: Partial<Record<keyof UserProfile, string>> = {}
+    const newErrors: Partial<Record<keyof Pick<User, 'name' | 'email' | 'phone' | 'businessNumber'>, string>> = {}
 
     // 이름 검증
     if (!validators.required(editedProfile.name)) {
@@ -71,6 +190,16 @@ export default function ProfileTab() {
 
   const handleSave = useCallback(async () => {
     try {
+      // userId 체크
+      if (!userId) {
+        toast({
+          title: '인증 오류',
+          description: '사용자 인증이 필요합니다',
+          variant: 'destructive'
+        })
+        return
+      }
+
       // 입력값 검증
       if (!validateProfile()) {
         toast({
@@ -81,41 +210,116 @@ export default function ProfileTab() {
         return
       }
 
-      // TODO: API 호출로 저장
-      // await settingsService.updateUserPreferences(userId, editedProfile)
+      // 트랜잭션으로 프로필 + 설정을 원자적으로 저장
+      await storage.transaction(async () => {
+        // 1. 프로필 업데이트 또는 생성
+        const existingUser = await userService.getById(userId)
 
-      setProfile(editedProfile)
+        if (existingUser) {
+          // 기존 사용자 업데이트
+          await userService.updateProfile(userId, {
+            name: editedProfile.name,
+            email: editedProfile.email,
+            phone: editedProfile.phone,
+            businessNumber: editedProfile.businessNumber,
+            address: editedProfile.address,
+            addressDetail: editedProfile.addressDetail,
+            businessType: editedProfile.businessType,
+          })
+        } else {
+          // 새 사용자 생성
+          await userService.create({
+            name: editedProfile.name,
+            email: editedProfile.email,
+            phone: editedProfile.phone,
+            businessNumber: editedProfile.businessNumber,
+            address: editedProfile.address,
+            addressDetail: editedProfile.addressDetail,
+            businessType: editedProfile.businessType,
+          })
+        }
+
+        // 2. 환경설정 저장
+        await settingsService.update(userId, {
+          preferences: {
+            language: editedPreferences.language,
+            timezone: editedPreferences.timezone,
+            timeFormat: editedPreferences.timeFormat,
+            currency: editedPreferences.currency,
+          }
+        })
+      })
+
+      // 3. 성공 후 상태 업데이트
+      const updatedUser = await userService.getById(userId)
+      if (updatedUser) {
+        setProfile(updatedUser)
+      }
+
+      // 4. Settings 훅 상태 새로고침
+      await refresh()
+
       setIsEditing(false)
       setErrors({})
       toast({
         title: uiText.settings.profile.messages.saveSuccess[lang],
       })
     } catch (error) {
+      console.error('Save error:', error)
       toast({
         title: '저장 실패',
         description: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다',
         variant: 'destructive'
       })
     }
-  }, [editedProfile, lang, toast, validateProfile])
+  }, [editedProfile, editedPreferences, lang, toast, validateProfile, refresh, userId])
 
   const handleCancel = useCallback(() => {
     setEditedProfile(profile)
+    if (settings) {
+      setEditedPreferences({
+        language: settings.preferences.language,
+        timezone: settings.preferences.timezone,
+        timeFormat: settings.preferences.timeFormat || '24',
+        currency: settings.preferences.currency || 'KRW',
+      })
+    }
     setIsEditing(false)
     setErrors({})
-  }, [profile])
+  }, [profile, settings])
 
-  const updateField = useCallback((field: keyof UserProfile, value: string) => {
+  const updateField = useCallback((field: keyof User, value: string) => {
     setEditedProfile(prev => ({ ...prev, [field]: value }))
     // 해당 필드의 에러 제거
-    if (errors[field]) {
+    if (errors[field as keyof typeof errors]) {
       setErrors(prev => {
         const newErrors = { ...prev }
-        delete newErrors[field]
+        delete newErrors[field as keyof typeof errors]
         return newErrors
       })
     }
   }, [errors])
+
+  // 로딩 중일 때
+  if (authLoading || !userId || profileLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{uiText.settings.profile.title[lang]}</CardTitle>
+          <CardDescription>
+            {authLoading ? '사용자 정보를 불러오는 중...' :
+             !userId ? '사용자 인증이 필요합니다' :
+             '프로필 정보를 불러오는 중...'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>
@@ -252,6 +456,83 @@ export default function ProfileTab() {
             disabled={!isEditing}
             placeholder={uiText.settings.profile.placeholders.addressDetail[lang]}
           />
+        </div>
+
+        <Separator className="my-6" />
+
+        {/* 환경설정 섹션 */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">환경설정</h3>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* 언어 */}
+            <div className="space-y-2">
+              <Label htmlFor="language">언어</Label>
+              <Select
+                value={isEditing ? editedPreferences.language : settings?.preferences.language || 'ko'}
+                onValueChange={(value: Language) => setEditedPreferences(prev => ({ ...prev, language: value }))}
+                disabled={!isEditing || settingsLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ko">한국어</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 시간 형식 */}
+            <div className="space-y-2">
+              <Label htmlFor="timeFormat">시간 형식</Label>
+              <Select
+                value={isEditing ? editedPreferences.timeFormat : settings?.preferences.timeFormat || '24'}
+                onValueChange={(value: TimeFormat) => setEditedPreferences(prev => ({ ...prev, timeFormat: value }))}
+                disabled={!isEditing || settingsLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="12">12시간 (AM/PM)</SelectItem>
+                  <SelectItem value="24">24시간</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 타임존 */}
+            <div className="space-y-2">
+              <Label htmlFor="timezone">타임존</Label>
+              <Input
+                id="timezone"
+                value={isEditing ? editedPreferences.timezone : settings?.preferences.timezone || 'Asia/Seoul'}
+                onChange={(e) => setEditedPreferences(prev => ({ ...prev, timezone: e.target.value }))}
+                disabled={!isEditing || settingsLoading}
+                placeholder="Asia/Seoul"
+              />
+            </div>
+
+            {/* 통화 */}
+            <div className="space-y-2">
+              <Label htmlFor="currency">통화</Label>
+              <Select
+                value={isEditing ? editedPreferences.currency : settings?.preferences.currency || 'KRW'}
+                onValueChange={(value) => setEditedPreferences(prev => ({ ...prev, currency: value }))}
+                disabled={!isEditing || settingsLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="KRW">₩ KRW (원)</SelectItem>
+                  <SelectItem value="USD">$ USD (달러)</SelectItem>
+                  <SelectItem value="EUR">€ EUR (유로)</SelectItem>
+                  <SelectItem value="JPY">¥ JPY (엔)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

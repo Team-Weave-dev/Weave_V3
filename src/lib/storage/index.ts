@@ -24,6 +24,7 @@ import { CalendarService } from './services/CalendarService';
 import { DocumentService } from './services/DocumentService';
 import { SettingsService } from './services/SettingsService';
 import { DashboardService } from './services/DashboardService';
+import { UserService } from './services/UserService';
 
 // Migration System
 import { MigrationManager } from './migrations/MigrationManager';
@@ -103,6 +104,19 @@ export async function initializeStorage(): Promise<void> {
     // Create storage manager
     storageManager = new StorageManager(currentAdapter);
 
+    // Clear fallback storage manager
+    defaultStorageManager = null;
+
+    // Recreate services with new storage manager
+    _projectService = null;
+    _taskService = null;
+    _clientService = null;
+    _calendarService = null;
+    _documentService = null;
+    _settingsService = null;
+    _dashboardService = null;
+    _userService = null;
+
     console.log('✅ Storage system initialized successfully');
   } catch (error) {
     console.error('❌ Failed to initialize storage system:', error);
@@ -165,6 +179,19 @@ export async function switchToDualWriteMode(userId: string): Promise<void> {
     currentDualWriteAdapter = dualAdapter;
     storageManager = new StorageManager(currentAdapter);
 
+    // Clear fallback storage manager
+    defaultStorageManager = null;
+
+    // Recreate services with new storage manager
+    _projectService = null;
+    _taskService = null;
+    _clientService = null;
+    _calendarService = null;
+    _documentService = null;
+    _settingsService = null;
+    _dashboardService = null;
+    _userService = null;
+
     console.log('✅ Switched to DualWrite mode successfully');
   } catch (error) {
     console.error('❌ Failed to switch to DualWrite mode:', error);
@@ -192,6 +219,19 @@ export async function fallbackToLocalStorageMode(): Promise<void> {
     currentDualWriteAdapter = null;
     storageManager = new StorageManager(currentAdapter);
 
+    // Clear fallback storage manager
+    defaultStorageManager = null;
+
+    // Recreate services with new storage manager
+    _projectService = null;
+    _taskService = null;
+    _clientService = null;
+    _calendarService = null;
+    _documentService = null;
+    _settingsService = null;
+    _dashboardService = null;
+    _userService = null;
+
     console.log('✅ Fallback to LocalStorage mode completed');
   } catch (error) {
     console.error('❌ Failed to fallback to LocalStorage mode:', error);
@@ -212,6 +252,7 @@ function createServices(storage: StorageManager) {
     documentService: new DocumentService(storage),
     settingsService: new SettingsService(storage),
     dashboardService: new DashboardService(storage),
+    userService: new UserService(storage),
   };
 }
 
@@ -232,25 +273,123 @@ export const migrationManager = new MigrationManager(localAdapterForMigration);
 export const backupManager = new BackupManager(localAdapterForMigration);
 
 /**
- * Create default instances for backward compatibility
- * These will be replaced when initializeStorage() is called
+ * Service getter functions
+ * These ensure services always use the current storage manager instance
  */
-const defaultLocalAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
-const defaultStorageManager = new StorageManager(defaultLocalAdapter);
+let defaultStorageManager: StorageManager | null = null;
+
+function getStorageOrDefault(): StorageManager {
+  if (storageManager) {
+    return storageManager;
+  }
+  // Fallback to default if not initialized yet (singleton)
+  if (!defaultStorageManager) {
+    const defaultLocalAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
+    defaultStorageManager = new StorageManager(defaultLocalAdapter);
+    console.warn('⚠️ Using fallback StorageManager - initializeStorage() was not called');
+  }
+  return defaultStorageManager;
+}
 
 /**
  * Legacy exports for backward compatibility
- * Note: These use the default LocalStorage adapter
- * Call initializeStorage() to enable DualWrite mode
+ * Note: These dynamically use the current storage instance
  */
-export const storage = defaultStorageManager;
-export const projectService = new ProjectService(defaultStorageManager);
-export const taskService = new TaskService(defaultStorageManager);
-export const clientService = new ClientService(defaultStorageManager);
-export const calendarService = new CalendarService(defaultStorageManager);
-export const documentService = new DocumentService(defaultStorageManager);
-export const settingsService = new SettingsService(defaultStorageManager);
-export const dashboardService = new DashboardService(defaultStorageManager);
+export const storage = new Proxy({} as StorageManager, {
+  get: (_, prop) => {
+    return (getStorageOrDefault() as any)[prop];
+  }
+});
+
+// Service singletons that use current storage
+let _projectService: ProjectService | null = null;
+let _taskService: TaskService | null = null;
+let _clientService: ClientService | null = null;
+let _calendarService: CalendarService | null = null;
+let _documentService: DocumentService | null = null;
+let _settingsService: SettingsService | null = null;
+let _dashboardService: DashboardService | null = null;
+let _userService: UserService | null = null;
+
+export const projectService = new Proxy({} as ProjectService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_projectService || (_projectService as any).storage !== currentStorage) {
+      _projectService = new ProjectService(currentStorage);
+    }
+    return (_projectService as any)[prop];
+  }
+});
+
+export const taskService = new Proxy({} as TaskService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_taskService || (_taskService as any).storage !== currentStorage) {
+      _taskService = new TaskService(currentStorage);
+    }
+    return (_taskService as any)[prop];
+  }
+});
+
+export const clientService = new Proxy({} as ClientService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_clientService || (_clientService as any).storage !== currentStorage) {
+      _clientService = new ClientService(currentStorage);
+    }
+    return (_clientService as any)[prop];
+  }
+});
+
+export const calendarService = new Proxy({} as CalendarService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_calendarService || (_calendarService as any).storage !== currentStorage) {
+      _calendarService = new CalendarService(currentStorage);
+    }
+    return (_calendarService as any)[prop];
+  }
+});
+
+export const documentService = new Proxy({} as DocumentService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_documentService || (_documentService as any).storage !== currentStorage) {
+      _documentService = new DocumentService(currentStorage);
+    }
+    return (_documentService as any)[prop];
+  }
+});
+
+export const settingsService = new Proxy({} as SettingsService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_settingsService || (_settingsService as any).storage !== currentStorage) {
+      _settingsService = new SettingsService(currentStorage);
+    }
+    return (_settingsService as any)[prop];
+  }
+});
+
+export const dashboardService = new Proxy({} as DashboardService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_dashboardService || (_dashboardService as any).storage !== currentStorage) {
+      _dashboardService = new DashboardService(currentStorage);
+    }
+    return (_dashboardService as any)[prop];
+  }
+});
+
+export const userService = new Proxy({} as UserService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_userService || (_userService as any).storage !== currentStorage) {
+      _userService = new UserService(currentStorage);
+    }
+    return (_userService as any)[prop];
+  }
+});
 
 /**
  * Export types for convenience
