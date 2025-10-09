@@ -407,7 +407,16 @@ export async function addCustomProject(project: ProjectTableRow): Promise<void> 
  */
 export async function updateCustomProject(idOrNo: string, updates: Partial<ProjectTableRow>): Promise<boolean> {
   try {
-    // Project 엔티티 updates로 변환 (필드 매핑)
+    // 1. ID 또는 No로 프로젝트 찾기
+    const allProjects = await projectService.getAll();
+    const project = allProjects.find(p => p.id === idOrNo || p.no === idOrNo);
+
+    if (!project) {
+      console.log('⚠️ 프로젝트를 찾을 수 없음:', idOrNo);
+      return false;
+    }
+
+    // 2. Project 엔티티 updates로 변환 (필드 매핑)
     const projectUpdates: Partial<Project> = {
       ...updates.no && { no: updates.no },
       ...updates.name && { name: updates.name },
@@ -431,8 +440,8 @@ export async function updateCustomProject(idOrNo: string, updates: Partial<Proje
       modifiedDate: new Date().toISOString(),
     };
 
-    // Storage API 업데이트
-    const updatedProject = await projectService.update(idOrNo, projectUpdates);
+    // 3. Storage API 업데이트 (실제 ID 사용)
+    const updatedProject = await projectService.update(project.id, projectUpdates);
 
     if (updatedProject) {
       console.log('✅ 프로젝트 업데이트 성공:', {
