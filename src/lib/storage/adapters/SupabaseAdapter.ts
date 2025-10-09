@@ -496,7 +496,281 @@ export class SupabaseAdapter implements StorageAdapter {
         return
       }
 
-      // Normal handling for other entities (tasks, events, clients, documents)
+      // Special handling for tasks (camelCase → snake_case)
+      if (entity === 'tasks' && Array.isArray(value)) {
+        const tasksArray = value as any[]
+
+        if (tasksArray.length === 0) {
+          console.warn(`No tasks found in tasks array`)
+          return
+        }
+
+        const dataToStore = tasksArray.map((task: any) => ({
+          // Identifiers
+          id: task.id,
+          user_id: this.userId,
+          project_id: this.isValidUUID(task.projectId) ? task.projectId : null,
+
+          // Basic info
+          title: task.title,
+          description: task.description || null,
+
+          // Status
+          status: task.status || 'pending',
+          priority: task.priority || 'medium',
+
+          // Schedule (camelCase → snake_case)
+          due_date: task.dueDate || null,
+          start_date: task.startDate || null,
+          completed_at: task.completedAt || null,
+
+          // Relations (camelCase → snake_case)
+          assignee_id: this.isValidUUID(task.assigneeId) ? task.assigneeId : null,
+          parent_task_id: this.isValidUUID(task.parentTaskId) ? task.parentTaskId : null,
+
+          // Tracking (camelCase → snake_case)
+          estimated_hours: task.estimatedHours || null,
+          actual_hours: task.actualHours || null,
+
+          // Metadata (JSONB)
+          tags: task.tags || [],
+          attachments: task.attachments || [],
+          recurring: task.recurring || null,
+          checklist: task.checklist || [],
+
+          // Timestamps (camelCase → snake_case)
+          created_at: task.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }))
+
+        await this.withRetry(async () => {
+          const query = this.supabase.from(tableName).upsert(dataToStore as any)
+          const { error } = await query
+
+          if (error) {
+            console.error('[SupabaseAdapter] Tasks sync error:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            })
+            throw error
+          }
+        })
+        return
+      }
+
+      // Special handling for events (camelCase → snake_case)
+      if (entity === 'events' && Array.isArray(value)) {
+        const eventsArray = value as any[]
+
+        if (eventsArray.length === 0) {
+          console.warn(`No events found in events array`)
+          return
+        }
+
+        const dataToStore = eventsArray.map((event: any) => ({
+          // Identifiers
+          id: event.id,
+          user_id: this.userId,
+          project_id: this.isValidUUID(event.projectId) ? event.projectId : null,
+          client_id: this.isValidUUID(event.clientId) ? event.clientId : null,
+
+          // Basic info
+          title: event.title,
+          description: event.description || null,
+          location: event.location || null,
+
+          // Time (camelCase → snake_case)
+          start_time: event.startDate,
+          end_time: event.endDate,
+          all_day: event.allDay || false,
+          timezone: event.timezone || 'Asia/Seoul',
+
+          // Type and status
+          type: event.type || 'event',
+          status: event.status || 'confirmed',
+
+          // Style
+          color: event.color || '#3B82F6',
+          icon: event.icon || null,
+
+          // Recurrence (JSONB)
+          recurrence: event.recurring || null,
+          recurrence_end: event.recurring?.endDate || null,
+          recurrence_exceptions: event.recurring?.exceptions || [],
+
+          // Reminders (JSONB)
+          reminders: event.reminders || [],
+
+          // Attendees (JSONB)
+          attendees: event.attendees || [],
+
+          // Metadata (JSONB)
+          metadata: event.metadata || {},
+          tags: event.tags || [],
+          is_private: event.isPrivate || false,
+          is_busy: event.isBusy !== undefined ? event.isBusy : true,
+
+          // Timestamps (camelCase → snake_case)
+          created_at: event.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }))
+
+        await this.withRetry(async () => {
+          const query = this.supabase.from(tableName).upsert(dataToStore as any)
+          const { error } = await query
+
+          if (error) {
+            console.error('[SupabaseAdapter] Events sync error:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            })
+            throw error
+          }
+        })
+        return
+      }
+
+      // Special handling for clients (camelCase → snake_case)
+      if (entity === 'clients' && Array.isArray(value)) {
+        const clientsArray = value as any[]
+
+        if (clientsArray.length === 0) {
+          console.warn(`No clients found in clients array`)
+          return
+        }
+
+        const dataToStore = clientsArray.map((client: any) => ({
+          // Identifiers
+          id: client.id,
+          user_id: this.userId,
+
+          // Basic info
+          name: client.name,
+          company: client.company || null,
+          email: client.email || null,
+          phone: client.phone || null,
+          address: typeof client.address === 'string' ? client.address :
+                   (client.address ? JSON.stringify(client.address) : null),
+
+          // Contact person (camelCase → snake_case)
+          // contacts 배열의 첫 번째 항목을 개별 필드로 변환
+          contact_person: client.contacts?.[0]?.name || null,
+          contact_phone: client.contacts?.[0]?.phone || null,
+          contact_email: client.contacts?.[0]?.email || null,
+
+          // Business info (camelCase → snake_case)
+          business_number: client.businessNumber || null,
+          business_type: client.businessType || null,
+          industry: client.industry || null,
+
+          // Metadata
+          notes: client.notes || null,
+          tags: client.tags || [],
+          status: client.status || 'active',
+
+          // Timestamps (camelCase → snake_case)
+          created_at: client.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }))
+
+        await this.withRetry(async () => {
+          const query = this.supabase.from(tableName).upsert(dataToStore as any)
+          const { error } = await query
+
+          if (error) {
+            console.error('[SupabaseAdapter] Clients sync error:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            })
+            throw error
+          }
+        })
+        return
+      }
+
+      // Special handling for documents (camelCase → snake_case)
+      if (entity === 'documents' && Array.isArray(value)) {
+        const documentsArray = value as any[]
+
+        if (documentsArray.length === 0) {
+          console.warn(`No documents found in documents array`)
+          return
+        }
+
+        const dataToStore = documentsArray.map((doc: any) => ({
+          // Identifiers
+          id: doc.id,
+          user_id: this.userId,
+          project_id: this.isValidUUID(doc.projectId) ? doc.projectId : null,
+
+          // Basic info (name → title)
+          title: doc.name || doc.title,
+          description: doc.description || null,
+          content: doc.content || null,
+
+          // Type and category
+          type: doc.type || 'other',
+          category: doc.category || 'etc',
+          status: doc.status || 'draft',
+
+          // File info (camelCase → snake_case)
+          file_url: doc.fileUrl || null,
+          file_name: doc.fileName || null,
+          file_size: doc.size || doc.fileSize || null,
+          file_type: doc.fileType || null,
+
+          // Template (camelCase → snake_case)
+          template_id: doc.templateId || null,
+          template_name: doc.templateName || null,
+
+          // Version control (camelCase → snake_case)
+          version: doc.version?.toString() || '1.0',
+          parent_document_id: this.isValidUUID(doc.parentDocumentId) ? doc.parentDocumentId : null,
+          is_latest: doc.isLatest !== undefined ? doc.isLatest : true,
+
+          // Signature (camelCase → snake_case)
+          requires_signature: doc.requiresSignature || false,
+          signed_at: doc.signedAt || doc.signatures?.[0]?.signedAt || null,
+          signature_url: doc.signatureUrl || null,
+
+          // Metadata (JSONB)
+          metadata: doc.metadata || {},
+          tags: doc.tags || [],
+
+          // Dates (camelCase → snake_case)
+          issued_date: doc.issuedDate || null,
+          due_date: doc.dueDate || null,
+          expiry_date: doc.expiryDate || null,
+
+          // Timestamps (camelCase → snake_case)
+          created_at: doc.createdAt || doc.savedAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }))
+
+        await this.withRetry(async () => {
+          const query = this.supabase.from(tableName).upsert(dataToStore as any)
+          const { error } = await query
+
+          if (error) {
+            console.error('[SupabaseAdapter] Documents sync error:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            })
+            throw error
+          }
+        })
+        return
+      }
+
+      // Normal handling for other entities (fallback)
       const dataToStore = Array.isArray(value)
         ? value.map((item: any) => ({
             ...item,
