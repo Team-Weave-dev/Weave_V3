@@ -2459,6 +2459,7 @@ export const getWidgetText = {
     monthlyRevenue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '월 매출' : 'Monthly Revenue',
     yearlyRevenue: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '연간 매출' : 'Yearly Revenue',
     activeProjects: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 프로젝트' : 'Active Projects',
+    monthlyProjects: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '신규 프로젝트' : 'New Projects',
     totalProjects: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '총 프로젝트' : 'Total Projects',
     completedTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료 작업' : 'Completed Tasks',
     yearlyTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '연간 작업' : 'Yearly Tasks',

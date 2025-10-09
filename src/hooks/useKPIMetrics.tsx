@@ -66,10 +66,8 @@ function calculateMonthlyMetrics(
   }, 0);
   const monthlyRevenueInManWon = Math.round(monthlyRevenue / 10000);
 
-  // 월간 진행 중인 프로젝트 수 (이번 달 등록된 프로젝트 중 진행 중인 것만)
-  const activeProjects = monthlyProjects.filter(
-    (p) => p.status === 'in_progress' || p.status === 'review'
-  ).length;
+  // 월간 신규 프로젝트 수 (이번 달 등록된 모든 프로젝트)
+  const monthlyProjectsCount = monthlyProjects.length;
 
   // 이번 달 완료된 작업 수
   const monthlyTasks = tasks.filter((t) => {
@@ -96,13 +94,13 @@ function calculateMonthlyMetrics(
     },
     {
       id: 'projects',
-      label: getWidgetText.kpiMetrics.activeProjects('ko'),
-      value: activeProjects,
+      label: getWidgetText.kpiMetrics.monthlyProjects('ko'),
+      value: monthlyProjectsCount,
       unit: '건',
       target: 10,
-      trend: activeProjects >= 7 ? 'stable' : activeProjects > 7 ? 'up' : 'down',
+      trend: monthlyProjectsCount >= 7 ? 'stable' : monthlyProjectsCount > 7 ? 'up' : 'down',
       trendValue: '0%',
-      progress: Math.min(Math.round((activeProjects / 10) * 100), 100),
+      progress: Math.min(Math.round((monthlyProjectsCount / 10) * 100), 100),
       icon: <Briefcase className="h-4 w-4" />,
       color: 'info',
     },
