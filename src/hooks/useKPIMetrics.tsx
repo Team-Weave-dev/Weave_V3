@@ -66,8 +66,8 @@ function calculateMonthlyMetrics(
   }, 0);
   const monthlyRevenueInManWon = Math.round(monthlyRevenue / 10000);
 
-  // 진행 중인 프로젝트 수
-  const activeProjects = projects.filter(
+  // 월간 진행 중인 프로젝트 수 (이번 달 등록된 프로젝트 중 진행 중인 것만)
+  const activeProjects = monthlyProjects.filter(
     (p) => p.status === 'in_progress' || p.status === 'review'
   ).length;
 
