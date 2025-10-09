@@ -45,7 +45,9 @@ const ENTITY_TABLE_MAP: Record<string, string> = {
   documents: 'documents',
   document: 'documents',
   settings: 'user_settings',
+  dashboard: 'user_settings', // dashboard는 user_settings.dashboard 컬럼에 저장
   user: 'users',
+  users: 'users',
 } as const
 
 /**
@@ -186,6 +188,19 @@ export class SupabaseAdapter implements StorageAdapter {
   }
 
   /**
+   * Validate UUID format
+   *
+   * @param value - Value to validate
+   * @returns True if value is a valid UUID
+   */
+  private isValidUUID(value: any): boolean {
+    if (typeof value !== 'string') return false
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    return uuidRegex.test(value)
+  }
+
+  /**
    * Get a value from Supabase
    *
    * @param key - Storage key
@@ -197,6 +212,39 @@ export class SupabaseAdapter implements StorageAdapter {
     try {
       const { entity, id } = this.parseKey(key)
       const tableName = this.getTableName(entity)
+
+      // Special handling for dashboard (fetch from user_settings.dashboard column)
+      if (entity === 'dashboard') {
+        const data = await this.withRetry(async () => {
+          const query = this.supabase
+            .from('user_settings')
+            .select('dashboard')
+            .eq('user_id', this.userId)
+            .single()
+          return await this.executeQuery<any>(query)
+        })
+
+        if (data === null || !data.dashboard) {
+          return null
+        }
+
+        // Return dashboard column value
+        const dashboardData = data.dashboard as T
+
+        // Validate type if type guard is provided
+        if (typeGuard && !typeGuard(dashboardData)) {
+          throw new StorageError(
+            `Type validation failed for key "${key}"`,
+            'GET_ERROR',
+            {
+              key,
+              severity: 'high',
+            }
+          )
+        }
+
+        return dashboardData
+      }
 
       const data = await this.withRetry(async () => {
         // Single entity query
@@ -261,6 +309,27 @@ export class SupabaseAdapter implements StorageAdapter {
       const { entity, id } = this.parseKey(key)
       const tableName = this.getTableName(entity)
 
+      // Special handling for dashboard (store in user_settings.dashboard column)
+      if (entity === 'dashboard') {
+        await this.withRetry(async () => {
+          // Update only the dashboard column in user_settings table
+          const query = this.supabase
+            .from('user_settings')
+            .update({
+              dashboard: value,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', this.userId)
+
+          const { error } = await query
+
+          if (error) {
+            throw error
+          }
+        })
+        return
+      }
+
       // Special handling for settings (Record<userId, Settings> → single Settings)
       if (entity === 'settings' && !Array.isArray(value)) {
         const settingsRecord = value as Record<string, any>
@@ -299,7 +368,135 @@ export class SupabaseAdapter implements StorageAdapter {
         return
       }
 
-      // Normal handling for other entities
+      // Special handling for users (User[] → single User for current user_id)
+      // users 테이블은 id가 PRIMARY KEY이며 user_id 컬럼이 없음 (auth.users와 1:1 매핑)
+      if (entity === 'users' && Array.isArray(value)) {
+        const usersArray = value as any[]
+
+        if (usersArray.length === 0) {
+          // No users to sync, skip (not an error)
+          console.warn(`No users found in users array`)
+          return
+        }
+
+        // Find user matching current userId, or use first user
+        const userData = usersArray.find((user: any) => user.id === this.userId) || usersArray[0]
+
+        // Prepare data for Supabase with snake_case column names
+        const dataToStore = {
+          id: this.userId,  // id = auth.uid() (PRIMARY KEY)
+          email: userData.email,
+          name: userData.name,
+          avatar: userData.avatar,
+          metadata: userData.metadata,
+          // Profile fields (camelCase → snake_case)
+          phone: userData.phone,
+          business_number: userData.businessNumber,
+          address: userData.address,
+          address_detail: userData.addressDetail,
+          business_type: userData.businessType,
+          // Timestamps (camelCase → snake_case)
+          created_at: userData.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+
+        await this.withRetry(async () => {
+          // id를 기준으로 upsert (PRIMARY KEY conflict 시 업데이트)
+          const query = this.supabase
+            .from(tableName)
+            .upsert(dataToStore as any)  // id가 PRIMARY KEY이므로 자동으로 conflict 해결
+          const { error } = await query
+
+          if (error) {
+            console.error('[SupabaseAdapter] Supabase error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            })
+            throw error
+          }
+        })
+        return
+      }
+
+      // Special handling for projects (camelCase → snake_case)
+      if (entity === 'projects' && Array.isArray(value)) {
+        const projectsArray = value as any[]
+
+        if (projectsArray.length === 0) {
+          console.warn(`No projects found in projects array`)
+          return
+        }
+
+        const dataToStore = projectsArray.map((project: any) => ({
+          // Identifiers
+          id: project.id,
+          user_id: this.userId,
+          // client_id must be UUID, not client name - set to null if not UUID format
+          client_id: this.isValidUUID(project.clientId) ? project.clientId : null,
+          no: project.no,
+          name: project.name,
+          description: project.description,
+          project_content: project.projectContent,
+
+          // Status
+          status: project.status,
+          progress: project.progress,
+          payment_progress: project.paymentProgress,
+
+          // Schedule (camelCase → snake_case)
+          registration_date: project.registrationDate,
+          modified_date: project.modifiedDate,
+          end_date: project.endDate || null,
+          start_date: project.startDate || null,
+
+          // Payment
+          settlement_method: project.settlementMethod,
+          payment_status: project.paymentStatus,
+          total_amount: project.totalAmount,
+          currency: project.currency,
+
+          // WBS (JSONB)
+          wbs_tasks: project.wbsTasks || [],
+
+          // Document status (JSONB) - Supabase stores documents info here
+          document_status: project.documentStatus || {
+            contract: { exists: false, status: 'none' },
+            invoice: { exists: false, status: 'none' },
+            report: { exists: false, status: 'none' },
+            estimate: { exists: false, status: 'none' },
+            etc: { exists: false, status: 'none' }
+          },
+
+          // Document flags (boolean)
+          has_contract: project.hasContract || false,
+          has_billing: project.hasBilling || false,
+          has_documents: project.hasDocuments || false,
+
+          // Timestamps (camelCase → snake_case)
+          created_at: project.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }))
+
+        await this.withRetry(async () => {
+          const query = this.supabase.from(tableName).upsert(dataToStore as any)
+          const { error } = await query
+
+          if (error) {
+            console.error('[SupabaseAdapter] Projects sync error:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            })
+            throw error
+          }
+        })
+        return
+      }
+
+      // Normal handling for other entities (tasks, events, clients, documents)
       const dataToStore = Array.isArray(value)
         ? value.map((item: any) => ({
             ...item,

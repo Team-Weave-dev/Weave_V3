@@ -114,6 +114,17 @@ async function getCustomProjects(): Promise<ProjectTableRow[]> {
 function toProject(row: ProjectTableRow): Project {
   const now = new Date().toISOString();
 
+  // 날짜를 ISO 8601 형식으로 정규화하는 헬퍼 함수
+  const normalizeDate = (dateString: string | undefined): string => {
+    if (!dateString) return now;
+    // 이미 ISO 8601 형식이면 그대로 반환
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dateString)) {
+      return dateString;
+    }
+    // YYYY-MM-DD 형식이면 ISO 8601로 변환
+    return new Date(dateString).toISOString();
+  };
+
   return {
     // Identity
     id: row.id,
@@ -131,10 +142,10 @@ function toProject(row: ProjectTableRow): Project {
     progress: row.progress || 0,
     paymentProgress: typeof row.paymentProgress === 'number' ? row.paymentProgress : undefined,
 
-    // Schedule
-    registrationDate: row.registrationDate,
-    modifiedDate: row.modifiedDate,
-    endDate: row.dueDate || undefined,
+    // Schedule (ISO 8601 형식으로 정규화)
+    registrationDate: normalizeDate(row.registrationDate),
+    modifiedDate: normalizeDate(row.modifiedDate),
+    endDate: row.dueDate ? normalizeDate(row.dueDate) : undefined,
     startDate: undefined,
 
     // Payment
@@ -164,9 +175,9 @@ function toProject(row: ProjectTableRow): Project {
     })),
     documentStatus: row.documentStatus,
 
-    // Timestamps
-    createdAt: row.registrationDate || now,
-    updatedAt: row.modifiedDate || now,
+    // Timestamps (ISO 8601 형식으로 정규화)
+    createdAt: normalizeDate(row.registrationDate),
+    updatedAt: normalizeDate(row.modifiedDate),
   };
 }
 
@@ -378,8 +389,11 @@ export async function addCustomProject(project: ProjectTableRow): Promise<void> 
   // ProjectTableRow → Project 변환
   const projectEntity = toProject(projectWithWBS);
 
-  // Storage API에 저장
-  await projectService.create(projectEntity);
+  // BaseService.create()가 id, createdAt, updatedAt을 자동으로 추가하므로 제거
+  const { id, createdAt, updatedAt, ...projectData } = projectEntity;
+
+  // Storage API에 저장 (id, createdAt, updatedAt 제외)
+  await projectService.create(projectData as Omit<Project, 'id' | 'createdAt' | 'updatedAt'>);
 
   console.log('✅ 프로젝트 Storage API에 저장 성공:', { id: projectEntity.id, no: projectEntity.no, name: projectEntity.name });
 }
