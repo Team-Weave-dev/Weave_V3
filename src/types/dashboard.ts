@@ -80,7 +80,14 @@ export interface ProjectReview {
     spent: number;
     currency: string;
   };
-  currentStatus: string;
+  currentStatus: string;  // 하위 호환성 유지
+  taskSummary?: {
+    inProgressCount: number;
+    latestTask?: {
+      name: string;
+      status: 'pending' | 'in_progress' | 'completed';
+    };
+  };
   issues?: string[];
   nextActions?: string[];
 }

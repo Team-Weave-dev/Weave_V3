@@ -9,7 +9,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { projectService } from '@/lib/storage';
-import type { Project } from '@/lib/storage/types/entities/project';
+import type { Project, WBSTask } from '@/lib/storage/types/entities/project';
 import type { ProjectReview } from '@/types/dashboard';
 import { getWidgetText } from '@/config/brand';
 
@@ -54,10 +54,39 @@ function convertProjectToReview(project: Project): ProjectReview {
   const spentBudget = project.actualCost || 0;
   const currency = project.currency || 'KRW';
 
-  // 현재 상태 메시지 (WBS 작업 기반)
-  const currentStatus = project.wbsTasks.length > 0
-    ? `${getWidgetText.hooks.fallback.tasksInProgress('ko')}: ${project.wbsTasks.filter(t => t.status === 'in_progress').length}${getWidgetText.hooks.fallback.tasksCount('ko')}`
-    : getWidgetText.hooks.fallback.noTasks('ko');
+  // 프로젝트의 WBS 작업 필터링 및 최신 작업 찾기
+  const wbsTasks = project.wbsTasks || [];
+  const inProgressTasks = wbsTasks.filter(t => t.status === 'in_progress');
+
+  // 최신 작업 (createdAt 기준)
+  const latestTask = wbsTasks.length > 0
+    ? [...wbsTasks].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+    : null;
+
+  // WBS 작업 상태 레이블 매핑
+  const wbsTaskStatusLabelMap: Record<WBSTask['status'], string> = {
+    'pending': '예정',
+    'in_progress': '진행중',
+    'completed': '완료',
+  };
+
+  // 현재 상태 메시지 (진행 중인 작업 개수 + 최신 작업)
+  let currentStatus = '';
+  if (inProgressTasks.length > 0) {
+    currentStatus = `${getWidgetText.hooks.fallback.tasksInProgress('ko')}: ${inProgressTasks.length}${getWidgetText.hooks.fallback.tasksCount('ko')}`;
+
+    // 최신 작업 정보 추가
+    if (latestTask) {
+      const statusLabel = wbsTaskStatusLabelMap[latestTask.status] || latestTask.status;
+      currentStatus += ` | ${statusLabel}: ${latestTask.name}`;
+    }
+  } else if (latestTask) {
+    // 진행 중인 작업이 없지만 최신 작업이 있는 경우
+    const statusLabel = wbsTaskStatusLabelMap[latestTask.status] || latestTask.status;
+    currentStatus = `${statusLabel}: ${latestTask.name}`;
+  } else {
+    currentStatus = getWidgetText.hooks.fallback.noTasks('ko');
+  }
 
   return {
     id: project.id,
@@ -76,6 +105,14 @@ function convertProjectToReview(project: Project): ProjectReview {
       currency,
     },
     currentStatus,
+    // 구조화된 작업 데이터 (Badge UI용)
+    taskSummary: wbsTasks.length > 0 ? {
+      inProgressCount: inProgressTasks.length,
+      latestTask: latestTask ? {
+        name: latestTask.name,
+        status: latestTask.status
+      } : undefined
+    } : undefined,
   };
 }
 
@@ -94,11 +131,11 @@ export function useProjectSummary() {
       setLoading(true);
       setError(null);
 
-      // ProjectService에서 모든 프로젝트 조회
+      // ProjectService에서 데이터 조회 (WBS Tasks 포함)
       const allProjects = await projectService.getAll();
 
-      // Project → ProjectReview 변환
-      const reviews = allProjects.map(convertProjectToReview);
+      // Project → ProjectReview 변환 (WBS tasks 포함)
+      const reviews = allProjects.map(project => convertProjectToReview(project));
 
       setProjects(reviews);
     } catch (err) {
@@ -113,10 +150,10 @@ export function useProjectSummary() {
     loadProjects();
 
     // Storage 구독 (프로젝트 변경 시 자동 리로드)
-    const unsubscribe = projectService['storage'].subscribe('projects', loadProjects);
+    const unsubscribeProjects = projectService['storage'].subscribe('projects', loadProjects);
 
     return () => {
-      unsubscribe();
+      unsubscribeProjects();
     };
   }, [loadProjects]);
 

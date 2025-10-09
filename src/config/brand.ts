@@ -2491,7 +2491,7 @@ export const getWidgetText = {
     // 기본 텍스트 (fallback)
     fallback: {
       noClient: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '클라이언트 미지정' : 'Client Not Assigned',
-      noTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업이 없습니다' : 'No tasks',
+      noTasks: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '이 프로젝트에 연결된 작업이 없습니다' : 'No tasks linked to this project',
       tasksInProgress: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 중인 작업' : 'Tasks in progress',
       tasksCount: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '개' : ' tasks'
     },

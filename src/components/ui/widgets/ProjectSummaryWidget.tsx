@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProjectReview } from '@/types/dashboard';
-import { getWidgetText, getLoadingText } from '@/config/brand';
+import { getWidgetText, getLoadingText, getWBSStatusText } from '@/config/brand';
 import { typography } from '@/config/constants';
 import { useProjectSummary } from '@/hooks/useProjectSummary';
 
@@ -169,12 +169,12 @@ export function ProjectSummaryWidget({
 }
 
 // 개별 프로젝트 카드 컴포넌트
-function ProjectCard({ 
-  project, 
-  lang, 
-  onProjectClick 
-}: { 
-  project: ProjectReview; 
+function ProjectCard({
+  project,
+  lang,
+  onProjectClick
+}: {
+  project: ProjectReview;
   lang: 'ko' | 'en';
   onProjectClick?: (project: ProjectReview) => void;
 }) {
@@ -217,13 +217,21 @@ function ProjectCard({
   };
   
   return (
-    <div
+    <Link
+      href={`/projects/${project.id}`}
       className={cn(
-        "group relative overflow-hidden rounded-lg border bg-card p-3 transition-all duration-200",
+        "group relative block overflow-hidden rounded-lg border bg-card p-3 transition-all duration-200",
         "hover:shadow-sm hover:border-primary/20",
-        onProjectClick && "cursor-pointer"
+        "cursor-pointer"
       )}
-      onClick={() => onProjectClick?.(project)}
+      onClick={(e) => {
+        // onProjectClick이 제공되면 기본 동작 중지 후 커스텀 동작 실행
+        if (onProjectClick) {
+          e.preventDefault();
+          onProjectClick(project);
+        }
+        // onProjectClick이 없으면 Link의 기본 동작(페이지 이동) 실행
+      }}
     >
       {/* First Row: Status Badge + D-day + Deadline */}
       <div className="flex items-center justify-between mb-1">
@@ -299,14 +307,27 @@ function ProjectCard({
         </div>
       </div>
 
-      {/* Status Section */}
-      {project.currentStatus && (
+      {/* Status Section with Badge UI */}
+      {project.taskSummary && (
         <div className="mt-2 pt-2 border-t border-border/50">
-          <p className={`${typography.widget.caption} line-clamp-1`}>
-            {project.currentStatus}
-          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={typography.widget.caption}>
+              {getWidgetText.hooks.fallback.tasksInProgress('ko')}: {project.taskSummary.inProgressCount}개
+            </span>
+            {project.taskSummary.latestTask && (
+              <>
+                <span className="text-muted-foreground">|</span>
+                <Badge variant="secondary" className="text-xs">
+                  {getWBSStatusText(project.taskSummary.latestTask.status, 'ko')}
+                </Badge>
+                <span className={`${typography.widget.caption} line-clamp-1 flex-1`}>
+                  {project.taskSummary.latestTask.name}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </Link>
   );
 }
