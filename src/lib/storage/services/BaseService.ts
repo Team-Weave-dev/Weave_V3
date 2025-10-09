@@ -52,27 +52,45 @@ export abstract class BaseService<T extends BaseEntity> {
    * Create a new entity
    */
   async create(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
+    console.log(`[BaseService.create] Creating entity for key: "${this.entityKey}"`)
+    console.log(`[BaseService.create] Input data:`, data)
+
     const now = this.getCurrentTimestamp();
+
+    // Check if data contains an id (TypeScript workaround for Omit)
+    const dataWithId = data as any;
+    const entityId = dataWithId.id || this.generateId();
+
+    console.log(`[BaseService.create] Using ID:`, entityId, dataWithId.id ? '(from input)' : '(generated)')
+
     const entity: T = {
       ...data,
-      id: this.generateId(),
+      id: entityId,
       createdAt: now,
       updatedAt: now,
     } as T;
+
+    console.log(`[BaseService.create] Generated entity:`, entity)
 
     // Validate entity
     if (!this.isValidEntity(entity)) {
       throw new Error(`Invalid entity data for ${this.entityKey}`);
     }
 
+    console.log(`[BaseService.create] Validation passed`)
+
     // Get existing entities
     const entities = await this.getAll();
+    console.log(`[BaseService.create] Existing entities count: ${entities.length}`)
 
     // Add new entity
     entities.push(entity);
+    console.log(`[BaseService.create] New entities array (length: ${entities.length}):`, entities)
 
     // Save to storage
+    console.log(`[BaseService.create] Calling storage.set("${this.entityKey}", array of ${entities.length} items)`)
     await this.storage.set<T[]>(this.entityKey, entities);
+    console.log(`[BaseService.create] storage.set() completed successfully`)
 
     return entity;
   }
@@ -89,7 +107,10 @@ export abstract class BaseService<T extends BaseEntity> {
    * Get all entities
    */
   async getAll(): Promise<T[]> {
+    console.log(`[BaseService.getAll] Fetching key: "${this.entityKey}"`)
     const entities = await this.storage.get<T[]>(this.entityKey);
+    console.log(`[BaseService.getAll] Result for "${this.entityKey}":`, entities)
+    console.log(`[BaseService.getAll] Returning:`, entities || [])
     return entities || [];
   }
 

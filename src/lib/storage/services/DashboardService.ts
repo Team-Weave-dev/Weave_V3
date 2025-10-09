@@ -5,6 +5,7 @@
  * Handles widget positions, dashboard configuration, and data persistence.
  *
  * Note: This service is independent like SettingsService and does not extend BaseService.
+ * Dashboard layout is synced to Supabase (user_settings.dashboard column).
  */
 
 import type { StorageManager } from '../core/StorageManager';

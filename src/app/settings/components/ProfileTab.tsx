@@ -190,8 +190,13 @@ export default function ProfileTab() {
 
   const handleSave = useCallback(async () => {
     try {
+      console.log('🔄 [ProfileTab] Starting save process...')
+      console.log('📝 [ProfileTab] Current userId:', userId)
+      console.log('📝 [ProfileTab] Edited profile data:', editedProfile)
+
       // userId 체크
       if (!userId) {
+        console.error('❌ [ProfileTab] No userId available')
         toast({
           title: '인증 오류',
           description: '사용자 인증이 필요합니다',
@@ -202,6 +207,7 @@ export default function ProfileTab() {
 
       // 입력값 검증
       if (!validateProfile()) {
+        console.error('❌ [ProfileTab] Validation failed')
         toast({
           title: '입력 오류',
           description: '입력값을 확인해주세요',
@@ -210,36 +216,44 @@ export default function ProfileTab() {
         return
       }
 
+      console.log('✅ [ProfileTab] Validation passed')
+
       // 트랜잭션으로 프로필 + 설정을 원자적으로 저장
       await storage.transaction(async () => {
+        console.log('🔄 [ProfileTab] Transaction started')
+
         // 1. 프로필 업데이트 또는 생성
         const existingUser = await userService.getById(userId)
+        console.log('📊 [ProfileTab] Existing user check:', existingUser ? 'Found' : 'Not found')
+
+        const profileData = {
+          name: editedProfile.name,
+          email: editedProfile.email,
+          phone: editedProfile.phone,
+          businessNumber: editedProfile.businessNumber,
+          address: editedProfile.address,
+          addressDetail: editedProfile.addressDetail,
+          businessType: editedProfile.businessType,
+        }
+        console.log('📝 [ProfileTab] Profile data to save:', profileData)
 
         if (existingUser) {
           // 기존 사용자 업데이트
-          await userService.updateProfile(userId, {
-            name: editedProfile.name,
-            email: editedProfile.email,
-            phone: editedProfile.phone,
-            businessNumber: editedProfile.businessNumber,
-            address: editedProfile.address,
-            addressDetail: editedProfile.addressDetail,
-            businessType: editedProfile.businessType,
-          })
+          console.log('🔄 [ProfileTab] Updating existing user...')
+          const result = await userService.updateProfile(userId, profileData)
+          console.log('✅ [ProfileTab] Update result:', result)
         } else {
-          // 새 사용자 생성
-          await userService.create({
-            name: editedProfile.name,
-            email: editedProfile.email,
-            phone: editedProfile.phone,
-            businessNumber: editedProfile.businessNumber,
-            address: editedProfile.address,
-            addressDetail: editedProfile.addressDetail,
-            businessType: editedProfile.businessType,
-          })
+          // 새 사용자 생성 (userId를 id로 사용)
+          console.log('🔄 [ProfileTab] Creating new user...')
+          const result = await userService.create({
+            ...profileData,
+            id: userId,  // Supabase auth userId를 id로 사용
+          } as any)  // TypeScript Omit 우회
+          console.log('✅ [ProfileTab] Create result:', result)
         }
 
         // 2. 환경설정 저장
+        console.log('🔄 [ProfileTab] Saving settings...')
         await settingsService.update(userId, {
           preferences: {
             language: editedPreferences.language,
@@ -248,24 +262,36 @@ export default function ProfileTab() {
             currency: editedPreferences.currency,
           }
         })
+        console.log('✅ [ProfileTab] Settings saved')
       })
 
+      console.log('✅ [ProfileTab] Transaction completed')
+
       // 3. 성공 후 상태 업데이트
+      console.log('🔄 [ProfileTab] Refreshing user data...')
       const updatedUser = await userService.getById(userId)
+      console.log('📊 [ProfileTab] Updated user from storage:', updatedUser)
+
       if (updatedUser) {
         setProfile(updatedUser)
+        console.log('✅ [ProfileTab] Profile state updated')
+      } else {
+        console.warn('⚠️ [ProfileTab] No updated user found in storage')
       }
 
       // 4. Settings 훅 상태 새로고침
+      console.log('🔄 [ProfileTab] Refreshing settings...')
       await refresh()
 
       setIsEditing(false)
       setErrors({})
+
+      console.log('✅ [ProfileTab] Save process completed successfully')
       toast({
         title: uiText.settings.profile.messages.saveSuccess[lang],
       })
     } catch (error) {
-      console.error('Save error:', error)
+      console.error('❌ [ProfileTab] Save error:', error)
       toast({
         title: '저장 실패',
         description: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다',
