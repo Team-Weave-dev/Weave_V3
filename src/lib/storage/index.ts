@@ -4,9 +4,12 @@
  * This file provides the main entry point for the storage system.
  * It exports singleton instances of all services and the storage manager.
  *
- * Phase 13 Update: DualWrite Mode Support
+ * Phase 15 Update: Supabase-Only Mode (DualWrite Disabled)
  * - LocalStorage mode: Before authentication
- * - DualWrite mode: After authentication (LocalStorage + Supabase)
+ * - Supabase-only mode: After authentication (Supabase as Single Source of Truth)
+ *
+ * Note: DualWrite mode has been disabled due to multi-device design flaw.
+ * See docs/DUALWRITE-DESIGN-FLAW.md for details.
  */
 
 import { StorageManager } from './core/StorageManager';
@@ -62,9 +65,11 @@ async function getUserId(): Promise<string | null> {
  * It determines the adapter mode based on authentication status and
  * initializes the storage system accordingly.
  *
- * Phase 13: DualWrite Mode Support
+ * Phase 15: Supabase-Only Mode (DualWrite Disabled)
  * - Before authentication: LocalStorageAdapter only
- * - After authentication: DualWriteAdapter (LocalStorage + Supabase)
+ * - After authentication: SupabaseAdapter (Supabase as Single Source of Truth)
+ *
+ * Note: DualWrite mode disabled to fix multi-device data resurrection issue.
  *
  * @returns Promise that resolves when storage is initialized
  */
@@ -76,23 +81,13 @@ export async function initializeStorage(): Promise<void> {
     const userId = await getUserId();
 
     if (userId) {
-      // Authenticated: Use DualWrite mode
-      console.log('✅ User authenticated, enabling DualWrite mode');
+      // Authenticated: Use Supabase-only mode
+      console.log('✅ User authenticated, enabling Supabase-only mode');
 
-      const localAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
       const supabaseAdapter = new SupabaseAdapter({ userId });
 
-      const dualAdapter = new DualWriteAdapter({
-        local: localAdapter,
-        supabase: supabaseAdapter,
-        syncInterval: 5000, // 5 seconds
-        enableSyncWorker: true,
-        enableVerification: false, // Disable for performance
-        maxRetries: 3,
-      });
-
-      currentAdapter = dualAdapter;
-      currentDualWriteAdapter = dualAdapter;
+      currentAdapter = supabaseAdapter;
+      currentDualWriteAdapter = null; // DualWrite disabled
     } else {
       // Not authenticated: Use LocalStorage only
       console.log('ℹ️ User not authenticated, using LocalStorage mode');
@@ -147,36 +142,28 @@ export function getDualWriteAdapter(): DualWriteAdapter | null {
 }
 
 /**
- * Switch to DualWrite mode
+ * Switch to Supabase-only mode
  *
  * This function should be called after user authentication to enable
- * background synchronization to Supabase.
+ * Supabase as the single source of truth.
+ *
+ * Note: DualWrite mode has been disabled due to multi-device design flaw.
  *
  * @param userId - User ID for Supabase RLS filtering
  */
-export async function switchToDualWriteMode(userId: string): Promise<void> {
-  console.log('🔄 Switching to DualWrite mode...');
+export async function switchToSupabaseMode(userId: string): Promise<void> {
+  console.log('🔄 Switching to Supabase-only mode...');
 
   try {
-    const localAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
     const supabaseAdapter = new SupabaseAdapter({ userId });
 
-    const dualAdapter = new DualWriteAdapter({
-      local: localAdapter,
-      supabase: supabaseAdapter,
-      syncInterval: 5000,
-      enableSyncWorker: true,
-      enableVerification: false,
-      maxRetries: 3,
-    });
-
-    // Stop old sync worker if exists
+    // Stop old sync worker if exists (for backward compatibility)
     if (currentDualWriteAdapter) {
       currentDualWriteAdapter.stopSyncWorker();
     }
 
-    currentAdapter = dualAdapter;
-    currentDualWriteAdapter = dualAdapter;
+    currentAdapter = supabaseAdapter;
+    currentDualWriteAdapter = null; // DualWrite disabled
     storageManager = new StorageManager(currentAdapter);
 
     // Clear fallback storage manager
@@ -192,11 +179,19 @@ export async function switchToDualWriteMode(userId: string): Promise<void> {
     _dashboardService = null;
     _userService = null;
 
-    console.log('✅ Switched to DualWrite mode successfully');
+    console.log('✅ Switched to Supabase-only mode successfully');
   } catch (error) {
-    console.error('❌ Failed to switch to DualWrite mode:', error);
+    console.error('❌ Failed to switch to Supabase-only mode:', error);
     throw error;
   }
+}
+
+/**
+ * @deprecated Use switchToSupabaseMode instead. DualWrite mode has been disabled.
+ */
+export async function switchToDualWriteMode(userId: string): Promise<void> {
+  console.warn('⚠️ switchToDualWriteMode is deprecated. Using Supabase-only mode instead.');
+  return switchToSupabaseMode(userId);
 }
 
 /**
