@@ -533,9 +533,421 @@ await dualAdapter.forceSyncAll()
 dualAdapter.stopSyncWorker()
 ```
 
+## 🔄 RealtimeAdapter (Phase 4 ✅)
+
+### 개요
+
+Supabase Realtime을 사용하여 실시간 동기화를 제공하는 어댑터입니다. WebSocket 기반 PostgreSQL Change Data Capture (CDC)를 통해 INSERT/UPDATE/DELETE 이벤트를 실시간으로 수신하고 LocalStorage를 자동 업데이트합니다.
+
+### 주요 기능
+
+#### 1. Realtime 채널 구독 (7개 테이블)
+
+```typescript
+class RealtimeAdapter {
+  private supabase: SupabaseClient
+  private userId: string
+  private localAdapter: StorageAdapter
+  private channels: Map<string, RealtimeChannel> = new Map()
+
+  async subscribeAll(): Promise<void> {
+    const entities = ['projects', 'tasks', 'events', 'clients', 'documents', 'settings', 'user']
+
+    for (const entity of entities) {
+      await this.subscribe(entity)
+    }
+  }
+
+  private async subscribe(entity: string): Promise<void> {
+    const tableName = ENTITY_TABLE_MAP[entity]
+    const channelName = `${entity}_changes_${this.userId}`
+
+    const channel = this.supabase
+      .channel(channelName)
+      .on('postgres_changes', {
+        event: '*',  // INSERT, UPDATE, DELETE
+        schema: 'public',
+        table: tableName,
+        filter: `user_id=eq.${this.userId}`,  // 사용자별 필터링 (RLS)
+      }, (payload) => {
+        this.handleRealtimeEvent(payload)
+      })
+      .subscribe()
+
+    this.channels.set(entity, channel)
+  }
+}
+```
+
+#### 2. INSERT/UPDATE/DELETE 이벤트 핸들러
+
+```typescript
+private async handleInsert(payload: RealtimePostgresChangesPayload<any>): Promise<void> {
+  const entity = this.getEntityFromTable(payload.table)
+  const newRecord = payload.new
+
+  // LocalStorage 업데이트 (새 레코드 추가)
+  await this.updateLocalStorage(entity, newRecord.id, newRecord)
+}
+
+private async handleUpdate(payload: RealtimePostgresChangesPayload<any>): Promise<void> {
+  const entity = this.getEntityFromTable(payload.table)
+  const updatedRecord = payload.new
+
+  // LocalStorage 업데이트 (기존 레코드 수정)
+  await this.updateLocalStorage(entity, updatedRecord.id, updatedRecord)
+}
+
+private async handleDelete(payload: RealtimePostgresChangesPayload<any>): Promise<void> {
+  const entity = this.getEntityFromTable(payload.table)
+  const deletedRecord = payload.old
+
+  // LocalStorage 업데이트 (레코드 삭제)
+  await this.updateLocalStorage(entity, deletedRecord.id, null)
+}
+```
+
+#### 3. LocalStorage 자동 업데이트
+
+```typescript
+private async updateLocalStorage(
+  entity: string,
+  id: string,
+  data: any | null
+): Promise<void> {
+  const currentArray = (await this.localAdapter.get(entity)) || []
+
+  let updatedArray: any[]
+
+  if (data === null) {
+    // 삭제: ID와 일치하는 레코드 제거
+    updatedArray = currentArray.filter((item: any) => item.id !== id)
+  } else {
+    // 추가/수정: ID로 기존 레코드 찾기
+    const existingIndex = currentArray.findIndex((item: any) => item.id === id)
+
+    if (existingIndex >= 0) {
+      // 수정: 기존 레코드 교체
+      updatedArray = [...currentArray]
+      updatedArray[existingIndex] = data
+    } else {
+      // 추가: 새 레코드 추가
+      updatedArray = [...currentArray, data]
+    }
+  }
+
+  // LocalStorage 저장
+  await this.localAdapter.set(entity, updatedArray)
+}
+```
+
+#### 4. 연결 상태 모니터링 및 재연결
+
+```typescript
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
+
+getConnectionStatus(): ConnectionStatus {
+  return this.connectionStatus
+}
+
+async reconnect(): Promise<void> {
+  // 기존 채널 정리
+  await this.unsubscribeAll()
+
+  // 재구독
+  await this.subscribeAll()
+}
+```
+
+### 사용 예시
+
+```typescript
+const realtimeAdapter = new RealtimeAdapter({
+  supabase,
+  userId: 'user-123',
+  localAdapter,
+  onConnectionChange: (status) => console.log('Connection:', status),
+  onError: (error) => console.error('Realtime error:', error)
+})
+
+// 모든 테이블 구독 시작
+await realtimeAdapter.subscribeAll()
+
+// 연결 상태 확인
+const status = realtimeAdapter.getConnectionStatus()
+
+// 구독 해제
+await realtimeAdapter.unsubscribeAll()
+```
+
+## 📴 OfflineQueue (Phase 5 ✅)
+
+### 개요
+
+오프라인 상태에서 작업을 큐에 저장하고 온라인 복귀 시 처리하는 시스템입니다. LocalStorage 지속성을 통해 브라우저 재시작 후에도 큐가 유지됩니다.
+
+### 주요 기능
+
+#### 1. 오프라인 작업 큐잉
+
+```typescript
+interface QueueOperation {
+  operationId: string
+  type: 'INSERT' | 'UPDATE' | 'DELETE'
+  entity: string
+  id: string
+  data: any | null
+  timestamp: number
+  retryCount?: number
+  error?: string
+}
+
+class OfflineQueue {
+  private queue: QueueOperation[] = []
+  private storageKey = 'weave_offline_queue'
+  private maxSize = 1000
+  private maxRetries = 3
+
+  async enqueue(operation: Omit<QueueOperation, 'operationId' | 'retryCount'>): Promise<void> {
+    // 큐 크기 제한 확인
+    if (this.queue.length >= this.maxSize) {
+      throw new Error('Queue is full')
+    }
+
+    // 중복 작업 제거 (동일 엔티티/ID)
+    this.removeDuplicates(operation.entity, operation.id)
+
+    // 큐에 추가
+    const queueOperation: QueueOperation = {
+      ...operation,
+      operationId: this.generateOperationId(),
+      retryCount: 0,
+    }
+
+    this.queue.push(queueOperation)
+
+    // LocalStorage에 저장
+    await this.saveToStorage()
+  }
+}
+```
+
+#### 2. 큐 처리 로직
+
+```typescript
+async processAll(
+  processor: (operation: QueueOperation) => Promise<void>
+): Promise<number> {
+  let processedCount = 0
+
+  while (this.queue.length > 0) {
+    const operation = this.queue[0]
+
+    try {
+      // 작업 처리
+      await processor(operation)
+
+      // 성공 시 큐에서 제거
+      await this.dequeue(operation.operationId)
+      processedCount++
+    } catch (error) {
+      // 실패 시 재시도 횟수 증가
+      operation.retryCount = (operation.retryCount || 0) + 1
+
+      // 최대 재시도 횟수 초과 시 큐에서 제거
+      if (operation.retryCount >= this.maxRetries) {
+        await this.dequeue(operation.operationId)
+      } else {
+        // 재시도 가능하면 큐 끝으로 이동
+        this.queue.shift()
+        this.queue.push(operation)
+        await this.saveToStorage()
+      }
+    }
+  }
+
+  return processedCount
+}
+```
+
+#### 3. LocalStorage 지속성
+
+```typescript
+private loadFromStorage(): void {
+  const stored = localStorage.getItem(this.storageKey)
+
+  if (stored) {
+    this.queue = JSON.parse(stored)
+  }
+}
+
+private async saveToStorage(): Promise<void> {
+  localStorage.setItem(this.storageKey, JSON.stringify(this.queue))
+}
+```
+
+### 사용 예시
+
+```typescript
+const queue = new OfflineQueue({
+  storageKey: 'offline_queue',
+  maxSize: 1000,
+  onQueueChange: (size) => console.log('Queue size:', size)
+})
+
+// 오프라인 작업 추가
+await queue.enqueue({
+  type: 'UPDATE',
+  entity: 'projects',
+  id: 'proj-123',
+  data: { name: 'New Project' },
+  timestamp: Date.now()
+})
+
+// 온라인 복귀 시 큐 처리
+await queue.processAll(async (operation) => {
+  await supabase.from(operation.entity).upsert(operation.data)
+})
+```
+
+## 🌐 BidirectionalSyncAdapter Offline 지원 (Phase 5 ✅)
+
+### 개요
+
+BidirectionalSyncAdapter에 온라인/오프라인 감지 로직을 통합하여 네트워크 상태에 따라 자동으로 동작을 변경합니다.
+
+### 주요 기능
+
+#### 1. 온라인/오프라인 감지
+
+```typescript
+class BidirectionalSyncAdapter implements StorageAdapter {
+  private offlineQueue: OfflineQueue
+  private syncStatus: SyncStatus = {
+    // ...
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    offlineQueueSize: 0,
+  }
+
+  constructor(options: BidirectionalSyncOptions) {
+    // OfflineQueue 초기화
+    this.offlineQueue = new OfflineQueue({
+      storageKey: 'weave_offline_queue',
+      maxSize: 1000,
+      onQueueChange: (size) => {
+        this.syncStatus.offlineQueueSize = size
+      }
+    })
+
+    // 온라인/오프라인 이벤트 리스너 등록
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => this.handleOnline())
+      window.addEventListener('offline', () => this.handleOffline())
+    }
+  }
+}
+```
+
+#### 2. 오프라인 모드 전환
+
+```typescript
+private handleOffline(): void {
+  console.warn('Network offline detected')
+  this.syncStatus.isOnline = false
+
+  // 동기화 워커는 계속 실행, sync() 내부에서 온라인 체크
+}
+
+async set<T>(key: string, value: T): Promise<void> {
+  // LocalStorage에 즉시 저장 (온라인/오프라인 상관없이)
+  await this.local.set(key, value)
+
+  if (this.syncStatus.isOnline) {
+    // 온라인: Supabase 동기화 시도
+    this.pushToSupabase(key, value).catch(...)
+  } else {
+    // 오프라인: OfflineQueue에 추가
+    await this.offlineQueue.enqueue({
+      type: 'UPDATE',
+      entity: key,
+      id: key,
+      data: value,
+      timestamp: Date.now(),
+    })
+  }
+}
+```
+
+#### 3. 온라인 복귀 처리
+
+```typescript
+private async handleOnline(): Promise<void> {
+  console.log('Network online detected')
+  this.syncStatus.isOnline = true
+
+  // 1. OfflineQueue 처리
+  if (!this.offlineQueue.isEmpty()) {
+    const processedCount = await this.offlineQueue.processAll(async (operation) => {
+      await this.pushToSupabase(operation.entity, operation.data)
+    })
+
+    console.log(`Processed ${processedCount} offline operations`)
+  }
+
+  // 2. 양방향 동기화 재개
+  await this.sync()
+}
+```
+
+#### 4. 동기화 상태 확인
+
+```typescript
+async sync(): Promise<void> {
+  // 오프라인 체크
+  if (!this.syncStatus.isOnline) {
+    console.log('Offline mode: Skipping sync')
+    return
+  }
+
+  // ... 동기화 로직
+}
+
+isOnline(): boolean {
+  return this.syncStatus.isOnline
+}
+
+getOfflineQueueSize(): number {
+  return this.offlineQueue.size()
+}
+```
+
+### 오프라인 모드 동작 흐름
+
+```
+1. 네트워크 연결 끊김
+   ↓
+2. handleOffline() 호출
+   - isOnline = false 설정
+   ↓
+3. set() 호출 시
+   - LocalStorage에 즉시 저장 ✅
+   - Supabase 동기화 건너뛰기
+   - OfflineQueue에 작업 추가 ✅
+   ↓
+4. 네트워크 연결 복구
+   ↓
+5. handleOnline() 호출
+   - isOnline = true 설정
+   - OfflineQueue.processAll() 실행
+   - 큐의 모든 작업을 Supabase로 동기화
+   - 양방향 동기화 재개
+```
+
 ---
 
-**Adapter 시스템은 스토리지 백엔드의 완전한 추상화를 제공하며, Phase 10 완료로 Supabase 마이그레이션을 위한 견고한 기반이 구축되었습니다.**
+**Adapter 시스템은 스토리지 백엔드의 완전한 추상화를 제공하며, Phase 4-5 완료로 실시간 동기화 및 오프라인 지원 기능이 추가되었습니다.**
 
-*마지막 업데이트: 2025-01-07*
+*마지막 업데이트: 2025-01-10*
+*Phase 4 완료: RealtimeAdapter (464줄)*
+*Phase 5 완료: OfflineQueue (376줄), BidirectionalSyncAdapter Offline 지원*
 *Phase 10.1-10.2 완료: SupabaseAdapter, DualWriteAdapter*
