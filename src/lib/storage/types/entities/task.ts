@@ -164,6 +164,9 @@ export interface Task extends JsonObject {
 
   /** Last update timestamp (ISO 8601) */
   updatedAt: string;
+
+  /** Last update user ID (for conflict resolution) */
+  updated_by?: string;
 }
 
 // ============================================================================
@@ -242,6 +245,9 @@ export function isTask(data: unknown): data is Task {
 
   // Optional recurring validation
   if (t.recurring !== undefined && !isTaskRecurring(t.recurring)) return false;
+
+  // Optional updated_by validation
+  if (t.updated_by !== undefined && typeof t.updated_by !== 'string') return false;
 
   return true;
 }

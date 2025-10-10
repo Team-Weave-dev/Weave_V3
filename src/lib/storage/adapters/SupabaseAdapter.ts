@@ -38,8 +38,8 @@ const ENTITY_TABLE_MAP: Record<string, string> = {
   project: 'projects',
   tasks: 'tasks',
   task: 'tasks',
-  events: 'calendar_events',
-  event: 'calendar_events',
+  events: 'events',
+  event: 'events',
   clients: 'clients',
   client: 'clients',
   documents: 'documents',
@@ -318,6 +318,7 @@ export class SupabaseAdapter implements StorageAdapter {
             .update({
               dashboard: value,
               updated_at: new Date().toISOString(),
+              updated_by: this.userId,
             })
             .eq('user_id', this.userId)
 
@@ -350,6 +351,7 @@ export class SupabaseAdapter implements StorageAdapter {
           preferences: userSettings.preferences,
           user_id: this.userId,
           updated_at: new Date().toISOString(),
+          updated_by: this.userId,
         }
 
         await this.withRetry(async () => {
@@ -398,6 +400,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: userData.createdAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          updated_by: this.userId,
         }
 
         await this.withRetry(async () => {
@@ -431,7 +434,7 @@ export class SupabaseAdapter implements StorageAdapter {
 
         const dataToStore = projectsArray.map((project: any) => ({
           // Identifiers
-          id: project.id,
+          id: this.isValidUUID(project.id) ? project.id : crypto.randomUUID(),
           user_id: this.userId,
           // client_id must be UUID, not client name - set to null if not UUID format
           client_id: this.isValidUUID(project.clientId) ? project.clientId : null,
@@ -477,6 +480,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: project.createdAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          updated_by: this.userId,
         }))
 
         await this.withRetry(async () => {
@@ -507,7 +511,7 @@ export class SupabaseAdapter implements StorageAdapter {
 
         const dataToStore = tasksArray.map((task: any) => ({
           // Identifiers
-          id: task.id,
+          id: this.isValidUUID(task.id) ? task.id : crypto.randomUUID(),
           user_id: this.userId,
           project_id: this.isValidUUID(task.projectId) ? task.projectId : null,
 
@@ -541,6 +545,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: task.createdAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          updated_by: this.userId,
         }))
 
         await this.withRetry(async () => {
@@ -569,66 +574,125 @@ export class SupabaseAdapter implements StorageAdapter {
           return
         }
 
-        const dataToStore = eventsArray.map((event: any) => ({
-          // Identifiers
-          id: event.id,
-          user_id: this.userId,
-          project_id: this.isValidUUID(event.projectId) ? event.projectId : null,
-          client_id: this.isValidUUID(event.clientId) ? event.clientId : null,
+        const dataToStore = eventsArray.map((event: any) => {
+          // Detect format: Dashboard has 'date' field, Storage has 'startDate' field
+          const isDashboardFormat = event.date && !event.startDate
 
-          // Basic info
-          title: event.title,
-          description: event.description || null,
-          location: event.location || null,
+          let startTime: string
+          let endTime: string
 
-          // Time (camelCase → snake_case)
-          start_time: event.startDate,
-          end_time: event.endDate,
-          all_day: event.allDay || false,
-          timezone: event.timezone || 'Asia/Seoul',
+          if (isDashboardFormat) {
+            // Convert Dashboard format: date + startTime/endTime → ISO timestamp
+            const eventDate = new Date(event.date)
 
-          // Type and status
-          type: event.type || 'event',
-          status: event.status || 'confirmed',
+            if (event.startTime) {
+              const [hours, minutes] = event.startTime.split(':')
+              const startDate = new Date(eventDate)
+              startDate.setHours(parseInt(hours), parseInt(minutes))
+              startTime = startDate.toISOString()
+            } else {
+              // No startTime: use date at midnight
+              startTime = eventDate.toISOString()
+            }
 
-          // Style
-          color: event.color || '#3B82F6',
-          icon: event.icon || null,
+            if (event.endTime) {
+              const [hours, minutes] = event.endTime.split(':')
+              const endDate = new Date(eventDate)
+              endDate.setHours(parseInt(hours), parseInt(minutes))
+              endTime = endDate.toISOString()
+            } else {
+              // No endTime: default to 1 hour after start
+              endTime = new Date(new Date(startTime).getTime() + 3600000).toISOString()
+            }
+          } else {
+            // Storage format: use as-is
+            startTime = event.startDate
+            endTime = event.endDate
+          }
 
-          // Recurrence (JSONB)
-          recurrence: event.recurring || null,
-          recurrence_end: event.recurring?.endDate || null,
-          recurrence_exceptions: event.recurring?.exceptions || [],
+          return {
+            // Identifiers
+            id: this.isValidUUID(event.id) ? event.id : crypto.randomUUID(),
+            user_id: this.userId,
+            project_id: this.isValidUUID(event.projectId) ? event.projectId : null,
+            client_id: this.isValidUUID(event.clientId) ? event.clientId : null,
 
-          // Reminders (JSONB)
-          reminders: event.reminders || [],
+            // Basic info
+            title: event.title,
+            description: event.description || null,
+            location: event.location || null,
 
-          // Attendees (JSONB)
-          attendees: event.attendees || [],
+            // Time (camelCase → snake_case) - NOW HANDLES BOTH FORMATS
+            start_time: startTime,
+            end_time: endTime,
+            all_day: event.allDay || false,
+            timezone: event.timezone || 'Asia/Seoul',
 
-          // Metadata (JSONB)
-          metadata: event.metadata || {},
-          tags: event.tags || [],
-          is_private: event.isPrivate || false,
-          is_busy: event.isBusy !== undefined ? event.isBusy : true,
+            // Type and status
+            type: event.type || 'event',
+            status: event.status || 'confirmed',
 
-          // Timestamps (camelCase → snake_case)
-          created_at: event.createdAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }))
+            // Style
+            color: event.color || '#3B82F6',
+            icon: event.icon || null,
+
+            // Recurrence (JSONB)
+            recurrence: event.recurring || null,
+            recurrence_end: event.recurring?.endDate || null,
+            recurrence_exceptions: event.recurring?.exceptions || [],
+
+            // Reminders (JSONB)
+            reminders: event.reminders || [],
+
+            // Attendees (JSONB)
+            attendees: event.attendees || [],
+
+            // Metadata (JSONB)
+            metadata: event.metadata || {},
+            tags: event.tags || [],
+            is_private: event.isPrivate || false,
+            is_busy: event.isBusy !== undefined ? event.isBusy : true,
+
+            // Timestamps (camelCase → snake_case)
+            created_at: event.createdAt || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            updated_by: this.userId,
+          }
+        })
 
         await this.withRetry(async () => {
-          const query = this.supabase.from(tableName).upsert(dataToStore as any)
-          const { error } = await query
+          // 삭제-삽입 전략: LocalStorage와 완전 동기화
+          // 1. 기존 events 모두 삭제
+          const { error: deleteError } = await this.supabase
+            .from(tableName)
+            .delete()
+            .eq('user_id', this.userId)
 
-          if (error) {
-            console.error('[SupabaseAdapter] Events sync error:', {
-              code: error.code,
-              message: error.message,
-              details: error.details,
-              hint: error.hint
+          if (deleteError) {
+            console.error('[SupabaseAdapter] Events delete error:', {
+              code: deleteError.code,
+              message: deleteError.message,
+              details: deleteError.details,
+              hint: deleteError.hint
             })
-            throw error
+            throw deleteError
+          }
+
+          // 2. 새로운 events 삽입 (배열이 비어있지 않을 때만)
+          if (dataToStore.length > 0) {
+            const { error: insertError } = await this.supabase
+              .from(tableName)
+              .insert(dataToStore as any)
+
+            if (insertError) {
+              console.error('[SupabaseAdapter] Events insert error:', {
+                code: insertError.code,
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint
+              })
+              throw insertError
+            }
           }
         })
         return
@@ -645,7 +709,7 @@ export class SupabaseAdapter implements StorageAdapter {
 
         const dataToStore = clientsArray.map((client: any) => ({
           // Identifiers
-          id: client.id,
+          id: this.isValidUUID(client.id) ? client.id : crypto.randomUUID(),
           user_id: this.userId,
 
           // Basic info
@@ -675,6 +739,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: client.createdAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          updated_by: this.userId,
         }))
 
         await this.withRetry(async () => {
@@ -705,7 +770,7 @@ export class SupabaseAdapter implements StorageAdapter {
 
         const dataToStore = documentsArray.map((doc: any) => ({
           // Identifiers
-          id: doc.id,
+          id: this.isValidUUID(doc.id) ? doc.id : crypto.randomUUID(),
           user_id: this.userId,
           project_id: this.isValidUUID(doc.projectId) ? doc.projectId : null,
 
@@ -751,6 +816,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: doc.createdAt || doc.savedAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          updated_by: this.userId,
         }))
 
         await this.withRetry(async () => {
@@ -776,11 +842,13 @@ export class SupabaseAdapter implements StorageAdapter {
             ...item,
             user_id: this.userId,
             updated_at: new Date().toISOString(),
+            updated_by: this.userId,
           }))
         : {
             ...(value as any),
             user_id: this.userId,
             updated_at: new Date().toISOString(),
+            updated_by: this.userId,
           }
 
       await this.withRetry(async () => {

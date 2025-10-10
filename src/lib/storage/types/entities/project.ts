@@ -406,6 +406,9 @@ export interface Project extends JsonObject {
 
   /** Last update timestamp (ISO 8601) */
   updatedAt: string;
+
+  /** Last update user ID (for conflict resolution) */
+  updated_by?: string;
 }
 
 // ============================================================================
@@ -542,6 +545,9 @@ export function isProject(data: unknown): data is Project {
 
   // Optional array validation
   if (p.tags !== undefined && !isStringArray(p.tags)) return false;
+
+  // Optional updated_by validation
+  if (p.updated_by !== undefined && typeof p.updated_by !== 'string') return false;
 
   return true;
 }

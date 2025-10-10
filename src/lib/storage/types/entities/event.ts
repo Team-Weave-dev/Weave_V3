@@ -185,6 +185,9 @@ export interface CalendarEvent extends JsonObject {
 
   /** Last update timestamp (ISO 8601) */
   updatedAt: string;
+
+  /** Last update user ID (for conflict resolution) */
+  updated_by?: string;
 }
 
 // ============================================================================
@@ -293,6 +296,9 @@ export function isCalendarEvent(data: unknown): data is CalendarEvent {
 
   // Optional recurring validation
   if (e.recurring !== undefined && !isEventRecurring(e.recurring)) return false;
+
+  // Optional updated_by validation
+  if (e.updated_by !== undefined && typeof e.updated_by !== 'string') return false;
 
   return true;
 }

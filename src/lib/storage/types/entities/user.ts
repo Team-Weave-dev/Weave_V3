@@ -58,6 +58,9 @@ export interface User {
   /** Last update timestamp (ISO 8601) */
   updatedAt: string;
 
+  /** Last update user ID (for conflict resolution) */
+  updated_by?: string;
+
   /** User preferences and metadata */
   metadata?: UserMetadata;
 }
@@ -83,6 +86,7 @@ export function isUser(data: unknown): data is User {
   // Optional fields validation
   if (u.avatar !== undefined && typeof u.avatar !== 'string') return false;
   if (u.phone !== undefined && typeof u.phone !== 'string') return false;
+  if (u.updated_by !== undefined && typeof u.updated_by !== 'string') return false;
   if (u.businessNumber !== undefined && typeof u.businessNumber !== 'string') return false;
   if (u.address !== undefined && typeof u.address !== 'string') return false;
   if (u.addressDetail !== undefined && typeof u.addressDetail !== 'string') return false;

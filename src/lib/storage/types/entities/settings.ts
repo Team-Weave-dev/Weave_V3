@@ -230,6 +230,9 @@ export interface Settings {
 
   /** Last update timestamp (ISO 8601) */
   updatedAt: string;
+
+  /** Last update user ID (for conflict resolution) */
+  updated_by?: string;
 }
 
 // ============================================================================
@@ -427,6 +430,9 @@ export function isSettings(data: unknown): data is Settings {
   if (!isProjectSettings(s.projects)) return false;
   if (!isNotificationSettings(s.notifications)) return false;
   if (!isUserPreferences(s.preferences)) return false;
+
+  // Optional updated_by validation
+  if (s.updated_by !== undefined && typeof s.updated_by !== 'string') return false;
 
   return true;
 }

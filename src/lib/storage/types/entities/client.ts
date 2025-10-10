@@ -132,6 +132,9 @@ export interface Client extends JsonObject {
 
   /** Last update timestamp (ISO 8601) */
   updatedAt: string;
+
+  /** Last update user ID (for conflict resolution) */
+  updated_by?: string;
 }
 
 // ============================================================================
@@ -211,6 +214,9 @@ export function isClient(data: unknown): data is Client {
 
   // Rating validation (1-5 range)
   if (c.rating !== undefined && !isNumberInRange(c.rating, 1, 5)) return false;
+
+  // Optional updated_by validation
+  if (c.updated_by !== undefined && typeof c.updated_by !== 'string') return false;
 
   return true;
 }

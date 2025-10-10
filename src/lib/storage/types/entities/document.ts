@@ -112,6 +112,9 @@ export interface Document extends JsonObject {
 
   /** Last update timestamp (ISO 8601) */
   updatedAt: string;
+
+  /** Last update user ID (for conflict resolution) */
+  updated_by?: string;
 }
 
 // ============================================================================
@@ -173,6 +176,9 @@ export function isDocument(data: unknown): data is Document {
     if (!Array.isArray(d.signatures)) return false;
     if (!d.signatures.every(isDocumentSignature)) return false;
   }
+
+  // Optional updated_by validation
+  if (d.updated_by !== undefined && typeof d.updated_by !== 'string') return false;
 
   return true;
 }
