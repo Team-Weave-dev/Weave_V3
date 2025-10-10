@@ -1,7 +1,9 @@
 import { CalendarEvent } from '@/types/dashboard';
 import { addDays, format } from 'date-fns';
+import { storage } from '@/lib/storage';
+import { STORAGE_KEYS } from '@/lib/storage/config';
 
-// 로컬스토리지 키
+// 로컬스토리지 키 (레거시 호환용)
 const CALENDAR_EVENTS_KEY = 'weave_calendar_events';
 
 // 초기 목데이터 (Phase 5 테스트를 위해 임시로 비활성화)
@@ -30,14 +32,13 @@ const generateMockEvents = (): CalendarEvent[] => {
   */
 };
 
-// 로컬스토리지에서 이벤트 로드
-export const loadCalendarEvents = (): CalendarEvent[] => {
+// 로컬스토리지에서 이벤트 로드 (Storage API 사용)
+export const loadCalendarEvents = async (): Promise<CalendarEvent[]> => {
   if (typeof window === 'undefined') return [];
-  
+
   try {
-    const stored = localStorage.getItem(CALENDAR_EVENTS_KEY);
-    if (stored) {
-      const events = JSON.parse(stored);
+    const events = await storage.get<CalendarEvent[]>(STORAGE_KEYS.EVENTS);
+    if (events && Array.isArray(events)) {
       // Date 객체로 변환
       return events.map((event: any) => ({
         ...event,
@@ -47,18 +48,18 @@ export const loadCalendarEvents = (): CalendarEvent[] => {
   } catch (error) {
     console.error('Failed to load calendar events:', error);
   }
-  
+
   // Phase 5 E2E 테스트: 로컬스토리지에 데이터가 없으면 빈 배열 반환
   // 목데이터 자동 생성 비활성화
   return [];
 };
 
-// 로컬스토리지에 이벤트 저장
-export const saveCalendarEvents = (events: CalendarEvent[]) => {
+// 로컬스토리지에 이벤트 저장 (Storage API 사용)
+export const saveCalendarEvents = async (events: CalendarEvent[]): Promise<void> => {
   if (typeof window === 'undefined') return;
-  
+
   try {
-    localStorage.setItem(CALENDAR_EVENTS_KEY, JSON.stringify(events));
+    await storage.set(STORAGE_KEYS.EVENTS, events);
   } catch (error) {
     console.error('Failed to save calendar events:', error);
   }
@@ -69,8 +70,8 @@ const recentlyAddedEvents = new Map<string, number>();
 const DUPLICATE_WINDOW_MS = 500; // 500ms 이내의 같은 이벤트는 중복으로 간주
 
 // 이벤트 추가 (React StrictMode 중복 방지)
-export const addCalendarEvent = (event: CalendarEvent): CalendarEvent[] => {
-  const events = loadCalendarEvents();
+export const addCalendarEvent = async (event: CalendarEvent): Promise<CalendarEvent[]> => {
+  const events = await loadCalendarEvents();
 
   // 중복 체크를 위한 이벤트 시그니처 생성
   const eventSignature = `${event.title}_${event.date}_${event.startTime}_${event.type}`;
@@ -95,7 +96,7 @@ export const addCalendarEvent = (event: CalendarEvent): CalendarEvent[] => {
 
   // 실제로 이벤트 추가
   const newEvents = [...events, event];
-  saveCalendarEvents(newEvents);
+  await saveCalendarEvents(newEvents);
   return newEvents;
 };
 
@@ -103,8 +104,8 @@ export const addCalendarEvent = (event: CalendarEvent): CalendarEvent[] => {
 const recentlyUpdatedEvents = new Map<string, number>();
 
 // 이벤트 수정 (React StrictMode 중복 방지)
-export const updateCalendarEvent = (updatedEvent: CalendarEvent): CalendarEvent[] => {
-  const events = loadCalendarEvents();
+export const updateCalendarEvent = async (updatedEvent: CalendarEvent): Promise<CalendarEvent[]> => {
+  const events = await loadCalendarEvents();
 
   // 중복 체크를 위한 업데이트 시그니처 생성
   const updateSignature = `update_${updatedEvent.id}_${JSON.stringify(updatedEvent)}`;
@@ -131,7 +132,7 @@ export const updateCalendarEvent = (updatedEvent: CalendarEvent): CalendarEvent[
   const newEvents = events.map(event =>
     event.id === updatedEvent.id ? updatedEvent : event
   );
-  saveCalendarEvents(newEvents);
+  await saveCalendarEvents(newEvents);
   return newEvents;
 };
 
@@ -139,8 +140,8 @@ export const updateCalendarEvent = (updatedEvent: CalendarEvent): CalendarEvent[
 const recentlyDeletedEvents = new Map<string, number>();
 
 // 이벤트 삭제 (React StrictMode 중복 방지)
-export const deleteCalendarEvent = (eventId: string): CalendarEvent[] => {
-  const events = loadCalendarEvents();
+export const deleteCalendarEvent = async (eventId: string): Promise<CalendarEvent[]> => {
+  const events = await loadCalendarEvents();
 
   // 이미 삭제된 이벤트인지 체크 (이벤트가 없으면 이미 삭제된 것)
   const eventExists = events.some(event => event.id === eventId);
@@ -170,14 +171,14 @@ export const deleteCalendarEvent = (eventId: string): CalendarEvent[] => {
 
   // 실제로 이벤트 삭제
   const newEvents = events.filter(event => event.id !== eventId);
-  saveCalendarEvents(newEvents);
+  await saveCalendarEvents(newEvents);
   return newEvents;
 };
 
 // 목데이터 리셋 (개발용)
-export const resetCalendarEvents = (): CalendarEvent[] => {
+export const resetCalendarEvents = async (): Promise<CalendarEvent[]> => {
   const mockEvents = generateMockEvents();
-  saveCalendarEvents(mockEvents);
+  await saveCalendarEvents(mockEvents);
   return mockEvents;
 };
 
@@ -344,10 +345,10 @@ export function resetAllCalendarData(): void {
 }
 
 // 캘린더 이벤트 데이터 상태 확인
-export function debugCalendarEvents(): void {
+export async function debugCalendarEvents(): Promise<void> {
   console.log(`🔍 [CALENDAR DEBUG] 캘린더 이벤트 상태 확인`);
 
-  const events = loadCalendarEvents();
+  const events = await loadCalendarEvents();
   console.log(`📊 현재 이벤트 개수: ${events.length}`);
   console.log('📄 이벤트 목록:', events);
 
@@ -367,20 +368,15 @@ export function debugCalendarEvents(): void {
     console.log('📭 저장된 캘린더 이벤트가 없습니다.');
   }
 
-  // localStorage에서 직접 확인
-  const rawData = localStorage.getItem(CALENDAR_EVENTS_KEY);
+  // Storage API로 직접 확인
+  const rawData = await storage.get(STORAGE_KEYS.EVENTS);
   if (rawData) {
-    try {
-      const allEvents = JSON.parse(rawData);
-      console.log(`🗄️  localStorage 직접 조회 결과:`, allEvents);
-    } catch (error) {
-      console.error('❌ localStorage 데이터 파싱 오류:', error);
-    }
+    console.log(`🗄️  Storage API 직접 조회 결과:`, rawData);
   }
 }
 
 // 캐시 문제 해결을 위한 원스톱 함수
-export function fixCalendarCacheIssues(): void {
+export async function fixCalendarCacheIssues(): Promise<void> {
   console.log('🚑 [CACHE FIX] 브라우저 캐싱 문제 해결 시작 (캘린더)...');
 
   // 1단계: 현재 상태 진단

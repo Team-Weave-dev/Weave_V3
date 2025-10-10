@@ -18,9 +18,9 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
   const [error, setError] = useState<Error | null>(null);
 
   // 이벤트 새로고침 함수 (다른 곳에서도 사용하므로 먼저 정의)
-  const refreshEvents = useCallback(() => {
+  const refreshEvents = useCallback(async () => {
     try {
-      const loadedEvents = loadCalendarEvents();
+      const loadedEvents = await loadCalendarEvents();
       setEvents(loadedEvents);
     } catch (err) {
       setError(err as Error);
@@ -29,18 +29,22 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
 
   // 이벤트 로드
   useEffect(() => {
-    try {
-      if (initialEvents && initialEvents.length > 0) {
-        setEvents(initialEvents);
-      } else {
-        const loadedEvents = loadCalendarEvents();
-        setEvents(loadedEvents);
+    const loadEvents = async () => {
+      try {
+        if (initialEvents && initialEvents.length > 0) {
+          setEvents(initialEvents);
+        } else {
+          const loadedEvents = await loadCalendarEvents();
+          setEvents(loadedEvents);
+        }
+        setIsLoading(false);
+      } catch (err) {
+        setError(err as Error);
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    } catch (err) {
-      setError(err as Error);
-      setIsLoading(false);
-    }
+    };
+
+    loadEvents();
   }, [initialEvents]);
 
   // calendarDataChanged 이벤트 리스닝 - 다른 곳에서 변경된 캘린더 이벤트를 실시간 반영
@@ -60,9 +64,9 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
   }, [refreshEvents]);
 
   // 이벤트 추가
-  const addEvent = useCallback((event: CalendarEvent) => {
+  const addEvent = useCallback(async (event: CalendarEvent) => {
     try {
-      const updatedEvents = addCalendarEvent(event);
+      const updatedEvents = await addCalendarEvent(event);
       setEvents(updatedEvents);
 
       // 실시간 동기화: 다른 위젯들에게 변경사항 알림
@@ -81,9 +85,9 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
   }, []);
 
   // 이벤트 수정
-  const updateEvent = useCallback((event: CalendarEvent) => {
+  const updateEvent = useCallback(async (event: CalendarEvent) => {
     try {
-      const updatedEvents = updateCalendarEvent(event);
+      const updatedEvents = await updateCalendarEvent(event);
       setEvents(updatedEvents);
 
       // 실시간 동기화: 다른 위젯들에게 변경사항 알림
@@ -102,9 +106,9 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
   }, []);
 
   // 이벤트 삭제
-  const deleteEvent = useCallback((eventId: string) => {
+  const deleteEvent = useCallback(async (eventId: string) => {
     try {
-      const updatedEvents = deleteCalendarEvent(eventId);
+      const updatedEvents = await deleteCalendarEvent(eventId);
       setEvents(updatedEvents);
 
       // 실시간 동기화: 다른 위젯들에게 변경사항 알림

@@ -37,14 +37,37 @@ interface AgendaViewProps {
  * AgendaView Component
  * 일정 목록 뷰 - 날짜별로 그룹화된 이벤트 목록
  */
-const AgendaView = React.memo(({ 
-  events, 
+const AgendaView = React.memo(({
+  events,
   onEventClick,
   containerHeight
 }: AgendaViewProps) => {
+  // 안전한 날짜 파싱 헬퍼
+  const parseEventDate = (date: Date | string): Date | null => {
+    try {
+      const parsed = date instanceof Date ? date : new Date(date);
+      // Invalid Date 체크
+      if (isNaN(parsed.getTime())) {
+        console.warn('[AgendaView] Invalid date:', date);
+        return null;
+      }
+      return parsed;
+    } catch (error) {
+      console.error('[AgendaView] Date parsing error:', error, date);
+      return null;
+    }
+  };
+
+  // 유효한 이벤트만 필터링
+  const validEvents = events.filter(event => {
+    const parsedDate = parseEventDate(event.date);
+    return parsedDate !== null;
+  });
+
   // 날짜별로 이벤트 그룹핑
-  const groupedEvents = events.reduce((acc, event) => {
-    const dateKey = format(new Date(event.date), 'yyyy-MM-dd');
+  const groupedEvents = validEvents.reduce((acc, event) => {
+    const parsedDate = parseEventDate(event.date)!; // 이미 필터링했으므로 null 아님
+    const dateKey = format(parsedDate, 'yyyy-MM-dd');
     if (!acc[dateKey]) {
       acc[dateKey] = [];
     }

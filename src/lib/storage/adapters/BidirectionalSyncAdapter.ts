@@ -31,6 +31,12 @@ import { SupabaseAdapter } from './SupabaseAdapter'
 import { TimestampSyncAdapter } from './TimestampSyncAdapter'
 import { StorageError } from '../types/base'
 import { OfflineQueue, type QueueOperation } from './OfflineQueue'
+import { conflictResolver } from '../utils/ConflictResolver'
+import type {
+  ConflictResolutionOptions,
+  ConflictData,
+  ConflictResolution,
+} from '../types/conflict'
 
 /**
  * 동기화 상태 정보
@@ -73,7 +79,7 @@ export interface SyncError {
 /**
  * BidirectionalSyncAdapter 생성 옵션
  */
-export interface BidirectionalSyncOptions {
+export interface BidirectionalSyncOptions extends ConflictResolutionOptions {
   /** LocalStorage 어댑터 */
   localAdapter: LocalStorageAdapter
   /** Supabase 어댑터 */
@@ -103,6 +109,9 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
   private enableAutoSync: boolean
   private maxRetries: number
   private retryDelay: number
+
+  // Phase 5.5: 충돌 해결 옵션
+  private conflictResolutionOptions: ConflictResolutionOptions
 
   private syncWorkerInterval: ReturnType<typeof setInterval> | null = null
   private syncStatus: SyncStatus = {
@@ -136,6 +145,15 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
     this.enableAutoSync = options.enableAutoSync ?? true
     this.maxRetries = options.maxRetries ?? 3
     this.retryDelay = options.retryDelay ?? 1000
+
+    // Phase 5.5: 충돌 해결 옵션 초기화
+    this.conflictResolutionOptions = {
+      autoResolve: options.autoResolve,
+      preferNewest: options.preferNewest ?? true,
+      onConflict: options.onConflict,
+      onResolved: options.onResolved,
+      onError: options.onError,
+    }
 
     // Phase 5.1: OfflineQueue 초기화
     this.offlineQueue = new OfflineQueue({
