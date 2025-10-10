@@ -48,7 +48,6 @@ const ENTITY_TABLE_MAP: Record<string, string> = {
   dashboard: 'user_settings', // dashboard는 user_settings.dashboard 컬럼에 저장
   user: 'users',
   users: 'users',
-  todo_sections: 'todo_sections',
 } as const
 
 /**
@@ -202,205 +201,6 @@ export class SupabaseAdapter implements StorageAdapter {
   }
 
   /**
-   * Transform Supabase data (snake_case) to camelCase
-   * @param entity - Entity type
-   * @param data - Raw Supabase data
-   * @returns Transformed data in camelCase
-   */
-  private transformFromSupabase(entity: string, data: any): any {
-    if (!data) return data
-
-    // Handle arrays
-    if (Array.isArray(data)) {
-      return data.map(item => this.transformFromSupabase(entity, item))
-    }
-
-    // Handle objects - transform based on entity type
-    switch (entity) {
-      case 'events':
-      case 'event':
-        return {
-          id: data.id,
-          userId: data.user_id,
-          projectId: data.project_id,
-          clientId: data.client_id,
-          title: data.title,
-          description: data.description,
-          location: data.location,
-          startDate: data.start_time,  // start_time → startDate
-          endDate: data.end_time,      // end_time → endDate
-          allDay: data.all_day,
-          timezone: data.timezone,
-          type: data.type,
-          status: data.status,
-          color: data.color,
-          icon: data.icon,
-          recurring: data.recurrence,
-          recurrenceEnd: data.recurrence_end,
-          recurrenceExceptions: data.recurrence_exceptions,
-          reminders: data.reminders,
-          attendees: data.attendees,
-          metadata: data.metadata,
-          tags: data.tags,
-          isPrivate: data.is_private,
-          isBusy: data.is_busy,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        }
-
-      case 'projects':
-      case 'project':
-        return {
-          id: data.id,
-          userId: data.user_id,
-          clientId: data.client_id,
-          no: data.no,
-          name: data.name,
-          description: data.description,
-          projectContent: data.project_content,
-          status: data.status,
-          progress: data.progress,
-          paymentProgress: data.payment_progress,
-          registrationDate: data.registration_date,
-          modifiedDate: data.modified_date,
-          endDate: data.end_date,
-          startDate: data.start_date,
-          settlementMethod: data.settlement_method,
-          paymentStatus: data.payment_status,
-          totalAmount: data.total_amount,
-          currency: data.currency,
-          wbsTasks: data.wbs_tasks,
-          documentStatus: data.document_status,
-          hasContract: data.has_contract,
-          hasBilling: data.has_billing,
-          hasDocuments: data.has_documents,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        }
-
-      case 'tasks':
-      case 'task':
-        return {
-          id: data.id,
-          userId: data.user_id,
-          projectId: data.project_id,
-          title: data.title,
-          description: data.description,
-          status: data.status,
-          priority: data.priority,
-          dueDate: data.due_date,
-          startDate: data.start_date,
-          completedAt: data.completed_at,
-          assigneeId: data.assignee_id,
-          parentTaskId: data.parent_task_id,
-          estimatedHours: data.estimated_hours,
-          actualHours: data.actual_hours,
-          tags: data.tags,
-          attachments: data.attachments,
-          recurring: data.recurring,
-          checklist: data.checklist,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        }
-
-      case 'clients':
-      case 'client':
-        return {
-          id: data.id,
-          userId: data.user_id,
-          name: data.name,
-          company: data.company,
-          email: data.email,
-          phone: data.phone,
-          address: data.address,
-          contactPerson: data.contact_person,
-          contactPhone: data.contact_phone,
-          contactEmail: data.contact_email,
-          businessNumber: data.business_number,
-          businessType: data.business_type,
-          industry: data.industry,
-          notes: data.notes,
-          tags: data.tags,
-          status: data.status,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        }
-
-      case 'documents':
-      case 'document':
-        return {
-          id: data.id,
-          userId: data.user_id,
-          projectId: data.project_id,
-          title: data.title,
-          description: data.description,
-          content: data.content,
-          type: data.type,
-          category: data.category,
-          status: data.status,
-          fileUrl: data.file_url,
-          fileName: data.file_name,
-          fileSize: data.file_size,
-          fileType: data.file_type,
-          templateId: data.template_id,
-          templateName: data.template_name,
-          version: data.version,
-          parentDocumentId: data.parent_document_id,
-          isLatest: data.is_latest,
-          requiresSignature: data.requires_signature,
-          signedAt: data.signed_at,
-          signatureUrl: data.signature_url,
-          metadata: data.metadata,
-          tags: data.tags,
-          issuedDate: data.issued_date,
-          dueDate: data.due_date,
-          expiryDate: data.expiry_date,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        }
-
-      case 'users':
-      case 'user':
-        return {
-          id: data.id,
-          email: data.email,
-          name: data.name,
-          avatar: data.avatar,
-          metadata: data.metadata,
-          phone: data.phone,
-          businessNumber: data.business_number,
-          address: data.address,
-          addressDetail: data.address_detail,
-          businessType: data.business_type,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        }
-
-      case 'settings':
-        // Settings는 JSONB 필드로 저장되어 있어 이미 camelCase
-        return data
-
-      case 'todo_sections':
-        return {
-          id: data.id,
-          userId: data.user_id,
-          name: data.name,
-          orderIndex: data.order_index,
-          isExpanded: data.is_expanded,
-          color: data.color,
-          icon: data.icon,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        }
-
-      default:
-        // Unknown entity: return as-is
-        console.warn(`Unknown entity type for transformation: ${entity}`)
-        return data
-    }
-  }
-
-  /**
    * Get a value from Supabase
    *
    * @param key - Storage key
@@ -447,29 +247,8 @@ export class SupabaseAdapter implements StorageAdapter {
       }
 
       const data = await this.withRetry(async () => {
-        // Special handling for users table (id = PRIMARY KEY, no user_id column)
-        if (entity === 'users' || entity === 'user') {
-          if (id) {
-            const query = this.supabase
-              .from(tableName)
-              .select('*')
-              .eq('id', id)
-              .single()
-            return await this.executeQuery<T>(query)
-          } else {
-            // users 배열 조회: 현재 사용자만 (id = userId)
-            console.log(`[SupabaseAdapter.get] Fetching users for userId: ${this.userId}`)
-            const query = this.supabase
-              .from(tableName)
-              .select('*')
-              .eq('id', this.userId)
-            return await this.executeQuery<T>(query)
-          }
-        }
-
-        // Single entity query (other tables with user_id)
+        // Single entity query
         if (id) {
-          console.log(`[SupabaseAdapter.get] Fetching single ${entity} with id=${id}, user_id=${this.userId}`)
           const query = this.supabase
             .from(tableName)
             .select('*')
@@ -478,11 +257,8 @@ export class SupabaseAdapter implements StorageAdapter {
             .single()
           return await this.executeQuery<T>(query)
         } else {
-          console.log(`[SupabaseAdapter.get] Fetching all ${entity} for user_id=${this.userId} from table=${tableName}`)
           const query = this.supabase.from(tableName).select('*').eq('user_id', this.userId)
-          const result = await this.executeQuery<T>(query)
-          console.log(`[SupabaseAdapter.get] Query result for ${entity}:`, result)
-          return result
+          return await this.executeQuery<T>(query)
         }
       })
 
@@ -490,11 +266,8 @@ export class SupabaseAdapter implements StorageAdapter {
         return null
       }
 
-      // Transform snake_case to camelCase
-      const transformedData = this.transformFromSupabase(entity, data)
-
       // Validate type if type guard is provided
-      if (typeGuard && !typeGuard(transformedData)) {
+      if (typeGuard && !typeGuard(data)) {
         throw new StorageError(
           `Type validation failed for key "${key}"`,
           'GET_ERROR',
@@ -505,7 +278,7 @@ export class SupabaseAdapter implements StorageAdapter {
         )
       }
 
-      return transformedData as T
+      return data as T
     } catch (error) {
       if (error instanceof StorageError) {
         throw error
@@ -633,7 +406,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: userData.createdAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+          updated_by: this.userId,
         }
 
         await this.withRetry(async () => {
@@ -713,7 +486,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: project.createdAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+          updated_by: this.userId,
         }))
 
         await this.withRetry(async () => {
@@ -742,76 +515,44 @@ export class SupabaseAdapter implements StorageAdapter {
           return
         }
 
-        // 중복 ID 제거 (마지막 항목만 유지)
-        const uniqueTasksArray = Array.from(
-          new Map(tasksArray.map(task => [task.id, task])).values()
-        )
+        const dataToStore = tasksArray.map((task: any) => ({
+          // Identifiers
+          id: this.isValidUUID(task.id) ? task.id : crypto.randomUUID(),
+          user_id: this.userId,
+          project_id: this.isValidUUID(task.projectId) ? task.projectId : null,
 
-        // Status 변환: Supabase CHECK 제약에 맞게 변환
-        // Supabase tasks.status CHECK: ('pending', 'in_progress', 'completed', 'cancelled', 'blocked')
-        const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled', 'blocked']
+          // Basic info
+          title: task.title,
+          description: task.description || null,
 
-        // Priority 변환: Supabase CHECK 제약에 맞게 변환
-        // Supabase tasks.priority CHECK: ('low', 'medium', 'high', 'urgent')
-        const validPriorities = ['low', 'medium', 'high', 'urgent']
+          // Status
+          status: task.status || 'pending',
+          priority: task.priority || 'medium',
 
-        const dataToStore = uniqueTasksArray.map((task: any) => {
-          // Status 검증
-          let taskStatus = task.status || 'pending'
-          if (!validStatuses.includes(taskStatus)) {
-            console.warn(`[SupabaseAdapter] Invalid task status "${taskStatus}", converting to "pending"`)
-            taskStatus = 'pending'
-          }
+          // Schedule (camelCase → snake_case)
+          due_date: task.dueDate || null,
+          start_date: task.startDate || null,
+          completed_at: task.completedAt || null,
 
-          // Priority 검증
-          let taskPriority = task.priority || 'medium'
-          if (!validPriorities.includes(taskPriority)) {
-            console.warn(`[SupabaseAdapter] Invalid task priority "${taskPriority}", converting to "medium"`)
-            taskPriority = 'medium'
-          }
+          // Relations (camelCase → snake_case)
+          assignee_id: this.isValidUUID(task.assigneeId) ? task.assigneeId : null,
+          parent_task_id: this.isValidUUID(task.parentTaskId) ? task.parentTaskId : null,
 
-          return {
-            // Identifiers
-            id: this.isValidUUID(task.id) ? task.id : crypto.randomUUID(),
-            user_id: this.userId,
-            project_id: this.isValidUUID(task.projectId) ? task.projectId : null,
+          // Tracking (camelCase → snake_case)
+          estimated_hours: task.estimatedHours || null,
+          actual_hours: task.actualHours || null,
 
-            // Basic info
-            title: task.title,
-            description: task.description || null,
+          // Metadata (JSONB)
+          tags: task.tags || [],
+          attachments: task.attachments || [],
+          recurring: task.recurring || null,
+          checklist: task.checklist || [],
 
-            // Status (검증된 값)
-            status: taskStatus,
-            priority: taskPriority,
-
-            // Schedule (camelCase → snake_case)
-            due_date: task.dueDate || null,
-            start_date: task.startDate || null,
-            completed_at: task.completedAt || null,
-
-            // Relations (camelCase → snake_case)
-            assignee_id: this.isValidUUID(task.assigneeId) ? task.assigneeId : null,
-            parent_task_id: this.isValidUUID(task.parentTaskId) ? task.parentTaskId : null,
-
-            // Tracking (camelCase → snake_case)
-            estimated_hours: task.estimatedHours || null,
-            actual_hours: task.actualHours || null,
-
-            // Metadata (JSONB)
-            tags: task.tags || [],
-            attachments: task.attachments || [],
-            recurring: task.recurring || null,
-            checklist: task.checklist || [],
-
-            // Timestamps (camelCase → snake_case)
-            created_at: task.createdAt || new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
-          }
-        })
-
-        // 디버깅: 전송할 데이터 로그
-        console.log('[SupabaseAdapter] Tasks data to store (first item):', dataToStore[0])
+          // Timestamps (camelCase → snake_case)
+          created_at: task.createdAt || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          updated_by: this.userId,
+        }))
 
         await this.withRetry(async () => {
           const query = this.supabase.from(tableName).upsert(dataToStore as any)
@@ -822,8 +563,7 @@ export class SupabaseAdapter implements StorageAdapter {
               code: error.code,
               message: error.message,
               details: error.details,
-              hint: error.hint,
-              fullError: JSON.stringify(error, null, 2)
+              hint: error.hint
             })
             throw error
           }
@@ -851,60 +591,29 @@ export class SupabaseAdapter implements StorageAdapter {
             // Convert Dashboard format: date + startTime/endTime → ISO timestamp
             const eventDate = new Date(event.date)
 
-            // Validate date
-            if (isNaN(eventDate.getTime())) {
-              console.error(`Invalid date for event: ${event.date}`)
-              // Use current date as fallback
-              const now = new Date()
-              startTime = now.toISOString()
-              endTime = new Date(now.getTime() + 3600000).toISOString()
+            if (event.startTime) {
+              const [hours, minutes] = event.startTime.split(':')
+              const startDate = new Date(eventDate)
+              startDate.setHours(parseInt(hours), parseInt(minutes))
+              startTime = startDate.toISOString()
             } else {
-              if (event.startTime) {
-                const [hours, minutes] = event.startTime.split(':')
-                const startDate = new Date(eventDate)
-                startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
-                startTime = startDate.toISOString()
-              } else {
-                // No startTime: use date at midnight
-                startTime = eventDate.toISOString()
-              }
+              // No startTime: use date at midnight
+              startTime = eventDate.toISOString()
+            }
 
-              if (event.endTime) {
-                const [hours, minutes] = event.endTime.split(':')
-                const endDate = new Date(eventDate)
-                endDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
-                endTime = endDate.toISOString()
-              } else {
-                // No endTime: default to 1 hour after start
-                endTime = new Date(new Date(startTime).getTime() + 3600000).toISOString()
-              }
+            if (event.endTime) {
+              const [hours, minutes] = event.endTime.split(':')
+              const endDate = new Date(eventDate)
+              endDate.setHours(parseInt(hours), parseInt(minutes))
+              endTime = endDate.toISOString()
+            } else {
+              // No endTime: default to 1 hour after start
+              endTime = new Date(new Date(startTime).getTime() + 3600000).toISOString()
             }
           } else {
-            // Storage format: validate and use
-            const startDate = new Date(event.startDate)
-            const endDate = new Date(event.endDate)
-
-            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-              console.error(`Invalid date for event: start=${event.startDate}, end=${event.endDate}`)
-              // Use current date as fallback
-              const now = new Date()
-              startTime = now.toISOString()
-              endTime = new Date(now.getTime() + 3600000).toISOString()
-            } else {
-              startTime = event.startDate
-              endTime = event.endDate
-            }
-          }
-
-          // Type 변환: Supabase CHECK 제약에 맞게 변환
-          // Supabase events.type CHECK: ('event', 'meeting', 'task', 'milestone', 'reminder', 'holiday')
-          const validTypes = ['event', 'meeting', 'task', 'milestone', 'reminder', 'holiday']
-          let eventType = event.type || 'event'
-
-          // 'other' → 'event'로 변환
-          if (!validTypes.includes(eventType)) {
-            console.warn(`[SupabaseAdapter] Invalid event type "${eventType}", converting to "event"`)
-            eventType = 'event'
+            // Storage format: use as-is
+            startTime = event.startDate
+            endTime = event.endDate
           }
 
           return {
@@ -925,8 +634,8 @@ export class SupabaseAdapter implements StorageAdapter {
             all_day: event.allDay || false,
             timezone: event.timezone || 'Asia/Seoul',
 
-            // Type and status (검증된 type)
-            type: eventType,
+            // Type and status
+            type: event.type || 'event',
             status: event.status || 'confirmed',
 
             // Style
@@ -953,7 +662,7 @@ export class SupabaseAdapter implements StorageAdapter {
             // Timestamps (camelCase → snake_case)
             created_at: event.createdAt || new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+            updated_by: this.userId,
           }
         })
 
@@ -1036,7 +745,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: client.createdAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+          updated_by: this.userId,
         }))
 
         await this.withRetry(async () => {
@@ -1113,7 +822,7 @@ export class SupabaseAdapter implements StorageAdapter {
           // Timestamps (camelCase → snake_case)
           created_at: doc.createdAt || doc.savedAt || new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+          updated_by: this.userId,
         }))
 
         await this.withRetry(async () => {
@@ -1133,64 +842,19 @@ export class SupabaseAdapter implements StorageAdapter {
         return
       }
 
-      // Special handling for todo_sections (camelCase → snake_case)
-      if (entity === 'todo_sections' && Array.isArray(value)) {
-        const todoSectionsArray = value as any[]
-
-        if (todoSectionsArray.length === 0) {
-          console.warn(`No todo_sections found in array`)
-          return
-        }
-
-        const dataToStore = todoSectionsArray.map((section: any) => ({
-          // Identifiers
-          id: this.isValidUUID(section.id) ? section.id : crypto.randomUUID(),
-          user_id: this.userId,
-
-          // Basic info
-          name: section.name,
-          order_index: section.orderIndex,
-          is_expanded: section.isExpanded,
-
-          // Optional styling
-          color: section.color || null,
-          icon: section.icon || null,
-
-          // Timestamps (camelCase → snake_case)
-          created_at: section.createdAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }))
-
-        await this.withRetry(async () => {
-          const query = this.supabase.from(tableName).upsert(dataToStore as any)
-          const { error } = await query
-
-          if (error) {
-            console.error('[SupabaseAdapter] TodoSections sync error:', {
-              code: error.code,
-              message: error.message,
-              details: error.details,
-              hint: error.hint
-            })
-            throw error
-          }
-        })
-        return
-      }
-
       // Normal handling for other entities (fallback)
       const dataToStore = Array.isArray(value)
         ? value.map((item: any) => ({
             ...item,
             user_id: this.userId,
             updated_at: new Date().toISOString(),
-            // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+            updated_by: this.userId,
           }))
         : {
             ...(value as any),
             user_id: this.userId,
             updated_at: new Date().toISOString(),
-            // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+            updated_by: this.userId,
           }
 
       await this.withRetry(async () => {
@@ -1241,16 +905,11 @@ export class SupabaseAdapter implements StorageAdapter {
       }
 
       await this.withRetry(async () => {
-        // Special handling for users table (id = PRIMARY KEY, no user_id column)
         const query = this.supabase
           .from(tableName)
           .delete()
           .eq('id', id)
-
-        // Other tables: add user_id filter
-        if (entity !== 'users' && entity !== 'user') {
-          query.eq('user_id', this.userId)
-        }
+          .eq('user_id', this.userId)
 
         const { error } = await query
 
@@ -1290,21 +949,11 @@ export class SupabaseAdapter implements StorageAdapter {
 
       for (const table of tables) {
         await this.withRetry(async () => {
-          // Special handling for users table (id = PRIMARY KEY)
-          if (table === 'users') {
-            const query = this.supabase.from(table).delete().eq('id', this.userId)
-            const { error } = await query
+          const query = this.supabase.from(table).delete().eq('user_id', this.userId)
+          const { error } = await query
 
-            if (error) {
-              throw error
-            }
-          } else {
-            const query = this.supabase.from(table).delete().eq('user_id', this.userId)
-            const { error } = await query
-
-            if (error) {
-              throw error
-            }
+          if (error) {
+            throw error
           }
         })
       }
@@ -1339,14 +988,10 @@ export class SupabaseAdapter implements StorageAdapter {
 
       for (const table of tables) {
         await this.withRetry(async () => {
-          // Special handling for users table (id = PRIMARY KEY)
-          const query = this.supabase.from(table).select('id')
-
-          if (table === 'users') {
-            query.eq('id', this.userId)
-          } else {
-            query.eq('user_id', this.userId)
-          }
+          const query = this.supabase
+            .from(table)
+            .select('id')
+            .eq('user_id', this.userId)
 
           const { data, error } = await query
 
@@ -1392,18 +1037,12 @@ export class SupabaseAdapter implements StorageAdapter {
       }
 
       const data = await this.withRetry(async () => {
-        // Special handling for users table (id = PRIMARY KEY, no user_id column)
         const query = this.supabase
           .from(tableName)
           .select('id')
           .eq('id', id)
-
-        // Other tables: add user_id filter
-        if (entity !== 'users' && entity !== 'user') {
-          query.eq('user_id', this.userId)
-        }
-
-        query.single()
+          .eq('user_id', this.userId)
+          .single()
 
         return await this.executeQuery(query)
       })

@@ -7,7 +7,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { settingsService } from '@/lib/storage'
-import type { Settings, UserPreferences, NotificationSettings, CalendarSettings, ProjectSettings, DashboardSettings } from '@/lib/storage/types/entities/settings'
+import type { Settings, UserPreferences, NotificationSettings, CalendarSettings, ProjectSettings } from '@/lib/storage/types/entities/settings'
+import type { DashboardData } from '@/lib/storage/services/DashboardService'
 
 interface UseSettingsReturn {
   settings: Settings | null
@@ -31,7 +32,7 @@ interface UseSettingsReturn {
   updateProjectSettings: (projects: Partial<ProjectSettings>) => Promise<void>
 
   // Dashboard Settings
-  updateDashboardSettings: (dashboard: Partial<DashboardSettings>) => Promise<void>
+  updateDashboardSettings: (dashboard: Partial<DashboardData>) => Promise<void>
 
   // Refresh
   refresh: () => Promise<void>
@@ -144,9 +145,9 @@ export function useSettings(userId: string): UseSettingsReturn {
   }, [userId])
 
   // Dashboard Settings 업데이트
-  const updateDashboardSettings = useCallback(async (dashboard: Partial<DashboardSettings>) => {
+  const updateDashboardSettings = useCallback(async (dashboard: Partial<DashboardData>) => {
     try {
-      const updated = await settingsService.update(userId, { dashboard: { ...settings?.dashboard, ...dashboard } as DashboardSettings })
+      const updated = await settingsService.update(userId, { dashboard: { ...settings?.dashboard, ...dashboard } as DashboardData })
       if (updated) setSettings(updated)
     } catch (err) {
       throw err instanceof Error ? err : new Error('Failed to update dashboard settings')

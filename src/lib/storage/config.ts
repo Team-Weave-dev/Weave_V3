@@ -122,6 +122,9 @@ export const STORAGE_KEYS = {
   /** Dashboard layout and configuration */
   DASHBOARD: 'dashboard',
 
+  /** Todo sections list */
+  TODO_SECTIONS: 'todo_sections',
+
   /** Schema version metadata */
   VERSION: '_version',
 

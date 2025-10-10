@@ -28,6 +28,7 @@ import { DocumentService } from './services/DocumentService';
 import { SettingsService } from './services/SettingsService';
 import { DashboardService } from './services/DashboardService';
 import { UserService } from './services/UserService';
+import { TodoSectionService } from './services/TodoSectionService';
 
 // Migration System
 import { MigrationManager } from './migrations/MigrationManager';
@@ -45,13 +46,17 @@ let currentDualWriteAdapter: DualWriteAdapter | null = null;
 
 /**
  * Get current user ID from Supabase auth
+ * Uses getSession() instead of getUser() for faster, local-first auth check.
+ * getSession() reads from local cookies, avoiding network round-trip.
+ *
  * @returns User ID or null if not authenticated
  */
 async function getUserId(): Promise<string | null> {
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
+    // Use getSession() for faster local check (reads from cookies)
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id || null;
   } catch (error) {
     console.error('Failed to get user ID:', error);
     return null;
@@ -111,6 +116,7 @@ export async function initializeStorage(): Promise<void> {
     _settingsService = null;
     _dashboardService = null;
     _userService = null;
+    _todoSectionService = null;
 
     console.log('✅ Storage system initialized successfully');
   } catch (error) {
@@ -178,6 +184,7 @@ export async function switchToSupabaseMode(userId: string): Promise<void> {
     _settingsService = null;
     _dashboardService = null;
     _userService = null;
+    _todoSectionService = null;
 
     console.log('✅ Switched to Supabase-only mode successfully');
   } catch (error) {
@@ -226,6 +233,7 @@ export async function fallbackToLocalStorageMode(): Promise<void> {
     _settingsService = null;
     _dashboardService = null;
     _userService = null;
+    _todoSectionService = null;
 
     console.log('✅ Fallback to LocalStorage mode completed');
   } catch (error) {
@@ -248,6 +256,7 @@ function createServices(storage: StorageManager) {
     settingsService: new SettingsService(storage),
     dashboardService: new DashboardService(storage),
     userService: new UserService(storage),
+    todoSectionService: new TodoSectionService(storage),
   };
 }
 
@@ -305,6 +314,7 @@ let _documentService: DocumentService | null = null;
 let _settingsService: SettingsService | null = null;
 let _dashboardService: DashboardService | null = null;
 let _userService: UserService | null = null;
+let _todoSectionService: TodoSectionService | null = null;
 
 export const projectService = new Proxy({} as ProjectService, {
   get: (_, prop) => {
@@ -386,6 +396,16 @@ export const userService = new Proxy({} as UserService, {
   }
 });
 
+export const todoSectionService = new Proxy({} as TodoSectionService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_todoSectionService || (_todoSectionService as any).storage !== currentStorage) {
+      _todoSectionService = new TodoSectionService(currentStorage);
+    }
+    return (_todoSectionService as any)[prop];
+  }
+});
+
 /**
  * Export types for convenience
  */
@@ -400,3 +420,4 @@ export type { CalendarEvent, CalendarEventCreate, CalendarEventUpdate } from './
 export type { Document, DocumentCreate, DocumentUpdate } from './types/entities/document';
 export type { Settings, SettingsUpdate, DashboardWidget } from './types/entities/settings';
 export type { User, UserCreate, UserUpdate } from './types/entities/user';
+export type { TodoSection, TodoSectionCreate, TodoSectionUpdate } from './types/entities/todo-section';

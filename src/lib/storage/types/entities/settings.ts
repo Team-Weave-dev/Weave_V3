@@ -6,6 +6,8 @@
  */
 
 import { isValidISODate, isStringArray, isPositiveNumber } from '../validators';
+import type { DashboardData } from '@/lib/storage/services/DashboardService';
+import type { ImprovedWidget, DashboardConfig } from '@/types/improved-dashboard';
 
 /**
  * Theme option
@@ -83,6 +85,8 @@ export interface DashboardWidget {
 
 /**
  * Dashboard layout configuration
+ * @deprecated Use DashboardData from DashboardService instead
+ * This interface is kept for backward compatibility only
  */
 export interface DashboardLayout {
   /** Widget list */
@@ -111,6 +115,8 @@ export interface WorkingHours {
 
 /**
  * Dashboard settings
+ * @deprecated Use DashboardData from DashboardService instead
+ * This interface is kept for backward compatibility only
  */
 export interface DashboardSettings {
   /** Dashboard layout configuration */
@@ -213,8 +219,8 @@ export interface Settings {
   /** User ID */
   userId: string;
 
-  /** Dashboard settings */
-  dashboard: DashboardSettings;
+  /** Dashboard data (widgets + configuration) */
+  dashboard: DashboardData;
 
   /** Calendar settings */
   calendar: CalendarSettings;
@@ -291,7 +297,36 @@ export function isDashboardLayout(data: unknown): data is DashboardLayout {
 }
 
 /**
- * Type guard for DashboardSettings
+ * Type guard for DashboardData (new format)
+ * Validates dashboard with widgets and config structure
+ */
+export function isDashboardData(data: unknown): data is DashboardData {
+  if (typeof data !== 'object' || data === null) return false;
+
+  const dashboard = data as DashboardData;
+
+  // Validate widgets array
+  if (!Array.isArray(dashboard.widgets)) return false;
+  // Note: We don't validate each widget deeply here for performance
+  // ImprovedWidget validation is handled by DashboardService
+
+  // Validate config object
+  if (typeof dashboard.config !== 'object' || dashboard.config === null) return false;
+
+  const config = dashboard.config;
+
+  // Required config fields
+  if (!isPositiveNumber(config.cols)) return false;
+  if (!isPositiveNumber(config.rowHeight)) return false;
+  if (typeof config.gap !== 'number' || config.gap < 0) return false;
+
+  return true;
+}
+
+/**
+ * Type guard for DashboardSettings (legacy format)
+ * @deprecated Use isDashboardData instead
+ * This function is kept for backward compatibility only
  */
 export function isDashboardSettings(data: unknown): data is DashboardSettings {
   if (typeof data !== 'object' || data === null) return false;
@@ -425,7 +460,7 @@ export function isSettings(data: unknown): data is Settings {
   if (!isValidISODate(s.updatedAt)) return false;
 
   // Required nested objects with full validation
-  if (!isDashboardSettings(s.dashboard)) return false;
+  if (!isDashboardData(s.dashboard)) return false;
   if (!isCalendarSettings(s.calendar)) return false;
   if (!isProjectSettings(s.projects)) return false;
   if (!isNotificationSettings(s.notifications)) return false;

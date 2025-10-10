@@ -38,10 +38,8 @@ max_client_conn = 100
 
 [realtime]
 enabled = true
-# Port to use for Realtime's HTTP server.
-port = 54323
 # IP version to use for Realtime's HTTP server.
-ip_version = "ipv4"
+ip_version = "IPv4"
 
 [studio]
 enabled = true

@@ -7,7 +7,8 @@
 import { SettingsService } from '../SettingsService'
 import { LocalStorageAdapter } from '../../adapters/LocalStorageAdapter'
 import type { StorageManager } from '../../core/StorageManager'
-import type { Settings, DashboardWidget } from '../../types/entities/settings'
+import type { Settings } from '../../types/entities/settings'
+import type { ImprovedWidget } from '@/types/improved-dashboard'
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -128,69 +129,60 @@ describe('SettingsService', () => {
     })
 
     it('should add dashboard widget', async () => {
-      const widget: DashboardWidget = {
+      const widget: ImprovedWidget = {
         id: 'widget-1',
-        type: 'todoList',
+        type: 'todoList' as const,
         position: { x: 0, y: 0, w: 2, h: 2 },
       }
 
       const updated = await service.addDashboardWidget(userId, widget)
 
-      expect(updated!.dashboard.layout.widgets).toHaveLength(1)
-      expect(updated!.dashboard.layout.widgets[0].id).toBe('widget-1')
+      expect(updated!.dashboard.widgets).toHaveLength(1)
+      expect(updated!.dashboard.widgets[0].id).toBe('widget-1')
     })
 
     it('should remove dashboard widget', async () => {
-      const widget: DashboardWidget = {
+      const widget: ImprovedWidget = {
         id: 'widget-1',
-        type: 'todoList',
+        type: 'todoList' as const,
         position: { x: 0, y: 0, w: 2, h: 2 },
       }
 
       await service.addDashboardWidget(userId, widget)
       const updated = await service.removeDashboardWidget(userId, 'widget-1')
 
-      expect(updated!.dashboard.layout.widgets).toHaveLength(0)
+      expect(updated!.dashboard.widgets).toHaveLength(0)
     })
 
-    it('should update widget position', async () => {
-      const widget: DashboardWidget = {
+    it('should update widget', async () => {
+      const widget: ImprovedWidget = {
         id: 'widget-1',
-        type: 'todoList',
+        type: 'todoList' as const,
         position: { x: 0, y: 0, w: 2, h: 2 },
       }
 
       await service.addDashboardWidget(userId, widget)
-      const updated = await service.updateWidgetPosition(userId, 'widget-1', {
-        x: 2,
-        y: 2,
-        w: 3,
-        h: 3,
+      const updated = await service.updateDashboardWidget(userId, 'widget-1', {
+        position: { x: 2, y: 2, w: 3, h: 3 },
       })
 
-      expect(updated!.dashboard.layout.widgets[0].position.x).toBe(2)
-      expect(updated!.dashboard.layout.widgets[0].position.y).toBe(2)
-      expect(updated!.dashboard.layout.widgets[0].position.w).toBe(3)
+      expect(updated!.dashboard.widgets[0].position.x).toBe(2)
+      expect(updated!.dashboard.widgets[0].position.y).toBe(2)
+      expect(updated!.dashboard.widgets[0].position.w).toBe(3)
     })
 
     it('should reset dashboard', async () => {
-      const widget: DashboardWidget = {
+      const widget: ImprovedWidget = {
         id: 'widget-1',
-        type: 'todoList',
+        type: 'todoList' as const,
         position: { x: 0, y: 0, w: 2, h: 2 },
       }
 
       await service.addDashboardWidget(userId, widget)
       const reset = await service.resetDashboard(userId)
 
-      expect(reset!.dashboard.layout.widgets).toHaveLength(0)
-      expect(reset!.dashboard.layout.columns).toBe(12)
-    })
-
-    it('should update dashboard theme', async () => {
-      const updated = await service.updateDashboardTheme(userId, 'dark')
-
-      expect(updated!.dashboard.theme).toBe('dark')
+      expect(reset!.dashboard.widgets).toHaveLength(0)
+      expect(reset!.dashboard.config.cols).toBe(9)
     })
   })
 
@@ -398,15 +390,15 @@ describe('SettingsService', () => {
     it('should handle multiple widgets', async () => {
       await service.getOrCreateDefaults(userId)
 
-      const widget1: DashboardWidget = {
+      const widget1: ImprovedWidget = {
         id: 'widget-1',
-        type: 'todoList',
+        type: 'todoList' as const,
         position: { x: 0, y: 0, w: 2, h: 2 },
       }
 
-      const widget2: DashboardWidget = {
+      const widget2: ImprovedWidget = {
         id: 'widget-2',
-        type: 'calendar',
+        type: 'calendar' as const,
         position: { x: 2, y: 0, w: 3, h: 2 },
       }
 
@@ -414,7 +406,7 @@ describe('SettingsService', () => {
       await service.addDashboardWidget(userId, widget2)
 
       const settings = await service.getByUserId(userId)
-      expect(settings!.dashboard.layout.widgets).toHaveLength(2)
+      expect(settings!.dashboard.widgets).toHaveLength(2)
     })
 
     it('should handle multiple holidays', async () => {

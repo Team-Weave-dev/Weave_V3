@@ -37,13 +37,37 @@ export const loadCalendarEvents = async (): Promise<CalendarEvent[]> => {
   if (typeof window === 'undefined') return [];
 
   try {
-    const events = await storage.get<CalendarEvent[]>(STORAGE_KEYS.EVENTS);
+    const events = await storage.get<any[]>(STORAGE_KEYS.EVENTS);
     if (events && Array.isArray(events)) {
-      // Date 객체로 변환
-      return events.map((event: any) => ({
-        ...event,
-        date: new Date(event.date),
-      }));
+      // Storage CalendarEvent (startDate/endDate) → Dashboard CalendarEvent (date) 변환
+      return events.map((event: any) => {
+        // Storage 형식인지 Dashboard 형식인지 확인
+        const hasStartDate = event.startDate && !event.date;
+
+        if (hasStartDate) {
+          // Storage 형식: startDate를 date로 변환
+          return {
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            location: event.location,
+            date: new Date(event.startDate), // startDate를 date로 변환
+            startTime: extractTime(event.startDate),
+            endTime: extractTime(event.endDate),
+            allDay: event.allDay,
+            type: event.type,
+            color: event.color,
+            recurring: event.recurring,
+            googleEventId: event.googleEventId
+          };
+        } else {
+          // Dashboard 형식: 그대로 date 변환만
+          return {
+            ...event,
+            date: new Date(event.date),
+          };
+        }
+      });
     }
   } catch (error) {
     console.error('Failed to load calendar events:', error);
@@ -53,6 +77,22 @@ export const loadCalendarEvents = async (): Promise<CalendarEvent[]> => {
   // 목데이터 자동 생성 비활성화
   return [];
 };
+
+// ISO 날짜 문자열에서 시간 추출 (HH:mm 형식)
+function extractTime(isoString: string | undefined): string | undefined {
+  if (!isoString) return undefined;
+
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return undefined;
+
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  } catch {
+    return undefined;
+  }
+}
 
 // 로컬스토리지에 이벤트 저장 (Storage API 사용)
 export const saveCalendarEvents = async (events: CalendarEvent[]): Promise<void> => {

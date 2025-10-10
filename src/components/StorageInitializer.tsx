@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { initializeStorage } from '@/lib/storage'
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * Storage 시스템 초기화 컴포넌트
  *
  * 앱 시작 시 자동으로 Storage 시스템을 초기화합니다:
- * - 인증 상태 확인
- * - LocalStorage 전용 또는 DualWrite 모드 선택
+ * - 인증 상태 확인 (Supabase Auth 완전히 로드될 때까지 대기)
+ * - LocalStorage 전용 또는 Supabase 모드 선택
  * - 자동 마이그레이션 실행 (필요 시)
  */
 export function StorageInitializer() {
@@ -21,6 +22,21 @@ export function StorageInitializer() {
     async function init() {
       try {
         console.log('🔧 Starting Storage system initialization...')
+
+        // Supabase Auth가 완전히 로드될 때까지 대기
+        const supabase = createClient()
+        console.log('⏳ Waiting for Supabase auth to load...')
+
+        // getSession()은 즉시 사용 가능하지만, getUser()는 네트워크 요청이 필요
+        const { data: { session } } = await supabase.auth.getSession()
+
+        if (session) {
+          console.log('✅ User authenticated, session found')
+        } else {
+          console.log('ℹ️ No active session found')
+        }
+
+        // 인증 상태 확인 후 Storage 초기화
         await initializeStorage()
 
         if (mounted) {

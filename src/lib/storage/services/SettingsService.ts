@@ -12,12 +12,10 @@ import type { StorageManager } from '../core/StorageManager';
 import type {
   Settings,
   SettingsUpdate,
-  DashboardLayout,
   CalendarSettings,
   ProjectSettings,
   NotificationSettings,
   UserPreferences,
-  DashboardWidget,
   Theme,
   CalendarView,
   ProjectView,
@@ -26,6 +24,8 @@ import type {
 } from '../types/entities/settings';
 import { isSettings } from '../types/entities/settings';
 import { STORAGE_KEYS } from '../config';
+import type { DashboardData } from './DashboardService';
+import type { ImprovedWidget, DashboardConfig } from '@/types/improved-dashboard';
 
 /**
  * Settings service class
@@ -121,11 +121,20 @@ export class SettingsService {
     const defaultSettings: Settings = {
       userId,
       dashboard: {
-        layout: {
-          widgets: [],
-          columns: 12,
-          rowHeight: 40,
+        widgets: [],
+        config: {
+          cols: 9,
+          rowHeight: 120,
           gap: 16,
+          isDraggable: true,
+          isResizable: true,
+          preventCollision: true,
+          allowOverlap: false,
+          compactType: 'vertical',
+          useCSSTransforms: true,
+          transformScale: 1,
+          resizeHandles: ['se'],
+          isDroppable: false,
         },
       },
       calendar: {
@@ -155,12 +164,16 @@ export class SettingsService {
   // ============================================================================
 
   /**
-   * Update dashboard layout
+   * Update dashboard data (widgets + config)
    */
-  async updateDashboardLayout(userId: string, layout: DashboardLayout): Promise<Settings | null> {
+  async updateDashboard(userId: string, dashboard: Partial<DashboardData>): Promise<Settings | null> {
+    const settings = await this.getByUserId(userId);
+    if (!settings) return null;
+
     return this.update(userId, {
       dashboard: {
-        layout,
+        ...settings.dashboard,
+        ...dashboard,
       },
     });
   }
@@ -168,19 +181,16 @@ export class SettingsService {
   /**
    * Add widget to dashboard
    */
-  async addDashboardWidget(userId: string, widget: DashboardWidget): Promise<Settings | null> {
+  async addDashboardWidget(userId: string, widget: ImprovedWidget): Promise<Settings | null> {
     const settings = await this.getByUserId(userId);
     if (!settings) return null;
 
-    const widgets = [...settings.dashboard.layout.widgets, widget];
+    const widgets = [...settings.dashboard.widgets, widget];
 
     return this.update(userId, {
       dashboard: {
         ...settings.dashboard,
-        layout: {
-          ...settings.dashboard.layout,
-          widgets,
-        },
+        widgets,
       },
     });
   }
@@ -192,33 +202,30 @@ export class SettingsService {
     const settings = await this.getByUserId(userId);
     if (!settings) return null;
 
-    const widgets = settings.dashboard.layout.widgets.filter((w) => w.id !== widgetId);
+    const widgets = settings.dashboard.widgets.filter((w: ImprovedWidget) => w.id !== widgetId);
 
     return this.update(userId, {
       dashboard: {
         ...settings.dashboard,
-        layout: {
-          ...settings.dashboard.layout,
-          widgets,
-        },
+        widgets,
       },
     });
   }
 
   /**
-   * Update widget position
+   * Update widget in dashboard
    */
-  async updateWidgetPosition(
+  async updateDashboardWidget(
     userId: string,
     widgetId: string,
-    position: { x: number; y: number; w: number; h: number }
+    updates: Partial<ImprovedWidget>
   ): Promise<Settings | null> {
     const settings = await this.getByUserId(userId);
     if (!settings) return null;
 
-    const widgets = settings.dashboard.layout.widgets.map((w) => {
+    const widgets = settings.dashboard.widgets.map((w: ImprovedWidget) => {
       if (w.id === widgetId) {
-        return { ...w, position };
+        return { ...w, ...updates };
       }
       return w;
     });
@@ -226,9 +233,24 @@ export class SettingsService {
     return this.update(userId, {
       dashboard: {
         ...settings.dashboard,
-        layout: {
-          ...settings.dashboard.layout,
-          widgets,
+        widgets,
+      },
+    });
+  }
+
+  /**
+   * Update dashboard config
+   */
+  async updateDashboardConfig(userId: string, config: Partial<DashboardConfig>): Promise<Settings | null> {
+    const settings = await this.getByUserId(userId);
+    if (!settings) return null;
+
+    return this.update(userId, {
+      dashboard: {
+        ...settings.dashboard,
+        config: {
+          ...settings.dashboard.config,
+          ...config,
         },
       },
     });
@@ -240,27 +262,21 @@ export class SettingsService {
   async resetDashboard(userId: string): Promise<Settings | null> {
     return this.update(userId, {
       dashboard: {
-        layout: {
-          widgets: [],
-          columns: 12,
-          rowHeight: 40,
+        widgets: [],
+        config: {
+          cols: 9,
+          rowHeight: 120,
           gap: 16,
+          isDraggable: true,
+          isResizable: true,
+          preventCollision: true,
+          allowOverlap: false,
+          compactType: 'vertical',
+          useCSSTransforms: true,
+          transformScale: 1,
+          resizeHandles: ['se'],
+          isDroppable: false,
         },
-      },
-    });
-  }
-
-  /**
-   * Update dashboard theme
-   */
-  async updateDashboardTheme(userId: string, theme: Theme): Promise<Settings | null> {
-    const settings = await this.getByUserId(userId);
-    if (!settings) return null;
-
-    return this.update(userId, {
-      dashboard: {
-        ...settings.dashboard,
-        theme,
       },
     });
   }
