@@ -409,6 +409,9 @@ export interface Project extends JsonObject {
 
   /** Last update user ID (for conflict resolution) */
   updated_by?: string;
+
+  /** Device ID that made the last update (for audit trail) */
+  device_id?: string;
 }
 
 // ============================================================================
@@ -548,6 +551,9 @@ export function isProject(data: unknown): data is Project {
 
   // Optional updated_by validation
   if (p.updated_by !== undefined && typeof p.updated_by !== 'string') return false;
+
+  // Optional device_id validation
+  if (p.device_id !== undefined && typeof p.device_id !== 'string') return false;
 
   return true;
 }

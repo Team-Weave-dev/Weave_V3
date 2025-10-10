@@ -61,6 +61,9 @@ export interface User {
   /** Last update user ID (for conflict resolution) */
   updated_by?: string;
 
+  /** Device ID that made the last update (for audit trail) */
+  device_id?: string;
+
   /** User preferences and metadata */
   metadata?: UserMetadata;
 }
@@ -87,6 +90,7 @@ export function isUser(data: unknown): data is User {
   if (u.avatar !== undefined && typeof u.avatar !== 'string') return false;
   if (u.phone !== undefined && typeof u.phone !== 'string') return false;
   if (u.updated_by !== undefined && typeof u.updated_by !== 'string') return false;
+  if (u.device_id !== undefined && typeof u.device_id !== 'string') return false;
   if (u.businessNumber !== undefined && typeof u.businessNumber !== 'string') return false;
   if (u.address !== undefined && typeof u.address !== 'string') return false;
   if (u.addressDetail !== undefined && typeof u.addressDetail !== 'string') return false;

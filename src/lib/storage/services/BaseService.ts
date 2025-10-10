@@ -7,6 +7,7 @@
 
 import type { StorageManager } from '../core/StorageManager';
 import type { JsonObject } from '../types/base';
+import { getDeviceId } from '../utils/deviceId';
 
 /**
  * Base entity interface
@@ -16,6 +17,7 @@ export interface BaseEntity extends JsonObject {
   id: string;
   createdAt: string;
   updatedAt: string;
+  device_id?: string;  // Optional device ID for audit trail
 }
 
 /**
@@ -68,6 +70,7 @@ export abstract class BaseService<T extends BaseEntity> {
       id: entityId,
       createdAt: now,
       updatedAt: now,
+      device_id: getDeviceId(),  // Track which device created this entity
     } as T;
 
     console.log(`[BaseService.create] Generated entity:`, entity)
@@ -132,6 +135,7 @@ export abstract class BaseService<T extends BaseEntity> {
       id, // Preserve ID
       createdAt: entities[index].createdAt, // Preserve creation timestamp
       updatedAt: this.getCurrentTimestamp(),
+      device_id: getDeviceId(),  // Track which device updated this entity
     } as T;
 
     // Validate updated entity
@@ -221,11 +225,13 @@ export abstract class BaseService<T extends BaseEntity> {
    */
   async createMany(dataArray: Omit<T, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<T[]> {
     const now = this.getCurrentTimestamp();
+    const deviceId = getDeviceId();
     const newEntities: T[] = dataArray.map((data) => ({
       ...data,
       id: this.generateId(),
       createdAt: now,
       updatedAt: now,
+      device_id: deviceId,  // Track which device created these entities
     })) as T[];
 
     // Validate all entities
@@ -255,6 +261,7 @@ export abstract class BaseService<T extends BaseEntity> {
     const updateMap = new Map(updates.map((u) => [u.id, u.data]));
     const updatedEntities: T[] = [];
     const now = this.getCurrentTimestamp();
+    const deviceId = getDeviceId();
 
     for (let i = 0; i < entities.length; i++) {
       const updateData = updateMap.get(entities[i].id);
@@ -265,6 +272,7 @@ export abstract class BaseService<T extends BaseEntity> {
           id: entities[i].id,
           createdAt: entities[i].createdAt,
           updatedAt: now,
+          device_id: deviceId,  // Track which device updated these entities
         } as T;
 
         if (!this.isValidEntity(updatedEntity)) {

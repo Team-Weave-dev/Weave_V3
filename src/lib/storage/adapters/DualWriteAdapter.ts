@@ -30,6 +30,8 @@ export interface DualWriteAdapterConfig {
   enableVerification?: boolean
   /** Maximum retry attempts for failed syncs */
   maxRetries?: number
+  /** Maximum queue size (default: 1000) - prevents unbounded growth */
+  maxQueueSize?: number
 }
 
 /**
@@ -100,6 +102,7 @@ export class DualWriteAdapter implements StorageAdapter {
   private enableSyncWorker: boolean
   private enableVerification: boolean
   private maxRetries: number
+  private maxQueueSize: number
 
   /**
    * Sync statistics
@@ -125,6 +128,7 @@ export class DualWriteAdapter implements StorageAdapter {
     this.enableSyncWorker = config.enableSyncWorker ?? true
     this.enableVerification = config.enableVerification ?? false
     this.maxRetries = config.maxRetries ?? 3
+    this.maxQueueSize = config.maxQueueSize ?? 1000
 
     // Start sync worker
     if (this.enableSyncWorker) {
@@ -270,6 +274,19 @@ export class DualWriteAdapter implements StorageAdapter {
    * @param operation - Operation type
    */
   private addToSyncQueue(key: string, value: JsonValue, operation: 'set' | 'remove'): void {
+    // Check queue size limit
+    if (this.syncQueue.size >= this.maxQueueSize && !this.syncQueue.has(key)) {
+      console.warn(
+        `Sync queue limit reached (${this.maxQueueSize}). Removing oldest entry.`
+      )
+      // Remove oldest entry (first entry in insertion order)
+      const firstKey = this.syncQueue.keys().next().value
+      if (firstKey) {
+        this.syncQueue.delete(firstKey)
+        console.warn(`Removed oldest queue entry: "${firstKey}"`)
+      }
+    }
+
     const entry: SyncQueueEntry = {
       key,
       value,
@@ -281,6 +298,18 @@ export class DualWriteAdapter implements StorageAdapter {
     this.syncQueue.set(key, entry)
     this.stats.queueSize = this.syncQueue.size
     this.persistSyncQueue()
+  }
+
+  /**
+   * Calculate exponential backoff delay
+   *
+   * @param retryCount - Current retry attempt (0-based)
+   * @returns Delay in milliseconds
+   */
+  private calculateBackoffDelay(retryCount: number): number {
+    // Exponential backoff: 1s, 2s, 4s
+    const baseDelay = 1000 // 1 second
+    return baseDelay * Math.pow(2, retryCount)
   }
 
   /**
@@ -328,6 +357,12 @@ export class DualWriteAdapter implements StorageAdapter {
           console.error(`Max retries exceeded for "${key}", removing from queue`)
           this.syncQueue.delete(key)
           this.stats.queueSize = this.syncQueue.size
+        } else {
+          // Calculate exponential backoff delay for next retry
+          const backoffDelay = this.calculateBackoffDelay(entry.retryCount - 1)
+          console.warn(
+            `Sync failed for "${key}" (attempt ${entry.retryCount}/${this.maxRetries}). Next retry in ${backoffDelay}ms`
+          )
         }
       }
 
@@ -354,13 +389,19 @@ export class DualWriteAdapter implements StorageAdapter {
 
     for (const entry of entries) {
       try {
+        // Apply exponential backoff delay before retry
+        if (entry.retryCount > 0) {
+          const backoffDelay = this.calculateBackoffDelay(entry.retryCount - 1)
+          await new Promise((resolve) => setTimeout(resolve, backoffDelay))
+        }
+
         await this.syncToSupabase(entry.key, entry.value, entry.operation)
       } catch (error) {
         // Error already logged in syncToSupabase
         // Continue with next item
       }
 
-      // Add delay between syncs to avoid overwhelming Supabase
+      // Add small delay between syncs to avoid overwhelming Supabase
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
   }
