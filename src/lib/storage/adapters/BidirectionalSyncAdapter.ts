@@ -30,6 +30,7 @@ import { LocalStorageAdapter } from './LocalStorageAdapter'
 import { SupabaseAdapter } from './SupabaseAdapter'
 import { TimestampSyncAdapter } from './TimestampSyncAdapter'
 import { StorageError } from '../types/base'
+import { OfflineQueue, type QueueOperation } from './OfflineQueue'
 
 /**
  * 동기화 상태 정보
@@ -47,6 +48,10 @@ export interface SyncStatus {
   successCount: number
   /** 실패한 동기화 횟수 */
   failureCount: number
+  /** 온라인 상태 (Phase 5.2) */
+  isOnline: boolean
+  /** 오프라인 큐 크기 (Phase 5.2) */
+  offlineQueueSize: number
 }
 
 /**
@@ -107,10 +112,17 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
     errors: [],
     successCount: 0,
     failureCount: 0,
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    offlineQueueSize: 0,
   }
 
   // 동기화 대기 큐 (키 → 값 맵)
   private pendingQueue = new Map<string, JsonValue>()
+
+  // Phase 5: Offline 큐 및 온라인 상태 관리
+  private offlineQueue: OfflineQueue
+  private onlineHandler: () => void
+  private offlineHandler: () => void
 
   constructor(options: BidirectionalSyncOptions) {
     this.local = options.localAdapter
@@ -124,6 +136,30 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
     this.enableAutoSync = options.enableAutoSync ?? true
     this.maxRetries = options.maxRetries ?? 3
     this.retryDelay = options.retryDelay ?? 1000
+
+    // Phase 5.1: OfflineQueue 초기화
+    this.offlineQueue = new OfflineQueue({
+      storageKey: 'weave_offline_queue',
+      maxSize: 1000,
+      maxRetries: this.maxRetries,
+      onQueueChange: (size) => {
+        this.syncStatus.offlineQueueSize = size
+        console.log(`[BidirectionalSyncAdapter] Offline queue size: ${size}`)
+      },
+      onError: (error, operation) => {
+        console.error('[BidirectionalSyncAdapter] Offline queue error:', error, operation)
+      },
+    })
+
+    // Phase 5.2: 온라인/오프라인 이벤트 리스너 등록
+    this.onlineHandler = () => this.handleOnline()
+    this.offlineHandler = () => this.handleOffline()
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', this.onlineHandler)
+      window.addEventListener('offline', this.offlineHandler)
+      console.log('[BidirectionalSyncAdapter] Online/offline event listeners registered')
+    }
 
     // 자동 동기화 시작
     if (this.enableAutoSync) {
@@ -160,26 +196,44 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
 
   /**
    * 데이터 저장 (LocalStorage 즉시 + Supabase 백그라운드)
+   *
+   * Phase 5.3: 오프라인 모드 지원
+   * - 온라인: LocalStorage + Supabase 동기화
+   * - 오프라인: LocalStorage + OfflineQueue에 추가
    */
   async set<T extends JsonValue>(key: string, value: T): Promise<void> {
     try {
-      // 1. LocalStorage에 즉시 저장
+      // 1. LocalStorage에 즉시 저장 (온라인/오프라인 상관없이 항상)
       await this.local.set(key, value)
 
-      // 2. 동기화 큐에 추가
-      this.pendingQueue.set(key, value)
-      this.syncStatus.pendingChanges = this.pendingQueue.size
+      // 2. 온라인 상태 확인
+      if (this.syncStatus.isOnline) {
+        // 온라인: 동기화 큐에 추가
+        this.pendingQueue.set(key, value)
+        this.syncStatus.pendingChanges = this.pendingQueue.size
 
-      // 3. Supabase 동기화 시도 (비차단)
-      this.pushToSupabase(key, value).catch(error => {
-        this.addSyncError({
-          timestamp: Date.now(),
-          message: error instanceof Error ? error.message : String(error),
-          key,
-          direction: 'push',
-          retryCount: 0,
+        // Supabase 동기화 시도 (비차단)
+        this.pushToSupabase(key, value).catch(error => {
+          this.addSyncError({
+            timestamp: Date.now(),
+            message: error instanceof Error ? error.message : String(error),
+            key,
+            direction: 'push',
+            retryCount: 0,
+          })
         })
-      })
+      } else {
+        // 오프라인: OfflineQueue에 추가
+        console.log(`[BidirectionalSyncAdapter] Offline mode: Adding ${key} to offline queue`)
+
+        await this.offlineQueue.enqueue({
+          type: 'UPDATE', // set은 UPDATE로 간주
+          entity: key,
+          id: key, // 엔티티 키를 ID로 사용
+          data: value,
+          timestamp: Date.now(),
+        })
+      }
     } catch (error) {
       throw new StorageError(
         `Failed to set key "${key}" in BidirectionalSyncAdapter`,
@@ -536,8 +590,15 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
    * 2. LocalStorage → Supabase (Push): 로컬 변경사항 업로드
    *
    * Phase 3.4 구현 완료
+   * Phase 5.3: 오프라인 모드 지원 추가
    */
   async sync(): Promise<void> {
+    // Phase 5.3: 오프라인 체크
+    if (!this.syncStatus.isOnline) {
+      console.log('[BidirectionalSyncAdapter] Offline mode: Skipping sync')
+      return
+    }
+
     if (this.syncStatus.isRunning) {
       console.log('[BidirectionalSyncAdapter] Sync already running, skipping...')
       return
@@ -709,6 +770,87 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
   }
 
   // ==========================================
+  // Phase 5.2-5.4: Offline 모드 관리
+  // ==========================================
+
+  /**
+   * 오프라인 모드 진입 핸들러 (Phase 5.3)
+   *
+   * 네트워크 연결이 끊겼을 때 호출됩니다.
+   * - 동기화 워커는 계속 실행 (네트워크 복구 시 자동 재개)
+   * - 이후 쓰기 작업은 OfflineQueue에 추가
+   */
+  private handleOffline(): void {
+    console.warn('[BidirectionalSyncAdapter] Network offline detected')
+
+    this.syncStatus.isOnline = false
+
+    // 동기화 워커는 계속 실행하되, sync() 내부에서 온라인 체크
+    // 오프라인 상태에서는 LocalStorage만 업데이트
+  }
+
+  /**
+   * 온라인 모드 복귀 핸들러 (Phase 5.4)
+   *
+   * 네트워크 연결이 복구되었을 때 호출됩니다.
+   * - OfflineQueue에 쌓인 작업들을 처리
+   * - 양방향 동기화 재개
+   */
+  private async handleOnline(): Promise<void> {
+    console.log('[BidirectionalSyncAdapter] Network online detected')
+
+    this.syncStatus.isOnline = true
+
+    try {
+      // 1. OfflineQueue 처리
+      if (!this.offlineQueue.isEmpty()) {
+        console.log(
+          `[BidirectionalSyncAdapter] Processing ${this.offlineQueue.size()} offline operations...`
+        )
+
+        const processedCount = await this.offlineQueue.processAll(async (operation) => {
+          // 큐의 각 작업을 Supabase로 동기화
+          await this.pushToSupabase(operation.entity, operation.data)
+        })
+
+        console.log(
+          `[BidirectionalSyncAdapter] Processed ${processedCount} offline operations`
+        )
+      }
+
+      // 2. 양방향 동기화 재개
+      await this.sync()
+
+      console.log('[BidirectionalSyncAdapter] Online recovery complete')
+    } catch (error) {
+      console.error('[BidirectionalSyncAdapter] Failed to process offline queue:', error)
+
+      this.addSyncError({
+        timestamp: Date.now(),
+        message: error instanceof Error ? error.message : String(error),
+        direction: 'push',
+        retryCount: 0,
+      })
+    }
+  }
+
+  /**
+   * 온라인 상태 확인
+   * @returns 온라인 상태
+   */
+  isOnline(): boolean {
+    return this.syncStatus.isOnline
+  }
+
+  /**
+   * 오프라인 큐 크기 조회
+   * @returns 큐에 있는 작업 개수
+   */
+  getOfflineQueueSize(): number {
+    return this.offlineQueue.size()
+  }
+
+  // ==========================================
   // 정리
   // ==========================================
 
@@ -716,6 +858,12 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
    * 리소스 정리 (워커 중지, 큐 클리어)
    */
   dispose(): void {
+    // 이벤트 리스너 제거
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('online', this.onlineHandler)
+      window.removeEventListener('offline', this.offlineHandler)
+    }
+
     this.stopSyncWorker()
     this.pendingQueue.clear()
     this.syncStatus.pendingChanges = 0
