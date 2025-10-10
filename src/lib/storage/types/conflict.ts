@@ -92,14 +92,15 @@ export interface ConflictResolutionOptions {
   preferNewest?: boolean
 
   /**
-   * 충돌 발생 시 콜백
+   * 충돌 발생 시 콜백 (UI modal 트리거)
+   * @returns 사용자가 선택한 해결 방법
    */
-  onConflict?: (conflict: ConflictData) => void | Promise<void>
+  onConflict?: (conflict: ConflictData) => ConflictResolution | Promise<ConflictResolution>
 
   /**
    * 해결 완료 시 콜백
    */
-  onResolved?: (resolution: ConflictResolution) => void | Promise<void>
+  onResolved?: (conflict: ConflictData, resolution: ConflictResolution) => void | Promise<void>
 
   /**
    * 에러 처리 콜백

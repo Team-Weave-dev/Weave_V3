@@ -283,8 +283,10 @@ export class ConflictResolver {
 
     const timeDiff = localTimestamp - remoteTimestamp
 
-    // 5초 이내 차이는 동시 수정으로 간주
-    if (Math.abs(timeDiff) <= 5000) {
+    // Phase 5.7 개선: 15초 이내 차이는 동시 수정으로 간주
+    // (기존 5초는 5초 동기화 주기와 겹쳐서 오판 가능)
+    const SIMULTANEOUS_THRESHOLD = 15000 // 15초로 증가
+    if (Math.abs(timeDiff) <= SIMULTANEOUS_THRESHOLD) {
       return 'both_modified'
     }
 

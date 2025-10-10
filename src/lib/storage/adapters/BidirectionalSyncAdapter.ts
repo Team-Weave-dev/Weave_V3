@@ -402,21 +402,58 @@ export class BidirectionalSyncAdapter implements StorageAdapter {
               const remoteItem = remoteMap.get(id)
               const localItem = localMap.get(id)
 
-              // TimestampSyncAdapter로 충돌 해결
-              const resolution = this.timestampSync.resolveConflict(
-                localItem || null,
-                remoteItem || null,
-                entityKey
-              )
+              // Phase 5.7: ConflictResolver로 충돌 감지 및 해결
+              if (localItem && remoteItem) {
+                // 양쪽 데이터 모두 존재: 충돌 감지
+                const itemKey = `${entityKey}:${id}`
+                const detection = conflictResolver.detectConflict(itemKey, localItem, remoteItem)
 
-              if (resolution.resolved) {
-                mergedArray.push(resolution.resolved)
-
-                // 충돌 발생 시 카운트
-                if (resolution.winner === 'remote' && localItem) {
+                if (detection.hasConflict && detection.conflict) {
+                  // 충돌 발생
                   conflictCount++
-                  updatedCount++
+
+                  if (detection.canAutoResolve && this.conflictResolutionOptions.autoResolve) {
+                    // 자동 해결
+                    const autoStrategy = detection.recommendedStrategy || 'keep_remote'
+                    const resolution = conflictResolver.resolve(detection.conflict, autoStrategy)
+                    mergedArray.push(resolution.resolvedData)
+                    updatedCount++
+
+                    // onResolved 콜백 호출
+                    this.conflictResolutionOptions.onResolved?.(detection.conflict, resolution)
+                  } else {
+                    // 수동 해결 필요: onConflict 콜백 호출
+                    if (this.conflictResolutionOptions.onConflict) {
+                      try {
+                        const resolution = await this.conflictResolutionOptions.onConflict(
+                          detection.conflict
+                        )
+                        mergedArray.push(resolution.resolvedData)
+                        updatedCount++
+
+                        // onResolved 콜백 호출
+                        this.conflictResolutionOptions.onResolved?.(detection.conflict, resolution)
+                      } catch (error) {
+                        // 콜백 에러 시 onError 처리 또는 로컬 유지
+                        this.conflictResolutionOptions.onError?.(error as Error, detection.conflict)
+                        mergedArray.push(localItem) // 에러 시 로컬 유지
+                      }
+                    } else {
+                      // 콜백 없으면 로컬 우선
+                      mergedArray.push(localItem)
+                    }
+                  }
+                } else {
+                  // 충돌 없음: 그대로 사용
+                  mergedArray.push(localItem)
                 }
+              } else if (remoteItem) {
+                // 원격만 존재: 새 데이터
+                mergedArray.push(remoteItem)
+                updatedCount++
+              } else if (localItem) {
+                // 로컬만 존재: 유지
+                mergedArray.push(localItem)
               }
             }
 

@@ -20,6 +20,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { useToast } from '@/hooks/use-toast'
+import { getConflictText } from '@/config/brand'
 import type {
   ConflictData,
   ResolutionStrategy,
@@ -42,6 +44,7 @@ export function ConflictResolutionModal({
   conflict,
   onResolve,
 }: ConflictResolutionModalProps) {
+  const { toast } = useToast()
   const [strategy, setStrategy] = useState<ResolutionStrategy>('merge_auto')
   const [manualSelections, setManualSelections] = useState<Record<string, 'local' | 'remote'>>({})
   const [isResolving, setIsResolving] = useState(false)
@@ -83,15 +86,17 @@ export function ConflictResolutionModal({
   const getConflictDescription = () => {
     if (!conflict) return ''
 
+    const lang = 'ko' // 기본 언어 설정
+
     switch (conflict.conflictType) {
       case 'local_newer':
-        return '로컬 버전이 더 최신입니다.'
+        return getConflictText.localNewer(lang)
       case 'remote_newer':
-        return '원격 버전이 더 최신입니다.'
+        return getConflictText.remoteNewer(lang)
       case 'both_modified':
-        return '양쪽 모두 수정되었습니다. (동시 수정 가능성)'
+        return getConflictText.bothModified(lang)
       default:
-        return '타임스탬프를 확인할 수 없습니다.'
+        return getConflictText.unknown(lang)
     }
   }
 
@@ -158,7 +163,12 @@ export function ConflictResolutionModal({
       onOpenChange(false)
     } catch (error) {
       console.error('Failed to resolve conflict:', error)
-      alert('충돌 해결에 실패했습니다.')
+      const lang = 'ko'
+      toast({
+        variant: 'destructive',
+        title: getConflictText.failureTitle(lang),
+        description: getConflictText.failureDesc(lang),
+      })
     } finally {
       setIsResolving(false)
     }
@@ -182,20 +192,22 @@ export function ConflictResolutionModal({
 
   if (!conflict) return null
 
+  const lang = 'ko' // 기본 언어 설정
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <div className="flex items-center gap-2">
             {getConflictIcon()}
-            <DialogTitle>데이터 충돌 해결</DialogTitle>
+            <DialogTitle>{getConflictText.title(lang)}</DialogTitle>
           </div>
           <DialogDescription>
             {getConflictDescription()}
             <br />
             <span className="text-sm text-muted-foreground">
-              엔티티: <strong>{conflict.entity}</strong>
-              {conflict.id && ` / ID: ${conflict.id}`}
+              {getConflictText.entityLabel(lang)} <strong>{conflict.entity}</strong>
+              {conflict.id && ` / ${getConflictText.idLabel(lang)} ${conflict.id}`}
             </span>
           </DialogDescription>
         </DialogHeader>
@@ -203,19 +215,19 @@ export function ConflictResolutionModal({
         <div className="space-y-6">
           {/* 해결 전략 선택 */}
           <div>
-            <Label className="text-base font-semibold mb-3 block">해결 방법 선택</Label>
+            <Label className="text-base font-semibold mb-3 block">{getConflictText.strategyLabel(lang)}</Label>
             <RadioGroup value={strategy} onValueChange={(v) => setStrategy(v as ResolutionStrategy)}>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 p-3 rounded-md border hover:bg-accent">
                   <RadioGroupItem value="keep_local" id="keep_local" />
                   <Label htmlFor="keep_local" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">로컬 버전 유지</span>
+                      <span className="font-medium">{getConflictText.keepLocal(lang)}</span>
                       <Badge variant="secondary">
                         {formatTimestamp(conflict.localTimestamp, conflict.localUpdatedAt)}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">현재 기기의 데이터를 유지합니다.</p>
+                    <p className="text-sm text-muted-foreground">{getConflictText.keepLocalDesc(lang)}</p>
                   </Label>
                 </div>
 
@@ -223,12 +235,12 @@ export function ConflictResolutionModal({
                   <RadioGroupItem value="keep_remote" id="keep_remote" />
                   <Label htmlFor="keep_remote" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">원격 버전 선택</span>
+                      <span className="font-medium">{getConflictText.keepRemote(lang)}</span>
                       <Badge variant="secondary">
                         {formatTimestamp(conflict.remoteTimestamp, conflict.remoteUpdatedAt)}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">서버의 데이터를 가져옵니다.</p>
+                    <p className="text-sm text-muted-foreground">{getConflictText.keepRemoteDesc(lang)}</p>
                   </Label>
                 </div>
 
@@ -237,11 +249,11 @@ export function ConflictResolutionModal({
                   <Label htmlFor="merge_auto" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2">
                       <Merge className="h-4 w-4" />
-                      <span className="font-medium">자동 병합</span>
-                      <Badge variant="outline">권장</Badge>
+                      <span className="font-medium">{getConflictText.mergeAuto(lang)}</span>
+                      <Badge variant="outline">{getConflictText.recommended(lang)}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      필드별로 최신 값을 자동으로 선택합니다.
+                      {getConflictText.mergeAutoDesc(lang)}
                     </p>
                   </Label>
                 </div>
@@ -250,10 +262,10 @@ export function ConflictResolutionModal({
                   <RadioGroupItem value="merge_manual" id="merge_manual" />
                   <Label htmlFor="merge_manual" className="flex-1 cursor-pointer">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">수동 병합</span>
+                      <span className="font-medium">{getConflictText.mergeManual(lang)}</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      필드별로 직접 선택합니다. (아래에서 선택)
+                      {getConflictText.mergeManualDesc(lang)}
                     </p>
                   </Label>
                 </div>
@@ -265,7 +277,7 @@ export function ConflictResolutionModal({
           {strategy === 'merge_manual' && conflictingFields.length > 0 && (
             <div>
               <Label className="text-base font-semibold mb-3 block">
-                충돌 필드 선택 ({conflictingFields.length}개)
+                {getConflictText.fieldSelectionLabel(lang)} ({conflictingFields.length}{getConflictText.fieldSelectionCount(lang)})
               </Label>
               <ScrollArea className="h-[300px] border rounded-md p-4">
                 <div className="space-y-4">
@@ -275,7 +287,7 @@ export function ConflictResolutionModal({
                     return (
                       <div key={diff.field} className="border-b pb-4 last:border-b-0">
                         <div className="font-medium text-sm mb-2">
-                          필드: <code className="text-primary">{diff.field}</code>
+                          {getConflictText.fieldLabel(lang)} <code className="text-primary">{diff.field}</code>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           {/* 로컬 선택 */}
@@ -290,7 +302,7 @@ export function ConflictResolutionModal({
                           >
                             <div className="flex items-center gap-2 mb-1">
                               {selection === 'local' && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                              <span className="text-xs font-medium">로컬</span>
+                              <span className="text-xs font-medium">{getConflictText.localLabel(lang)}</span>
                             </div>
                             <pre className="text-xs text-muted-foreground overflow-x-auto">
                               {renderValue(diff.localValue)}
@@ -309,7 +321,7 @@ export function ConflictResolutionModal({
                           >
                             <div className="flex items-center gap-2 mb-1">
                               {selection === 'remote' && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                              <span className="text-xs font-medium">원격</span>
+                              <span className="text-xs font-medium">{getConflictText.remoteLabel(lang)}</span>
                             </div>
                             <pre className="text-xs text-muted-foreground overflow-x-auto">
                               {renderValue(diff.remoteValue)}
@@ -328,15 +340,15 @@ export function ConflictResolutionModal({
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isResolving}>
             <X className="h-4 w-4 mr-2" />
-            취소
+            {getConflictText.cancel(lang)}
           </Button>
           <Button onClick={handleResolve} disabled={isResolving}>
             {isResolving ? (
-              <>처리 중...</>
+              <>{getConflictText.resolving(lang)}</>
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                해결 적용
+                {getConflictText.resolve(lang)}
               </>
             )}
           </Button>

@@ -1437,6 +1437,49 @@ export const uiText = {
         downgrade: { ko: "다운그레이드는 다음 결제 주기부터 적용됩니다", en: "Downgrades are applied from the next billing cycle" }
       }
     }
+  },
+  // Storage & Conflict Resolution (2025-10-10 추가)
+  storage: {
+    conflict: {
+      // Dialog
+      title: { ko: "데이터 충돌 해결", en: "Resolve Data Conflict" },
+      entityLabel: { ko: "엔티티:", en: "Entity:" },
+      idLabel: { ko: "ID:", en: "ID:" },
+
+      // Conflict Types
+      localNewer: { ko: "로컬 버전이 더 최신입니다.", en: "Local version is newer." },
+      remoteNewer: { ko: "원격 버전이 더 최신입니다.", en: "Remote version is newer." },
+      bothModified: { ko: "양쪽 모두 수정되었습니다. (동시 수정 가능성)", en: "Both sides modified. (Possible concurrent modification)" },
+      unknown: { ko: "타임스탬프를 확인할 수 없습니다.", en: "Cannot verify timestamp." },
+
+      // Strategy Selection
+      strategyLabel: { ko: "해결 방법 선택", en: "Choose Resolution Strategy" },
+      keepLocal: { ko: "로컬 버전 유지", en: "Keep Local Version" },
+      keepLocalDesc: { ko: "현재 기기의 데이터를 유지합니다.", en: "Keep data from this device." },
+      keepRemote: { ko: "원격 버전 선택", en: "Select Remote Version" },
+      keepRemoteDesc: { ko: "서버의 데이터를 가져옵니다.", en: "Get data from server." },
+      mergeAuto: { ko: "자동 병합", en: "Auto Merge" },
+      mergeAutoDesc: { ko: "필드별로 최신 값을 자동으로 선택합니다.", en: "Automatically select newest value per field." },
+      mergeManual: { ko: "수동 병합", en: "Manual Merge" },
+      mergeManualDesc: { ko: "필드별로 직접 선택합니다. (아래에서 선택)", en: "Choose manually per field. (Select below)" },
+      recommended: { ko: "권장", en: "Recommended" },
+
+      // Manual Merge
+      fieldSelectionLabel: { ko: "충돌 필드 선택", en: "Select Conflicting Fields" },
+      fieldSelectionCount: { ko: "개", en: "items" },
+      fieldLabel: { ko: "필드:", en: "Field:" },
+      localLabel: { ko: "로컬", en: "Local" },
+      remoteLabel: { ko: "원격", en: "Remote" },
+
+      // Buttons
+      cancel: { ko: "취소", en: "Cancel" },
+      resolve: { ko: "해결 적용", en: "Apply Resolution" },
+      resolving: { ko: "처리 중...", en: "Processing..." },
+
+      // Toast Messages
+      failureTitle: { ko: "충돌 해결 실패", en: "Conflict Resolution Failed" },
+      failureDesc: { ko: "충돌 해결에 실패했습니다. 다시 시도해주세요.", en: "Failed to resolve conflict. Please try again." }
+    }
   }
 } as const
 
@@ -2898,4 +2941,46 @@ export const getSettingsText = {
   planTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.plan.title[lang],
   planDescription: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.plan.description[lang],
   currentPlan: (lang: 'ko' | 'en' = defaultLanguage) => uiText.settings.plan.current[lang],
+}
+
+// 충돌 해결 헬퍼 함수 (2025-10-10 추가)
+export const getConflictText = {
+  // Dialog
+  title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.title[lang],
+  entityLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.entityLabel[lang],
+  idLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.idLabel[lang],
+
+  // Conflict Types
+  localNewer: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.localNewer[lang],
+  remoteNewer: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.remoteNewer[lang],
+  bothModified: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.bothModified[lang],
+  unknown: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.unknown[lang],
+
+  // Strategy Selection
+  strategyLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.strategyLabel[lang],
+  keepLocal: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.keepLocal[lang],
+  keepLocalDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.keepLocalDesc[lang],
+  keepRemote: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.keepRemote[lang],
+  keepRemoteDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.keepRemoteDesc[lang],
+  mergeAuto: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.mergeAuto[lang],
+  mergeAutoDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.mergeAutoDesc[lang],
+  mergeManual: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.mergeManual[lang],
+  mergeManualDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.mergeManualDesc[lang],
+  recommended: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.recommended[lang],
+
+  // Manual Merge
+  fieldSelectionLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.fieldSelectionLabel[lang],
+  fieldSelectionCount: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.fieldSelectionCount[lang],
+  fieldLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.fieldLabel[lang],
+  localLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.localLabel[lang],
+  remoteLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.remoteLabel[lang],
+
+  // Buttons
+  cancel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.cancel[lang],
+  resolve: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.resolve[lang],
+  resolving: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.resolving[lang],
+
+  // Toast Messages
+  failureTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.failureTitle[lang],
+  failureDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.failureDesc[lang],
 }
