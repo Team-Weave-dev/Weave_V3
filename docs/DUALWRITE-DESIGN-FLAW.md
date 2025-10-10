@@ -665,6 +665,366 @@ DualWrite 모드의 설계 결함은 **단방향 동기화**와 **충돌 해결 
 
 ---
 
+## Phase 5.5-5.6 완료: 충돌 해결 시스템 구현
+
+**완료일**: 2025-10-10
+**상태**: ✅ 완료
+**커밋**: 977a3d1
+
+### 📊 구현 개요
+
+Phase 5의 선택 작업인 충돌 해결 UI(Phase 5.5)와 자동 머지 전략(Phase 5.6)을 완료했습니다. 이로써 Multi-device 환경에서 발생하는 데이터 충돌을 사용자가 직접 해결하거나 시스템이 자동으로 해결할 수 있는 완전한 시스템을 구축했습니다.
+
+### 🔧 구현된 주요 컴포넌트
+
+#### 1. ConflictResolutionModal.tsx (348줄)
+**위치**: `src/components/ui/storage/ConflictResolutionModal.tsx`
+
+**핵심 기능**:
+- React Dialog 기반 모달 UI
+- 4가지 해결 전략 선택 인터페이스
+- 수동 필드 선택 시 side-by-side 비교 뷰
+- 중앙화된 텍스트 시스템 통합 (`brand.ts`)
+
+**해결 전략**:
+```typescript
+type ResolutionStrategy =
+  | 'keep_local'       // 로컬 버전 유지
+  | 'keep_remote'      // 원격 버전 유지
+  | 'merge_auto'       // 자동 머지 (타임스탬프 기반)
+  | 'merge_manual'     // 수동 머지 (사용자 선택)
+  | 'cancel'           // 해결 취소
+```
+
+**UI 구성**:
+- 충돌 타입 표시 (local_newer, remote_newer, both_modified, unknown)
+- 타임스탬프 비교 뷰
+- 필드별 차이점 강조 표시
+- 수동 선택 시 체크박스 기반 필드 선택
+
+#### 2. conflict.ts (156줄)
+**위치**: `src/lib/storage/types/conflict.ts`
+
+**타입 정의**:
+```typescript
+// 충돌 타입
+type ConflictType =
+  | 'local_newer'      // 로컬이 더 최신
+  | 'remote_newer'     // 원격이 더 최신
+  | 'both_modified'    // 5초 이내 동시 수정
+  | 'unknown'          // 타임스탬프 판단 불가
+
+// 충돌 데이터 구조
+interface ConflictData<T> {
+  key: string
+  entity: string
+  id?: string
+  localVersion: T
+  remoteVersion: T
+  localTimestamp?: number
+  remoteTimestamp?: number
+  conflictType: ConflictType
+  differences: FieldDifference[]    // 필드별 차이
+  detectedAt: number
+  userId?: string
+}
+
+// 해결 결과
+interface ConflictResolution<T> {
+  strategy: ResolutionStrategy
+  resolvedData: T
+  appliedAt: number
+  manualChanges?: Partial<T>
+}
+```
+
+**타입 가드**:
+- `isConflictData()`: 충돌 데이터 검증
+- `isConflictResolution()`: 해결 결과 검증
+- `isFieldDifference()`: 필드 차이 검증
+
+#### 3. ConflictResolver.ts (424줄)
+**위치**: `src/lib/storage/utils/ConflictResolver.ts`
+
+**핵심 메서드**:
+
+```typescript
+class ConflictResolver {
+  // 충돌 감지
+  detectConflict<T>(key: string, local: T, remote: T): ConflictDetectionResult<T>
+
+  // 충돌 해결
+  resolve<T>(conflict: ConflictData<T>, strategy: ResolutionStrategy): ConflictResolution<T>
+
+  // 자동 머지 (필드별 타임스탬프 비교)
+  private autoMerge<T>(local: T, remote: T, differences: FieldDifference[]): T
+
+  // 수동 머지 (사용자 선택 필드 적용)
+  private manualMerge<T>(local: T, manualChanges: Partial<T>): T
+
+  // 통계 추적
+  getStats(): ConflictStats
+}
+```
+
+**충돌 감지 알고리즘**:
+1. 데이터 동등성 검사 (deep equality)
+2. 타임스탬프 추출 (updatedAt, modifiedDate, timestamp, createdAt 순)
+3. 충돌 타입 결정:
+   - 시간 차이 > 5초: local_newer 또는 remote_newer
+   - 시간 차이 ≤ 5초: both_modified (동시 편집)
+   - 타임스탬프 없음: unknown
+4. 필드별 차이 분석
+5. 자동 해결 가능 여부 판단
+
+**자동 머지 전략**:
+```typescript
+// 필드별 타임스탬프 비교로 최신 값 선택
+for (const diff of differences) {
+  if (diff.hasConflict) {
+    if (diff.remoteTimestamp && diff.localTimestamp) {
+      // 타임스탬프가 있으면 최신 값 선택
+      if (diff.remoteTimestamp > diff.localTimestamp) {
+        merged[diff.field] = diff.remoteValue
+      } else {
+        merged[diff.field] = diff.localValue
+      }
+    } else {
+      // 타임스탬프 없으면 원격 우선
+      merged[diff.field] = diff.remoteValue
+    }
+  }
+}
+
+// 최종 updated_at은 두 버전 중 최신값
+merged.updated_at = Math.max(localTimestamp, remoteTimestamp)
+```
+
+#### 4. BidirectionalSyncAdapter.ts 수정
+**위치**: `src/lib/storage/adapters/BidirectionalSyncAdapter.ts`
+
+**추가된 기능**:
+```typescript
+interface BidirectionalSyncOptions extends ConflictResolutionOptions {
+  localAdapter: LocalStorageAdapter
+  supabaseAdapter: SupabaseAdapter
+  syncInterval?: number
+  enableAutoSync?: boolean
+  maxRetries?: number
+  retryDelay?: number
+}
+
+interface ConflictResolutionOptions {
+  autoResolve?: boolean           // 자동 해결 활성화
+  preferNewest?: boolean          // 최신 버전 우선 (기본: true)
+  onConflict?: (conflict: ConflictData) => void
+  onResolved?: (resolution: ConflictResolution) => void
+  onError?: (error: Error) => void
+}
+```
+
+### 🐛 해결된 타입 에러 (4건)
+
+모든 에러는 TypeScript의 spread operator 타입 안전성 관련 문제였으며, type guard를 추가하여 해결했습니다.
+
+#### 에러 1-2: ConflictResolutionModal.tsx
+**문제**: `conflict.localVersion` 타입이 `JsonValue`로, spread 연산 시 타입 검증 필요
+
+**해결**:
+```typescript
+// Type guard 추가
+if (typeof conflict.localVersion === 'object' &&
+    conflict.localVersion !== null &&
+    !Array.isArray(conflict.localVersion)) {
+  resolvedData = {
+    ...conflict.localVersion,
+    ...manualData,
+    updatedAt: new Date().toISOString(),
+  } as JsonValue
+} else {
+  resolvedData = manualData as JsonValue
+}
+```
+
+#### 에러 3-4: ConflictResolver.ts
+**문제**: Generic 타입 `T extends JsonValue`에 대한 spread 연산
+
+**해결**:
+```typescript
+// autoMerge 메서드
+if (typeof local !== 'object' || local === null || Array.isArray(local)) {
+  return local
+}
+
+const localObject = local as Record<string, JsonValue>
+const merged = { ...localObject }
+
+// manualMerge 메서드
+if (typeof local !== 'object' || local === null || Array.isArray(local)) {
+  return manualData as T
+}
+
+return {
+  ...local,
+  ...manualData,
+  updatedAt: new Date().toISOString(),
+} as T
+```
+
+### 📋 통합 테스트 문서
+
+**파일**: `docs/CONFLICT-RESOLUTION-TESTING.md`
+
+**포함 내용**:
+1. **시나리오 1**: 충돌 감지 테스트
+   - 동시 편집 시뮬레이션
+   - 충돌 타입 검증
+   - 필드 차이 분석 확인
+
+2. **시나리오 2**: 자동 머지 테스트
+   - `autoMerge()` 메서드 검증
+   - 타임스탬프 기반 필드 선택
+   - 결과 데이터 무결성 확인
+
+3. **시나리오 3**: UI 테스트
+   - 모달 렌더링 확인
+   - 4가지 해결 전략 동작
+   - 수동 선택 UI 검증
+
+4. **시나리오 4**: 통합 테스트
+   - BidirectionalSyncAdapter와 통합
+   - End-to-end 충돌 해결 플로우
+   - 에러 처리 및 복구
+
+### 📊 구현 결과
+
+#### 추가된 파일 (3개)
+- `src/components/ui/storage/ConflictResolutionModal.tsx` (348줄)
+- `src/lib/storage/types/conflict.ts` (156줄)
+- `src/lib/storage/utils/ConflictResolver.ts` (424줄)
+
+#### 수정된 파일 (1개)
+- `src/lib/storage/adapters/BidirectionalSyncAdapter.ts` (충돌 해결 옵션 추가)
+
+#### 총 코드 라인
+- **신규 코드**: 928줄
+- **수정 코드**: 58줄
+- **총 변경**: 986줄
+
+#### 빌드 및 검증
+```bash
+# 타입 체크 통과
+npm run type-check  # ✅ 에러 0개
+
+# 빌드 성공
+npm run build       # ✅ 5.5초 완료
+
+# Git 커밋 완료
+git commit -m "feat(storage): Phase 5.5-5.6 충돌 해결 시스템 완료"
+# 커밋 해시: 977a3d1
+# 8 files changed, 1079 insertions(+), 58 deletions(-)
+```
+
+### 🎯 시스템 동작 원리
+
+#### 충돌 발생 시 플로우
+
+```
+1. BidirectionalSyncAdapter에서 충돌 감지
+   ↓
+2. ConflictResolver.detectConflict() 호출
+   ↓
+3. 충돌 타입 결정 및 필드 분석
+   ↓
+4-1. autoResolve=true
+   → ConflictResolver.resolve('merge_auto')
+   → 자동 머지 완료
+
+4-2. autoResolve=false
+   → onConflict() 콜백 호출
+   → ConflictResolutionModal 렌더링
+   → 사용자 전략 선택
+   → ConflictResolver.resolve(strategy)
+   → 해결 완료
+   ↓
+5. onResolved() 콜백 호출
+   ↓
+6. 해결된 데이터로 동기화 재시도
+```
+
+#### 자동 해결 예시
+```typescript
+const dualAdapter = new BidirectionalSyncAdapter({
+  local: localAdapter,
+  supabase: supabaseAdapter,
+  autoResolve: true,        // 자동 해결 활성화
+  preferNewest: true,       // 최신 버전 우선
+  onResolved: (resolution) => {
+    console.log('Conflict auto-resolved:', resolution)
+  }
+})
+```
+
+#### 수동 해결 예시
+```tsx
+const [conflict, setConflict] = useState<ConflictData | null>(null)
+
+const dualAdapter = new BidirectionalSyncAdapter({
+  local: localAdapter,
+  supabase: supabaseAdapter,
+  autoResolve: false,       // 수동 해결
+  onConflict: (conflictData) => {
+    setConflict(conflictData)  // 모달 표시
+  }
+})
+
+// UI에서
+<ConflictResolutionModal
+  conflict={conflict}
+  onResolve={async (resolution) => {
+    // 해결된 데이터로 저장
+    await conflictResolver.applyResolution(resolution)
+  }}
+/>
+```
+
+### 🔍 추가 개선 가능 영역 (향후 고려사항)
+
+#### 1. 고급 머지 전략
+- **Three-way merge**: 공통 조상 버전 활용
+- **Operational Transform**: 실시간 협업 편집 지원
+- **CRDT (Conflict-free Replicated Data Types)**: 자동 충돌 방지
+
+#### 2. UI 개선
+- 변경 사항 diff 뷰 (코드 diff 스타일)
+- 타임라인 뷰 (변경 히스토리 시각화)
+- 미리보기 모드 (해결 결과 사전 확인)
+
+#### 3. 성능 최적화
+- 대용량 객체 충돌 처리 최적화
+- 배치 충돌 해결 (여러 충돌 동시 처리)
+- 백그라운드 자동 해결 큐
+
+#### 4. 모니터링 및 분석
+- 충돌 발생 빈도 추적
+- 해결 전략별 성공률 분석
+- 사용자 선호 전략 학습
+
+### ✅ Phase 5 완료 요약
+
+| Phase | 상태 | 설명 |
+|-------|------|------|
+| **5.1** | ✅ 완료 | OfflineQueue 클래스 구현 |
+| **5.2** | ✅ 완료 | Offline 감지 이벤트 리스너 |
+| **5.3** | ✅ 완료 | Offline 모드 전환 (LocalStorage 우선) |
+| **5.4** | ✅ 완료 | Online 복귀 시 큐 처리 |
+| **5.5** | ✅ 완료 | 충돌 해결 UI (ConflictResolutionModal) |
+| **5.6** | ✅ 완료 | 자동 머지 전략 (ConflictResolver) |
+
+**전체 Phase 5 달성률**: 100% (6/6 완료)
+
+---
+
 **작성자**: Claude Code
 **검토**: 필요
 **승인**: 대기 중
