@@ -15,7 +15,6 @@
 import { StorageManager } from './core/StorageManager';
 import { LocalStorageAdapter } from './adapters/LocalStorageAdapter';
 import { SupabaseAdapter } from './adapters/SupabaseAdapter';
-import { DualWriteAdapter } from './adapters/DualWriteAdapter';
 import { STORAGE_CONFIG } from './config';
 import { createClient } from '../supabase/client';
 
@@ -42,7 +41,6 @@ import type { StorageAdapter } from './types/base';
  */
 let storageManager: StorageManager | null = null;
 let currentAdapter: StorageAdapter | null = null;
-let currentDualWriteAdapter: DualWriteAdapter | null = null;
 
 /**
  * Get current user ID from Supabase auth
@@ -92,13 +90,11 @@ export async function initializeStorage(): Promise<void> {
       const supabaseAdapter = new SupabaseAdapter({ userId });
 
       currentAdapter = supabaseAdapter;
-      currentDualWriteAdapter = null; // DualWrite disabled
     } else {
       // Not authenticated: Use LocalStorage only
       console.log('ℹ️ User not authenticated, using LocalStorage mode');
       const localAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
       currentAdapter = localAdapter;
-      currentDualWriteAdapter = null;
     }
 
     // Create storage manager
@@ -138,14 +134,6 @@ export function getStorage(): StorageManager {
   return storageManager;
 }
 
-/**
- * Get current DualWriteAdapter instance (if in DualWrite mode)
- *
- * @returns DualWriteAdapter instance or null
- */
-export function getDualWriteAdapter(): DualWriteAdapter | null {
-  return currentDualWriteAdapter;
-}
 
 /**
  * Switch to Supabase-only mode
@@ -163,13 +151,7 @@ export async function switchToSupabaseMode(userId: string): Promise<void> {
   try {
     const supabaseAdapter = new SupabaseAdapter({ userId });
 
-    // Stop old sync worker if exists (for backward compatibility)
-    if (currentDualWriteAdapter) {
-      currentDualWriteAdapter.stopSyncWorker();
-    }
-
     currentAdapter = supabaseAdapter;
-    currentDualWriteAdapter = null; // DualWrite disabled
     storageManager = new StorageManager(currentAdapter);
 
     // Clear fallback storage manager
@@ -193,13 +175,6 @@ export async function switchToSupabaseMode(userId: string): Promise<void> {
   }
 }
 
-/**
- * @deprecated Use switchToSupabaseMode instead. DualWrite mode has been disabled.
- */
-export async function switchToDualWriteMode(userId: string): Promise<void> {
-  console.warn('⚠️ switchToDualWriteMode is deprecated. Using Supabase-only mode instead.');
-  return switchToSupabaseMode(userId);
-}
 
 /**
  * Fallback to LocalStorage-only mode
@@ -211,14 +186,8 @@ export async function fallbackToLocalStorageMode(): Promise<void> {
   console.log('⚠️ Falling back to LocalStorage mode...');
 
   try {
-    // Stop sync worker if exists
-    if (currentDualWriteAdapter) {
-      currentDualWriteAdapter.stopSyncWorker();
-    }
-
     const localAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
     currentAdapter = localAdapter;
-    currentDualWriteAdapter = null;
     storageManager = new StorageManager(currentAdapter);
 
     // Clear fallback storage manager
