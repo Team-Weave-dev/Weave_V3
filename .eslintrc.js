@@ -3,7 +3,7 @@ module.exports = {
   extends: ["next/core-web-vitals"],
   plugins: ["@typescript-eslint"],
   rules: {
-    "@typescript-eslint/no-explicit-any": "off",이걱
+    "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": [
       "warn",
       {
