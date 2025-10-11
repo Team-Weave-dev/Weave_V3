@@ -63,15 +63,23 @@ export function toTask(todoTask: DashboardTodoTask, userId: string = '1'): Task 
   // Children을 subtasks ID 배열로 변환
   const subtasks = todoTask.children?.map(child => child.id) || [];
 
+  // 날짜 변환 헬퍼: Date 객체 또는 문자열을 ISO string으로 안전하게 변환
+  const toISOString = (date: Date | string | undefined): string | undefined => {
+    if (!date) return undefined;
+    if (typeof date === 'string') return date; // 이미 문자열이면 그대로 반환
+    if (date instanceof Date) return date.toISOString(); // Date 객체면 변환
+    return undefined;
+  };
+
   const task: Task & { sectionId?: string } = {
     id: todoTask.id,
     userId,
     title: todoTask.title,
     status,
     priority,
-    dueDate: todoTask.dueDate?.toISOString(),
-    completedAt: todoTask.completedAt?.toISOString(),
-    createdAt: todoTask.createdAt?.toISOString() || new Date().toISOString(),
+    dueDate: toISOString(todoTask.dueDate),
+    completedAt: toISOString(todoTask.completedAt),
+    createdAt: toISOString(todoTask.createdAt) || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     parentTaskId: todoTask.parentId,
     subtasks,
@@ -300,26 +308,49 @@ export async function deleteTodoTask(id: string): Promise<boolean> {
 }
 
 /**
- * Save all todo tasks (bulk operation)
+ * Save all todo tasks (incremental update)
+ *
+ * ✅ 개선된 방식: 기존 태스크와 비교하여 create/update/delete만 수행
+ * ❌ 이전 방식: 모든 태스크를 삭제하고 재생성 (비효율적)
  */
 export async function saveTodoTasks(todoTasks: DashboardTodoTask[]): Promise<void> {
-  // 기존 모든 tasks 삭제
+  // 1. 기존 태스크 조회
   const existingTasks = await taskService.getAll();
-  for (const task of existingTasks) {
+  const existingTaskIds = new Set(existingTasks.map(t => t.id));
+
+  // 2. 새로운 태스크 ID 세트
+  const newTaskIds = new Set<string>();
+  const allNewTasks: DashboardTodoTask[] = [];
+
+  // 부모 태스크와 자식 태스크 모두 수집
+  for (const todoTask of todoTasks) {
+    allNewTasks.push(todoTask);
+    newTaskIds.add(todoTask.id);
+
+    if (todoTask.children && todoTask.children.length > 0) {
+      for (const child of todoTask.children) {
+        allNewTasks.push(child);
+        newTaskIds.add(child.id);
+      }
+    }
+  }
+
+  // 3. 삭제할 태스크 (기존에는 있었지만 새로운 목록에는 없음)
+  const tasksToDelete = existingTasks.filter(t => !newTaskIds.has(t.id));
+  for (const task of tasksToDelete) {
     await taskService.delete(task.id);
   }
 
-  // 새로운 tasks 저장
-  for (const todoTask of todoTasks) {
+  // 4. 생성 또는 업데이트
+  for (const todoTask of allNewTasks) {
     const task = toTask(todoTask);
-    await taskService.create(task);
 
-    // Children도 저장
-    if (todoTask.children && todoTask.children.length > 0) {
-      for (const child of todoTask.children) {
-        const childTask = toTask(child);
-        await taskService.create(childTask);
-      }
+    if (existingTaskIds.has(todoTask.id)) {
+      // 기존 태스크 업데이트
+      await taskService.update(todoTask.id, task);
+    } else {
+      // 새 태스크 생성
+      await taskService.create(task);
     }
   }
 }

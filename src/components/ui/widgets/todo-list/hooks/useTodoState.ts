@@ -201,17 +201,23 @@ export function useTodoState(props?: {
 
   // Storage API 동기화를 위한 헬퍼 함수
   const setLocalTasks = useCallback((tasks: TodoTask[] | ((prev: TodoTask[]) => TodoTask[])) => {
+    // 1. State 업데이트를 위한 변수 (타입 명시)
+    let tasksToSave: TodoTask[] = [];
+
+    // 2. State setter - 순수하게 state만 업데이트
     setLocalTasksState((prevTasks) => {
       const newTasks = typeof tasks === 'function' ? tasks(prevTasks) : tasks;
-      // Widget TodoTask[] → Dashboard TodoTask[] 변환 후 Storage API에 저장 (비동기)
-      if (typeof window !== 'undefined') {
-        const dashboardTasks = newTasks.map(widgetToDashboardTask);
-        saveTodoTasks(dashboardTasks).catch((error) => {
-          console.error('Failed to save tasks to Storage API:', error);
-        });
-      }
+      tasksToSave = newTasks;  // Storage sync를 위해 저장
       return newTasks;
     });
+
+    // 3. State setter 외부에서 Storage sync (1번만 실행됨)
+    if (typeof window !== 'undefined' && tasksToSave.length >= 0) {
+      const dashboardTasks = tasksToSave.map(widgetToDashboardTask);
+      saveTodoTasks(dashboardTasks).catch((error) => {
+        console.error('Failed to save tasks to Storage API:', error);
+      });
+    }
   }, []);
 
   // sections 업데이트 (Storage API는 각 핸들러에서 직접 호출)
