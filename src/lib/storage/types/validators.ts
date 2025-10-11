@@ -12,7 +12,10 @@
  * @returns True if value is a valid ISO 8601 date string
  *
  * @example
- * isValidISODate("2025-01-05T10:30:00.000Z") // true
+ * isValidISODate("2025-01-05T10:30:00.000Z") // true (UTC with milliseconds)
+ * isValidISODate("2025-01-05T10:30:00Z") // true (UTC without milliseconds)
+ * isValidISODate("2025-01-05T10:30:00.000+09:00") // true (timezone offset)
+ * isValidISODate("2025-01-05T10:30:00+00:00") // true (timezone offset without milliseconds)
  * isValidISODate("invalid-date") // false
  */
 export function isValidISODate(value: unknown): value is string {
@@ -22,7 +25,10 @@ export function isValidISODate(value: unknown): value is string {
   const date = new Date(value);
 
   // Check if date is valid and the string matches ISO 8601 format
-  return !isNaN(date.getTime()) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(value);
+  // Support both Z (UTC) and timezone offset (+HH:MM or -HH:MM)
+  // Milliseconds are optional
+  const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?$/;
+  return !isNaN(date.getTime()) && isoDateRegex.test(value);
 }
 
 /**

@@ -29,6 +29,122 @@ export class TaskService extends BaseService<Task> {
   }
 
   // ============================================================================
+  // Data Normalization
+  // ============================================================================
+
+  /**
+   * Normalize task data to ensure type safety
+   * Fixes common data issues from localStorage
+   * @param data - Task data to normalize
+   * @returns Normalized task data
+   */
+  private normalizeTaskData<T extends Partial<Task>>(data: T): T {
+    const normalized = { ...data };
+
+    // Normalize number fields (estimatedHours, actualHours)
+    if ('estimatedHours' in normalized) {
+      const value = normalized.estimatedHours;
+      if (value !== null && value !== undefined) {
+        if (typeof value === 'string') {
+          const parsed = parseFloat(value);
+          normalized.estimatedHours = isNaN(parsed) ? undefined : parsed;
+        } else if (typeof value !== 'number') {
+          normalized.estimatedHours = undefined;
+        } else if (value < 0) {
+          normalized.estimatedHours = 0;
+        }
+      }
+    }
+
+    if ('actualHours' in normalized) {
+      const value = normalized.actualHours;
+      if (value !== null && value !== undefined) {
+        if (typeof value === 'string') {
+          const parsed = parseFloat(value);
+          normalized.actualHours = isNaN(parsed) ? undefined : parsed;
+        } else if (typeof value !== 'number') {
+          normalized.actualHours = undefined;
+        } else if (value < 0) {
+          normalized.actualHours = 0;
+        }
+      }
+    }
+
+    // Normalize array fields (subtasks, dependencies, tags, attachments)
+    if ('subtasks' in normalized) {
+      const value = normalized.subtasks;
+      if (value !== null && value !== undefined) {
+        if (!Array.isArray(value)) {
+          normalized.subtasks = [];
+        } else {
+          // Ensure all items are strings
+          normalized.subtasks = value.filter((item): item is string => typeof item === 'string');
+        }
+      }
+    }
+
+    if ('dependencies' in normalized) {
+      const value = normalized.dependencies;
+      if (value !== null && value !== undefined) {
+        if (!Array.isArray(value)) {
+          normalized.dependencies = [];
+        } else {
+          normalized.dependencies = value.filter((item): item is string => typeof item === 'string');
+        }
+      }
+    }
+
+    if ('tags' in normalized) {
+      const value = normalized.tags;
+      if (value !== null && value !== undefined) {
+        if (!Array.isArray(value)) {
+          normalized.tags = [];
+        } else {
+          normalized.tags = value.filter((item): item is string => typeof item === 'string');
+        }
+      }
+    }
+
+    if ('attachments' in normalized) {
+      const value = normalized.attachments;
+      if (value !== null && value !== undefined) {
+        if (!Array.isArray(value)) {
+          normalized.attachments = [];
+        }
+      }
+    }
+
+    // Normalize recurring object
+    if ('recurring' in normalized) {
+      const value = normalized.recurring;
+      if (value !== null && value !== undefined) {
+        if (typeof value !== 'object' || !value.pattern) {
+          normalized.recurring = undefined;
+        } else {
+          const validPatterns = ['daily', 'weekly', 'monthly', 'yearly'];
+          if (!validPatterns.includes(value.pattern)) {
+            normalized.recurring = undefined;
+          }
+        }
+      }
+    }
+
+    return normalized;
+  }
+
+  /**
+   * Override update to auto-normalize data before validation
+   * @param id - Task ID
+   * @param updates - Partial task data
+   * @returns Updated task
+   */
+  async update(id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<Task | null> {
+    // Normalize the updates before passing to BaseService
+    const normalizedUpdates = this.normalizeTaskData(updates);
+    return super.update(id, normalizedUpdates);
+  }
+
+  // ============================================================================
   // Basic Query Methods
   // ============================================================================
 

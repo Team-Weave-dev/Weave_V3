@@ -154,8 +154,8 @@ export default function FullScreenCalendarModal({
       console.log('[FullScreenCalendarModal] Updating task date via Storage API:', taskId, newDate);
 
       await taskService.update(taskId, {
-        dueDate: newDate.toISOString(),
-        updatedAt: new Date().toISOString()
+        dueDate: newDate.toISOString()
+        // updatedAt은 BaseService가 자동으로 설정
       });
 
       console.log('[FullScreenCalendarModal] Task date updated successfully via Storage API');

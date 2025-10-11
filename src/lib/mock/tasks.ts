@@ -47,8 +47,11 @@ export function toTask(todoTask: DashboardTodoTask, userId: string = '1'): Task 
 
   // Section ID를 tag로 변환
   const tags: string[] = [];
+  console.log(`[toTask] Converting TodoTask "${todoTask.title}" with sectionId: ${todoTask.sectionId}`);
+
   if (todoTask.sectionId) {
     tags.push(`section:${todoTask.sectionId}`);
+    console.log(`[toTask] Added section tag: section:${todoTask.sectionId}`);
   }
   if (todoTask.depth > 0) {
     tags.push(`depth:${todoTask.depth}`);
@@ -60,7 +63,7 @@ export function toTask(todoTask: DashboardTodoTask, userId: string = '1'): Task 
   // Children을 subtasks ID 배열로 변환
   const subtasks = todoTask.children?.map(child => child.id) || [];
 
-  const task: Task = {
+  const task: Task & { sectionId?: string } = {
     id: todoTask.id,
     userId,
     title: todoTask.title,
@@ -73,9 +76,12 @@ export function toTask(todoTask: DashboardTodoTask, userId: string = '1'): Task 
     parentTaskId: todoTask.parentId,
     subtasks,
     tags,
+    // sectionId를 별도 필드로도 추가 (TodoListWidget 필터링용)
+    ...(todoTask.sectionId && { sectionId: todoTask.sectionId }),
   };
 
-  return task;
+  console.log(`[toTask] Created Task with sectionId: ${task.sectionId} and tags:`, task.tags);
+  return task as Task;
 }
 
 /**
@@ -89,14 +95,15 @@ export function toTodoTask(task: Task, children: DashboardTodoTask[] = []): Dash
   const completed = task.status === 'completed';
   const priority: TodoPriority = TASK_TO_TODO_PRIORITY[task.priority] || 'p3';
 
-  // Tags에서 sectionId, depth, order 추출
-  let sectionId: string | undefined;
+  // sectionId 추출: 직접 필드 우선, tags 배열 폴백
+  let sectionId: string | undefined = (task as any).sectionId;
   let depth = 0;
   let order = 0;
 
+  // sectionId가 필드로 없으면 tags에서 추출
   if (task.tags) {
     for (const tag of task.tags) {
-      if (tag.startsWith('section:')) {
+      if (!sectionId && tag.startsWith('section:')) {
         sectionId = tag.substring(8);
       } else if (tag.startsWith('depth:')) {
         depth = parseInt(tag.substring(6), 10) || 0;
@@ -105,6 +112,8 @@ export function toTodoTask(task: Task, children: DashboardTodoTask[] = []): Dash
       }
     }
   }
+
+  console.log(`[toTodoTask] Task "${task.title}" - sectionId from field: ${(task as any).sectionId}, extracted sectionId: ${sectionId}`);
 
   const todoTask: DashboardTodoTask = {
     id: task.id,

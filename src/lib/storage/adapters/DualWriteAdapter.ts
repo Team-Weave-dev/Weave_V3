@@ -130,13 +130,18 @@ export class DualWriteAdapter implements StorageAdapter {
     this.maxRetries = config.maxRetries ?? 3
     this.maxQueueSize = config.maxQueueSize ?? 1000
 
+    // Load persisted queue from localStorage
+    this.loadSyncQueue()
+
+    // Auto-sync from Supabase if LocalStorage is empty (non-blocking)
+    this.initializeFromSupabase().catch((error) => {
+      console.error('Failed to initialize from Supabase:', error)
+    })
+
     // Start sync worker
     if (this.enableSyncWorker) {
       this.startSyncWorker()
     }
-
-    // Load persisted queue from localStorage
-    this.loadSyncQueue()
   }
 
   /**
@@ -513,5 +518,93 @@ export class DualWriteAdapter implements StorageAdapter {
     this.stats.pendingCount = 0
     this.persistSyncQueue()
     console.log('Sync queue cleared')
+  }
+
+  /**
+   * Sync data from Supabase to LocalStorage (with transformation)
+   *
+   * Use this when LocalStorage is missing data that exists in Supabase.
+   * SupabaseAdapter automatically transforms snake_case → camelCase.
+   *
+   * @param key - Storage key to sync
+   */
+  async syncFromSupabase(key: string): Promise<void> {
+    try {
+      console.log(`Syncing "${key}" from Supabase → LocalStorage (with transformation)...`)
+
+      // Get data from Supabase (with automatic transformation)
+      const supabaseData = await this.supabase.get(key)
+
+      if (supabaseData === null) {
+        console.log(`No data found in Supabase for "${key}"`)
+        return
+      }
+
+      // Write transformed data to LocalStorage
+      await this.local.set(key, supabaseData)
+
+      console.log(`✅ Synced "${key}": ${Array.isArray(supabaseData) ? supabaseData.length : 1} items`)
+    } catch (error) {
+      console.error(`Failed to sync "${key}" from Supabase:`, error)
+      throw new StorageError('Failed to sync from Supabase', 'GET_ERROR', {
+        key,
+        cause: error instanceof Error ? error : new Error(String(error)),
+        severity: 'high',
+      })
+    }
+  }
+
+  /**
+   * Sync all entities from Supabase to LocalStorage
+   *
+   * Useful for initial setup or recovering from LocalStorage data loss.
+   */
+  async syncAllFromSupabase(): Promise<void> {
+    const entities = ['projects', 'tasks', 'events', 'clients', 'documents', 'todo_sections']
+
+    console.log('Syncing all entities from Supabase → LocalStorage...')
+
+    for (const entity of entities) {
+      try {
+        await this.syncFromSupabase(entity)
+      } catch (error) {
+        console.error(`Failed to sync entity "${entity}":`, error)
+        // Continue with other entities
+      }
+    }
+
+    console.log('✅ All entities synced from Supabase')
+  }
+
+  /**
+   * Initialize LocalStorage from Supabase if empty
+   *
+   * Automatically called on DualWriteAdapter construction.
+   * Checks if LocalStorage has data, and if not, syncs from Supabase.
+   */
+  private async initializeFromSupabase(): Promise<void> {
+    const entities = ['tasks', 'todo_sections', 'projects', 'events', 'clients', 'documents']
+
+    console.log('[DualWriteAdapter] Checking LocalStorage initialization...')
+
+    for (const entity of entities) {
+      try {
+        // Check if LocalStorage has data for this entity
+        const localData = await this.local.get(entity)
+
+        if (!localData || (Array.isArray(localData) && localData.length === 0)) {
+          // LocalStorage is empty, sync from Supabase
+          console.log(`[DualWriteAdapter] "${entity}" is empty in LocalStorage, syncing from Supabase...`)
+          await this.syncFromSupabase(entity)
+        } else {
+          console.log(`[DualWriteAdapter] "${entity}" already exists in LocalStorage (${Array.isArray(localData) ? localData.length : 1} items)`)
+        }
+      } catch (error) {
+        console.error(`[DualWriteAdapter] Failed to initialize "${entity}":`, error)
+        // Continue with other entities
+      }
+    }
+
+    console.log('[DualWriteAdapter] Initialization complete')
   }
 }

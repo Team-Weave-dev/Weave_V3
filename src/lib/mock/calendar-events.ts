@@ -99,7 +99,60 @@ export const saveCalendarEvents = async (events: CalendarEvent[]): Promise<void>
   if (typeof window === 'undefined') return;
 
   try {
-    await storage.set(STORAGE_KEYS.EVENTS, events);
+    // Dashboard CalendarEvent (date) → Storage CalendarEvent (startDate/endDate) 변환
+    const storageEvents = events.map(event => {
+      const eventDate = event.date instanceof Date ? event.date : new Date(event.date);
+
+      // startDate 생성: date + startTime
+      let startDateTime = new Date(eventDate);
+      if (event.startTime) {
+        const [hours, minutes] = event.startTime.split(':').map(Number);
+        startDateTime.setHours(hours, minutes, 0, 0);
+      }
+      const startDate = startDateTime.toISOString();
+
+      // endDate 생성: date + endTime
+      let endDateTime = new Date(eventDate);
+      if (event.endTime) {
+        const [hours, minutes] = event.endTime.split(':').map(Number);
+        endDateTime.setHours(hours, minutes, 0, 0);
+      }
+
+      // ✅ 중요: endDate가 startDate보다 이르거나 같으면 자동으로 1시간 추가
+      if (endDateTime.getTime() <= startDateTime.getTime()) {
+        if (event.allDay) {
+          // 종일 이벤트: 다음 날 자정으로 설정
+          endDateTime = new Date(startDateTime);
+          endDateTime.setDate(endDateTime.getDate() + 1);
+          endDateTime.setHours(0, 0, 0, 0);
+        } else {
+          // 일반 이벤트: 시작 시간 + 1시간
+          endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+        }
+      }
+      const endDate = endDateTime.toISOString();
+
+      // Storage 형식으로 변환
+      return {
+        id: event.id,
+        userId: 'current-user', // TODO: 실제 사용자 ID로 교체
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        startDate,
+        endDate,
+        allDay: event.allDay,
+        type: event.type,
+        category: 'work' as const, // 기본값
+        color: event.color,
+        recurring: event.recurring,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    console.log('[saveCalendarEvents] Saving to Storage:', storageEvents);
+    await storage.set(STORAGE_KEYS.EVENTS, storageEvents);
   } catch (error) {
     console.error('Failed to save calendar events:', error);
   }

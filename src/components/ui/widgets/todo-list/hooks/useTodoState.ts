@@ -109,14 +109,6 @@ export function useTodoState(props?: {
 }) {
   const { tasks: propsTasks, onTaskAdd, onTaskToggle, onTaskDelete, onTaskUpdate } = props || {};
 
-  // TODO: Replace with actual user ID from authentication
-  // For now, use a default userId for development
-  const getCurrentUserId = (): string => {
-    // In production, this should come from authentication context
-    // For now, use a default test user
-    return 'default-user';
-  };
-
   // Load initial data from Storage API or generate mock data
   const loadInitialData = useCallback(async () => {
     // SSR check - return initial data on server
@@ -132,22 +124,31 @@ export function useTodoState(props?: {
       // Dashboard TodoTask[] → Widget TodoTask[] 변환
       const savedTasks = savedDashboardTasks.map(dashboardToWidgetTask);
 
-      // Storage API에서 sections 로드
-      const userId = getCurrentUserId();
-      const storageSections = await todoSectionService.getByUserId(userId);
+      // Storage API에서 sections 로드 (RLS로 자동 필터링됨)
+      const storageSections = await todoSectionService.getAll();
 
       // Storage TodoSection[] → Widget TodoSection[] 변환
       const savedSections = storageSections.map(storageToWidgetSection);
 
       console.log('Storage API savedTasks:', savedTasks);
+      console.log('Storage API savedTasks length:', savedTasks?.length);
+      console.log('Storage API savedTasks detail:', JSON.stringify(savedTasks, null, 2));
       console.log('Storage API savedSections:', savedSections);
+      console.log('Storage API savedSections length:', savedSections?.length);
+      console.log('Storage API savedSections detail:', JSON.stringify(savedSections, null, 2));
 
-      if (savedTasks && savedTasks.length > 0 && savedSections && savedSections.length > 0) {
+      // Tasks나 Sections 중 하나라도 있으면 저장된 데이터 사용
+      if ((savedTasks && savedTasks.length > 0) || (savedSections && savedSections.length > 0)) {
         // Use saved data if available
-        console.log('Returning saved data');
-        return { tasks: savedTasks, sections: savedSections };
+        console.log('Returning saved data - tasks:', savedTasks?.length, 'sections:', savedSections?.length);
+        const result = {
+          tasks: savedTasks || [],
+          sections: savedSections || []
+        };
+        console.log('Final result:', result);
+        return result;
       } else {
-        // Generate initial data
+        // Generate initial data only if both are empty
         console.log('Generating initial data');
         const initialData = generateInitialData();
         console.log('Generated initial data:', initialData);
@@ -476,7 +477,9 @@ export function useTodoState(props?: {
 
     // 3. Storage API에 비동기 저장
     try {
-      const userId = getCurrentUserId();
+      // TODO: Auth 시스템 통합 후 실제 userId 사용
+      // 현재는 Supabase RLS가 자동으로 user_id를 처리함
+      const userId = 'current-user'; // Placeholder, RLS가 실제 userId로 대체
       const storagePayload = widgetToStorageSection(newWidgetSection, userId);
 
       // todoSectionService.create를 호출하여 Storage에 저장

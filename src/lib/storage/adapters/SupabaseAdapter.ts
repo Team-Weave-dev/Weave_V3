@@ -280,14 +280,38 @@ export class SupabaseAdapter implements StorageAdapter {
 
       case 'tasks':
       case 'task':
-        return {
+        // Priority 변환: Supabase (urgent/high/medium/low) → TodoTask (p1/p2/p3/p4)
+        const priorityMap: Record<string, string> = {
+          'urgent': 'p1',
+          'high': 'p2',
+          'medium': 'p3',
+          'low': 'p4'
+        };
+
+        // Tags에서 sectionId 추출
+        let sectionId: string | undefined;
+        const tags = data.tags || [];
+        const filteredTags: string[] = [];
+
+        console.log(`[SupabaseAdapter.transformFromSupabase] Task "${data.title}" tags:`, tags);
+
+        for (const tag of tags) {
+          if (typeof tag === 'string' && tag.startsWith('section:')) {
+            sectionId = tag.substring(8);
+            console.log(`[SupabaseAdapter.transformFromSupabase] Extracted sectionId: ${sectionId} from tag: ${tag}`);
+          } else {
+            filteredTags.push(tag);
+          }
+        }
+
+        const transformedTask = {
           id: data.id,
           userId: data.user_id,
           projectId: data.project_id,
           title: data.title,
           description: data.description,
           status: data.status,
-          priority: data.priority,
+          priority: priorityMap[data.priority] || data.priority, // p1/p2/p3/p4로 변환
           dueDate: data.due_date,
           startDate: data.start_date,
           completedAt: data.completed_at,
@@ -295,13 +319,22 @@ export class SupabaseAdapter implements StorageAdapter {
           parentTaskId: data.parent_task_id,
           estimatedHours: data.estimated_hours,
           actualHours: data.actual_hours,
-          tags: data.tags,
+          tags: filteredTags, // section: 태그를 제외한 나머지 태그들
+          sectionId: sectionId, // 추출한 sectionId 추가
           attachments: data.attachments,
           recurring: data.recurring,
           checklist: data.checklist,
           createdAt: data.created_at,
           updatedAt: data.updated_at,
-        }
+        };
+
+        console.log(`[SupabaseAdapter.transformFromSupabase] Transformed task with sectionId:`, {
+          title: transformedTask.title,
+          sectionId: transformedTask.sectionId,
+          status: transformedTask.status
+        });
+
+        return transformedTask;
 
       case 'clients':
       case 'client':
@@ -755,6 +788,14 @@ export class SupabaseAdapter implements StorageAdapter {
         // Supabase tasks.priority CHECK: ('low', 'medium', 'high', 'urgent')
         const validPriorities = ['low', 'medium', 'high', 'urgent']
 
+        // TodoTask priority (p1/p2/p3/p4) → Supabase priority (urgent/high/medium/low) 매핑
+        const todoPriorityMap: Record<string, string> = {
+          'p1': 'urgent',
+          'p2': 'high',
+          'p3': 'medium',
+          'p4': 'low'
+        }
+
         const dataToStore = uniqueTasksArray.map((task: any) => {
           // Status 검증
           let taskStatus = task.status || 'pending'
@@ -763,8 +804,14 @@ export class SupabaseAdapter implements StorageAdapter {
             taskStatus = 'pending'
           }
 
-          // Priority 검증
+          // Priority 변환 및 검증
           let taskPriority = task.priority || 'medium'
+
+          // p1/p2/p3/p4 형식을 urgent/high/medium/low로 변환
+          if (todoPriorityMap[taskPriority]) {
+            taskPriority = todoPriorityMap[taskPriority]
+          }
+
           if (!validPriorities.includes(taskPriority)) {
             console.warn(`[SupabaseAdapter] Invalid task priority "${taskPriority}", converting to "medium"`)
             taskPriority = 'medium'
@@ -797,8 +844,15 @@ export class SupabaseAdapter implements StorageAdapter {
             estimated_hours: task.estimatedHours || null,
             actual_hours: task.actualHours || null,
 
-            // Metadata (JSONB)
-            tags: task.tags || [],
+            // Metadata (JSONB) - sectionId를 tags에 포함
+            tags: (() => {
+              const taskTags = task.tags || []
+              // sectionId가 있으면 tags에 추가
+              if (task.sectionId) {
+                return [`section:${task.sectionId}`, ...taskTags]
+              }
+              return taskTags
+            })(),
             attachments: task.attachments || [],
             recurring: task.recurring || null,
             checklist: task.checklist || [],
@@ -986,8 +1040,10 @@ export class SupabaseAdapter implements StorageAdapter {
                 code: insertError.code,
                 message: insertError.message,
                 details: insertError.details,
-                hint: insertError.hint
+                hint: insertError.hint,
+                fullError: JSON.stringify(insertError, null, 2),
               })
+              console.error('[SupabaseAdapter] Events data being inserted (first item):', dataToStore[0])
               throw insertError
             }
           }

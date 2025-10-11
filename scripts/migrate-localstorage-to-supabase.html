@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LocalStorage → Supabase 마이그레이션</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .log {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+    }
+    .log-info { color: #2196F3; }
+    .log-success { color: #4CAF50; }
+    .log-error { color: #f44336; }
+    .log-warning { color: #ff9800; }
+    .warning-box {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 LocalStorage → Supabase 마이그레이션</h1>
+
+    <div class="warning-box">
+      <strong>⚠️ 주의사항:</strong>
+      <ul>
+        <li>이 스크립트는 LocalStorage의 todo 데이터를 Supabase로 복사합니다</li>
+        <li>기존 LocalStorage 데이터는 유지됩니다</li>
+        <li>마이그레이션 전에 Supabase에 로그인되어 있어야 합니다</li>
+      </ul>
+    </div>
+
+    <button id="migrateBtn" onclick="migrate()">마이그레이션 시작</button>
+
+    <div class="log" id="logContainer"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    // Supabase 설정 (환경 변수는 실제 값으로 교체 필요)
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+    let supabase;
+    let userId;
+
+    function log(message, type = 'info') {
+      const logContainer = document.getElementById('logContainer');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    window.migrate = async function() {
+      const btn = document.getElementById('migrateBtn');
+      btn.disabled = true;
+
+      try {
+        log('🔧 Supabase 클라이언트 초기화 중...', 'info');
+        supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 사용자 인증 확인
+        log('👤 사용자 인증 확인 중...', 'info');
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          log('❌ 로그인되어 있지 않습니다. 먼저 로그인해주세요.', 'error');
+          return;
+        }
+
+        userId = user.id;
+        log(`✅ 인증 완료: ${user.email} (ID: ${userId})`, 'success');
+
+        // LocalStorage에서 데이터 읽기
+        log('\n📋 LocalStorage에서 데이터 읽는 중...', 'info');
+
+        const tasksData = localStorage.getItem('weave_v2_tasks');
+        const sectionsData = localStorage.getItem('weave_v2_todo_sections');
+
+        if (!tasksData && !sectionsData) {
+          log('⚠️ LocalStorage에 마이그레이션할 데이터가 없습니다.', 'warning');
+          return;
+        }
+
+        // Tasks 마이그레이션
+        if (tasksData) {
+          log('\n🔄 Tasks 마이그레이션 시작...', 'info');
+          const tasks = JSON.parse(tasksData);
+          log(`  총 ${tasks.length}개 task 발견`, 'info');
+
+          for (const task of tasks) {
+            // Supabase 포맷으로 변환
+            const supabaseTask = {
+              id: task.id,
+              user_id: userId,
+              title: task.title,
+              description: task.description || null,
+              status: task.status || 'pending',
+              priority: task.priority || 'medium',
+              due_date: task.dueDate || null,
+              start_date: task.startDate || null,
+              completed_at: task.completedAt || null,
+              assignee_id: null,
+              parent_task_id: task.parentTaskId || null,
+              estimated_hours: task.estimatedHours || null,
+              actual_hours: task.actualHours || null,
+              tags: task.tags || [],
+              attachments: task.attachments || [],
+              recurring: task.recurring || null,
+              checklist: task.checklist || [],
+              created_at: task.createdAt || new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+
+            // Supabase에 저장
+            const { error } = await supabase
+              .from('tasks')
+              .upsert(supabaseTask);
+
+            if (error) {
+              log(`  ❌ Task "${task.title}" 저장 실패: ${error.message}`, 'error');
+            } else {
+              log(`  ✅ Task "${task.title}" 저장 완료`, 'success');
+            }
+          }
+
+          log(`✅ Tasks 마이그레이션 완료 (${tasks.length}개)`, 'success');
+        }
+
+        // TodoSections 마이그레이션
+        if (sectionsData) {
+          log('\n🔄 TodoSections 마이그레이션 시작...', 'info');
+          const sections = JSON.parse(sectionsData);
+          log(`  총 ${sections.length}개 section 발견`, 'info');
+
+          for (const section of sections) {
+            // Supabase 포맷으로 변환
+            const supabaseSection = {
+              id: section.id,
+              user_id: userId,
+              name: section.name,
+              order_index: section.orderIndex || 0,
+              is_expanded: section.isExpanded !== undefined ? section.isExpanded : true,
+              color: section.color || null,
+              icon: section.icon || null,
+              created_at: section.createdAt || new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+
+            // Supabase에 저장
+            const { error } = await supabase
+              .from('todo_sections')
+              .upsert(supabaseSection);
+
+            if (error) {
+              log(`  ❌ Section "${section.name}" 저장 실패: ${error.message}`, 'error');
+            } else {
+              log(`  ✅ Section "${section.name}" 저장 완료`, 'success');
+            }
+          }
+
+          log(`✅ TodoSections 마이그레이션 완료 (${sections.length}개)`, 'success');
+        }
+
+        log('\n🎉 모든 마이그레이션 완료!', 'success');
+        log('💡 이제 페이지를 새로고침하면 Supabase에서 데이터를 불러옵니다.', 'info');
+
+      } catch (error) {
+        log(`❌ 마이그레이션 실패: ${error.message}`, 'error');
+        console.error(error);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    // 페이지 로드 시 환경 변수 체크
+    window.addEventListener('DOMContentLoaded', () => {
+      if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+        log('⚠️ 경고: Supabase 환경 변수가 설정되지 않았습니다!', 'error');
+        log('   이 HTML 파일을 열고 SUPABASE_URL과 SUPABASE_ANON_KEY를 실제 값으로 교체하세요.', 'error');
+        document.getElementById('migrateBtn').disabled = true;
+      } else {
+        log('✅ Supabase 설정 확인 완료', 'success');
+        log('💡 "마이그레이션 시작" 버튼을 클릭하세요', 'info');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -188,6 +188,9 @@ export interface CalendarEvent extends JsonObject {
 
   /** Last update user ID (for conflict resolution) */
   updated_by?: string;
+
+  /** Device ID for audit trail (added by BaseService) */
+  device_id?: string;
 }
 
 // ============================================================================
@@ -299,6 +302,9 @@ export function isCalendarEvent(data: unknown): data is CalendarEvent {
 
   // Optional updated_by validation
   if (e.updated_by !== undefined && typeof e.updated_by !== 'string') return false;
+
+  // Optional device_id validation (added by BaseService)
+  if (e.device_id !== undefined && typeof e.device_id !== 'string') return false;
 
   return true;
 }

@@ -329,9 +329,9 @@ export function CalendarWidget({
       console.log('[CalendarWidget] Updating task date via Storage API:', taskId, newDate);
 
       // TaskService를 통해 dueDate 업데이트
+      // updatedAt은 BaseService가 자동으로 설정하므로 전달하지 않음
       await taskService.update(taskId, {
-        dueDate: newDate.toISOString(),
-        updatedAt: new Date().toISOString()
+        dueDate: newDate.toISOString()
       });
 
       // Storage API의 구독 시스템이 자동으로 모든 위젯에 변경 알림
@@ -353,9 +353,8 @@ export function CalendarWidget({
       const todoId = editingEvent.id.replace('todo-', '');
 
       try {
-        const updates: any = {
-          updatedAt: new Date().toISOString()
-        };
+        const updates: any = {};
+        // updatedAt은 BaseService가 자동으로 설정하므로 전달하지 않음
 
         // 날짜 업데이트
         if (eventData.date) {
@@ -545,9 +544,10 @@ export function CalendarWidget({
       }
 
       // For local calendar events, update directly
+      // Storage의 CalendarEvent 타입은 startDate/endDate를 사용함
       const updatedEvent: CalendarEvent = {
         ...event,
-        date: newDate,
+        date: newDate,  // 위젯 내부에서는 date 사용
       };
 
       // If time is included in droppableId (WeekView, DayView)
@@ -573,6 +573,7 @@ export function CalendarWidget({
         updatedEvent.endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
       }
 
+      console.log('[CalendarWidget] Updating calendar event:', updatedEvent);
       updateEvent(updatedEvent);
     }
   };
