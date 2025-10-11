@@ -269,6 +269,7 @@ export function ImprovedDashboard({
   isCompactControlled
 }: ImprovedDashboardProps) {
   // 스토어 구독
+  const isInitialized = useImprovedDashboardStore((state) => state.isInitialized);
   const widgets = useImprovedDashboardStore(selectWidgets);
   const config = useImprovedDashboardStore(selectConfig);
   const editState = useImprovedDashboardStore(selectEditState);
@@ -313,9 +314,13 @@ export function ImprovedDashboard({
   
   // 초기화
   useEffect(() => {
-    // 이미 위젯이 있으면 초기화하지 않음 (localStorage에서 로드됨)
+    // 스토어 초기화가 완료되지 않았으면 대기
+    if (!isInitialized) {
+      return;
+    }
+
+    // 이미 위젯이 있으면 초기화하지 않음 (Supabase/LocalStorage에서 로드됨)
     if (widgets.length > 0) {
-      console.log('📦 localStorage에서 위젯 복원됨:', widgets.length, '개');
       return;
     }
 
@@ -533,8 +538,7 @@ export function ImprovedDashboard({
       ];
       testWidgets.forEach((w) => addWidget(w));
     }
-    console.log('🎯 대시보드 초기 위젯 설정 완료');
-  }, []); // 마운트 시 한 번만 실행
+  }, [isInitialized, widgets.length, initialWidgets, addWidget]); // 초기화 상태에 의존
 
   // 중복 ID 위젯 정리 (개발/StrictMode에서 이중 마운트 대비)
   useEffect(() => {

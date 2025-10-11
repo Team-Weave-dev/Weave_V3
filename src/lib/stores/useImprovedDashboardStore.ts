@@ -12,12 +12,15 @@ import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpac
 import { dashboardService } from '@/lib/storage';
 
 interface ImprovedDashboardStore {
+  // 초기화 상태
+  isInitialized: boolean;
+
   // 위젯 상태
   widgets: ImprovedWidget[];
-  
+
   // 설정
   config: DashboardConfig;
-  
+
   // 편집 상태
   editState: DashboardEditState;
   
@@ -101,6 +104,7 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
     devtools(
       immer((set, get) => ({
         // 초기 상태
+        isInitialized: false,
         widgets: [],
         config: initialConfig,
         editState: initialEditState,
@@ -837,6 +841,7 @@ export async function initializeDashboardStore(): Promise<void> {
     if (data) {
       const { widgets, config } = data;
       useImprovedDashboardStore.setState({
+        isInitialized: true,
         widgets,
         config,
       });
@@ -846,9 +851,16 @@ export async function initializeDashboardStore(): Promise<void> {
       });
     } else {
       console.log('ℹ️ No saved dashboard layout found, using defaults');
+      useImprovedDashboardStore.setState({
+        isInitialized: true,
+      });
     }
   } catch (error) {
     console.error('❌ Failed to load dashboard layout:', error);
+    // 에러가 발생해도 초기화 플래그는 true로 설정
+    useImprovedDashboardStore.setState({
+      isInitialized: true,
+    });
   }
 }
 
