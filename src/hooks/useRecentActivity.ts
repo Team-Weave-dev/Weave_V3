@@ -1,19 +1,16 @@
 /**
  * useRecentActivity Hook
  *
- * ProjectService, TaskService, DocumentService에서 데이터를 집계하여
- * 최근 활동 내역을 생성하고 RecentActivityWidget에서 사용
+ * ActivityLogService에서 활동 로그 데이터를 로드하여
+ * RecentActivityWidget에서 사용하는 Self-Loading Hook
  */
 
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { projectService, taskService, documentService } from '@/lib/storage';
-import type { Project } from '@/lib/storage/types/entities/project';
-import type { Task } from '@/lib/storage/types/entities/task';
-import type { Document } from '@/lib/storage/types/entities/document';
-import type { ActivityItem, ActivityType } from '@/types/dashboard';
-import { getWidgetText } from '@/config/brand';
+import { activityLogService } from '@/lib/storage';
+import type { ActivityLog } from '@/lib/storage/types/entities/activity-log';
+import type { ActivityItem, ActivityType, ActivityUser } from '@/types/dashboard';
 
 interface UseRecentActivityReturn {
   activities: ActivityItem[];
@@ -22,125 +19,41 @@ interface UseRecentActivityReturn {
   refresh: () => Promise<void>;
 }
 
-// 현재 사용자 정보 (실제로는 인증 시스템에서 가져옴)
-const currentUser = { id: 'current-user', name: '나', initials: '나' };
-
 /**
- * 프로젝트 엔티티를 활동 아이템으로 변환
+ * ActivityLog 엔티티를 ActivityItem 위젯 타입으로 변환
  */
-function projectToActivities(projects: Project[]): ActivityItem[] {
-  const activities: ActivityItem[] = [];
+function activityLogToActivityItem(log: ActivityLog): ActivityItem {
+  // ActivityLog의 타입을 ActivityItem의 타입으로 매핑
+  const typeMapping: Record<string, ActivityType> = {
+    'create': 'create',
+    'update': 'update',
+    'delete': 'delete',
+    'complete': 'complete',
+    'comment': 'comment',
+    'document': 'document',
+    // view, export, share는 매핑 안 됨
+  };
 
-  projects.forEach((project) => {
-    // 프로젝트 생성 활동
-    activities.push({
-      id: `project-create-${project.id}`,
-      type: 'create' as ActivityType,
-      user: currentUser,
-      action: getWidgetText.hooks.activityActions.projectCreated('ko'),
-      target: project.name,
-      timestamp: new Date(project.registrationDate),
-      description: project.clientName ? `${getWidgetText.hooks.activityDescriptions.clientPrefix('ko')}${project.clientName}` : undefined,
-    });
+  const mappedType = typeMapping[log.type] || 'create';
 
-    // 프로젝트 완료 활동 (completed 상태인 경우)
-    if (project.status === 'completed' && project.completedAt) {
-      activities.push({
-        id: `project-complete-${project.id}`,
-        type: 'complete' as ActivityType,
-        user: currentUser,
-        action: getWidgetText.hooks.activityActions.projectCompleted('ko'),
-        target: project.name,
-        timestamp: new Date(project.completedAt),
-      });
-    }
-  });
+  // ActivityUser 객체 생성
+  const user: ActivityUser = {
+    id: log.userId,
+    name: log.userName,
+    initials: log.userInitials,
+    // avatar는 향후 User 엔티티에서 가져올 수 있음
+  };
 
-  return activities;
-}
-
-/**
- * 작업 엔티티를 활동 아이템으로 변환
- */
-function taskToActivities(tasks: Task[]): ActivityItem[] {
-  const activities: ActivityItem[] = [];
-
-  tasks.forEach((task) => {
-    // 작업 생성 활동
-    activities.push({
-      id: `task-create-${task.id}`,
-      type: 'create' as ActivityType,
-      user: currentUser,
-      action: getWidgetText.hooks.activityActions.taskCreated('ko'),
-      target: task.title,
-      timestamp: new Date(task.createdAt),
-    });
-
-    // 작업 완료 활동 (completed 상태인 경우)
-    if (task.status === 'completed' && task.completedAt) {
-      activities.push({
-        id: `task-complete-${task.id}`,
-        type: 'complete' as ActivityType,
-        user: currentUser,
-        action: getWidgetText.hooks.activityActions.taskCompleted('ko'),
-        target: task.title,
-        timestamp: new Date(task.completedAt),
-      });
-    }
-  });
-
-  return activities;
-}
-
-/**
- * 문서 엔티티를 활동 아이템으로 변환
- */
-function documentToActivities(documents: Document[]): ActivityItem[] {
-  const activities: ActivityItem[] = [];
-
-  documents.forEach((doc) => {
-    // 문서 업로드 활동
-    activities.push({
-      id: `document-create-${doc.id}`,
-      type: 'document' as ActivityType,
-      user: currentUser,
-      action: getWidgetText.hooks.activityActions.documentUploaded('ko'),
-      target: doc.title || doc.fileName,
-      timestamp: new Date(doc.uploadedAt),
-      description: doc.type ? `${getWidgetText.hooks.activityDescriptions.documentTypePrefix('ko')}${doc.type}` : undefined,
-    });
-  });
-
-  return activities;
-}
-
-/**
- * 모든 서비스에서 활동 데이터 집계
- */
-async function aggregateActivities(): Promise<ActivityItem[]> {
-  // 모든 서비스에서 데이터 가져오기
-  const [projects, tasks, documents] = await Promise.all([
-    projectService.getAll(),
-    taskService.getAll(),
-    documentService.getAll(),
-  ]);
-
-  // 각 엔티티를 활동으로 변환
-  const projectActivities = projectToActivities(projects);
-  const taskActivities = taskToActivities(tasks);
-  const documentActivities = documentToActivities(documents);
-
-  // 모든 활동 합치기
-  const allActivities = [
-    ...projectActivities,
-    ...taskActivities,
-    ...documentActivities,
-  ];
-
-  // 시간순으로 정렬 (최신순)
-  allActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-  return allActivities;
+  return {
+    id: log.id,
+    type: mappedType,
+    user,
+    action: log.action,
+    target: log.entityName,
+    timestamp: new Date(log.timestamp), // ISO string to Date
+    description: log.description,
+    metadata: log.metadata,
+  };
 }
 
 /**
@@ -158,8 +71,13 @@ export function useRecentActivity(): UseRecentActivityReturn {
       setLoading(true);
       setError(null);
 
-      const aggregated = await aggregateActivities();
-      setActivities(aggregated);
+      // ActivityLogService에서 최근 50개 활동 로드
+      const logs = await activityLogService.getRecent(50);
+
+      // ActivityLog를 ActivityItem으로 변환
+      const converted = logs.map(activityLogToActivityItem);
+
+      setActivities(converted);
     } catch (err) {
       console.error('Failed to load recent activities:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -171,25 +89,13 @@ export function useRecentActivity(): UseRecentActivityReturn {
   useEffect(() => {
     loadActivities();
 
-    // Storage 구독 (프로젝트, 작업, 문서 변경 시 자동 리로드)
-    const unsubscribeProjects = projectService['storage'].subscribe(
-      'projects',
-      loadActivities
-    );
-    const unsubscribeTasks = taskService['storage'].subscribe(
-      'tasks',
-      loadActivities
-    );
-    const unsubscribeDocuments = documentService['storage'].subscribe(
-      'documents',
+    // Storage 구독: activity_logs 키 변경 시 자동 리로드
+    const unsubscribe = activityLogService['storage'].subscribe(
+      'activity_logs',
       loadActivities
     );
 
-    return () => {
-      unsubscribeProjects();
-      unsubscribeTasks();
-      unsubscribeDocuments();
-    };
+    return () => unsubscribe();
   }, [loadActivities]);
 
   return {

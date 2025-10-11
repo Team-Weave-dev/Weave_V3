@@ -28,6 +28,7 @@ import { SettingsService } from './services/SettingsService';
 import { DashboardService } from './services/DashboardService';
 import { UserService } from './services/UserService';
 import { TodoSectionService } from './services/TodoSectionService';
+import { ActivityLogService } from './services/ActivityLogService';
 
 // Migration System
 import { MigrationManager } from './migrations/MigrationManager';
@@ -113,6 +114,7 @@ export async function initializeStorage(): Promise<void> {
     _dashboardService = null;
     _userService = null;
     _todoSectionService = null;
+    _activityLogService = null;
 
     console.log('✅ Storage system initialized successfully');
   } catch (error) {
@@ -167,6 +169,7 @@ export async function switchToSupabaseMode(userId: string): Promise<void> {
     _dashboardService = null;
     _userService = null;
     _todoSectionService = null;
+    _activityLogService = null;
 
     console.log('✅ Switched to Supabase-only mode successfully');
   } catch (error) {
@@ -203,6 +206,7 @@ export async function fallbackToLocalStorageMode(): Promise<void> {
     _dashboardService = null;
     _userService = null;
     _todoSectionService = null;
+    _activityLogService = null;
 
     console.log('✅ Fallback to LocalStorage mode completed');
   } catch (error) {
@@ -226,6 +230,7 @@ function createServices(storage: StorageManager) {
     dashboardService: new DashboardService(storage),
     userService: new UserService(storage),
     todoSectionService: new TodoSectionService(storage),
+    activityLogService: new ActivityLogService(storage),
   };
 }
 
@@ -284,6 +289,7 @@ let _settingsService: SettingsService | null = null;
 let _dashboardService: DashboardService | null = null;
 let _userService: UserService | null = null;
 let _todoSectionService: TodoSectionService | null = null;
+let _activityLogService: ActivityLogService | null = null;
 
 export const projectService = new Proxy({} as ProjectService, {
   get: (_, prop) => {
@@ -375,6 +381,16 @@ export const todoSectionService = new Proxy({} as TodoSectionService, {
   }
 });
 
+export const activityLogService = new Proxy({} as ActivityLogService, {
+  get: (_, prop) => {
+    const currentStorage = getStorageOrDefault();
+    if (!_activityLogService || (_activityLogService as any).storage !== currentStorage) {
+      _activityLogService = new ActivityLogService(currentStorage);
+    }
+    return (_activityLogService as any)[prop];
+  }
+});
+
 /**
  * Export types for convenience
  */
@@ -390,3 +406,4 @@ export type { Document, DocumentCreate, DocumentUpdate } from './types/entities/
 export type { Settings, SettingsUpdate, DashboardWidget } from './types/entities/settings';
 export type { User, UserCreate, UserUpdate } from './types/entities/user';
 export type { TodoSection, TodoSectionCreate, TodoSectionUpdate } from './types/entities/todo-section';
+export type { ActivityLog, CreateActivityLogInput, ActivityLogFilter } from './types/entities/activity-log';

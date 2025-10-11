@@ -9,6 +9,7 @@ import type { StorageManager } from '../core/StorageManager';
 import type { Task, TaskCreate, TaskUpdate, TaskStatus, TaskPriority, TaskRecurring } from '../types/entities/task';
 import { isTask } from '../types/entities/task';
 import { STORAGE_KEYS } from '../config';
+import type { CreateActivityLogInput } from '../types/entities/activity-log';
 
 /**
  * Task service class
@@ -26,6 +27,42 @@ export class TaskService extends BaseService<Task> {
    */
   protected isValidEntity(data: unknown): data is Task {
     return isTask(data);
+  }
+
+  // ============================================================================
+  // Activity Logging
+  // ============================================================================
+
+  /**
+   * Format date for activity log messages (YYYY-MM-DD HH:MM)
+   */
+  private formatDateForLog(isoDate: string | undefined): string {
+    if (!isoDate) return '없음';
+
+    try {
+      const date = new Date(isoDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
+    } catch {
+      return isoDate;
+    }
+  }
+
+  /**
+   * Create activity log with dynamic import to avoid circular dependency
+   */
+  private async createActivityLog(input: CreateActivityLogInput): Promise<void> {
+    try {
+      const { activityLogService } = await import('../index');
+      await activityLogService.createLog(input);
+    } catch (error) {
+      console.error('[TaskService] Failed to create activity log:', error);
+    }
   }
 
   // ============================================================================
@@ -133,15 +170,101 @@ export class TaskService extends BaseService<Task> {
   }
 
   /**
-   * Override update to auto-normalize data before validation
+   * Override create to add activity logging
+   * @param data - Task data
+   * @returns Created task
+   */
+  override async create(data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Promise<Task> {
+    const task = await super.create(data);
+
+    await this.createActivityLog({
+      type: 'create',
+      action: '할일 생성',
+      entityType: 'task',
+      entityId: task.id,
+      entityName: task.title,
+      userId: task.userId,
+      userName: 'User',
+      userInitials: 'U',
+      description: `할일 "${task.title}"을(를) 생성했습니다.`,
+    });
+
+    return task;
+  }
+
+  /**
+   * Override update to auto-normalize data and add activity logging
    * @param id - Task ID
    * @param updates - Partial task data
    * @returns Updated task
    */
-  async update(id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<Task | null> {
+  override async update(id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<Task | null> {
+    const oldTask = await this.getById(id);
+    if (!oldTask) return null;
+
     // Normalize the updates before passing to BaseService
     const normalizedUpdates = this.normalizeTaskData(updates);
-    return super.update(id, normalizedUpdates);
+    const updatedTask = await super.update(id, normalizedUpdates);
+    if (!updatedTask) return null;
+
+    // Track changes
+    const changes: string[] = [];
+    if (updates.title && updates.title !== oldTask.title) {
+      changes.push(`제목: "${oldTask.title}" → "${updates.title}"`);
+    }
+    if (updates.status && updates.status !== oldTask.status) {
+      changes.push(`상태: ${oldTask.status} → ${updates.status}`);
+    }
+    if (updates.priority && updates.priority !== oldTask.priority) {
+      changes.push(`우선순위: ${oldTask.priority} → ${updates.priority}`);
+    }
+    if (updates.dueDate && updates.dueDate !== oldTask.dueDate) {
+      changes.push(`마감일: ${this.formatDateForLog(oldTask.dueDate)} → ${this.formatDateForLog(updates.dueDate)}`);
+    }
+
+    if (changes.length > 0) {
+      await this.createActivityLog({
+        type: 'update',
+        action: '할일 수정',
+        entityType: 'task',
+        entityId: updatedTask.id,
+        entityName: updatedTask.title,
+        userId: updatedTask.userId,
+        userName: 'User',
+        userInitials: 'U',
+        description: `할일 "${updatedTask.title}" 수정: ${changes.join(', ')}`,
+      });
+    }
+
+    return updatedTask;
+  }
+
+  /**
+   * Override delete to add activity logging
+   * @param id - Task ID
+   * @returns Success boolean
+   */
+  override async delete(id: string): Promise<boolean> {
+    const task = await this.getById(id);
+    if (!task) return false;
+
+    const result = await super.delete(id);
+
+    if (result) {
+      await this.createActivityLog({
+        type: 'delete',
+        action: '할일 삭제',
+        entityType: 'task',
+        entityId: task.id,
+        entityName: task.title,
+        userId: task.userId,
+        userName: 'User',
+        userInitials: 'U',
+        description: `할일 "${task.title}"을(를) 삭제했습니다.`,
+      });
+    }
+
+    return result;
   }
 
   // ============================================================================
@@ -295,10 +418,29 @@ export class TaskService extends BaseService<Task> {
   }
 
   /**
-   * Complete a task
+   * Complete a task (with activity logging)
    */
   async completeTask(taskId: string): Promise<Task | null> {
-    return this.updateStatus(taskId, 'completed');
+    const task = await this.getById(taskId);
+    if (!task) return null;
+
+    const updatedTask = await this.updateStatus(taskId, 'completed');
+
+    if (updatedTask) {
+      await this.createActivityLog({
+        type: 'complete',
+        action: '할일 완료',
+        entityType: 'task',
+        entityId: updatedTask.id,
+        entityName: updatedTask.title,
+        userId: updatedTask.userId,
+        userName: 'User',
+        userInitials: 'U',
+        description: `할일 "${updatedTask.title}"을(를) 완료했습니다.`,
+      });
+    }
+
+    return updatedTask;
   }
 
   /**

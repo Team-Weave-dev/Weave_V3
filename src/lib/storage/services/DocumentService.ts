@@ -9,6 +9,7 @@ import type { StorageManager } from '../core/StorageManager';
 import type { Document, DocumentCreate, DocumentUpdate, DocumentType, DocumentStatus } from '../types/entities/document';
 import { isDocument } from '../types/entities/document';
 import { STORAGE_KEYS, buildKey } from '../config';
+import type { CreateActivityLogInput } from '../types/entities/activity-log';
 
 /**
  * Document service class
@@ -26,6 +27,115 @@ export class DocumentService extends BaseService<Document> {
    */
   protected isValidEntity(data: unknown): data is Document {
     return isDocument(data);
+  }
+
+  // ============================================================================
+  // Activity Logging
+  // ============================================================================
+
+  /**
+   * Create activity log with dynamic import to avoid circular dependency
+   */
+  private async createActivityLog(input: CreateActivityLogInput): Promise<void> {
+    try {
+      const { activityLogService } = await import('../index');
+      await activityLogService.createLog(input);
+    } catch (error) {
+      console.error('[DocumentService] Failed to create activity log:', error);
+    }
+  }
+
+  /**
+   * Override create to add activity logging
+   * @param data - Document data
+   * @returns Created document
+   */
+  override async create(data: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): Promise<Document> {
+    const document = await super.create(data);
+
+    await this.createActivityLog({
+      type: 'create',
+      action: '문서 생성',
+      entityType: 'document',
+      entityId: document.id,
+      entityName: document.name,
+      userId: document.userId,
+      userName: 'User',
+      userInitials: 'U',
+      description: `문서 "${document.name}"을(를) 생성했습니다.`,
+    });
+
+    return document;
+  }
+
+  /**
+   * Override update to add activity logging
+   * @param id - Document ID
+   * @param updates - Partial document data
+   * @returns Updated document
+   */
+  override async update(id: string, updates: Partial<Omit<Document, 'id' | 'createdAt'>>): Promise<Document | null> {
+    const oldDocument = await this.getById(id);
+    if (!oldDocument) return null;
+
+    const updatedDocument = await super.update(id, updates);
+    if (!updatedDocument) return null;
+
+    // Track changes
+    const changes: string[] = [];
+    if (updates.name && updates.name !== oldDocument.name) {
+      changes.push(`이름: "${oldDocument.name}" → "${updates.name}"`);
+    }
+    if (updates.status && updates.status !== oldDocument.status) {
+      changes.push(`상태: ${oldDocument.status} → ${updates.status}`);
+    }
+    if (updates.type && updates.type !== oldDocument.type) {
+      changes.push(`타입: ${oldDocument.type} → ${updates.type}`);
+    }
+
+    if (changes.length > 0) {
+      await this.createActivityLog({
+        type: 'update',
+        action: '문서 수정',
+        entityType: 'document',
+        entityId: updatedDocument.id,
+        entityName: updatedDocument.name,
+        userId: updatedDocument.userId,
+        userName: 'User',
+        userInitials: 'U',
+        description: `문서 "${updatedDocument.name}" 수정: ${changes.join(', ')}`,
+      });
+    }
+
+    return updatedDocument;
+  }
+
+  /**
+   * Override delete to add activity logging
+   * @param id - Document ID
+   * @returns Success boolean
+   */
+  override async delete(id: string): Promise<boolean> {
+    const document = await this.getById(id);
+    if (!document) return false;
+
+    const result = await super.delete(id);
+
+    if (result) {
+      await this.createActivityLog({
+        type: 'delete',
+        action: '문서 삭제',
+        entityType: 'document',
+        entityId: document.id,
+        entityName: document.name,
+        userId: document.userId,
+        userName: 'User',
+        userInitials: 'U',
+        description: `문서 "${document.name}"을(를) 삭제했습니다.`,
+      });
+    }
+
+    return result;
   }
 
   // ============================================================================

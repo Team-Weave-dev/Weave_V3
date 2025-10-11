@@ -17,6 +17,7 @@ import type {
 } from '../types/entities/event';
 import { isCalendarEvent } from '../types/entities/event';
 import { STORAGE_KEYS } from '../config';
+import type { CreateActivityLogInput } from '../types/entities/activity-log';
 
 /**
  * Calendar service class
@@ -34,6 +35,118 @@ export class CalendarService extends BaseService<CalendarEvent> {
    */
   protected isValidEntity(data: unknown): data is CalendarEvent {
     return isCalendarEvent(data);
+  }
+
+  // ============================================================================
+  // Activity Logging
+  // ============================================================================
+
+  /**
+   * Create activity log with dynamic import to avoid circular dependency
+   */
+  private async createActivityLog(input: CreateActivityLogInput): Promise<void> {
+    try {
+      const { activityLogService } = await import('../index');
+      await activityLogService.createLog(input);
+    } catch (error) {
+      console.error('[CalendarService] Failed to create activity log:', error);
+    }
+  }
+
+  /**
+   * Override create to add activity logging
+   * @param data - CalendarEvent data
+   * @returns Created event
+   */
+  override async create(data: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<CalendarEvent> {
+    const event = await super.create(data);
+
+    await this.createActivityLog({
+      type: 'create',
+      action: '일정 생성',
+      entityType: 'event',
+      entityId: event.id,
+      entityName: event.title,
+      userId: event.userId,
+      userName: 'User',
+      userInitials: 'U',
+      description: `일정 "${event.title}"을(를) 생성했습니다.`,
+    });
+
+    return event;
+  }
+
+  /**
+   * Override update to add activity logging
+   * @param id - Event ID
+   * @param updates - Partial event data
+   * @returns Updated event
+   */
+  override async update(id: string, updates: Partial<Omit<CalendarEvent, 'id' | 'createdAt'>>): Promise<CalendarEvent | null> {
+    const oldEvent = await this.getById(id);
+    if (!oldEvent) return null;
+
+    const updatedEvent = await super.update(id, updates);
+    if (!updatedEvent) return null;
+
+    // Track changes
+    const changes: string[] = [];
+    if (updates.title && updates.title !== oldEvent.title) {
+      changes.push(`제목: "${oldEvent.title}" → "${updates.title}"`);
+    }
+    if (updates.status && updates.status !== oldEvent.status) {
+      changes.push(`상태: ${oldEvent.status} → ${updates.status}`);
+    }
+    if (updates.startDate && updates.startDate !== oldEvent.startDate) {
+      changes.push(`시작일: ${oldEvent.startDate} → ${updates.startDate}`);
+    }
+    if (updates.endDate && updates.endDate !== oldEvent.endDate) {
+      changes.push(`종료일: ${oldEvent.endDate} → ${updates.endDate}`);
+    }
+
+    if (changes.length > 0) {
+      await this.createActivityLog({
+        type: 'update',
+        action: '일정 수정',
+        entityType: 'event',
+        entityId: updatedEvent.id,
+        entityName: updatedEvent.title,
+        userId: updatedEvent.userId,
+        userName: 'User',
+        userInitials: 'U',
+        description: `일정 "${updatedEvent.title}" 수정: ${changes.join(', ')}`,
+      });
+    }
+
+    return updatedEvent;
+  }
+
+  /**
+   * Override delete to add activity logging
+   * @param id - Event ID
+   * @returns Success boolean
+   */
+  override async delete(id: string): Promise<boolean> {
+    const event = await this.getById(id);
+    if (!event) return false;
+
+    const result = await super.delete(id);
+
+    if (result) {
+      await this.createActivityLog({
+        type: 'delete',
+        action: '일정 삭제',
+        entityType: 'event',
+        entityId: event.id,
+        entityName: event.title,
+        userId: event.userId,
+        userName: 'User',
+        userInitials: 'U',
+        description: `일정 "${event.title}"을(를) 삭제했습니다.`,
+      });
+    }
+
+    return result;
   }
 
   // ============================================================================

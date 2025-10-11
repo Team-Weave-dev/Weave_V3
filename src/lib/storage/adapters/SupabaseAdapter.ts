@@ -49,6 +49,7 @@ const ENTITY_TABLE_MAP: Record<string, string> = {
   user: 'users',
   users: 'users',
   todo_sections: 'todo_sections',
+  activity_logs: 'activity_logs',  // ActivityLog 엔티티 매핑
 } as const
 
 /**
@@ -1228,6 +1229,72 @@ export class SupabaseAdapter implements StorageAdapter {
               details: error.details,
               hint: error.hint
             })
+            throw error
+          }
+        })
+        return
+      }
+
+      // Special handling for activity_logs (camelCase → snake_case)
+      if (entity === 'activity_logs' && Array.isArray(value)) {
+        const activityLogsArray = value as any[]
+
+        console.log('[SupabaseAdapter] Raw activity_logs array:', activityLogsArray)
+        console.log('[SupabaseAdapter] First item:', activityLogsArray[0])
+
+        if (activityLogsArray.length === 0) {
+          console.warn(`No activity_logs found in array`)
+          return
+        }
+
+        const dataToStore = activityLogsArray.map((log: any) => {
+          console.log('[SupabaseAdapter] Mapping log:', log)
+          return {
+          // Identifiers
+          id: this.isValidUUID(log.id) ? log.id : crypto.randomUUID(),
+          user_id: this.userId,
+
+          // Activity info - 데이터베이스 스키마에 맞게 매핑
+          action: log.action,                      // action (TEXT)
+          resource_type: log.entityType,           // entityType → resource_type
+          resource_id: this.isValidUUID(log.entityId) ? log.entityId : null,  // entityId → resource_id (UUID)
+          resource_name: log.entityName,           // entityName → resource_name
+
+          // Additional info - metadata JSONB에 모든 추가 정보 저장
+          metadata: {
+            type: log.type,                        // ActivityType
+            userName: log.userName,                // 사용자 이름
+            userInitials: log.userInitials,        // 사용자 이니셜
+            description: log.description,          // 추가 설명
+            changes: log.changes || [],            // 변경 내역
+            timestamp: log.timestamp,              // 원본 타임스탬프
+            ...(log.metadata || {})                // 기존 메타데이터 병합
+          },
+
+          // Status (기본값: success)
+          status: 'success',
+
+          // Timestamps (camelCase → snake_case)
+          created_at: log.createdAt || new Date().toISOString(),
+        }
+        })
+
+        // 디버깅: 전송할 데이터 로그
+        console.log('[SupabaseAdapter] ActivityLogs data to store (first item):', dataToStore[0])
+
+        await this.withRetry(async () => {
+          const query = this.supabase.from(tableName).upsert(dataToStore as any)
+          const { error } = await query
+
+          if (error) {
+            console.error('[SupabaseAdapter] ActivityLogs sync error:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint,
+              fullError: JSON.stringify(error, null, 2)
+            })
+            console.error('[SupabaseAdapter] ActivityLogs data being sent (first item):', dataToStore[0])
             throw error
           }
         })

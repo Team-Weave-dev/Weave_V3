@@ -7,6 +7,25 @@
  */
 
 // ============================================================================
+// Base Entity Interface
+// ============================================================================
+
+/**
+ * Base entity interface that all domain entities must extend
+ * Provides common fields for all entities in the system
+ */
+export interface BaseEntity {
+  /** Unique identifier (UUID) */
+  id: string;
+
+  /** Entity creation timestamp (ISO 8601) */
+  createdAt: string;
+
+  /** Last update timestamp (ISO 8601) */
+  updatedAt: string;
+}
+
+// ============================================================================
 // JSON Type Definitions
 // ============================================================================
 

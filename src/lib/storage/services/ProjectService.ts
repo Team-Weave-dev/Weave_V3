@@ -21,6 +21,7 @@ import { isProject } from '../types/entities/project';
 import type { CalendarEvent } from '../types/entities/event';
 import type { DeleteRelationsOptions, DeleteRelationsResult, DeleteError } from '../types/base';
 import { STORAGE_KEYS } from '../config';
+import type { CreateActivityLogInput } from '../types/entities/activity-log';
 
 /**
  * Project service class
@@ -334,16 +335,6 @@ export class ProjectService extends BaseService<Project> {
    */
   async updateStatus(projectId: string, status: ProjectStatus): Promise<Project | null> {
     return this.update(projectId, { status });
-  }
-
-  /**
-   * Complete a project
-   */
-  async completeProject(projectId: string): Promise<Project | null> {
-    return this.update(projectId, {
-      status: 'completed',
-      progress: 100,
-    });
   }
 
   /**
@@ -706,5 +697,142 @@ export class ProjectService extends BaseService<Project> {
       sent: documents.filter((d) => d.status === 'sent').length,
       approved: documents.filter((d) => d.status === 'approved').length,
     };
+  }
+
+  // ============================================================================
+  // Activity Logging (Private Helper)
+  // ============================================================================
+
+  /**
+   * Create activity log entry
+   * Private helper to avoid circular dependency issues
+   */
+  private async createActivityLog(input: CreateActivityLogInput): Promise<void> {
+    try {
+      // Import dynamically to avoid circular dependencies
+      const { activityLogService } = await import('../index');
+      await activityLogService.createLog(input);
+    } catch (error) {
+      // Log error but don't throw - activity logging should not break main operations
+      console.error('[ProjectService] Failed to create activity log:', error);
+    }
+  }
+
+  // ============================================================================
+  // Override CRUD Methods with Activity Logging
+  // ============================================================================
+
+  /**
+   * Create project with activity logging
+   */
+  override async create(data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
+    const project = await super.create(data);
+
+    // Log activity
+    await this.createActivityLog({
+      type: 'create',
+      action: '프로젝트 생성',
+      entityType: 'project',
+      entityId: project.id,
+      entityName: project.name,
+      userId: project.userId,
+      userName: 'User', // TODO: Get from User entity
+      userInitials: 'U',
+      description: `프로젝트 "${project.name}"을(를) 생성했습니다.`,
+    });
+
+    return project;
+  }
+
+  /**
+   * Update project with activity logging
+   */
+  override async update(id: string, updates: Partial<Omit<Project, 'id' | 'createdAt'>>): Promise<Project | null> {
+    const oldProject = await this.getById(id);
+    if (!oldProject) return null;
+
+    const updatedProject = await super.update(id, updates);
+    if (!updatedProject) return null;
+
+    // Determine what changed for description
+    const changes: string[] = [];
+    if (updates.name && updates.name !== oldProject.name) {
+      changes.push(`이름: "${oldProject.name}" → "${updates.name}"`);
+    }
+    if (updates.status && updates.status !== oldProject.status) {
+      changes.push(`상태: ${oldProject.status} → ${updates.status}`);
+    }
+    if (updates.progress !== undefined && updates.progress !== oldProject.progress) {
+      changes.push(`진행률: ${oldProject.progress}% → ${updates.progress}%`);
+    }
+
+    // Log activity only if there are meaningful changes
+    if (changes.length > 0) {
+      await this.createActivityLog({
+        type: 'update',
+        action: '프로젝트 수정',
+        entityType: 'project',
+        entityId: updatedProject.id,
+        entityName: updatedProject.name,
+        userId: updatedProject.userId,
+        userName: 'User',
+        userInitials: 'U',
+        description: `프로젝트 "${updatedProject.name}" 수정: ${changes.join(', ')}`,
+      });
+    }
+
+    return updatedProject;
+  }
+
+  /**
+   * Delete project with activity logging
+   */
+  override async delete(id: string): Promise<boolean> {
+    const project = await this.getById(id);
+    if (!project) return false;
+
+    const success = await super.delete(id);
+    if (!success) return false;
+
+    // Log activity
+    await this.createActivityLog({
+      type: 'delete',
+      action: '프로젝트 삭제',
+      entityType: 'project',
+      entityId: project.id,
+      entityName: project.name,
+      userId: project.userId,
+      userName: 'User',
+      userInitials: 'U',
+      description: `프로젝트 "${project.name}"을(를) 삭제했습니다.`,
+    });
+
+    return true;
+  }
+
+  /**
+   * Complete project with activity logging
+   */
+  async completeProject(projectId: string): Promise<Project | null> {
+    const project = await this.update(projectId, {
+      status: 'completed',
+      progress: 100,
+    });
+    if (!project) return null;
+
+    // Log activity
+    await this.createActivityLog({
+      type: 'complete',
+      action: '프로젝트 완료',
+      entityType: 'project',
+      entityId: project.id,
+      entityName: project.name,
+      userId: project.userId,
+      userName: 'User',
+      userInitials: 'U',
+      description: `프로젝트 "${project.name}"을(를) 완료했습니다.`,
+    });
+
+    return project;
   }
 }
