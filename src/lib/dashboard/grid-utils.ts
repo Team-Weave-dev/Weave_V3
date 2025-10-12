@@ -213,8 +213,6 @@ export function compactLayout(
   config: GridConfig,
   compactType: 'vertical' | 'horizontal' = 'vertical'
 ): GridPosition[] {
-  console.log('🔧 compactLayout 시작:', { itemCount: items.length, compactType });
-
   if (items.length === 0) return [];
 
   if (compactType === 'vertical') {
@@ -225,8 +223,6 @@ export function compactLayout(
       return a.x - b.x;
     });
 
-    console.log('📊 정렬된 위젯 순서:', sortedItems.map(item => ({ y: item.y, x: item.x })));
-
     // 2. 각 위젯을 충돌 없이 배치
     const result: GridPosition[] = [];
 
@@ -234,7 +230,6 @@ export function compactLayout(
       // 첫 번째 위젯은 y=0부터 시작
       if (result.length === 0) {
         result.push({ ...item, y: 0 });
-        console.log(`  ✓ 위젯 ${index}: y=0 (첫 번째 위젯)`);
         return;
       }
 
@@ -253,22 +248,19 @@ export function compactLayout(
         if (!hasCollision) {
           // 충돌 없음 - 이 위치에 배치
           result.push(testPosition);
-          console.log(`  ✓ 위젯 ${index}: y=${targetY} (충돌 없음)`);
           foundPosition = true;
         } else {
           // 충돌 있음 - 한 칸 아래로
           targetY++;
           if (targetY > 100) {
             // 무한 루프 방지
-            console.error(`  ✗ 위젯 ${index}: 배치 실패 (무한 루프)`);
+            console.error(`위젯 ${index}: 배치 실패 (무한 루프)`);
             result.push({ ...item, y: targetY });
             foundPosition = true;
           }
         }
       }
     });
-
-    console.log('✅ compactLayout 완료:', result.map(r => ({ y: r.y, x: r.x, h: r.h })));
 
     // 원본 순서로 복원 (items 배열의 인덱스 순서 유지)
     const resultMap = new Map(sortedItems.map((item, i) => [item, result[i]]));
@@ -442,8 +434,6 @@ export function optimizeLayout(
   items: GridPosition[],
   config: GridConfig
 ): GridPosition[] {
-  console.log('🚀 optimizeLayout 시작:', { itemCount: items.length });
-
   if (items.length === 0) return [];
 
   const { cols } = config;
@@ -456,8 +446,6 @@ export function optimizeLayout(
     return a.y - b.y; // 같으면 y 위치 우선
   });
 
-  console.log('📊 정렬된 위젯 (크기순):', sortedItems.map(item => ({ w: item.w, h: item.h, area: item.w * item.h })));
-
   // 2. 각 위젯을 최적 위치에 배치
   const result: GridPosition[] = [];
 
@@ -465,7 +453,6 @@ export function optimizeLayout(
     // 첫 번째 위젯은 (0, 0)에 배치
     if (result.length === 0) {
       result.push({ ...item, x: 0, y: 0 });
-      console.log(`  ✓ 위젯 ${index}: (0, 0) - 첫 번째 위젯`);
       return;
     }
 
@@ -506,22 +493,18 @@ export function optimizeLayout(
 
     if (bestPosition) {
       result.push(bestPosition);
-      console.log(`  ✓ 위젯 ${index}: (${bestPosition.x}, ${bestPosition.y}) - 최적 위치`);
     } else {
       // 빈 공간을 못 찾으면 findEmptySpace 사용
       const fallbackPosition = findEmptySpace(item.w, item.h, result, config);
       if (fallbackPosition) {
         result.push({ ...item, ...fallbackPosition });
-        console.log(`  ⚠️ 위젯 ${index}: (${fallbackPosition.x}, ${fallbackPosition.y}) - fallback 위치`);
       } else {
         // 최악의 경우 원래 위치 유지
         result.push(item);
-        console.error(`  ✗ 위젯 ${index}: 배치 실패, 원래 위치 유지`);
+        console.error(`위젯 ${index}: 배치 실패, 원래 위치 유지`);
       }
     }
   });
-
-  console.log('✅ optimizeLayout 완료:', result.map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h })));
 
   // 원본 순서로 복원 (items 배열의 인덱스 순서 유지)
   const resultMap = new Map(sortedItems.map((item, i) => [item, result[i]]));

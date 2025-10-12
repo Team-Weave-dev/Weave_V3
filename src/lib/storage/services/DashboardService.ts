@@ -12,6 +12,7 @@ import type { StorageManager } from '../core/StorageManager';
 import type { ImprovedWidget, DashboardConfig } from '@/types/improved-dashboard';
 import type { JsonObject } from '../types/base';
 import { STORAGE_KEYS } from '../config';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * Dashboard data structure
@@ -49,6 +50,7 @@ export class DashboardService {
 
   /**
    * Save dashboard data
+   * Saves to both LocalStorage and Supabase (user_settings.dashboard)
    */
   async save(widgets: ImprovedWidget[], config: DashboardConfig): Promise<void> {
     const data: DashboardData = {
@@ -56,22 +58,75 @@ export class DashboardService {
       config,
     };
 
+    // 1. LocalStorage에 즉시 저장 (빠른 응답)
     await this.storage.set<DashboardData>(this.entityKey, data);
+
+    // 2. Supabase에 동기화 (백그라운드)
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        // user_settings 테이블의 dashboard 컬럼 업데이트
+        const { error } = await supabase
+          .from('user_settings')
+          .upsert({
+            user_id: user.id,
+            dashboard: data as any,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (error) {
+          console.error('❌ Failed to sync dashboard to Supabase:', error);
+        } else {
+          console.log('✅ Dashboard synced to Supabase');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Supabase sync error:', error);
+      // LocalStorage 저장은 이미 완료되었으므로 에러를 throw하지 않음
+    }
   }
 
   /**
    * Load dashboard data
+   * Loads from Supabase first, falls back to LocalStorage
    * Automatically migrates from legacy format if needed
    */
   async load(): Promise<DashboardData | null> {
-    // Try to load from new key first
+    // 1. Supabase에서 먼저 조회 시도
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: settings, error } = await supabase
+          .from('user_settings')
+          .select('dashboard')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!error && settings?.dashboard) {
+          console.log('✅ Dashboard loaded from Supabase');
+          // Supabase 데이터를 LocalStorage에도 동기화
+          await this.storage.set<DashboardData>(this.entityKey, settings.dashboard);
+          return settings.dashboard as DashboardData;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to load from Supabase, falling back to LocalStorage:', error);
+    }
+
+    // 2. LocalStorage에서 조회
     const data = await this.storage.get<DashboardData>(this.entityKey);
 
     if (data) {
       return data;
     }
 
-    // If not found, try to migrate from legacy format
+    // 3. Legacy 데이터 마이그레이션
     return this.migrateLegacyData();
   }
 
