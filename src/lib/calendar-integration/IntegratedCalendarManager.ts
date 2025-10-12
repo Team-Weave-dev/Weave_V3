@@ -7,9 +7,11 @@ import type {
   CalendarItemSource,
 } from '@/types/integrated-calendar';
 import type { CalendarEvent, TaxDeadline, TodoTask } from '@/types/dashboard';
+import type { TaxSchedule } from '@/lib/storage/types/entities/tax-schedule';
 
 import { calendarAdapter } from './adapters/calendar-adapter';
 import { taxAdapter } from './adapters/tax-adapter';
+import { taxScheduleAdapter } from './adapters/tax-schedule-adapter';
 import { todoAdapter } from './adapters/todo-adapter';
 import { localStorageDataSource } from './data-sources/LocalStorageDataSource';
 import {
@@ -30,6 +32,7 @@ type SubscriberCallback = (items: UnifiedCalendarItem[]) => void;
 export interface IDataSource {
   getCalendarEvents(): Promise<CalendarEvent[]>;
   getTaxDeadlines(): Promise<TaxDeadline[]>;
+  getTaxSchedules?(): Promise<TaxSchedule[]>;  // Supabase 기반 세무 일정
   getTodoTasks(): Promise<TodoTask[]>;
   deleteCalendarEvent?(eventId: string): Promise<void>;
   deleteTaxDeadline?(deadlineId: string): Promise<void>;
@@ -214,21 +217,38 @@ export class IntegratedCalendarManager {
     }
 
     // 각 소스에서 데이터 가져오기
-    const [calendarEvents, taxDeadlines, todoTasks] = await Promise.all([
+    const [calendarEvents, taxDeadlines, taxSchedules, todoTasks] = await Promise.all([
       this.dataSource.getCalendarEvents(),
       this.dataSource.getTaxDeadlines(),
+      this.dataSource.getTaxSchedules?.() ?? Promise.resolve([]),  // Supabase 세무 일정 (선택적)
       this.dataSource.getTodoTasks(),
     ]);
 
+    console.log('[IntegratedCalendarManager] Raw data fetched:');
+    console.log('  - Calendar events:', calendarEvents.length);
+    console.log('  - Tax deadlines:', taxDeadlines.length);
+    console.log('  - Tax schedules:', taxSchedules.length, taxSchedules);
+    console.log('  - Todo tasks:', todoTasks.length);
+
     // 어댑터를 통해 변환
     const calendarItems = calendarAdapter.toUnifiedBatch(calendarEvents);
-    const taxItems = taxAdapter.toUnifiedBatch(taxDeadlines);
+    const taxDeadlineItems = taxAdapter.toUnifiedBatch(taxDeadlines);
+    const taxScheduleItems = taxScheduleAdapter.toUnifiedBatch(taxSchedules);  // 새로운 세무 일정
     const todoItems = todoAdapter.toUnifiedBatch(todoTasks);
 
+    console.log('[IntegratedCalendarManager] Converted items:');
+    console.log('  - Calendar items:', calendarItems.length);
+    console.log('  - Tax deadline items:', taxDeadlineItems.length);
+    console.log('  - Tax schedule items:', taxScheduleItems.length, taxScheduleItems);
+    console.log('  - Todo items:', todoItems.length);
+
     // 모든 아이템 통합 및 정렬 (날짜 기준)
-    const allItems = [...calendarItems, ...taxItems, ...todoItems].sort(
-      (a, b) => a.date.getTime() - b.date.getTime()
-    );
+    const allItems = [
+      ...calendarItems,
+      ...taxDeadlineItems,
+      ...taxScheduleItems,  // Supabase 세무 일정 추가
+      ...todoItems,
+    ].sort((a, b) => a.date.getTime() - b.date.getTime());
 
     // 캐시 업데이트
     this.cache = allItems;

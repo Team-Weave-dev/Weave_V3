@@ -2,8 +2,10 @@
 // Storage API 기반 실제 데이터 소스 구현
 
 import type { CalendarEvent, TaxDeadline, TodoTask } from '@/types/dashboard';
+import type { TaxSchedule } from '@/lib/storage/types/entities/tax-schedule';
 import type { IDataSource } from '../IntegratedCalendarManager';
 import { notifyCalendarDataChanged } from '../events';
+import { taxScheduleService } from '@/lib/storage/services/TaxScheduleService';
 import {
   getCalendarEvents as getStorageCalendarEvents,
   saveCalendarEvents as saveStorageCalendarEvents,
@@ -45,7 +47,7 @@ export class LocalStorageDataSource implements IDataSource {
   }
 
   /**
-   * 세무 일정 조회
+   * 세무 일정 조회 (레거시 - TaxDeadline)
    */
   async getTaxDeadlines(): Promise<TaxDeadline[]> {
     // SSR 안전성: 서버 사이드에서는 빈 배열 반환
@@ -72,6 +74,40 @@ export class LocalStorageDataSource implements IDataSource {
       return [];
     } catch (error) {
       console.error('Failed to load tax deadlines from localStorage:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 세무 일정 조회 (Supabase 기반 - TaxSchedule)
+   */
+  async getTaxSchedules(): Promise<TaxSchedule[]> {
+    try {
+      console.log('[LocalStorageDataSource] Fetching tax schedules from Supabase...');
+
+      // Supabase에서 직접 조회 (SSR 안전)
+      if (typeof window === 'undefined') {
+        console.log('[LocalStorageDataSource] SSR context, returning empty array');
+        return [];
+      }
+
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('tax_schedules')
+        .select('*')
+        .order('tax_date', { ascending: true });
+
+      if (error) {
+        console.error('[LocalStorageDataSource] Supabase error:', error);
+        return [];
+      }
+
+      console.log('[LocalStorageDataSource] Tax schedules loaded:', data?.length || 0, data);
+      return data || [];
+    } catch (error) {
+      console.error('[LocalStorageDataSource] Failed to load tax schedules from Supabase:', error);
       return [];
     }
   }

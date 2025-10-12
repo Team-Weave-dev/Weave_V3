@@ -2,6 +2,7 @@
 // 위젯 데이터 통합 아키텍처를 위한 타입 정의
 
 import type { CalendarEvent, TodoTask, TaxDeadline } from './dashboard';
+import type { TaxSchedule } from '@/lib/storage/types/entities/tax-schedule';
 
 /**
  * 통합 캘린더 아이템의 데이터 출처
@@ -55,7 +56,7 @@ export interface UnifiedCalendarItem {
   tags?: string[];                                // 태그 목록
 
   // 원본 데이터 참조 (역변환 및 상세 정보 조회용)
-  originalData: CalendarEvent | TaxDeadline | TodoTask;
+  originalData: CalendarEvent | TaxDeadline | TodoTask | TaxSchedule;
 
   // 시각화 속성
   color: string;                                  // 표시 색상
