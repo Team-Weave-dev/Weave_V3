@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Select,
   SelectContent,
@@ -24,13 +25,60 @@ import {
   Receipt,
   Coins,
   Home,
+  XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getWidgetText } from '@/config/brand';
+import { getWidgetText, getLoadingText } from '@/config/brand';
 import { typography } from '@/config/constants';
 import type { TaxDeadlineWidgetProps, TaxDeadline, TaxCategory } from '@/types/dashboard';
+import { useTaxScheduleData } from '@/hooks/useTaxScheduleData';
+import type { TaxSchedule } from '@/lib/storage/types/entities/tax-schedule';
 
-// 한국 세무 일정 데이터
+/**
+ * TaxSchedule (Supabase) → TaxDeadline (위젯) 변환 함수
+ */
+function convertTaxScheduleToDeadline(schedule: TaxSchedule): TaxDeadline {
+  // Supabase는 tax_date (스네이크 케이스) 사용
+  // TypeScript 타입은 taxDate (카멜 케이스) 사용
+  const dateField = (schedule as any).tax_date || schedule.taxDate;
+  const taxDate = new Date(dateField);
+  const deadlineDay = taxDate.getDate();
+  const deadlineMonth = taxDate.getMonth() + 1; // 0-indexed → 1-indexed
+
+  // 카테고리 매핑: Supabase category → 위젯 category
+  const categoryMap: Record<string, TaxCategory> = {
+    'vat': 'VAT',
+    'income_tax': 'income-tax',
+    'corporate_tax': 'corporate-tax',
+    'withholding_tax': 'withholding',
+    'local_tax': 'local-tax',
+    'property_tax': 'property-tax',
+    'customs': 'customs',
+    'year_end_settlement': 'other',
+    'other': 'other',
+  };
+
+  const category = categoryMap[schedule.category] || 'other';
+
+  // Supabase의 모든 일정은 매년 반복이지만, 특정 월에 고정됨
+  // deadlineMonth가 있으면 yearly (특정 월 고정), 없으면 monthly (매월 반복)
+  const frequency = 'yearly'; // Supabase 데이터는 모두 yearly로 처리
+  const importance = schedule.type === 'filing' ? 'critical' : 'high';
+
+  return {
+    id: schedule.id,
+    title: schedule.title,
+    category,
+    deadlineDay,
+    deadlineMonth, // deadlineMonth를 그대로 유지 (undefined 아님)
+    frequency,
+    importance,
+    description: schedule.description || '',
+    taxPeriod: schedule.metadata?.taxPeriod as string || '',
+  };
+}
+
+// 기존 하드코딩 데이터는 폴백용으로만 유지 (self-loading이므로 사용 안 함)
 const KOREAN_TAX_CALENDAR: TaxDeadline[] = [
   // 매월 반복
   {
@@ -257,6 +305,9 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
   const [viewMode, setViewMode] = useState<'next3months' | 'all' | number>('next3months');
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
+  // Self-loading: Supabase 데이터 로드
+  const { schedules, loading, error } = useTaxScheduleData();
+
   // 뷰 모드 핸들러
   const handleViewModeChange = (value: string) => {
     if (value === 'next3months') {
@@ -283,17 +334,22 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
     setExpandedItems(newExpanded);
   };
 
+  // Supabase schedules → 위젯 deadlines 변환
+  const convertedDeadlines = useMemo(() => {
+    return schedules.map(convertTaxScheduleToDeadline);
+  }, [schedules]);
+
   // 오늘부터 3개월 후까지의 일정 가져오기
   const getNext3MonthsDeadlines = (deadlines: TaxDeadline[]) => {
     const today = new Date();
     const threeMonthsLater = new Date();
     threeMonthsLater.setMonth(today.getMonth() + 3);
-    
+
     return deadlines.map(deadline => {
       const dday = calculateDday(deadline.deadlineDay, deadline.deadlineMonth);
       const deadlineDate = new Date(today);
       deadlineDate.setDate(today.getDate() + dday);
-      
+
       return {
         ...deadline,
         dday,
@@ -307,7 +363,7 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
 
   // 필터링된 세무 일정
   const filteredDeadlines = useMemo(() => {
-    let filtered = [...KOREAN_TAX_CALENDAR];
+    let filtered = [...convertedDeadlines]; // Supabase 데이터 사용
 
     // 카테고리 필터
     if (categories && categories.length > 0) {
@@ -316,7 +372,7 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
 
     // 뷰 모드에 따른 필터링
     let withDday;
-    
+
     if (viewMode === 'next3months') {
       // 향후 3개월 일정
       withDday = getNext3MonthsDeadlines(filtered);
@@ -326,7 +382,7 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
         ...deadline,
         dday: calculateDday(deadline.deadlineDay, deadline.deadlineMonth)
       }));
-      
+
       // 다가오는 일정만 표시
       if (showOnlyUpcoming) {
         withDday = withDday.filter(d => d.dday >= 0);
@@ -339,12 +395,12 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
         }
         return d.deadlineMonth === viewMode;
       });
-      
+
       withDday = monthFilter.map(deadline => ({
         ...deadline,
         dday: calculateDday(deadline.deadlineDay, deadline.deadlineMonth)
       }));
-      
+
       // 다가오는 일정만 표시
       if (showOnlyUpcoming) {
         withDday = withDday.filter(d => d.dday >= 0);
@@ -356,7 +412,40 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
 
     // 최대 항목 수 제한
     return withDday.slice(0, maxItems);
-  }, [viewMode, categories, showOnlyUpcoming, maxItems]);
+  }, [convertedDeadlines, viewMode, categories, showOnlyUpcoming, maxItems]);
+
+  // 로딩 상태
+  if (loading) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12">
+            <LoadingSpinner size="md" text={getLoadingText.data('ko')} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <Card className="h-full flex flex-col overflow-hidden">
+        <CardHeader>
+          <CardTitle className={typography.widget.title}>{displayTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-12 text-destructive">
+            <XCircle className="h-12 w-12 mb-4 opacity-50" />
+            <p className={typography.text.small}>세무 일정을 불러오는 중 오류가 발생했습니다</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-full flex flex-col overflow-hidden">
