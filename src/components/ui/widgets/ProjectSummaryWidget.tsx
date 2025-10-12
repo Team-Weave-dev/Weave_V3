@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -110,17 +110,22 @@ export function ProjectSummaryWidget({
   return (
     <Card className="h-full flex flex-col overflow-hidden">
       <CardHeader>
-        <div className="flex items-center justify-between mb-2">
-          <CardTitle className={typography.widget.title}>
-            {displayTitle}
-          </CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <CardTitle className={typography.widget.title}>
+              {displayTitle}
+            </CardTitle>
+            <CardDescription className={typography.text.description}>
+              {widgetText.description(lang)}
+            </CardDescription>
+          </div>
           <Badge variant="secondary" className={typography.widget.badge}>
             {projects.length}{widgetText.projectsInProgress(lang)}
           </Badge>
         </div>
-        
+
         {/* 상태별 카운트 표시 및 더보기 버튼 */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <Activity className="h-3.5 w-3.5 text-blue-700" />

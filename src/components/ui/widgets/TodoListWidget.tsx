@@ -731,12 +731,12 @@ export function TodoListWidget({
             </CardDescription>
           </div>
           
-          <div className="flex items-center gap-2">
-            {/* 할 일 추가 버튼 - 더 눈에 띄게 */}
+          <div className="flex items-center gap-1">
+            {/* 할 일 추가 버튼 - 아이콘만 */}
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
-              className="h-8 gap-1.5"
+              className="h-8 w-8 p-0"
               onClick={() => {
                 // 섹션이 없으면 기본 섹션 생성
                 if (sections.length === 0) {
@@ -752,25 +752,22 @@ export function TodoListWidget({
                   setAddingSectionId(sections[0]?.id || 'default');
                 }
               }}
+              title={getWidgetText.todoList.addTask('ko')}
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">{getWidgetText.todoList.addTask('ko')}</span>
             </Button>
 
-            {/* 뷰 모드 탭 */}
+            {/* 뷰 모드 탭 - 아이콘만 */}
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
               <TabsList className="grid grid-cols-3 h-8">
-                <TabsTrigger value="section" className="text-xs">
-                  <List className="h-3 w-3 mr-1" />
-                  섹션
+                <TabsTrigger value="section" className="px-2" title="섹션">
+                  <List className="h-4 w-4" />
                 </TabsTrigger>
-                <TabsTrigger value="date" className="text-xs">
-                  <CalendarIcon className="h-3 w-3 mr-1" />
-                  날짜
+                <TabsTrigger value="date" className="px-2" title="날짜">
+                  <CalendarIcon className="h-4 w-4" />
                 </TabsTrigger>
-                <TabsTrigger value="completed" className="text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
-                  완료
+                <TabsTrigger value="completed" className="px-2" title="완료">
+                  <Clock className="h-4 w-4" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -781,6 +778,7 @@ export function TodoListWidget({
               size="sm"
               className="h-8 w-8 p-0"
               onClick={() => setIsOptionsOpen(true)}
+              title="옵션"
             >
               <Settings className="h-4 w-4" />
             </Button>

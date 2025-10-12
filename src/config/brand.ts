@@ -2402,6 +2402,7 @@ export const getWidgetText = {
   },
   projectSummary: {
     title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '프로젝트 요약' : 'Project Summary',
+    description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 중인 프로젝트 현황을 확인하세요' : 'Track your ongoing projects',
     active: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '진행 중' : 'Active',
     completed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '완료됨' : 'Completed',
     delayed: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '지연' : 'Delayed',
@@ -2414,7 +2415,7 @@ export const getWidgetText = {
   todoList: {
     title: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '할 일 목록' : 'Todo List',
     description: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '오늘의 작업을 관리하세요' : 'Manage your tasks today',
-    addTask: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업 추가' : 'Add Task',
+    addTask: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '추가' : 'Add',
     addTaskPrompt: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '작업을 추가하려면 + 버튼을 클릭하세요' : 'Click + button to add task',
     newTask: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새 작업' : 'New Task',
     placeholder: (lang: 'ko' | 'en' = defaultLanguage) => lang === 'ko' ? '새로운 작업을 입력하세요' : 'Enter new task',
