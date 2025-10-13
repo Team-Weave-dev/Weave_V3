@@ -487,6 +487,35 @@ export class SettingsService {
   }
 
   // ============================================================================
+  // Project Table Configuration (Phase 17)
+  // ============================================================================
+
+  /**
+   * Get project table configuration
+   */
+  async getProjectTableConfig(userId: string): Promise<import('../types/entities/settings').ProjectTableConfig | null> {
+    const settings = await this.getByUserId(userId);
+    return settings?.projectTableConfig || null;
+  }
+
+  /**
+   * Update project table configuration
+   */
+  async updateProjectTableConfig(
+    userId: string,
+    config: import('../types/entities/settings').ProjectTableConfig
+  ): Promise<Settings | null> {
+    return this.update(userId, { projectTableConfig: config });
+  }
+
+  /**
+   * Reset project table configuration
+   */
+  async resetProjectTableConfig(userId: string): Promise<Settings | null> {
+    return this.update(userId, { projectTableConfig: undefined });
+  }
+
+  // ============================================================================
   // Bulk Operations
   // ============================================================================
 

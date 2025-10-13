@@ -9,8 +9,8 @@ import { createClient } from '@/lib/supabase/client'
  *
  * 앱 시작 시 자동으로 Storage 시스템을 초기화합니다:
  * - 인증 상태 확인 (Supabase Auth 완전히 로드될 때까지 대기)
- * - LocalStorage 전용 또는 Supabase 모드 선택
- * - 자동 마이그레이션 실행 (필요 시)
+ * - Phase 16: 인증 필수 - 비인증 사용자는 로그인 페이지로 리다이렉트
+ * - Supabase-only 모드로 Storage 초기화
  */
 export function StorageInitializer() {
   const [initialized, setInitialized] = useState(false)
@@ -23,20 +23,23 @@ export function StorageInitializer() {
       try {
         console.log('🔧 Starting Storage system initialization...')
 
-        // Supabase Auth가 완전히 로드될 때까지 대기
+        // Supabase Auth 세션 확인
         const supabase = createClient()
-        console.log('⏳ Waiting for Supabase auth to load...')
+        console.log('⏳ Checking authentication status...')
 
-        // getSession()은 즉시 사용 가능하지만, getUser()는 네트워크 요청이 필요
+        // getSession()은 즉시 사용 가능 (로컬 쿠키에서 읽음)
         const { data: { session } } = await supabase.auth.getSession()
 
-        if (session) {
-          console.log('✅ User authenticated, session found')
-        } else {
-          console.log('ℹ️ No active session found')
+        // Phase 16: 인증 필수 - 비인증 사용자는 로그인 페이지로 리다이렉트
+        if (!session) {
+          console.log('⚠️ No active session - redirecting to login page')
+          window.location.href = '/login'
+          return
         }
 
-        // 인증 상태 확인 후 Storage 초기화
+        console.log('✅ User authenticated, initializing Supabase storage')
+
+        // 인증된 사용자만 Storage 초기화
         await initializeStorage()
 
         if (mounted) {

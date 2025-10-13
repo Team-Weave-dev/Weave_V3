@@ -591,7 +591,9 @@ export type StorageErrorCode =
   | 'TRANSACTION_ERROR'
   | 'ADAPTER_ERROR'
   | 'CACHE_ERROR'
-  | 'ROLLBACK_ERROR';
+  | 'ROLLBACK_ERROR'
+  | 'AUTH_REQUIRED'
+  | 'STORAGE_NOT_INITIALIZED';
 
 /**
  * Error severity levels

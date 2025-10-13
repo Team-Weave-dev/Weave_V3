@@ -10,6 +10,8 @@ import type {
 } from '@/lib/types/project-table.types';
 import { PROJECT_COLUMNS } from '@/lib/config/project-columns';
 import { removeCustomProject } from '@/lib/mock/projects';
+import { createClient } from '@/lib/supabase/client';
+import { settingsService } from '@/lib/storage';
 
 // 중앙화된 칼럼 설정 사용 - 개요 탭과 동일한 데이터 소스
 const DEFAULT_COLUMNS: ProjectTableColumn[] = PROJECT_COLUMNS;
@@ -32,26 +34,39 @@ const DEFAULT_PAGINATION = {
   total: 0
 };
 
-// 로컬스토리지 키 - 설정 영속화
-const STORAGE_KEY = 'weave-project-table-config';
+// Phase 17: 로컬스토리지 제거 - SettingsService 사용
+// Legacy localStorage key for migration
+const LEGACY_STORAGE_KEY = 'weave-project-table-config';
 
 export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsChange?: () => void) {
   // 하이드레이션 상태 추적
   const [isHydrated, setIsHydrated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // 삭제 모드 관련 상태
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
-  // 하이드레이션이 완료되면 localStorage 설정 적용
+  // 하이드레이션 및 인증 상태 확인
   useEffect(() => {
-    setIsHydrated(true);
+    async function checkAuth() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
+
+      setIsHydrated(true);
+    }
+
+    checkAuth();
   }, []);
 
-  // 저장된 설정 불러오기 (중앙화된 설정 관리)
-  const loadSavedConfig = useCallback((): ProjectTableConfig => {
-    // 하이드레이션이 완료되지 않았다면 항상 기본 설정 반환
-    if (!isHydrated || typeof window === 'undefined') {
+  // Phase 17: SettingsService에서 설정 불러오기
+  const loadSavedConfig = useCallback(async (): Promise<ProjectTableConfig> => {
+    // 하이드레이션이 완료되지 않았거나 userId가 없으면 기본 설정 반환
+    if (!isHydrated || !userId) {
       return {
         columns: DEFAULT_COLUMNS,
         filters: DEFAULT_FILTERS,
@@ -61,15 +76,40 @@ export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsC
     }
 
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsedConfig = JSON.parse(saved);
+      // SettingsService에서 설정 가져오기
+      const savedConfig = await settingsService.getProjectTableConfig(userId);
+
+      if (savedConfig) {
         return {
-          ...parsedConfig,
+          ...savedConfig,
           // 새로운 컬럼이 추가된 경우를 대비한 병합 로직
-          columns: mergeColumns(parsedConfig.columns || [], DEFAULT_COLUMNS),
-          pagination: { ...DEFAULT_PAGINATION, ...parsedConfig.pagination }
+          // Type assertion: storage types와 project-table types는 구조가 동일
+          columns: mergeColumns(savedConfig.columns as any as ProjectTableColumn[] || [], DEFAULT_COLUMNS),
+          pagination: { ...DEFAULT_PAGINATION, ...savedConfig.pagination }
         };
+      }
+
+      // Phase 17: 마이그레이션 - localStorage에서 데이터 가져오기
+      if (typeof window !== 'undefined') {
+        const legacyData = localStorage.getItem(LEGACY_STORAGE_KEY);
+        if (legacyData) {
+          console.log('🔄 Migrating project table config from localStorage to Supabase...');
+          const parsedConfig = JSON.parse(legacyData);
+          const migratedConfig: ProjectTableConfig = {
+            ...parsedConfig,
+            columns: mergeColumns(parsedConfig.columns || [], DEFAULT_COLUMNS),
+            pagination: { ...DEFAULT_PAGINATION, ...parsedConfig.pagination }
+          };
+
+          // Supabase에 저장
+          await settingsService.updateProjectTableConfig(userId, migratedConfig);
+
+          // 마이그레이션 완료 후 localStorage 데이터 제거
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
+          console.log('✅ Migration completed - localStorage data removed');
+
+          return migratedConfig;
+        }
       }
     } catch (error) {
       console.error('Failed to load saved table config:', error);
@@ -81,7 +121,7 @@ export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsC
       sort: DEFAULT_SORT,
       pagination: DEFAULT_PAGINATION
     };
-  }, [isHydrated]);
+  }, [isHydrated, userId]);
 
   const [config, setConfig] = useState<ProjectTableConfig>(() => {
     // 초기 렌더링에서는 항상 기본 설정 사용
@@ -100,27 +140,32 @@ export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsC
     setData(initialData);
   }, [initialData]);
 
-  // 하이드레이션이 완료되면 저장된 설정 적용
+  // Phase 17: 하이드레이션 및 userId 확인 후 설정 로드
   useEffect(() => {
-    if (isHydrated) {
-      const savedConfig = loadSavedConfig();
-      setConfig(savedConfig);
+    async function loadConfig() {
+      if (isHydrated && userId) {
+        const savedConfig = await loadSavedConfig();
+        setConfig(savedConfig);
+      }
     }
-  }, [isHydrated, loadSavedConfig]);
 
-  // 설정 저장 (중앙화된 설정 영속화)
-  const saveConfig = useCallback((newConfig: ProjectTableConfig) => {
-    // 하이드레이션이 완료된 후에만 localStorage 접근
-    if (!isHydrated || typeof window === 'undefined') {
+    loadConfig();
+  }, [isHydrated, userId, loadSavedConfig]);
+
+  // Phase 17: SettingsService로 설정 저장
+  const saveConfig = useCallback(async (newConfig: ProjectTableConfig) => {
+    // userId가 없으면 저장 불가
+    if (!userId) {
+      console.warn('Cannot save config: user not authenticated');
       return;
     }
 
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
+      await settingsService.updateProjectTableConfig(userId, newConfig);
     } catch (error) {
       console.error('Failed to save table config:', error);
     }
-  }, [isHydrated]);
+  }, [userId]);
 
   // 설정 업데이트 핸들러
   const updateConfig = useCallback((newConfig: ProjectTableConfig) => {

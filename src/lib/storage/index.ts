@@ -34,7 +34,7 @@ import { ActivityLogService } from './services/ActivityLogService';
 import { MigrationManager } from './migrations/MigrationManager';
 import { BackupManager } from './utils/BackupManager';
 
-import type { StorageAdapter } from './types/base';
+import { StorageError, type StorageAdapter } from './types/base';
 
 /**
  * Global storage manager instance
@@ -66,16 +66,15 @@ async function getUserId(): Promise<string | null> {
  * Initialize storage system
  *
  * This function should be called once when the application starts.
- * It determines the adapter mode based on authentication status and
- * initializes the storage system accordingly.
+ * It requires user authentication and initializes Supabase-only storage.
  *
- * Phase 15: Supabase-Only Mode (DualWrite Disabled)
- * - Before authentication: LocalStorageAdapter only
- * - After authentication: SupabaseAdapter (Supabase as Single Source of Truth)
- *
- * Note: DualWrite mode disabled to fix multi-device data resurrection issue.
+ * Phase 16: Supabase-Only Mode (LocalStorage Removed)
+ * - Authentication is REQUIRED to use the application
+ * - Supabase is the Single Source of Truth
+ * - LocalStorage fallback has been completely removed
  *
  * @returns Promise that resolves when storage is initialized
+ * @throws {StorageError} If user is not authenticated
  */
 export async function initializeStorage(): Promise<void> {
   console.log('🔧 Initializing storage system...');
@@ -84,19 +83,23 @@ export async function initializeStorage(): Promise<void> {
     // Get user authentication status
     const userId = await getUserId();
 
-    if (userId) {
-      // Authenticated: Use Supabase-only mode
-      console.log('✅ User authenticated, enabling Supabase-only mode');
-
-      const supabaseAdapter = new SupabaseAdapter({ userId });
-
-      currentAdapter = supabaseAdapter;
-    } else {
-      // Not authenticated: Use LocalStorage only
-      console.log('ℹ️ User not authenticated, using LocalStorage mode');
-      const localAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
-      currentAdapter = localAdapter;
+    if (!userId) {
+      // Authentication required - throw error
+      throw new StorageError(
+        'Authentication required to use this application',
+        'AUTH_REQUIRED',
+        {
+          severity: 'critical',
+          userMessage: '앱을 사용하려면 로그인이 필요합니다.',
+        }
+      );
     }
+
+    // Authenticated: Use Supabase-only mode
+    console.log('✅ User authenticated, enabling Supabase-only mode');
+
+    const supabaseAdapter = new SupabaseAdapter({ userId });
+    currentAdapter = supabaseAdapter;
 
     // Create storage manager
     storageManager = new StorageManager(currentAdapter);
@@ -179,41 +182,6 @@ export async function switchToSupabaseMode(userId: string): Promise<void> {
 }
 
 
-/**
- * Fallback to LocalStorage-only mode
- *
- * This function can be used to revert to LocalStorage mode
- * in case of Supabase connection issues.
- */
-export async function fallbackToLocalStorageMode(): Promise<void> {
-  console.log('⚠️ Falling back to LocalStorage mode...');
-
-  try {
-    const localAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
-    currentAdapter = localAdapter;
-    storageManager = new StorageManager(currentAdapter);
-
-    // Clear fallback storage manager
-    defaultStorageManager = null;
-
-    // Recreate services with new storage manager
-    _projectService = null;
-    _taskService = null;
-    _clientService = null;
-    _calendarService = null;
-    _documentService = null;
-    _settingsService = null;
-    _dashboardService = null;
-    _userService = null;
-    _todoSectionService = null;
-    _activityLogService = null;
-
-    console.log('✅ Fallback to LocalStorage mode completed');
-  } catch (error) {
-    console.error('❌ Failed to fallback to LocalStorage mode:', error);
-    throw error;
-  }
-}
 
 /**
  * Service factory functions
@@ -260,13 +228,16 @@ function getStorageOrDefault(): StorageManager {
   if (storageManager) {
     return storageManager;
   }
-  // Fallback to default if not initialized yet (singleton)
-  if (!defaultStorageManager) {
-    const defaultLocalAdapter = new LocalStorageAdapter(STORAGE_CONFIG);
-    defaultStorageManager = new StorageManager(defaultLocalAdapter);
-    console.warn('⚠️ Using fallback StorageManager - initializeStorage() was not called');
-  }
-  return defaultStorageManager;
+
+  // No fallback to LocalStorage - authentication is required
+  throw new StorageError(
+    'Storage not initialized. Authentication required.',
+    'STORAGE_NOT_INITIALIZED',
+    {
+      severity: 'critical',
+      userMessage: '스토리지가 초기화되지 않았습니다. 로그인이 필요합니다.',
+    }
+  );
 }
 
 /**

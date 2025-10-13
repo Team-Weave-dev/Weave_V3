@@ -164,6 +164,100 @@ export interface ProjectSettings {
 }
 
 /**
+ * Project table column configuration
+ * Aligned with @/lib/types/project-table.types.ts ProjectTableColumn
+ */
+export interface ProjectTableColumn {
+  /** Column ID */
+  id: string;
+
+  /** Column key for data mapping */
+  key: string;
+
+  /** Column label */
+  label: string;
+
+  /** Column sortable */
+  sortable?: boolean;
+
+  /** Column filterable */
+  filterable?: boolean;
+
+  /** Column width (optional) */
+  width?: number;
+
+  /** Column visibility */
+  visible: boolean;
+
+  /** Column order */
+  order: number;
+
+  /** Column type */
+  type: 'text' | 'date' | 'number' | 'status' | 'progress' | 'currency' | 'payment_progress';
+}
+
+/**
+ * Table filter state
+ * Aligned with @/lib/types/project-table.types.ts TableFilterState
+ */
+export interface TableFilterState {
+  /** Search query */
+  searchQuery: string;
+
+  /** Status filter */
+  statusFilter: 'planning' | 'in_progress' | 'review' | 'completed' | 'on_hold' | 'cancelled' | 'all';
+
+  /** Client filter */
+  clientFilter: string;
+
+  /** Custom filters (key-value pairs) */
+  customFilters: Record<string, any>;
+}
+
+/**
+ * Table sort state
+ */
+export interface TableSortState {
+  /** Sort column */
+  column: string;
+
+  /** Sort direction */
+  direction: 'asc' | 'desc';
+}
+
+/**
+ * Table pagination state
+ */
+export interface TablePaginationState {
+  /** Current page number */
+  page: number;
+
+  /** Items per page */
+  pageSize: number;
+
+  /** Total items count */
+  total: number;
+}
+
+/**
+ * Project table configuration (Phase 17)
+ * User-specific UI settings for project table view
+ */
+export interface ProjectTableConfig {
+  /** Column configurations */
+  columns: ProjectTableColumn[];
+
+  /** Filter state */
+  filters: TableFilterState;
+
+  /** Sort state */
+  sort: TableSortState;
+
+  /** Pagination state */
+  pagination: TablePaginationState;
+}
+
+/**
  * Notification settings
  */
 export interface NotificationSettings {
@@ -233,6 +327,9 @@ export interface Settings {
 
   /** User preferences */
   preferences: UserPreferences;
+
+  /** Project table configuration (Phase 17 - optional) */
+  projectTableConfig?: ProjectTableConfig;
 
   /** Last update timestamp (ISO 8601) */
   updatedAt: string;
