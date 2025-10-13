@@ -1,12 +1,61 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { CalendarEvent } from '@/types/dashboard';
-import {
-  loadCalendarEvents,
-  addCalendarEvent,
-  updateCalendarEvent,
-  deleteCalendarEvent,
-} from '@/lib/mock/calendar-events';
+import { loadCalendarEvents } from '@/lib/mock/calendar-events';
 import { notifyCalendarDataChanged, addCalendarDataChangedListener } from '@/lib/calendar-integration/events';
+import { calendarService } from '@/lib/storage';
+import type { CalendarEvent as StorageCalendarEvent } from '@/lib/storage/types/entities/event';
+
+/**
+ * Dashboard CalendarEvent → Storage CalendarEvent 변환
+ */
+function toStorageEvent(dashboardEvent: CalendarEvent): Omit<StorageCalendarEvent, 'id' | 'createdAt' | 'updatedAt'> {
+  const eventDate = dashboardEvent.date instanceof Date ? dashboardEvent.date : new Date(dashboardEvent.date);
+
+  // startDate 생성: date + startTime
+  let startDateTime = new Date(eventDate);
+  if (dashboardEvent.startTime) {
+    const [hours, minutes] = dashboardEvent.startTime.split(':').map(Number);
+    startDateTime.setHours(hours, minutes, 0, 0);
+  }
+  const startDate = startDateTime.toISOString();
+
+  // endDate 생성: date + endTime
+  let endDateTime = new Date(eventDate);
+  if (dashboardEvent.endTime) {
+    const [hours, minutes] = dashboardEvent.endTime.split(':').map(Number);
+    endDateTime.setHours(hours, minutes, 0, 0);
+  }
+
+  // endDate가 startDate보다 이르거나 같으면 자동으로 1시간 추가
+  if (endDateTime.getTime() <= startDateTime.getTime()) {
+    if (dashboardEvent.allDay) {
+      // 종일 이벤트: 다음 날 자정으로 설정
+      endDateTime = new Date(startDateTime);
+      endDateTime.setDate(endDateTime.getDate() + 1);
+      endDateTime.setHours(0, 0, 0, 0);
+    } else {
+      // 일반 이벤트: 시작 시간 + 1시간
+      endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+    }
+  }
+  const endDate = endDateTime.toISOString();
+
+  return {
+    userId: 'current-user', // TODO: 실제 사용자 ID로 교체
+    title: dashboardEvent.title,
+    description: dashboardEvent.description,
+    location: dashboardEvent.location,
+    startDate,
+    endDate,
+    allDay: dashboardEvent.allDay || false,
+    type: dashboardEvent.type || 'event',
+    category: 'work', // 기본값
+    status: 'confirmed', // 기본값
+    color: dashboardEvent.color,
+    recurring: dashboardEvent.recurring,
+    timezone: 'Asia/Seoul', // 기본값
+  };
+}
 
 /**
  * useCalendarEvents Hook
@@ -66,29 +115,56 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
   // 이벤트 추가
   const addEvent = useCallback(async (event: CalendarEvent) => {
     try {
-      const updatedEvents = await addCalendarEvent(event);
-      setEvents(updatedEvents);
+      // Dashboard CalendarEvent → Storage CalendarEvent 변환
+      const storageEventData = toStorageEvent(event);
+
+      console.log('[useCalendarEvents] Converting event:', {
+        dashboard: event,
+        storage: storageEventData
+      });
+
+      // CalendarService를 사용하여 이벤트 생성 (ActivityLog 자동 기록)
+      // BaseService가 자동으로 ID를 생성하므로 id를 전달하지 않음
+      const createdEvent = await calendarService.create(storageEventData);
+
+      console.log('[useCalendarEvents] Event created with activity log:', createdEvent.id);
+
+      // 이벤트 목록 새로고침
+      await refreshEvents();
 
       // 실시간 동기화: 다른 위젯들에게 변경사항 알림
       notifyCalendarDataChanged({
         source: 'calendar',
         changeType: 'add',
-        itemId: event.id,
+        itemId: createdEvent.id, // CalendarService가 생성한 ID 사용
         timestamp: Date.now(),
       });
 
       return true;
     } catch (err) {
+      console.error('[useCalendarEvents] Failed to add event:', err);
       setError(err as Error);
       return false;
     }
-  }, []);
+  }, [refreshEvents]);
 
   // 이벤트 수정
   const updateEvent = useCallback(async (event: CalendarEvent) => {
     try {
-      const updatedEvents = await updateCalendarEvent(event);
-      setEvents(updatedEvents);
+      // Dashboard CalendarEvent → Storage CalendarEvent 변환
+      const storageEventData = toStorageEvent(event);
+
+      // CalendarService를 사용하여 이벤트 수정 (ActivityLog 자동 기록)
+      const updatedEvent = await calendarService.update(event.id, storageEventData);
+
+      if (!updatedEvent) {
+        throw new Error(`Event not found: ${event.id}`);
+      }
+
+      console.log('[useCalendarEvents] Event updated with activity log:', updatedEvent.id);
+
+      // 이벤트 목록 새로고침
+      await refreshEvents();
 
       // 실시간 동기화: 다른 위젯들에게 변경사항 알림
       notifyCalendarDataChanged({
@@ -100,16 +176,26 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
 
       return true;
     } catch (err) {
+      console.error('[useCalendarEvents] Failed to update event:', err);
       setError(err as Error);
       return false;
     }
-  }, []);
+  }, [refreshEvents]);
 
   // 이벤트 삭제
   const deleteEvent = useCallback(async (eventId: string) => {
     try {
-      const updatedEvents = await deleteCalendarEvent(eventId);
-      setEvents(updatedEvents);
+      // CalendarService를 사용하여 이벤트 삭제 (ActivityLog 자동 기록)
+      const success = await calendarService.delete(eventId);
+
+      if (!success) {
+        throw new Error(`Event not found or failed to delete: ${eventId}`);
+      }
+
+      console.log('[useCalendarEvents] Event deleted with activity log:', eventId);
+
+      // 이벤트 목록 새로고침
+      await refreshEvents();
 
       // 실시간 동기화: 다른 위젯들에게 변경사항 알림
       notifyCalendarDataChanged({
@@ -121,10 +207,11 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
 
       return true;
     } catch (err) {
+      console.error('[useCalendarEvents] Failed to delete event:', err);
       setError(err as Error);
       return false;
     }
-  }, []);
+  }, [refreshEvents]);
 
   // 날짜별 이벤트 필터링
   const getEventsByDate = useCallback(
