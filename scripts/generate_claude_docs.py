@@ -312,7 +312,8 @@ def generate_file_map_lines(entry: Entry) -> list[str]:
     lines: list[str] = []
 
     for file in sorted(base.iterdir(), key=lambda f: f.name.lower()):
-        if file.name.lower() == 'claude.md':
+        # Skip root-level documentation files (CLAUDE.md or claude.md)
+        if file.name.lower() in ('claude.md', 'CLAUDE.md'):
             continue
         if not file.is_file():
             continue
@@ -335,7 +336,7 @@ def generate_file_map_lines(entry: Entry) -> list[str]:
 
 # SECTION: Root Document Helpers - 루트 claude.md 전용 유틸
 def build_directory_tree() -> list[str]:
-    claude_paths = [Path(p) for p in DOCS.keys() if p != 'claude.md']
+    claude_paths = [Path(p) for p in DOCS.keys() if p != 'CLAUDE.md']
     extra_files = [Path('scripts/generate_claude_docs.py')]
 
     file_children: dict[Path, list[str]] = defaultdict(list)
@@ -355,7 +356,7 @@ def build_directory_tree() -> list[str]:
                 dir_set.add(parent)
                 parent = parent.parent
 
-    file_children[Path('.')].append('claude.md')
+    file_children[Path('.')].append('CLAUDE.md')
 
     dir_children: dict[Path, list[Path]] = defaultdict(list)
     for directory in dir_set:
@@ -431,9 +432,13 @@ def update_directory_block(lines: list[str]) -> list[str]:
 
 
 def update_root_document() -> None:
-    path = Path('claude.md')
+    """Update root documentation file (CLAUDE.md or claude.md for backward compatibility)"""
+    path = Path('CLAUDE.md')
     if not path.exists():
-        return
+        # Fallback to lowercase for backward compatibility
+        path = Path('claude.md')
+        if not path.exists():
+            return
 
     lines = path.read_text(encoding='utf-8').splitlines()
     lines = update_directory_block(lines)
@@ -446,8 +451,8 @@ def update_root_document() -> None:
 # ---------------------------------------------------------------------------
 
 add(
-    'claude.md',
-    title='claude.md - 프로젝트 작업 허브',
+    'CLAUDE.md',
+    title='CLAUDE.md - 프로젝트 작업 허브',
     purpose=[
         '모든 claude.md 문서의 기준이 되는 중앙 허브입니다.',
         '작업 언어, 문서화 원칙, 디렉토리 흐름, 업데이트 프로토콜을 정의합니다.'
@@ -504,7 +509,7 @@ add(
         '`npm run docs:update`로 자동 동기화 상태를 확인'
     ],
     references=[
-        'claude.md',
+        'CLAUDE.md',
         'scripts/update-claude-docs.js',
         'docs/Auto-Reference-System.md'
     ]
@@ -554,7 +559,7 @@ add(
         '불필요한 파일은 삭제하고 참조 문서를 정리'
     ],
     references=[
-        'claude.md',
+        'CLAUDE.md',
         'src/components/layout/claude.md',
         'src/config/brand.ts'
     ]
@@ -580,7 +585,7 @@ add(
         '파괴적 작업에는 확인 절차와 백업 전략을 포함'
     ],
     references=[
-        'claude.md',
+        'CLAUDE.md',
         'docs/Claude-Workflow-Checklists.md',
         'src/lib/storage/claude.md'
     ]
@@ -673,7 +678,7 @@ add(
         '새 도메인을 추가하면 구조 요약과 관련 문서를 갱신',
         '컨벤션 변경 시 config 및 하위 claude.md를 함께 수정'
     ],
-    references=['claude.md']
+    references=['CLAUDE.md']
 )
 
 add(
@@ -695,7 +700,7 @@ add(
         '설정 변경 시 영향을 받는 컴포넌트·서비스·문서를 점검',
         '언어 키 구조(ko, en 등)를 유지'
     ],
-    references=['claude.md', 'src/components/claude.md', 'src/lib/claude.md']
+    references=['CLAUDE.md', 'src/components/claude.md', 'src/lib/claude.md']
 )
 
 add(
@@ -2050,7 +2055,7 @@ def write_entry(path: Path, entry: Entry) -> None:
 # SECTION: CLI Entry Point - 스크립트 실행 지점
 def main() -> None:
     for path_str in sorted(DOCS.keys()):
-        if path_str == 'claude.md':
+        if path_str == 'CLAUDE.md':
             continue
         write_entry(Path(path_str), DOCS[path_str])
     update_root_document()

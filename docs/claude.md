@@ -165,6 +165,6 @@
 - `npm run docs:update`로 자동 동기화 상태를 확인
 
 ## 관련 문서
-- claude.md
+- CLAUDE.md
 - scripts/update-claude-docs.js
 - docs/Auto-Reference-System.md

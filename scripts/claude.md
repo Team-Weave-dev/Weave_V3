@@ -53,11 +53,11 @@
 - fix-todo-sectionid.js 65~67 const queue
 - generate_claude_docs.py 10~70 Data Model - claude 문서 항목 구조
 - generate_claude_docs.py 071~301 Section Extraction Utilities - 파일 섹션 파싱 로직
-- generate_claude_docs.py 302~335 File Map Builder - 각 파일별 라인 범위 요약
-- generate_claude_docs.py 0336~1987 Root Document Helpers - 루트 claude.md 전용 유틸
-- generate_claude_docs.py 1988~2041 Document Builder - claude.md 템플릿 생성
-- generate_claude_docs.py 2042~2049 File Writer - claude.md 파일 저장
-- generate_claude_docs.py 2050~2060 CLI Entry Point - 스크립트 실행 지점
+- generate_claude_docs.py 302~336 File Map Builder - 각 파일별 라인 범위 요약
+- generate_claude_docs.py 0337~1992 Root Document Helpers - 루트 claude.md 전용 유틸
+- generate_claude_docs.py 1993~2046 Document Builder - claude.md 템플릿 생성
+- generate_claude_docs.py 2047~2054 File Writer - claude.md 파일 저장
+- generate_claude_docs.py 2055~2065 CLI Entry Point - 스크립트 실행 지점
 - integration-test.js 08~09 const puppeteer - 통합 테스트 스크립트 테스트 계정으로 로그인하고 모든 페이지를 방문하여 기본적인 작동을 확인합니다.
 - integration-test.js 10~10 const BASE_URL
 - integration-test.js 11~11 const TEST_EMAIL
@@ -174,6 +174,6 @@
 - 파괴적 작업에는 확인 절차와 백업 전략을 포함
 
 ## 관련 문서
-- claude.md
+- CLAUDE.md
 - docs/Claude-Workflow-Checklists.md
 - src/lib/storage/claude.md

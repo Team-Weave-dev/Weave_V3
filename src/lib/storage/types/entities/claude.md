@@ -75,10 +75,10 @@
 - project.ts 255~259 export ProjectVisibility - Project visibility
 - project.ts 260~423 export Project - Project entity
 - project.ts 424~452 export isWBSTask - Type guard for WBSTask
-- project.ts 453~567 export isProject - Type guard for Project
-- project.ts 568~572 export ProjectUpdate - Partial project type for updates
-- project.ts 573~577 export ProjectCreate - Project creation payload (without auto-generated fields)
-- project.ts 578~581 export ProjectListItem - Project list item (without heavy lazy-loaded fields)
+- project.ts 453~609 export isProject - Type guard for Project
+- project.ts 610~614 export ProjectUpdate - Partial project type for updates
+- project.ts 615~619 export ProjectCreate - Project creation payload (without auto-generated fields)
+- project.ts 620~623 export ProjectListItem - Project list item (without heavy lazy-loaded fields)
 - settings.ts 15~19 export Theme - Theme option
 - settings.ts 20~24 export CalendarView - Calendar view option
 - settings.ts 25~29 export WeekStartDay - Week start day (0: Sunday, 1: Monday)

@@ -31,6 +31,6 @@ Next.js가 직접 서빙하는 정적 파일을 관리합니다.
 - 불필요한 파일은 삭제하고 참조 문서를 정리
 
 ## 관련 문서
-- claude.md
+- CLAUDE.md
 - src/components/layout/claude.md
 - src/config/brand.ts

@@ -30,7 +30,7 @@ StorageManager가 다양한 저장소를 사용할 수 있도록 추상화합니
 - RealtimeAdapter.ts 72~88 export RealtimeAdapterConfig - RealtimeAdapter 설정
 - RealtimeAdapter.ts 089~464 export RealtimeAdapter - ========================================================= RealtimeAdapter 클래스 =========================================================
 - SupabaseAdapter.ts 20~60 export SupabaseAdapterConfig - Configuration options for SupabaseAdapter
-- SupabaseAdapter.ts 0061~1540 export SupabaseAdapter - Supabase adapter implementing the StorageAdapter interface Provides integration with Supabase database with user-scoped data isolation, RLS policy support, and type-safe CRUD operations.
+- SupabaseAdapter.ts 0061~1685 export SupabaseAdapter - Supabase adapter implementing the StorageAdapter interface Provides integration with Supabase database with user-scoped data isolation, RLS policy support, and type-safe CRUD operations.
 
 ## 중앙화·모듈화·캡슐화
 - 스토리지 키와 버전은 core와 types 정의를 사용

@@ -38,4 +38,4 @@
 - 컨벤션 변경 시 config 및 하위 claude.md를 함께 수정
 
 ## 관련 문서
-- claude.md
+- CLAUDE.md

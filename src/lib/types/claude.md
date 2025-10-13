@@ -20,25 +20,25 @@
 
 ## 파일 라인 맵
 - project-table.types.ts 03~14 export ProjectTableColumn - 프로젝트 테이블 시스템 중앙화된 타입 정의
-- project-table.types.ts 15~52 export ProjectTableRow
-- project-table.types.ts 53~61 export ProjectStatus
-- project-table.types.ts 62~69 export SettlementMethod - 정산방식 타입
-- project-table.types.ts 70~76 export PaymentStatus - 수금상태 타입 수금상태 타입
-- project-table.types.ts 77~83 export Currency - 통화 단위 타입
-- project-table.types.ts 84~86 export WBSTaskStatus - WBS 작업 상태 타입
-- project-table.types.ts 87~99 export WBSTask - WBS 작업 아이템
-- project-table.types.ts 100~105 export WBSTemplateType - WBS 템플릿 타입
-- project-table.types.ts 106~130 export ContractInfo
-- project-table.types.ts 131~138 export EstimateInfo - 견적서 정보 인터페이스 추가
-- project-table.types.ts 139~153 export BillingInfo
-- project-table.types.ts 154~166 export DocumentInfo
-- project-table.types.ts 167~175 export ProjectDocumentStatus - 프로젝트 문서 현황 통합 관리
-- project-table.types.ts 176~182 export DocumentStatus - 개별 문서 상태
-- project-table.types.ts 183~193 export TableFilterState
-- project-table.types.ts 194~198 export TableSortState
-- project-table.types.ts 199~226 export ProjectTableConfig
-- project-table.types.ts 227~251 export calculateProjectProgress - WBS 작업 목록을 기반으로 프로젝트 진행률을 자동 계산합니다. 완료된 작업 수 / 전체 작업 수 * 100 @param wbsTasks - WBS 작업 목록 @returns 진행률 (0-100) @example const tasks = [ { id: '1', name: '기획', status: 'completed', ... }, { id: '2', name: '설계', status: 'in_progress', ... }, { id: '3', name: '개발', status: 'pending', ... } ] calculateProjectProgress(tasks) // 33 (1/3 * 100)
-- project-table.types.ts 252~259 export getWBSTaskCounts - WBS 작업 목록의 상태별 개수를 계산합니다. @param wbsTasks - WBS 작업 목록 @returns 상태별 작업 개수 객체 @example getWBSTaskCounts(tasks) // { //   total: 5, //   pending: 2, //   inProgress: 1, //   completed: 2 // }
+- project-table.types.ts 15~53 export ProjectTableRow
+- project-table.types.ts 54~62 export ProjectStatus
+- project-table.types.ts 63~70 export SettlementMethod - 정산방식 타입
+- project-table.types.ts 71~77 export PaymentStatus - 수금상태 타입 수금상태 타입
+- project-table.types.ts 78~84 export Currency - 통화 단위 타입
+- project-table.types.ts 85~87 export WBSTaskStatus - WBS 작업 상태 타입
+- project-table.types.ts 088~100 export WBSTask - WBS 작업 아이템
+- project-table.types.ts 101~106 export WBSTemplateType - WBS 템플릿 타입
+- project-table.types.ts 107~131 export ContractInfo
+- project-table.types.ts 132~139 export EstimateInfo - 견적서 정보 인터페이스 추가
+- project-table.types.ts 140~154 export BillingInfo
+- project-table.types.ts 155~168 export DocumentInfo
+- project-table.types.ts 169~177 export ProjectDocumentStatus - 프로젝트 문서 현황 통합 관리
+- project-table.types.ts 178~184 export DocumentStatus - 개별 문서 상태
+- project-table.types.ts 185~195 export TableFilterState
+- project-table.types.ts 196~200 export TableSortState
+- project-table.types.ts 201~228 export ProjectTableConfig
+- project-table.types.ts 229~253 export calculateProjectProgress - WBS 작업 목록을 기반으로 프로젝트 진행률을 자동 계산합니다. 완료된 작업 수 / 전체 작업 수 * 100 @param wbsTasks - WBS 작업 목록 @returns 진행률 (0-100) @example const tasks = [ { id: '1', name: '기획', status: 'completed', ... }, { id: '2', name: '설계', status: 'in_progress', ... }, { id: '3', name: '개발', status: 'pending', ... } ] calculateProjectProgress(tasks) // 33 (1/3 * 100)
+- project-table.types.ts 254~261 export getWBSTaskCounts - WBS 작업 목록의 상태별 개수를 계산합니다. @param wbsTasks - WBS 작업 목록 @returns 상태별 작업 개수 객체 @example getWBSTaskCounts(tasks) // { //   total: 5, //   pending: 2, //   inProgress: 1, //   completed: 2 // }
 - settings.types.ts 08~10 export PlanType - 요금제 타입
 - settings.types.ts 11~25 export Plan - 요금제 정보
 - settings.types.ts 26~45 export Usage - 사용량 정보

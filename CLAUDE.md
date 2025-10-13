@@ -214,7 +214,7 @@ Weave_V3/
 │   ├── migrations/
 │   │   └── claude.md
 │   └── claude.md
-└── claude.md
+└── CLAUDE.md
 ```
 
 ## 문서 네비게이션

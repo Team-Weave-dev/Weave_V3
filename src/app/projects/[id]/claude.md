@@ -23,7 +23,7 @@ ProjectDetail 컴포넌트와 탭 구조를 사용합니다.
 
 ## 파일 라인 맵
 - page.tsx 22~25 const resolvedParams
-- ProjectDetailClient.tsx 069~721 export ProjectDetailClient - Client Component Wrapper for ProjectDetail Handles client-side interactions and navigation with localStorage support
+- ProjectDetailClient.tsx 069~722 export ProjectDetailClient - Client Component Wrapper for ProjectDetail Handles client-side interactions and navigation with localStorage support
 
 ## 중앙화·모듈화·캡슐화
 - 텍스트는 brand 설정, 열 정의는 lib/config/project-columns에서 사용

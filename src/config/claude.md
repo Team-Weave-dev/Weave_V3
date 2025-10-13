@@ -101,6 +101,6 @@
 - 언어 키 구조(ko, en 등)를 유지
 
 ## 관련 문서
-- claude.md
+- CLAUDE.md
 - src/components/claude.md
 - src/lib/claude.md

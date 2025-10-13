@@ -22,7 +22,7 @@
 
 ## 파일 라인 맵
 - DocumentGeneratorModal.tsx 033~480 export DocumentGeneratorModal
-- index.tsx 057~786 export ProjectCreateModal
+- index.tsx 059~822 export ProjectCreateModal
 
 ## 중앙화·모듈화·캡슐화
 - 라벨과 버튼 텍스트는 brand 설정 사용
