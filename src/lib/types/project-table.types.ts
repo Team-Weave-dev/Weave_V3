@@ -18,6 +18,7 @@ export interface ProjectTableRow {
   name: string;
   registrationDate: string;
   client: string;
+  clientId?: string;  // Supabase clients 테이블 UUID 참조
   /**
    * @deprecated 이제 wbsTasks 기반으로 자동 계산됩니다. calculateProjectProgress() 사용 권장
    * 마이그레이션 후에는 읽기 전용으로 사용됩니다.
@@ -153,6 +154,7 @@ export interface BillingInfo {
 
 export interface DocumentInfo {
   id: string;
+  projectId?: string;  // Supabase 프로젝트 UUID 참조 (foreign key)
   type: 'contract' | 'invoice' | 'report' | 'estimate' | 'etc';
   name: string;
   createdAt: string;

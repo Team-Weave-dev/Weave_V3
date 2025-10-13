@@ -7,7 +7,7 @@ import type {
   WBSTask,
   Currency
 } from '@/lib/types/project-table.types';
-import { projectService } from '@/lib/storage';
+import { projectService, clientService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
 
 /**
@@ -46,6 +46,20 @@ export async function getMockProjectById(id: string): Promise<ProjectTableRow | 
 
       if (foundByNo) {
         const row = toProjectTableRow(foundByNo);
+
+        // clientId가 있으면 클라이언트 이름 조회
+        if (foundByNo.clientId) {
+          try {
+            const client = await clientService.getById(foundByNo.clientId);
+            if (client) {
+              row.client = client.name;
+              row.clientId = client.id;
+            }
+          } catch (error) {
+            console.warn(`클라이언트 조회 실패 (${foundByNo.clientId}):`, error);
+          }
+        }
+
         console.log('✅ 프로젝트 발견 (by no):', { id: row.id, no: row.no, name: row.name });
         return row;
       }
@@ -55,6 +69,20 @@ export async function getMockProjectById(id: string): Promise<ProjectTableRow | 
     }
 
     const row = toProjectTableRow(project);
+
+    // clientId가 있으면 클라이언트 이름 조회
+    if (project.clientId) {
+      try {
+        const client = await clientService.getById(project.clientId);
+        if (client) {
+          row.client = client.name;
+          row.clientId = client.id;
+        }
+      } catch (error) {
+        console.warn(`클라이언트 조회 실패 (${project.clientId}):`, error);
+      }
+    }
+
     console.log('✅ 프로젝트 발견:', { id: row.id, no: row.no, name: row.name });
     return row;
   } catch (error) {
@@ -88,8 +116,27 @@ async function getCustomProjects(): Promise<ProjectTableRow[]> {
     // Storage API에서 모든 프로젝트 조회
     const projects = await projectService.getAll();
 
-    // Project → ProjectTableRow 변환
-    const rows = projects.map(toProjectTableRow);
+    // Project → ProjectTableRow 변환 (클라이언트 이름 포함)
+    const rows = await Promise.all(
+      projects.map(async (project) => {
+        const row = toProjectTableRow(project);
+
+        // clientId가 있으면 클라이언트 이름 조회
+        if (project.clientId) {
+          try {
+            const client = await clientService.getById(project.clientId);
+            if (client) {
+              row.client = client.name;
+              row.clientId = client.id;
+            }
+          } catch (error) {
+            console.warn(`클라이언트 조회 실패 (${project.clientId}):`, error);
+          }
+        }
+
+        return row;
+      })
+    );
 
     console.log('📋 getCustomProjects: 로드된 프로젝트 수:', rows.length);
 
@@ -129,7 +176,7 @@ function toProject(row: ProjectTableRow): Project {
     // Identity
     id: row.id,
     userId: 'user-1',  // 현재 단일 사용자 시스템
-    clientId: row.client || undefined,
+    clientId: row.clientId || undefined,
 
     // Basic info
     no: row.no,
@@ -416,6 +463,17 @@ export async function updateCustomProject(idOrNo: string, updates: Partial<Proje
       return false;
     }
 
+    // 날짜 정규화 헬퍼 (YYYY-MM-DD → ISO 8601)
+    const normalizeDate = (dateString: string | undefined): string | undefined => {
+      if (!dateString) return undefined;
+      // 이미 ISO 8601 형식이면 그대로 반환
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dateString)) {
+        return dateString;
+      }
+      // YYYY-MM-DD 형식이면 ISO 8601로 변환
+      return new Date(dateString).toISOString();
+    };
+
     // 2. Project 엔티티 updates로 변환 (필드 매핑)
     const projectUpdates: Partial<Project> = {
       ...updates.no && { no: updates.no },
@@ -423,7 +481,7 @@ export async function updateCustomProject(idOrNo: string, updates: Partial<Proje
       ...updates.status && { status: updates.status },
       ...updates.progress !== undefined && { progress: updates.progress },
       ...updates.projectContent && { projectContent: updates.projectContent, description: updates.projectContent },
-      ...updates.dueDate && { endDate: updates.dueDate },
+      ...updates.dueDate && { endDate: normalizeDate(updates.dueDate) },
       ...updates.settlementMethod && { settlementMethod: updates.settlementMethod },
       ...updates.paymentStatus && { paymentStatus: updates.paymentStatus },
       ...updates.totalAmount !== undefined && { totalAmount: updates.totalAmount },
@@ -468,12 +526,28 @@ export async function updateCustomProject(idOrNo: string, updates: Partial<Proje
  */
 export async function removeCustomProject(idOrNo: string): Promise<boolean> {
   try {
-    const success = await projectService.delete(idOrNo);
-    if (success) {
-      console.log('✅ 프로젝트 삭제 성공:', idOrNo);
-    } else {
-      console.log('⚠️ 프로젝트 삭제 실패: 프로젝트를 찾을 수 없음', idOrNo);
+    // 1. ID 또는 No로 프로젝트 찾기
+    const allProjects = await projectService.getAll();
+    const project = allProjects.find(p => p.id === idOrNo || p.no === idOrNo);
+
+    if (!project) {
+      console.log('⚠️ 프로젝트를 찾을 수 없음:', idOrNo);
+      return false;
     }
+
+    // 2. Storage API 삭제 (실제 ID 사용)
+    const success = await projectService.delete(project.id);
+
+    if (success) {
+      console.log('✅ 프로젝트 삭제 성공:', {
+        id: project.id,
+        no: project.no,
+        name: project.name
+      });
+    } else {
+      console.log('⚠️ 프로젝트 삭제 실패:', idOrNo);
+    }
+
     return success;
   } catch (error) {
     console.error('❌ 프로젝트 삭제 중 오류:', error);

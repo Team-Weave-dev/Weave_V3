@@ -24,6 +24,8 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import DocumentGeneratorModal from './DocumentGeneratorModal'
 import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog'
+import { clientService } from '@/lib/storage'
+import { createClient } from '@/lib/supabase/client'
 
 interface ProjectCreateModalProps {
   isOpen: boolean
@@ -162,6 +164,39 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
 
       console.log('✅ 날짜 검증 통과');
 
+      // 🆕 1. 사용자 ID 가져오기 (Supabase 인증)
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        console.error('❌ 사용자 ID를 가져올 수 없습니다.');
+        toast({
+          title: '인증 오류',
+          description: '로그인 상태를 확인해주세요.',
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('✅ 사용자 ID 확인:', userId);
+
+      // 🆕 2. 클라이언트 생성 (clients 테이블에 삽입)
+      const clientData = {
+        userId: userId,
+        name: data.client,  // 클라이언트 명을 name 필드에 저장
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      console.log('👤 클라이언트 생성 시작:', clientData);
+
+      const newClient = await clientService.create(clientData);
+      const clientId = newClient.id;  // 생성된 클라이언트 UUID
+
+      console.log('✅ 클라이언트 생성 완료:', { clientId, name: newClient.name });
+
       // 새 프로젝트 데이터 생성
       // 🎯 초기 상태: 항상 기획(planning)으로 시작
       // 이후 ProjectStatus 컴포넌트의 자동 상태 결정 로직이 적용됨:
@@ -174,7 +209,8 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
 
       const newProject: Omit<ProjectTableRow, 'id' | 'no' | 'modifiedDate'> = {
         name: data.name,
-        client: data.client,
+        client: data.client,  // UI 표시용 (하위 호환성)
+        clientId: clientId,   // 🆕 Supabase clients 테이블 UUID 참조
         registrationDate: format(data.registrationDate, 'yyyy-MM-dd'),
         dueDate: format(data.dueDate, 'yyyy-MM-dd'),
         status: initialStatus,

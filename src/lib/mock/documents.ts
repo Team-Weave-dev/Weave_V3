@@ -156,7 +156,23 @@ export async function getProjectDocuments(projectId: string): Promise<DocumentIn
   // Legacy migration (once)
   await migrateLegacyDocuments();
 
-  const documents = await documentService.getDocumentsByProject(projectId);
+  // 🔑 프로젝트 번호(no)를 UUID로 변환
+  let actualProjectId = projectId;
+
+  if (projectId.startsWith('WEAVE_') || projectId.startsWith('project-')) {
+    const { projectService } = await import('@/lib/storage');
+    const projects = await projectService.getAll();
+    const project = projects.find(p => p.no === projectId || p.id === projectId);
+
+    if (project && project.id) {
+      actualProjectId = project.id;
+      console.log(`✅ [getProjectDocuments] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
+    } else {
+      console.warn(`⚠️  [getProjectDocuments] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+    }
+  }
+
+  const documents = await documentService.getDocumentsByProject(actualProjectId);
   return documents.map(documentToDocumentInfo);
 }
 
@@ -164,10 +180,35 @@ export async function getProjectDocuments(projectId: string): Promise<DocumentIn
  * Add a new document to a project
  */
 export async function addProjectDocument(projectId: string, documentInfo: DocumentInfo): Promise<DocumentInfo> {
-  const document = documentInfoToDocument(documentInfo, projectId);
+  // 🔑 프로젝트 번호(no)를 UUID로 변환
+  // projectId가 'WEAVE_XXX' 형태(프로젝트 번호)라면 실제 UUID를 조회
+  let actualProjectId = projectId;
+
+  if (projectId.startsWith('WEAVE_') || projectId.startsWith('project-')) {
+    // projectId가 프로젝트 번호 또는 LocalStorage ID인 경우
+    // ProjectService를 통해 실제 프로젝트를 조회하여 UUID 가져오기
+    const { projectService } = await import('@/lib/storage');
+    const projects = await projectService.getAll();
+
+    // 'no' 필드로 프로젝트 찾기
+    const project = projects.find(p => p.no === projectId || p.id === projectId);
+
+    if (project && project.id) {
+      actualProjectId = project.id;
+      console.log(`✅ [addProjectDocument] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
+    } else {
+      console.warn(`⚠️  [addProjectDocument] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+      // 프로젝트를 찾지 못했지만 계속 진행 (LocalStorage에는 저장됨)
+    }
+  }
+
+  const document = documentInfoToDocument(documentInfo, actualProjectId);
   const created = await documentService.create(document);
 
-  // 🔔 이벤트 발생
+  // 📊 문서 추가 후 프로젝트의 document_status 자동 업데이트
+  await updateProjectDocumentStatus(actualProjectId);
+
+  // 🔔 이벤트 발생 (원본 projectId 사용 - UI 동기화용)
   notifyDocumentChange(projectId, 'added', { documentId: created.id, documentName: created.name });
 
   return documentToDocumentInfo(created);
@@ -193,7 +234,7 @@ export async function updateProjectDocument(
 
   const updated = await documentService.update(documentId, docUpdates);
 
-  // 🔔 이벤트 발생
+  // 🔔 이벤트 발생 (원본 projectId 사용 - UI 동기화용)
   if (updated) {
     notifyDocumentChange(projectId, 'updated', { documentId, updates: Object.keys(updates) });
   }
@@ -205,18 +246,36 @@ export async function updateProjectDocument(
  * Delete a document
  */
 export async function deleteProjectDocument(projectId: string, documentId: string): Promise<boolean> {
+  // 🔑 프로젝트 번호(no)를 UUID로 변환
+  let actualProjectId = projectId;
+
+  if (projectId.startsWith('WEAVE_') || projectId.startsWith('project-')) {
+    const { projectService } = await import('@/lib/storage');
+    const projects = await projectService.getAll();
+    const project = projects.find(p => p.no === projectId || p.id === projectId);
+
+    if (project && project.id) {
+      actualProjectId = project.id;
+    }
+  }
+
   // Get document info before deletion for event
   const document = await documentService.getById(documentId);
   const deleted = await documentService.delete(documentId);
 
-  // 🔔 이벤트 발생
-  if (deleted && document) {
-    const remaining = await documentService.getDocumentsByProject(projectId);
-    notifyDocumentChange(projectId, 'deleted', {
-      documentId,
-      documentName: document.name,
-      remainingCount: remaining.length
-    });
+  if (deleted) {
+    // 📊 문서 삭제 후 프로젝트의 document_status 자동 업데이트
+    await updateProjectDocumentStatus(actualProjectId);
+
+    // 🔔 이벤트 발생 (원본 projectId 사용 - UI 동기화용)
+    if (document) {
+      const remaining = await documentService.getDocumentsByProject(actualProjectId);
+      notifyDocumentChange(projectId, 'deleted', {
+        documentId,
+        documentName: document.name,
+        remainingCount: remaining.length
+      });
+    }
   }
 
   return deleted;
@@ -229,7 +288,20 @@ export async function deleteProjectDocumentsByType(
   projectId: string,
   documentType: DocumentInfo['type']
 ): Promise<number> {
-  const projectDocs = await documentService.getDocumentsByProject(projectId);
+  // 🔑 프로젝트 번호(no)를 UUID로 변환
+  let actualProjectId = projectId;
+
+  if (projectId.startsWith('WEAVE_') || projectId.startsWith('project-')) {
+    const { projectService } = await import('@/lib/storage');
+    const projects = await projectService.getAll();
+    const project = projects.find(p => p.no === projectId || p.id === projectId);
+
+    if (project && project.id) {
+      actualProjectId = project.id;
+    }
+  }
+
+  const projectDocs = await documentService.getDocumentsByProject(actualProjectId);
   const docsToDelete = projectDocs.filter(doc => doc.type === documentType);
 
   let deletedCount = 0;
@@ -238,9 +310,12 @@ export async function deleteProjectDocumentsByType(
     if (deleted) deletedCount++;
   }
 
-  // 🔔 이벤트 발생
   if (deletedCount > 0) {
-    const remaining = await documentService.getDocumentsByProject(projectId);
+    // 📊 문서 삭제 후 프로젝트의 document_status 자동 업데이트
+    await updateProjectDocumentStatus(actualProjectId);
+
+    // 🔔 이벤트 발생 (원본 projectId 사용 - UI 동기화용)
+    const remaining = await documentService.getDocumentsByProject(actualProjectId);
     notifyDocumentChange(projectId, 'bulk-deleted', {
       documentType,
       deletedCount,
@@ -255,10 +330,75 @@ export async function deleteProjectDocumentsByType(
  * Clear all documents for a project
  */
 export async function clearProjectDocuments(projectId: string): Promise<void> {
-  const projectDocs = await documentService.getDocumentsByProject(projectId);
+  // 🔑 프로젝트 번호(no)를 UUID로 변환
+  let actualProjectId = projectId;
+
+  if (projectId.startsWith('WEAVE_') || projectId.startsWith('project-')) {
+    const { projectService } = await import('@/lib/storage');
+    const projects = await projectService.getAll();
+    const project = projects.find(p => p.no === projectId || p.id === projectId);
+
+    if (project && project.id) {
+      actualProjectId = project.id;
+    }
+  }
+
+  const projectDocs = await documentService.getDocumentsByProject(actualProjectId);
 
   for (const doc of projectDocs) {
     await documentService.delete(doc.id);
+  }
+
+  // 📊 모든 문서 삭제 후 프로젝트의 document_status 자동 업데이트
+  if (projectDocs.length > 0) {
+    await updateProjectDocumentStatus(actualProjectId);
+  }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * 프로젝트의 document_status 자동 업데이트
+ * 모든 문서를 조회하여 타입별 요약 정보를 계산하고 ProjectService로 업데이트
+ */
+async function updateProjectDocumentStatus(projectId: string): Promise<void> {
+  try {
+    const { projectService } = await import('@/lib/storage');
+    const documents = await documentService.getDocumentsByProject(projectId);
+
+    // 타입별 문서 요약 계산
+    const documentStatus: any = {
+      contract: { exists: false, count: 0, status: 'none' as const, latestSavedAt: undefined },
+      invoice: { exists: false, count: 0, status: 'none' as const, latestSavedAt: undefined },
+      estimate: { exists: false, count: 0, status: 'none' as const, latestSavedAt: undefined },
+      report: { exists: false, count: 0, status: 'none' as const, latestSavedAt: undefined },
+      etc: { exists: false, count: 0, status: 'none' as const, latestSavedAt: undefined },
+    };
+
+    // 각 문서를 순회하며 타입별 카운트 및 최신 날짜 계산
+    documents.forEach(doc => {
+      const type = doc.type;
+      if (documentStatus[type]) {
+        documentStatus[type].exists = true;
+        documentStatus[type].count++;
+        documentStatus[type].status = 'completed'; // 문서가 있으면 completed
+
+        // 최신 저장일 업데이트
+        const savedAt = doc.savedAt || doc.createdAt;
+        if (!documentStatus[type].latestSavedAt || savedAt > documentStatus[type].latestSavedAt) {
+          documentStatus[type].latestSavedAt = savedAt;
+        }
+      }
+    });
+
+    // ProjectService를 통해 document_status 업데이트
+    await projectService.updateDocumentStatus(projectId, documentStatus);
+
+    console.log(`📊 [updateProjectDocumentStatus] 프로젝트 ${projectId}의 document_status 업데이트 완료`);
+  } catch (error) {
+    console.error(`❌ [updateProjectDocumentStatus] document_status 업데이트 실패:`, error);
   }
 }
 
@@ -306,7 +446,7 @@ export async function saveGeneratedDocumentsToProject(
   // GeneratedDocument를 DocumentInfo로 변환
   const documentInfos = generatedDocuments.map(convertGeneratedDocumentToDocumentInfo);
 
-  // 프로젝트에 문서들 저장
+  // 프로젝트에 문서들 저장 (addProjectDocument가 자동으로 UUID 변환 처리)
   const savedDocs: DocumentInfo[] = [];
   for (const docInfo of documentInfos) {
     const saved = await addProjectDocument(projectId, docInfo);
@@ -331,6 +471,20 @@ export async function saveGeneratedDocumentsToProject(
 export async function debugProjectDocuments(projectId: string): Promise<void> {
   console.log(`🔍 [PROJECT DEBUG] 프로젝트 ${projectId} 문서 상태 확인`);
 
+  // 🔑 프로젝트 번호(no)를 UUID로 변환
+  let actualProjectId = projectId;
+
+  if (projectId.startsWith('WEAVE_') || projectId.startsWith('project-')) {
+    const { projectService } = await import('@/lib/storage');
+    const projects = await projectService.getAll();
+    const project = projects.find(p => p.no === projectId || p.id === projectId);
+
+    if (project && project.id) {
+      actualProjectId = project.id;
+      console.log(`✅ [DEBUG] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
+    }
+  }
+
   const documents = await getProjectDocuments(projectId);
   console.log(`📊 현재 문서 개수: ${documents.length}`);
   console.log('📄 문서 목록:', documents);
@@ -350,8 +504,8 @@ export async function debugProjectDocuments(projectId: string): Promise<void> {
     console.log('📭 해당 프로젝트에는 저장된 문서가 없습니다.');
   }
 
-  // Storage API에서 직접 확인
-  const allDocs = await documentService.getDocumentsByProject(projectId);
+  // Storage API에서 직접 확인 (UUID 사용)
+  const allDocs = await documentService.getDocumentsByProject(actualProjectId);
   console.log(`🗄️  Storage API 직접 조회 결과 (${allDocs.length}개):`, allDocs);
 }
 

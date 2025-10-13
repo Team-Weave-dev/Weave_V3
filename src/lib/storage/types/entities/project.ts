@@ -451,13 +451,22 @@ export function isWBSTask(data: unknown): data is WBSTask {
  * Type guard for Project
  */
 export function isProject(data: unknown): data is Project {
-  if (typeof data !== 'object' || data === null) return false;
+  if (typeof data !== 'object' || data === null) {
+    console.error('[isProject] Not an object or null');
+    return false;
+  }
 
   const p = data as Project;
 
   // Required identity fields
-  if (!p.id || typeof p.id !== 'string') return false;
-  if (!p.userId || typeof p.userId !== 'string') return false;
+  if (!p.id || typeof p.id !== 'string') {
+    console.error('[isProject] Invalid id:', p.id);
+    return false;
+  }
+  if (!p.userId || typeof p.userId !== 'string') {
+    console.error('[isProject] Invalid userId:', p.userId);
+    return false;
+  }
 
   // Required basic information
   if (!p.no || typeof p.no !== 'string') return false;
@@ -554,6 +563,39 @@ export function isProject(data: unknown): data is Project {
 
   // Optional device_id validation
   if (p.device_id !== undefined && typeof p.device_id !== 'string') return false;
+
+  // DocumentStatus validation (if present)
+  if (p.documentStatus !== undefined) {
+    if (typeof p.documentStatus !== 'object' || p.documentStatus === null) return false;
+
+    // Validate each document type status
+    const docTypes = ['contract', 'invoice', 'estimate', 'report', 'etc'] as const;
+    for (const docType of docTypes) {
+      const docStatus = p.documentStatus[docType];
+      if (!docStatus) continue;
+
+      // Validate required fields
+      if (typeof docStatus.exists !== 'boolean') return false;
+      if (!['none', 'draft', 'completed', 'approved', 'sent'].includes(docStatus.status)) {
+        return false;
+      }
+
+      // Validate optional fields
+      if (docStatus.lastUpdated !== undefined && !isValidISODate(docStatus.lastUpdated)) {
+        return false;
+      }
+      // Support both lastUpdated and latestSavedAt (legacy)
+      if ('latestSavedAt' in docStatus) {
+        const latestSavedAt = (docStatus as any).latestSavedAt;
+        if (latestSavedAt !== undefined && !isValidISODate(latestSavedAt)) {
+          return false;
+        }
+      }
+      if (docStatus.count !== undefined && typeof docStatus.count !== 'number') {
+        return false;
+      }
+    }
+  }
 
   return true;
 }

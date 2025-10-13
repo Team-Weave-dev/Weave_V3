@@ -276,3 +276,77 @@ export function getActualProjectStatus(
 
   return 'planning';
 }
+
+/**
+ * UTC ISO 문자열을 KST(한국 표준시, UTC+09:00)로 변환하여 포맷팅합니다.
+ *
+ * @param dateString - UTC ISO 날짜 문자열 (예: "2025-10-13T08:10:58.86+00:00")
+ * @param format - 출력 형식 ('date' | 'datetime' | 'time')
+ * @returns KST로 변환된 날짜 문자열 (예: "2025. 10. 13.", "2025. 10. 13. 오후 5:10")
+ *
+ * @example
+ * ```typescript
+ * formatKSTDate("2025-10-13T08:10:58.86+00:00", "date")
+ * // "2025. 10. 13."
+ *
+ * formatKSTDate("2025-10-13T08:10:58.86+00:00", "datetime")
+ * // "2025. 10. 13. 오후 5:10"
+ *
+ * formatKSTDate("2025-10-13T08:10:58.86+00:00", "time")
+ * // "오후 5:10"
+ * ```
+ */
+export function formatKSTDate(
+  dateString: string | undefined | null,
+  format: 'date' | 'datetime' | 'time' = 'date'
+): string {
+  if (!dateString) return '-'
+
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '-'
+
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Seoul',
+  }
+
+  switch (format) {
+    case 'date':
+      options.year = 'numeric'
+      options.month = 'numeric'
+      options.day = 'numeric'
+      break
+    case 'datetime':
+      options.year = 'numeric'
+      options.month = 'numeric'
+      options.day = 'numeric'
+      options.hour = 'numeric'
+      options.minute = 'numeric'
+      options.hour12 = true
+      break
+    case 'time':
+      options.hour = 'numeric'
+      options.minute = 'numeric'
+      options.hour12 = true
+      break
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', options).format(date)
+}
+
+/**
+ * 현재 KST(한국 표준시) 날짜를 ISO 8601 형식으로 반환합니다.
+ * UI 표시용이 아닌 데이터 저장용으로 사용 시 주의하세요.
+ * (Best Practice: 데이터베이스에는 UTC로 저장하고 UI에서만 KST로 표시)
+ *
+ * @returns 현재 KST 날짜의 ISO 문자열
+ *
+ * @example
+ * ```typescript
+ * const now = getCurrentKSTDate()
+ * // "2025-10-13T17:10:58.860+09:00"
+ * ```
+ */
+export function getCurrentKSTDate(): string {
+  return new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' })
+    .replace(' ', 'T') + '+09:00'
+}

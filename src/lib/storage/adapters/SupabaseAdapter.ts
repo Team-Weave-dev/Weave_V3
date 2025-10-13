@@ -694,10 +694,19 @@ export class SupabaseAdapter implements StorageAdapter {
       if (entity === 'projects' && Array.isArray(value)) {
         const projectsArray = value as any[]
 
-        if (projectsArray.length === 0) {
-          console.warn(`No projects found in projects array`)
-          return
-        }
+        // 🔍 디버깅: 받은 프로젝트 배열 정보 로깅
+        console.log('[SupabaseAdapter] Projects set() called:', {
+          projectsCount: projectsArray.length,
+          userId: this.userId,
+          firstProject: projectsArray[0] ? {
+            id: projectsArray[0].id,
+            no: projectsArray[0].no,
+            name: projectsArray[0].name
+          } : null
+        })
+
+        // 빈 배열이어도 DELETE 쿼리는 실행해야 함 (마지막 프로젝트 삭제 시)
+        // dataToStore가 빈 배열이면 INSERT를 건너뛰도록 아래에서 처리
 
         const dataToStore = projectsArray.map((project: any) => ({
           // Identifiers
@@ -751,17 +760,56 @@ export class SupabaseAdapter implements StorageAdapter {
         }))
 
         await this.withRetry(async () => {
-          const query = this.supabase.from(tableName).upsert(dataToStore as any)
-          const { error } = await query
+          // 삭제-삽입 전략: LocalStorage와 완전 동기화
+          // 1. 기존 projects 모두 삭제
+          console.log('[SupabaseAdapter] Projects DELETE 시작:', { userId: this.userId })
 
-          if (error) {
-            console.error('[SupabaseAdapter] Projects sync error:', {
-              code: error.code,
-              message: error.message,
-              details: error.details,
-              hint: error.hint
+          const { error: deleteError } = await this.supabase
+            .from(tableName)
+            .delete()
+            .eq('user_id', this.userId)
+
+          if (deleteError) {
+            console.error('[SupabaseAdapter] Projects delete error:', {
+              code: deleteError.code,
+              message: deleteError.message,
+              details: deleteError.details,
+              hint: deleteError.hint
             })
-            throw error
+            throw deleteError
+          }
+
+          console.log('[SupabaseAdapter] Projects DELETE 성공')
+
+          // 2. 새로운 projects 삽입 (배열이 비어있지 않을 때만)
+          if (dataToStore.length > 0) {
+            console.log('[SupabaseAdapter] Projects INSERT 시작:', {
+              count: dataToStore.length,
+              firstProject: {
+                id: dataToStore[0].id,
+                no: dataToStore[0].no,
+                name: dataToStore[0].name,
+                user_id: dataToStore[0].user_id
+              }
+            })
+
+            const { error: insertError } = await this.supabase
+              .from(tableName)
+              .insert(dataToStore as any)
+
+            if (insertError) {
+              console.error('[SupabaseAdapter] Projects insert error:', {
+                code: insertError.code,
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint
+              })
+              throw insertError
+            }
+
+            console.log('[SupabaseAdapter] Projects INSERT 성공:', dataToStore.length)
+          } else {
+            console.log('[SupabaseAdapter] Projects INSERT 건너뜀 (빈 배열)')
           }
         })
         return
@@ -771,10 +819,8 @@ export class SupabaseAdapter implements StorageAdapter {
       if (entity === 'tasks' && Array.isArray(value)) {
         const tasksArray = value as any[]
 
-        if (tasksArray.length === 0) {
-          console.warn(`No tasks found in tasks array`)
-          return
-        }
+        // 빈 배열이어도 DELETE 쿼리는 실행해야 함 (마지막 태스크 삭제 시)
+        // dataToStore가 빈 배열이면 INSERT를 건너뛰도록 아래에서 처리
 
         // 중복 ID 제거 (마지막 항목만 유지)
         const uniqueTasksArray = Array.from(
@@ -866,21 +912,44 @@ export class SupabaseAdapter implements StorageAdapter {
         })
 
         // 디버깅: 전송할 데이터 로그
-        console.log('[SupabaseAdapter] Tasks data to store (first item):', dataToStore[0])
+        if (dataToStore.length > 0) {
+          console.log('[SupabaseAdapter] Tasks data to store (first item):', dataToStore[0])
+        }
 
         await this.withRetry(async () => {
-          const query = this.supabase.from(tableName).upsert(dataToStore as any)
-          const { error } = await query
+          // 삭제-삽입 전략: LocalStorage와 완전 동기화
+          // 1. 기존 tasks 모두 삭제
+          const { error: deleteError } = await this.supabase
+            .from(tableName)
+            .delete()
+            .eq('user_id', this.userId)
 
-          if (error) {
-            console.error('[SupabaseAdapter] Tasks sync error:', {
-              code: error.code,
-              message: error.message,
-              details: error.details,
-              hint: error.hint,
-              fullError: JSON.stringify(error, null, 2)
+          if (deleteError) {
+            console.error('[SupabaseAdapter] Tasks delete error:', {
+              code: deleteError.code,
+              message: deleteError.message,
+              details: deleteError.details,
+              hint: deleteError.hint
             })
-            throw error
+            throw deleteError
+          }
+
+          // 2. 새로운 tasks 삽입 (배열이 비어있지 않을 때만)
+          if (dataToStore.length > 0) {
+            const { error: insertError } = await this.supabase
+              .from(tableName)
+              .insert(dataToStore as any)
+
+            if (insertError) {
+              console.error('[SupabaseAdapter] Tasks insert error:', {
+                code: insertError.code,
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint,
+                fullError: JSON.stringify(insertError, null, 2)
+              })
+              throw insertError
+            }
           }
         })
         return
@@ -1056,10 +1125,8 @@ export class SupabaseAdapter implements StorageAdapter {
       if (entity === 'clients' && Array.isArray(value)) {
         const clientsArray = value as any[]
 
-        if (clientsArray.length === 0) {
-          console.warn(`No clients found in clients array`)
-          return
-        }
+        // 빈 배열이어도 DELETE 쿼리는 실행해야 함 (마지막 클라이언트 삭제 시)
+        // dataToStore가 빈 배열이면 INSERT를 건너뛰도록 아래에서 처리
 
         const dataToStore = clientsArray.map((client: any) => ({
           // Identifiers
@@ -1097,17 +1164,35 @@ export class SupabaseAdapter implements StorageAdapter {
         }))
 
         await this.withRetry(async () => {
-          const query = this.supabase.from(tableName).upsert(dataToStore as any)
-          const { error } = await query
-
-          if (error) {
-            console.error('[SupabaseAdapter] Clients sync error:', {
-              code: error.code,
-              message: error.message,
-              details: error.details,
-              hint: error.hint
+          // ⚠️ Clients는 UPSERT 전략 사용 (Projects에서 참조하므로 delete-insert 불가)
+          // Foreign key constraint 위반 방지: projects.client_id → clients.id
+          if (dataToStore.length > 0) {
+            console.log('[SupabaseAdapter] Clients UPSERT 시작:', {
+              count: dataToStore.length,
+              firstClient: {
+                id: dataToStore[0].id,
+                name: dataToStore[0].name,
+                user_id: dataToStore[0].user_id
+              }
             })
-            throw error
+
+            const { error: upsertError } = await this.supabase
+              .from(tableName)
+              .upsert(dataToStore as any)  // id 기반 UPSERT (새 클라이언트 추가 또는 기존 업데이트)
+
+            if (upsertError) {
+              console.error('[SupabaseAdapter] Clients upsert error:', {
+                code: upsertError.code,
+                message: upsertError.message,
+                details: upsertError.details,
+                hint: upsertError.hint
+              })
+              throw upsertError
+            }
+
+            console.log('[SupabaseAdapter] Clients UPSERT 성공:', dataToStore.length)
+          } else {
+            console.log('[SupabaseAdapter] Clients UPSERT 건너뜀 (빈 배열)')
           }
         })
         return
@@ -1117,74 +1202,134 @@ export class SupabaseAdapter implements StorageAdapter {
       if (entity === 'documents' && Array.isArray(value)) {
         const documentsArray = value as any[]
 
-        if (documentsArray.length === 0) {
-          console.warn(`No documents found in documents array`)
-          return
-        }
+        // 빈 배열이어도 DELETE 쿼리는 실행해야 함 (마지막 문서 삭제 시)
+        // dataToStore가 빈 배열이면 INSERT를 건너뛰도록 아래에서 처리
 
-        const dataToStore = documentsArray.map((doc: any) => ({
-          // Identifiers
-          id: this.isValidUUID(doc.id) ? doc.id : crypto.randomUUID(),
-          user_id: this.userId,
-          project_id: this.isValidUUID(doc.projectId) ? doc.projectId : null,
+        const dataToStore = documentsArray.map((doc: any) => {
+          // 디버깅: 원본 document 데이터 구조 확인
+          console.log('[SupabaseAdapter] Processing document:', {
+            id: doc.id,
+            projectId: doc.projectId,
+            project_id: doc.project_id,
+            title: doc.name || doc.title,
+            allKeys: Object.keys(doc)
+          })
 
-          // Basic info (name → title)
-          title: doc.name || doc.title,
-          description: doc.description || null,
-          content: doc.content || null,
+          // Status 매핑: Document 타입 → Supabase CHECK 제약
+          // Document: 'draft' | 'sent' | 'approved' | 'completed' | 'archived'
+          // Supabase: 'draft' | 'review' | 'approved' | 'sent' | 'signed' | 'archived'
+          const statusMap: Record<string, string> = {
+            'completed': 'signed',  // 'completed' → 'signed' 매핑
+          }
+          const docStatus = doc.status || 'draft'
+          const mappedStatus = statusMap[docStatus] || docStatus
 
-          // Type and category
-          type: doc.type || 'other',
-          category: doc.category || 'etc',
-          status: doc.status || 'draft',
+          // Type 검증: Supabase CHECK 제약
+          const validTypes = ['contract', 'invoice', 'estimate', 'report', 'meeting_note', 'specification', 'proposal', 'other']
+          let docType = doc.type || 'other'
+          if (!validTypes.includes(docType)) {
+            console.warn(`[SupabaseAdapter] Invalid document type "${docType}", converting to "other"`)
+            docType = 'other'
+          }
 
-          // File info (camelCase → snake_case)
-          file_url: doc.fileUrl || null,
-          file_name: doc.fileName || null,
-          file_size: doc.size || doc.fileSize || null,
-          file_type: doc.fileType || null,
+          // project_id 처리: projectId 또는 project_id 필드 모두 확인
+          const projectIdValue = doc.projectId || doc.project_id || null
+          const finalProjectId = this.isValidUUID(projectIdValue) ? projectIdValue : null
 
-          // Template (camelCase → snake_case)
-          template_id: doc.templateId || null,
-          template_name: doc.templateName || null,
+          // 디버깅: project_id 변환 결과
+          console.log('[SupabaseAdapter] Document project_id mapping:', {
+            title: doc.name || doc.title,
+            original_projectId: doc.projectId,
+            original_project_id: doc.project_id,
+            combined: projectIdValue,
+            isValid: this.isValidUUID(projectIdValue),
+            final: finalProjectId
+          })
 
-          // Version control (camelCase → snake_case)
-          version: doc.version?.toString() || '1.0',
-          parent_document_id: this.isValidUUID(doc.parentDocumentId) ? doc.parentDocumentId : null,
-          is_latest: doc.isLatest !== undefined ? doc.isLatest : true,
+          return {
+            // Identifiers
+            id: this.isValidUUID(doc.id) ? doc.id : crypto.randomUUID(),
+            user_id: this.userId,
+            project_id: finalProjectId,  // 변환된 project_id 사용
 
-          // Signature (camelCase → snake_case)
-          requires_signature: doc.requiresSignature || false,
-          signed_at: doc.signedAt || doc.signatures?.[0]?.signedAt || null,
-          signature_url: doc.signatureUrl || null,
+            // Basic info (name → title)
+            title: doc.name || doc.title,
+            description: doc.description || null,
+            content: doc.content || null,
 
-          // Metadata (JSONB)
-          metadata: doc.metadata || {},
-          tags: doc.tags || [],
+            // Type and category (검증된 값)
+            type: docType,
+            category: doc.category || 'etc',
+            status: mappedStatus,
 
-          // Dates (camelCase → snake_case)
-          issued_date: doc.issuedDate || null,
-          due_date: doc.dueDate || null,
-          expiry_date: doc.expiryDate || null,
+            // File info (camelCase → snake_case)
+            file_url: doc.fileUrl || null,
+            file_name: doc.fileName || null,
+            file_size: doc.size || doc.fileSize || null,
+            file_type: doc.fileType || null,
 
-          // Timestamps (camelCase → snake_case)
-          created_at: doc.createdAt || doc.savedAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
-        }))
+            // Template (camelCase → snake_case)
+            template_id: doc.templateId || null,
+            template_name: doc.templateName || null,
+
+            // Version control (camelCase → snake_case)
+            version: doc.version?.toString() || '1.0',
+            parent_document_id: this.isValidUUID(doc.parentDocumentId) ? doc.parentDocumentId : null,
+            is_latest: doc.isLatest !== undefined ? doc.isLatest : true,
+
+            // Signature (camelCase → snake_case)
+            requires_signature: doc.requiresSignature || false,
+            signed_at: doc.signedAt || doc.signatures?.[0]?.signedAt || null,
+            signature_url: doc.signatureUrl || null,
+
+            // Metadata (JSONB)
+            metadata: doc.metadata || {},
+            tags: doc.tags || [],
+
+            // Dates (camelCase → snake_case)
+            issued_date: doc.issuedDate || null,
+            due_date: doc.dueDate || null,
+            expiry_date: doc.expiryDate || null,
+
+            // Timestamps (camelCase → snake_case)
+            created_at: doc.createdAt || doc.savedAt || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        })
 
         await this.withRetry(async () => {
-          const query = this.supabase.from(tableName).upsert(dataToStore as any)
-          const { error } = await query
+          // 삭제-삽입 전략: LocalStorage와 완전 동기화
+          // 1. 기존 documents 모두 삭제
+          const { error: deleteError } = await this.supabase
+            .from(tableName)
+            .delete()
+            .eq('user_id', this.userId)
 
-          if (error) {
-            console.error('[SupabaseAdapter] Documents sync error:', {
-              code: error.code,
-              message: error.message,
-              details: error.details,
-              hint: error.hint
+          if (deleteError) {
+            console.error('[SupabaseAdapter] Documents delete error:', {
+              code: deleteError.code,
+              message: deleteError.message,
+              details: deleteError.details,
+              hint: deleteError.hint
             })
-            throw error
+            throw deleteError
+          }
+
+          // 2. 새로운 documents 삽입 (배열이 비어있지 않을 때만)
+          if (dataToStore.length > 0) {
+            const { error: insertError } = await this.supabase
+              .from(tableName)
+              .insert(dataToStore as any)
+
+            if (insertError) {
+              console.error('[SupabaseAdapter] Documents insert error:', {
+                code: insertError.code,
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint
+              })
+              throw insertError
+            }
           }
         })
         return

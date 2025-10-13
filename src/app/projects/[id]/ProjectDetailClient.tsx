@@ -132,6 +132,7 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
           for (const [index, genDoc] of newProject.generatedDocuments.entries()) {
             const newDocument: DocumentInfo = {
               id: `${genDoc.templateId}-${Date.now()}-${index}`, // 고유성 보장을 위해 index 추가
+              projectId: projectWithId.id, // 🔑 프로젝트 UUID 참조 (Supabase foreign key)
               type: mapCategoryToDocumentType(genDoc.category),
               name: genDoc.title,
               createdAt: new Date().toISOString(),
