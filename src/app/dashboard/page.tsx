@@ -16,6 +16,7 @@ import { WidgetSidebar } from '@/components/dashboard/WidgetSidebar'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults'
 import { ConfirmDialog } from '@/components/ui/dialogConfirm'
+import { createDefaultWidgets } from '@/components/dashboard/utils/defaultWidgets'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -112,9 +113,17 @@ export default function DashboardPage() {
     // 스토어 초기화
     resetStore()
 
-    // 기본 위젯 5개 추가
-    initialWidgets.forEach((widget) => {
-      addWidget(widget as ImprovedWidget)
+    // 기본 위젯 6개 추가 (createDefaultWidgets 사용)
+    const defaultWidgets = createDefaultWidgets()
+    defaultWidgets.forEach((widget) => {
+      addWidget(widget)
+    })
+
+    // 초기화 확인 모달 닫기
+    setResetConfirmOpen(false)
+
+    console.log('✅ 대시보드 초기화 완료: 6개 위젯으로 재설정', {
+      widgets: defaultWidgets.map(w => w.type)
     })
   }
 
@@ -198,18 +207,22 @@ export default function DashboardPage() {
     }
 
     checkUser()
-  }, [router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 스토어 초기화 및 자동 저장 설정
   useEffect(() => {
-    // localStorage에서 대시보드 레이아웃 로드
+    // 로딩이 완료된 후에만 초기화 (Storage 초기화 대기)
+    if (loading) return
+
+    // Supabase에서 대시보드 레이아웃 로드
     initializeDashboardStore()
 
     // 자동 저장 구독 설정
     const cleanup = setupDashboardAutoSave()
 
     return cleanup
-  }, [])
+  }, [loading])
 
   if (loading) {
     return <FullPageLoadingSpinner text={getLoadingText.data('ko')} />

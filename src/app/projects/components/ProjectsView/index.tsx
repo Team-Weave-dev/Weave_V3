@@ -149,7 +149,8 @@ export default function ProjectsView() {
 
   const handleProjectSelect = useCallback((projectNo: string) => {
     router.push(`/projects/${projectNo}`);
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreateProject = useCallback(() => {
     console.log('📝 ProjectsView: 새 프로젝트 버튼 클릭됨!');

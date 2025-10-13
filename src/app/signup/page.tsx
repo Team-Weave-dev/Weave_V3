@@ -35,7 +35,8 @@ export default function SignupPage() {
     }
 
     checkAuth()
-  }, [router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -831,7 +831,7 @@ export { shallow } from 'zustand/shallow';
 
 /**
  * Initialize dashboard store from storage
- * This should be called once when the app starts
+ * This should be called once when the app starts (after Storage initialization)
  */
 export async function initializeDashboardStore(): Promise<void> {
   try {
@@ -857,7 +857,13 @@ export async function initializeDashboardStore(): Promise<void> {
     }
   } catch (error) {
     console.error('❌ Failed to load dashboard layout:', error);
-    // 에러가 발생해도 초기화 플래그는 true로 설정
+
+    // Storage가 초기화되지 않은 경우 (STORAGE_NOT_INITIALIZED 에러)
+    if (error instanceof Error && error.message.includes('Storage not initialized')) {
+      console.warn('⚠️ Storage not yet initialized, will use default layout');
+    }
+
+    // 에러가 발생해도 초기화 플래그는 true로 설정 (기본 위젯으로 시작)
     useImprovedDashboardStore.setState({
       isInitialized: true,
     });

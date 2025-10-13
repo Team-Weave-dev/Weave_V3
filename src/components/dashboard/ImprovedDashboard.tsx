@@ -394,7 +394,7 @@ export function ImprovedDashboard({
     // 기존 위젯 백업 (롤백용)
     const previousWidgets = widgets;
 
-    // 기본 위젯 생성
+    // 기본 위젯 생성 (새로운 6개 위젯)
     const defaultWidgets = createDefaultWidgets();
 
     // 1. Zustand 스토어에 즉시 반영 (UI 즉시 업데이트)
@@ -404,10 +404,22 @@ export function ImprovedDashboard({
     try {
       const { dashboardService } = await import('@/lib/storage');
 
+      // Legacy Zustand persist 키 강제 삭제 (오래된 데이터 방지)
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const legacyKey = 'weave-dashboard-layout';
+        const hadLegacy = window.localStorage.getItem(legacyKey) !== null;
+        window.localStorage.removeItem(legacyKey);
+        if (hadLegacy) {
+          console.log('🗑️ Legacy dashboard key removed:', legacyKey);
+        }
+      }
+
       // 현재 config를 유지하면서 위젯만 초기화
       await dashboardService.save(defaultWidgets, config);
 
-      console.log('✅ 위젯 초기화 완료: 6개 위젯 저장됨');
+      console.log('✅ 위젯 초기화 완료: 6개 위젯 저장됨', {
+        widgets: defaultWidgets.map(w => w.type)
+      });
       alert('위젯 배치가 초기 상태로 되돌려졌습니다.');
     } catch (error) {
       console.error('❌ 위젯 초기화 실패:', error);
@@ -415,7 +427,11 @@ export function ImprovedDashboard({
       // 실패 시 이전 상태로 롤백
       setWidgets(previousWidgets);
 
-      alert('위젯 초기화 중 문제가 발생했습니다.\n다시 시도해주세요.');
+      alert(
+        '위젯 초기화 중 문제가 발생했습니다.\n' +
+        (error instanceof Error ? error.message : '알 수 없는 오류') +
+        '\n\n다시 시도해주세요.'
+      );
     }
   }, [widgets, setWidgets, config]);
 
@@ -705,7 +721,22 @@ export function ImprovedDashboard({
           <Button
             size="sm"
             variant="default"
-            onClick={exitEditMode}
+            onClick={async () => {
+              // 편집 완료 시 명시적으로 저장 후 편집 모드 종료
+              try {
+                const { dashboardService } = await import('@/lib/storage');
+                const currentState = useImprovedDashboardStore.getState();
+                await dashboardService.save(currentState.widgets, currentState.config);
+                console.log('✅ Dashboard saved successfully');
+
+                // 저장 성공 후 편집 모드 종료
+                exitEditMode();
+              } catch (error) {
+                console.error('❌ Failed to save dashboard:', error);
+                alert('대시보드 저장에 실패했습니다.\n' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+                // 저장 실패 시 편집 모드를 유지하여 사용자가 재시도할 수 있도록 함
+              }
+            }}
           >
             <Save className="h-4 w-4 mr-2" />
             {getDashboardText.complete('ko')}

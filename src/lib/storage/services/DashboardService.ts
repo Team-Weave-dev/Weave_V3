@@ -51,6 +51,8 @@ export class DashboardService {
   /**
    * Save dashboard data
    * Saves to both LocalStorage and Supabase (user_settings.dashboard)
+   *
+   * @throws Error if Supabase sync fails (LocalStorage is still saved)
    */
   async save(widgets: ImprovedWidget[], config: DashboardConfig): Promise<void> {
     const data: DashboardData = {
@@ -60,34 +62,42 @@ export class DashboardService {
 
     // 1. LocalStorage에 즉시 저장 (빠른 응답)
     await this.storage.set<DashboardData>(this.entityKey, data);
+    console.log('💾 Dashboard saved to LocalStorage');
 
-    // 2. Supabase에 동기화 (백그라운드)
-    try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+    // 2. Supabase에 동기화
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      if (user) {
-        // user_settings 테이블의 dashboard 컬럼 업데이트
-        const { error } = await supabase
-          .from('user_settings')
-          .upsert({
-            user_id: user.id,
-            dashboard: data as any,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id'
-          });
-
-        if (error) {
-          console.error('❌ Failed to sync dashboard to Supabase:', error);
-        } else {
-          console.log('✅ Dashboard synced to Supabase');
-        }
-      }
-    } catch (error) {
-      console.error('❌ Supabase sync error:', error);
-      // LocalStorage 저장은 이미 완료되었으므로 에러를 throw하지 않음
+    if (authError) {
+      console.error('❌ Authentication error:', authError);
+      throw new Error(`Failed to get authenticated user: ${authError.message}`);
     }
+
+    if (!user) {
+      console.warn('⚠️ No authenticated user, skipping Supabase sync');
+      return;
+    }
+
+    // user_settings 테이블의 dashboard 컬럼 업데이트
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({
+        user_id: user.id,
+        dashboard: data, // 타입 캐스팅 제거 - Supabase가 자동으로 JSONB로 변환
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (error) {
+      console.error('❌ Failed to sync dashboard to Supabase:', error);
+      throw new Error(`Failed to sync dashboard to Supabase: ${error.message}`);
+    }
+
+    console.log('✅ Dashboard synced to Supabase', {
+      widgetCount: widgets.length,
+      userId: user.id
+    });
   }
 
   /**

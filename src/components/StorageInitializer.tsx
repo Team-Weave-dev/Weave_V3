@@ -23,6 +23,22 @@ export function StorageInitializer() {
       try {
         console.log('🔧 Starting Storage system initialization...')
 
+        // 공개 페이지 확인 (로그인, 회원가입, 홈 등)
+        const currentPath = window.location.pathname
+        const publicPaths = ['/', '/login', '/signup', '/auth']
+        const isPublicPath = publicPaths.some(path =>
+          currentPath === path || currentPath.startsWith(path + '/')
+        )
+
+        // 공개 페이지에서는 Storage 초기화를 건너뜀
+        if (isPublicPath) {
+          console.log('ℹ️ Public page - skipping Storage initialization')
+          if (mounted) {
+            setInitialized(true)
+          }
+          return
+        }
+
         // Supabase Auth 세션 확인
         const supabase = createClient()
         console.log('⏳ Checking authentication status...')
@@ -31,6 +47,7 @@ export function StorageInitializer() {
         const { data: { session } } = await supabase.auth.getSession()
 
         // Phase 16: 인증 필수 - 비인증 사용자는 로그인 페이지로 리다이렉트
+        // (공개 페이지가 아닌 경우에만)
         if (!session) {
           console.log('⚠️ No active session - redirecting to login page')
           window.location.href = '/login'
