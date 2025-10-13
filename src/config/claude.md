@@ -1,375 +1,106 @@
-# config/ - 중앙화 설정 시스템
-
-## 🎯 설정 시스템 개요
-
-이 디렉토리는 프로젝트의 모든 설정, 상수, 브랜드 정보를 중앙화하여 관리합니다. **하드코딩 방지**와 **유지보수성 향상**이 핵심 목표입니다.
-
-## 📁 파일 구조
-
-```
-config/
-├── brand.ts         # 🏷️ 브랜드 정보, UI 텍스트, 다국어 지원
-├── color-palette.ts # 🎨 색상 팔레트 시스템, 테마 색상 관리
-└── constants.ts     # 📐 레이아웃 상수, 매직 넘버, 스타일 값
-```
-
-## 🏷️ brand.ts - 브랜드 및 UI 텍스트 관리
-
-### 주요 기능
-- **브랜드 정보**: 회사명, 로고, 설명 등
-- **UI 텍스트**: 모든 사용자 대면 텍스트
-- **다국어 지원**: ko/en 언어 쌍으로 구성
-- **라우트 관리**: 모든 페이지 경로 중앙화
-
-### 구조
-```typescript
-export const brand = {
-  name: { ko: "UI 컴포넌트 라이브러리", en: "UI Components Library" },
-  company: { ko: "Weave", en: "Weave" },
-  description: { /* ... */ },
-  logo: { /* ... */ },
-  metadata: { /* ... */ },
-  copyright: { /* ... */ }
-}
-
-export const uiText = {
-  buttons: { /* 모든 버튼 텍스트 */ },
-  navigation: { /* 네비게이션 메뉴 텍스트 */ },
-  notifications: { /* 알림 메시지 */ },
-  badges: { /* 배지 텍스트 */ }
-}
-
-export const routes = {
-  home: "/",
-  components: "/components",
-  docs: "/docs",
-  // ...
-}
-```
-
-### 헬퍼 함수
-```typescript
-// 브랜드 정보 접근
-export const getBrandName = (lang: 'ko' | 'en' = 'ko') => brand.name[lang]
-export const getDescription = (lang: 'ko' | 'en' = 'ko') => brand.description[lang]
-
-// UI 텍스트 접근
-export const getNavText = {
-  home: (lang: 'ko' | 'en' = 'ko') => uiText.navigation.home[lang],
-  docs: (lang: 'ko' | 'en' = 'ko') => uiText.navigation.docs[lang],
-  // ...
-}
-
-// 프로젝트 정산방식 텍스트 (2025-09-25 추가)
-export const getSettlementMethodText = {
-  not_set: (lang: 'ko' | 'en' = 'ko') =>
-    uiText.componentDemo.projectPage.projectDetails.settlementMethods.not_set[lang],
-  advance_final: (lang: 'ko' | 'en' = 'ko') =>
-    uiText.componentDemo.projectPage.projectDetails.settlementMethods.advance_final[lang],
-  advance_interim_final: (lang: 'ko' | 'en' = 'ko') =>
-    uiText.componentDemo.projectPage.projectDetails.settlementMethods.advance_interim_final[lang],
-  post_payment: (lang: 'ko' | 'en' = 'ko') =>
-    uiText.componentDemo.projectPage.projectDetails.settlementMethods.post_payment[lang]
-}
-
-// 프로젝트 수금상태 텍스트 (2025-09-25 추가)
-export const getPaymentStatusText = {
-  not_started: (lang: 'ko' | 'en' = 'ko') =>
-    uiText.componentDemo.projectPage.projectDetails.paymentStatuses.not_started[lang],
-  advance_completed: (lang: 'ko' | 'en' = 'ko') =>
-    uiText.componentDemo.projectPage.projectDetails.paymentStatuses.advance_completed[lang],
-  interim_completed: (lang: 'ko' | 'en' = 'ko') =>
-    uiText.componentDemo.projectPage.projectDetails.paymentStatuses.interim_completed[lang],
-  final_completed: (lang: 'ko' | 'en' = 'ko') =>
-    uiText.componentDemo.projectPage.projectDetails.paymentStatuses.final_completed[lang]
-}
-```
-
-### 사용 예시
-```typescript
-// ✅ 올바른 사용법
-import {
-  getBrandName,
-  getNavText,
-  getSettlementMethodText,
-  getPaymentStatusText
-} from '@/config/brand'
-
-// 기본 텍스트 사용
-const title = getBrandName('ko')  // "UI 컴포넌트 라이브러리"
-const homeText = getNavText.home('ko')  // "홈"
-
-// 프로젝트 정산방식 텍스트 사용 (2025-09-25 추가)
-const settlementText = getSettlementMethodText.advance_final('ko')  // "선금+잔금"
-const paymentText = getPaymentStatusText.advance_completed('ko')  // "선금 완료"
-
-// ❌ 절대 금지
-const title = "UI 컴포넌트 라이브러리"
-const homeText = "홈"
-const settlementText = "선금+잔금"
-const paymentText = "선금 완료"
-```
-
-## 📐 constants.ts - 레이아웃 상수 및 스타일 값
-
-### 주요 기능
-- **레이아웃 크기**: 컨테이너, 네비게이션 등의 크기
-- **간격 시스템**: 일관된 spacing 관리
-- **타이포그래피**: 텍스트 스타일 중앙화
-- **애니메이션**: 지속시간, 트랜지션 등
-- **기본값**: 프로그레스바, 폼 등의 초기값
-
-### 구조
-```typescript
-export const layout = {
-  container: {
-    maxWidth: "980px",
-    textMaxWidth: "750px",
-    navigationWidth: "256px"
-  },
-  spacing: {
-    section: { sm: "py-8", md: "py-12 md:pb-8", lg: "py-24 pb-20" },
-    gap: { small: "gap-2", medium: "gap-4", large: "gap-8" }
-  },
-  heights: {
-    button: "h-11",
-    icon: "h-4 w-4",
-    logoSmall: "w-8 h-8",
-    logoMedium: "w-12 h-12",
-    logoLarge: "w-16 h-16"
-  }
-}
-
-export const typography = {
-  title: {
-    hero: "text-3xl font-bold leading-tight tracking-tighter md:text-6xl lg:leading-[1.1]",
-    section: "text-2xl font-bold text-primary",
-    card: "text-lg font-semibold"
-  },
-  text: {
-    body: "text-lg text-muted-foreground sm:text-xl",
-    description: "text-sm text-muted-foreground",
-    button: "text-sm font-medium"
-  }
-}
-
-export const defaults = {
-  progress: { initialValue: 65, min: 0, max: 100 },
-  animation: { duration: "duration-200", transition: "transition-all" }
-}
-```
-
-### 사용 예시
-```typescript
-// ✅ 올바른 사용법
-import { layout, typography } from '@/config/constants'
-
-<div style={{maxWidth: layout.container.maxWidth}}>
-  <h1 className={typography.title.hero}>
-    제목
-  </h1>
-</div>
-
-// ❌ 절대 금지
-<div style={{maxWidth: "980px"}}>
-  <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-6xl lg:leading-[1.1]">
-    제목
-  </h1>
-</div>
-```
-
-## 🎨 color-palette.ts - 색상 팔레트 및 테마 시스템
-
-### 주요 기능
-- **다중 팔레트**: 5가지 색상 테마 (soft, vivid, monochrome, highContrast, nature)
-- **시맨틱 색상**: 상태별 의미있는 색상 정의
-- **프로젝트 상태 색상**: 프로젝트 진행 상태별 전용 색상
-- **접근성 지원**: 고대비 모드 및 색각 이상자 배려
-- **CSS 변수 생성**: 동적 테마 변경을 위한 CSS 변수 자동 생성
-
-### 팔레트 타입 구조
-```typescript
-export type ColorPalette = {
-  name: string
-  description: string
-  colors: {
-    // 시맨틱 상태 색상
-    success: { hsl: string; foreground: string }
-    warning: { hsl: string; foreground: string }
-    error: { hsl: string; foreground: string }
-    info: { hsl: string; foreground: string }
-
-    // 프로젝트 상태 색상
-    projectReview: { hsl: string; foreground: string }
-    projectComplete: { hsl: string; foreground: string }
-    projectCancelled: { hsl: string; foreground: string }
-    projectPlanning: { hsl: string; foreground: string }
-    projectOnhold: { hsl: string; foreground: string }
-    projectInprogress: { hsl: string; foreground: string }
-  }
-}
-```
-
-### 사용 가능한 팔레트
-
-**1. Soft Palette (기본)**
-- 부드럽고 연한 파스텔 톤
-- 일반적인 사용자 환경에 적합
-- 눈의 피로도 최소화
-
-**2. Vivid Palette**
-- 선명하고 강렬한 색상
-- 시각적 임팩트가 중요한 경우
-- 디스플레이 품질이 우수한 환경
-
-**3. Monochrome Palette**
-- 흑백 계열의 미니멀한 색상
-- 전문적이고 깔끔한 인상
-- 색상 구분이 어려운 환경
-
-**4. High Contrast Palette**
-- WCAG 접근성 지침 최적화
-- 시각 장애 사용자 배려
-- 저조도 환경에서 가독성 향상
-
-**5. Nature Palette**
-- 자연에서 영감받은 편안한 색상
-- 장시간 사용 시 눈의 피로 감소
-- 친환경적 브랜드 이미지
-
-### 사용 예시
-```typescript
-import { getPalette, generateCSSVariables, defaultPalette } from '@/config/color-palette'
-
-// 기본 팔레트 사용
-const currentPalette = defaultPalette
-
-// 특정 팔레트 선택
-const vividTheme = getPalette('vivid')
-const accessibleTheme = getPalette('highContrast')
-
-// CSS 변수 생성 (동적 테마 변경)
-const cssVars = generateCSSVariables(currentPalette)
-
-// 컴포넌트에서 색상 사용
-const statusColor = currentPalette.colors.success.hsl
-const projectStatusColor = currentPalette.colors.projectComplete.hsl
-```
-
-### CSS 변수 활용
-```css
-/* 생성된 CSS 변수 활용 */
-.success-status {
-  background-color: hsl(var(--success));
-  color: hsl(var(--success-foreground));
-}
-
-.project-complete {
-  background-color: hsl(var(--project-complete));
-  color: hsl(var(--project-complete-foreground));
-}
-```
-
-### 팔레트 확장 가이드
-```typescript
-// 새로운 팔레트 추가
-export const customPalette: ColorPalette = {
-  name: 'custom',
-  description: '사용자 정의 색상 팔레트',
-  colors: {
-    // 모든 필수 색상 정의 필요
-    success: { hsl: '120 50% 50%', foreground: '0 0% 100%' },
-    // ... 기타 색상들
-  }
-}
-
-// colorPalettes 객체에 추가
-export const colorPalettes = {
-  // 기존 팔레트들...
-  custom: customPalette
-}
-```
-
-## 🚨 하드코딩 방지 규칙
-
-### 절대 금지 사항
-
-1. **문자열 하드코딩**
-   ```typescript
-   // ❌ 금지
-   const message = "저장되었습니다"
-
-   // ✅ 허용
-   const message = getNotificationText.saveSuccess('ko')
-   ```
-
-2. **매직 넘버 하드코딩**
-   ```typescript
-   // ❌ 금지
-   const maxWidth = "980px"
-
-   // ✅ 허용
-   const maxWidth = layout.container.maxWidth
-   ```
-
-3. **스타일 값 하드코딩**
-   ```typescript
-   // ❌ 금지
-   <button className="h-11 px-8 text-sm font-medium">
-
-   // ✅ 허용
-   <button className={`${layout.heights.button} px-8 ${typography.text.button}`}>
-   ```
-
-### 새로운 값 추가 프로세스
-
-1. **텍스트 추가**
-   ```typescript
-   // brand.ts의 uiText 객체에 추가
-   export const uiText = {
-     // 기존 내용...
-     newSection: {
-       newText: { ko: "새로운 텍스트", en: "New Text" }
-     }
-   }
-
-   // 헬퍼 함수 추가
-   export const getNewText = {
-     newText: (lang: 'ko' | 'en' = defaultLanguage) => uiText.newSection.newText[lang]
-   }
-   ```
-
-2. **상수 추가**
-   ```typescript
-   // constants.ts에 추가
-   export const layout = {
-     // 기존 내용...
-     newDimensions: {
-       width: "400px",
-       height: "300px"
-     }
-   }
-   ```
-
-## 🔄 자동 업데이트 감지
-
-이 디렉토리의 파일이 변경되면 다음 항목들이 자동으로 업데이트되어야 합니다:
-
-- **메인 CLAUDE.md**: 설정 시스템 상태 반영
-- **컴포넌트 문서**: 새로운 설정 사용법 안내
-- **타입 정의**: TypeScript 인터페이스 업데이트
-
-## 📊 품질 메트릭
-
-### 중앙화 지표
-- **하드코딩 문자열**: 0개 (100% 중앙화)
-- **매직 넘버**: 0개 (100% 상수화)
-- **다국어 커버리지**: 100% (모든 텍스트 ko/en 지원)
-
-### 성능 지표
-- **번들 크기**: < 5KB (tree-shaking 최적화)
-- **타입 추론**: 100% (모든 함수 완전 타입 추론)
-
----
-
-**이 중앙화 시스템은 프로젝트의 유지보수성과 확장성을 보장하는 핵심 인프라입니다.**
+# src/config - 중앙 설정
+
+## 라인 가이드
+- 012~015: 디렉토리 목적
+- 016~020: 핵심 책임
+- 021~023: 구조 요약
+- 024~095: 파일 라인 맵
+- 096~098: 중앙화·모듈화·캡슐화
+- 099~102: 작업 규칙
+- 103~107: 관련 문서
+
+## 디렉토리 목적
+브랜드, 경로, 레이아웃 등 전역 설정을 관리합니다.
+하드코딩을 방지하고 일관된 UI·문구 경험을 제공합니다.
+
+## 핵심 책임
+- brand.ts로 텍스트·메타데이터 정의
+- constants.ts로 레이아웃 및 기본값 관리
+- 도메인 전용 설정 파일 유지
+
+## 구조 요약
+- 하위 디렉토리가 없습니다.
+
+## 파일 라인 맵
+- brand.ts 07~23 Brand Identity - 브랜드명, 회사명, 소개 문구
+- brand.ts 24~30 Theme Tokens - 프라이머리 색상 및 전역 텍스트 클래스
+- brand.ts 31~38 Brand Assets - 로고와 파비콘 경로
+- brand.ts 39~49 Metadata - SEO 타이틀/설명 텍스트
+- brand.ts 50~56 Legal Notice - 저작권 문구
+- brand.ts 57~58 UI Text Registry - 공통 UI 텍스트 모음
+- brand.ts 59~92 UI Buttons - 기본 버튼 라벨, 크기 및 변형 텍스트
+- brand.ts 093~135 UI Navigation - 상단 네비게이션 및 메뉴 텍스트
+- brand.ts 136~150 Notifications - 시스템 알림 텍스트
+- brand.ts 151~157 Badges - 배지 라벨 텍스트
+- brand.ts 158~202 Auth Menu - 인증 및 계정 영역 텍스트
+- brand.ts 203~233 Component Demo Sections - 데모 섹션 제목과 설명
+- brand.ts 234~241 Layout Hero - 히어로 레이아웃 텍스트
+- brand.ts 242~255 Demo Cards - 카드 컴포넌트 관련 문구
+- brand.ts 256~271 Demo Forms - 폼 데모 텍스트
+- brand.ts 272~288 Demo Button Variants - 데모 버튼 변형 설명
+- brand.ts 289~296 Demo Navigation - 데모 네비게이션 안내
+- brand.ts 297~322 Demo Chart Data - 차트 목데이터 라벨
+- brand.ts 323~386 Demo Status - 상태 배지 텍스트
+- brand.ts 387~422 Demo Project Status - 프로젝트 상태 배지
+- brand.ts 423~997 Project Page Text - 프로젝트 페이지 텍스트
+- brand.ts 0998~1028 Component Demo Color Palette - 색상 팔레트 텍스트
+- brand.ts 1029~1057 Component Demo View Mode - 뷰 전환 텍스트
+- brand.ts 1058~1093 Calendar Text - 캘린더 컴포넌트 라벨
+- brand.ts 1094~1161 Chart Text - 차트 관련 라벨
+- brand.ts 1162~1215 Usage Guide - 사용법 안내 텍스트
+- brand.ts 1216~1227 Data Tab - 데이터 탭 확장 텍스트
+- brand.ts 1228~1263 Project Status - 프로젝트 상태 라벨
+- brand.ts 1264~1307 Calendar Widget - 일정 위젯 텍스트
+- brand.ts 1308~1446 Settings Page - 사용자 설정 페이지 텍스트
+- brand.ts 1447~1492 Storage Conflict Resolution - 저장소 충돌 해결 텍스트
+- brand.ts 1493~1506 Route Map - 주요 네비게이션 경로 상수
+- brand.ts 1507~1533 Header Navigation Config - 헤더 메뉴 구성 및 인증 액션
+- brand.ts 1534~1536 Default Language - UI 기본 언어 코드
+- brand.ts 1537~1551 Brand Helpers - 브랜드 및 메타데이터 조회
+- brand.ts 1552~1564 UI Text Helpers - 경로 기반 텍스트 조회
+- brand.ts 1565~1578 Button Text Helpers - 버튼 라벨 및 변형 조회
+- brand.ts 1579~1592 Navigation Text Helpers - 네비게이션 라벨 조회
+- brand.ts 1593~1606 Auth Text Helpers - 인증 및 계정 라벨
+- brand.ts 1607~1613 Notification Text Helpers - 알림 메시지 라벨
+- brand.ts 1614~1618 Badge Text Helpers - 배지 라벨
+- brand.ts 1619~1630 Calendar Text Helpers - 캘린더 라벨
+- brand.ts 1631~1656 Chart Text Helpers - 차트 라벨
+- brand.ts 1657~1674 Usage Text Helpers - 사용 안내 라벨
+- brand.ts 1675~1680 Data Text Helpers - 데이터 탭 라벨
+- brand.ts 1681~2997 Component Demo Text Helpers - 데모 페이지 문구
+- color-palette.ts 06~26 export ColorPalette - 색상 팔레트 시스템 사용자가 선택할 수 있는 다양한 색상 테마를 제공합니다.
+- color-palette.ts 27~47 export softPalette - 연한 팔레트 (기본)
+- color-palette.ts 48~68 export vividPalette - 선명한 팔레트
+- color-palette.ts 69~89 export monochromePalette - 모노톤 팔레트
+- color-palette.ts 090~110 export highContrastPalette - 고대비 팔레트 (접근성 최적화)
+- color-palette.ts 111~131 export naturePalette - 네이처 팔레트 (자연 색상)
+- color-palette.ts 132~140 export colorPalettes - 팔레트 컬렉션
+- color-palette.ts 141~143 export defaultPalette - 기본 팔레트
+- color-palette.ts 144~148 export getPalette - 팔레트 선택 함수
+- color-palette.ts 149~177 export generateCSSVariables - CSS 변수 생성 함수
+- constants.ts 07~60 export layout - 레이아웃 크기
+- constants.ts 61~74 export hoverStyles - 호버 스타일 디자인 원칙 IMPORTANT: 포인트 컬러 적용 시 항상 "흰색 배경(bg-primary-foreground) + Primary 텍스트 색상(text-primary)" 조합 사용 accent 색상은 사용하지 않음 - 일관성 있는 UX를 위해 제거됨
+- constants.ts 75~94 export defaults - UI 기본값
+- constants.ts 095~134 export typography - 타이포그래피
+- constants.ts 135~143 export breakpoints - 반응형 브레이크포인트
+- constants.ts 144~152 export zIndex - Z-index 계층
+- constants.ts 153~198 export calendar - 캘린더 컴포넌트 디자인 토큰
+- constants.ts 199~262 export chart - 차트 컴포넌트 디자인 토큰
+- constants.ts 263~286 export chartTypes - 차트별 특화 설정
+- constants.ts 287~312 export cssVariables - CSS 변수 직접 매핑 시스템 (Recharts 통합용)
+- constants.ts 313~342 export colors - 위젯 색상 시스템 - 날씨 위젯 색상 추가
+- constants.ts 343~385 export placeholderIcons - 플레이스홀더 아이콘 가이드라인
+- constants.ts 386~428 export plans - 요금제 시스템 (2025-10-07 추가)
+- constants.ts 429~441 export usageLimits - 사용량 제한 관련 상수
+
+## 중앙화·모듈화·캡슐화
+- 모든 텍스트·경로는 config에서 시작하여 단일 진실 공급원을 보장
+
+## 작업 규칙
+- 설정 변경 시 영향을 받는 컴포넌트·서비스·문서를 점검
+- 언어 키 구조(ko, en 등)를 유지
+
+## 관련 문서
+- claude.md
+- src/components/claude.md
+- src/lib/claude.md
