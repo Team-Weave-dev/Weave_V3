@@ -8,7 +8,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { projectService } from '@/lib/storage';
+import { projectService, clientService } from '@/lib/storage';
 import type { Project, WBSTask } from '@/lib/storage/types/entities/project';
 import type { ProjectReview } from '@/types/dashboard';
 import { getWidgetText } from '@/config/brand';
@@ -17,7 +17,7 @@ import { getWidgetText } from '@/config/brand';
  * Project → ProjectReview 변환 함수
  * Storage의 Project 타입을 Dashboard의 ProjectReview 타입으로 매핑
  */
-function convertProjectToReview(project: Project): ProjectReview {
+async function convertProjectToReview(project: Project): Promise<ProjectReview> {
   // 상태 매핑: Storage → Dashboard
   const statusMap: Record<Project['status'], ProjectReview['status']> = {
     'planning': 'normal',
@@ -54,9 +54,26 @@ function convertProjectToReview(project: Project): ProjectReview {
   const spentBudget = project.actualCost || 0;
   const currency = project.currency || 'KRW';
 
+  // 클라이언트 정보 조회
+  let clientName = getWidgetText.hooks.fallback.noClient('ko');
+  if (project.clientId) {
+    try {
+      const client = await clientService.getById(project.clientId);
+      if (client) {
+        // 회사명이 있으면 회사명, 없으면 담당자명 사용
+        clientName = client.company || client.name;
+      }
+    } catch (error) {
+      console.error('Failed to load client:', error);
+      // 에러 시 fallback 사용
+    }
+  }
+
   // 프로젝트의 WBS 작업 필터링 및 최신 작업 찾기
   const wbsTasks = project.wbsTasks || [];
+  const pendingTasks = wbsTasks.filter(t => t.status === 'pending');
   const inProgressTasks = wbsTasks.filter(t => t.status === 'in_progress');
+  const completedTasks = wbsTasks.filter(t => t.status === 'completed');
 
   // 최신 작업 (createdAt 기준)
   const latestTask = wbsTasks.length > 0
@@ -92,7 +109,7 @@ function convertProjectToReview(project: Project): ProjectReview {
     id: project.id,
     projectId: project.no,
     projectName: project.name,
-    client: project.clientId || getWidgetText.hooks.fallback.noClient('ko'),  // TODO: ClientService 통합
+    client: clientName,
     pm: project.userId,  // TODO: UserService 통합하여 이름 가져오기
     status: statusMap[project.status],
     statusLabel: statusLabelMap[project.status],
@@ -107,7 +124,10 @@ function convertProjectToReview(project: Project): ProjectReview {
     currentStatus,
     // 구조화된 작업 데이터 (Badge UI용)
     taskSummary: wbsTasks.length > 0 ? {
+      totalCount: wbsTasks.length,
+      pendingCount: pendingTasks.length,
       inProgressCount: inProgressTasks.length,
+      completedCount: completedTasks.length,
       latestTask: latestTask ? {
         name: latestTask.name,
         status: latestTask.status
@@ -134,8 +154,10 @@ export function useProjectSummary() {
       // ProjectService에서 데이터 조회 (WBS Tasks 포함)
       const allProjects = await projectService.getAll();
 
-      // Project → ProjectReview 변환 (WBS tasks 포함)
-      const reviews = allProjects.map(project => convertProjectToReview(project));
+      // Project → ProjectReview 변환 (WBS tasks 포함) - 병렬 처리
+      const reviews = await Promise.all(
+        allProjects.map(project => convertProjectToReview(project))
+      );
 
       setProjects(reviews);
     } catch (err) {

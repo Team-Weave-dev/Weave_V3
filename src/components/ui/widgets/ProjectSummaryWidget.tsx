@@ -317,7 +317,8 @@ function ProjectCard({
         <div className="mt-2 pt-2 border-t border-border/50">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={typography.widget.caption}>
-              {getWidgetText.hooks.fallback.tasksInProgress('ko')}: {project.taskSummary.inProgressCount}개
+              작업: {project.taskSummary.totalCount}개
+              {project.taskSummary.inProgressCount > 0 && ` (진행중: ${project.taskSummary.inProgressCount})`}
             </span>
             {project.taskSummary.latestTask && (
               <>

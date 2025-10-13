@@ -82,7 +82,10 @@ export interface ProjectReview {
   };
   currentStatus: string;  // 하위 호환성 유지
   taskSummary?: {
+    totalCount: number;
+    pendingCount: number;
     inProgressCount: number;
+    completedCount: number;
     latestTask?: {
       name: string;
       status: 'pending' | 'in_progress' | 'completed';
