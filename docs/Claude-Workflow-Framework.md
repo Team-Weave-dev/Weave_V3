@@ -32,7 +32,7 @@
 
 ### 필수 읽기 순서
 ```
-1. 루트 CLAUDE.md → 전체 프로젝트 구조 파악
+1. 루트 claude.md → 전체 프로젝트 구조 파악
 2. 영향받는 디렉토리의 claude.md → 구체적 컨텍스트
 3. 관련 설정 파일 → 중앙화 시스템 현황
 ```
@@ -41,11 +41,11 @@
 
 | 작업 유형 | 필수 읽기 파일 | 목적 |
 |-----------|----------------|------|
-| **컴포넌트 작업** | CLAUDE.md + components/ui/claude.md + config/claude.md | 기존 컴포넌트 패턴, 중앙화 규칙 |
-| **훅 작업** | CLAUDE.md + hooks/claude.md + 관련 컴포넌트 | 훅 패턴, 사용처 파악 |
-| **페이지 작업** | CLAUDE.md + app/claude.md + config/claude.md | 라우팅 패턴, 브랜드 시스템 |
-| **설정 변경** | CLAUDE.md + config/claude.md + 모든 하위 claude.md | 전체 영향도 분석 |
-| **유틸리티 작업** | CLAUDE.md + lib/claude.md + 사용처 분석 | 기존 함수, 재사용성 |
+| **컴포넌트 작업** | claude.md + components/ui/claude.md + config/claude.md | 기존 컴포넌트 패턴, 중앙화 규칙 |
+| **훅 작업** | claude.md + hooks/claude.md + 관련 컴포넌트 | 훅 패턴, 사용처 파악 |
+| **페이지 작업** | claude.md + app/claude.md + config/claude.md | 라우팅 패턴, 브랜드 시스템 |
+| **설정 변경** | claude.md + config/claude.md + 모든 하위 claude.md | 전체 영향도 분석 |
+| **유틸리티 작업** | claude.md + lib/claude.md + 사용처 분석 | 기존 함수, 재사용성 |
 
 ### 컨텍스트 분석 체크리스트
 - [ ] **현재 상태**: 기존 컴포넌트/훅/유틸리티 개수와 목록
@@ -125,11 +125,11 @@ export function useCustomHook<T>(
 ### 업데이트 대상 결정
 ```
 작업 영역에 따른 업데이트 파일:
-- src/components/ui/* 작업 → components/ui/claude.md + CLAUDE.md
-- src/hooks/* 작업 → hooks/claude.md + CLAUDE.md
-- src/lib/* 작업 → lib/claude.md + CLAUDE.md
-- src/app/* 작업 → app/claude.md + CLAUDE.md
-- src/config/* 작업 → config/claude.md + 모든 관련 claude.md + CLAUDE.md
+- src/components/ui/* 작업 → components/ui/claude.md + claude.md
+- src/hooks/* 작업 → hooks/claude.md + claude.md
+- src/lib/* 작업 → lib/claude.md + claude.md
+- src/app/* 작업 → app/claude.md + claude.md
+- src/config/* 작업 → config/claude.md + 모든 관련 claude.md + claude.md
 ```
 
 ### 문서 업데이트 템플릿
@@ -182,7 +182,7 @@ export function useCustomHook<T>(
 - [ ] 문서 예시 코드 수정
 ```
 
-### 메인 CLAUDE.md 업데이트
+### 메인 claude.md 업데이트
 
 #### 통계 자동 반영
 ```markdown
@@ -225,7 +225,7 @@ export function useCustomHook<T>(
 ```
 - [ ] 관련 claude.md 파일을 모두 업데이트했는가?
 - [ ] 새로운 패턴을 문서화했는가?
-- [ ] 메인 CLAUDE.md의 통계를 업데이트했는가?
+- [ ] 메인 claude.md의 통계를 업데이트했는가?
 - [ ] 변경사항이 다른 영역에 미치는 영향을 검토했는가?
 ```
 
@@ -238,7 +238,7 @@ export function useCustomHook<T>(
 #### 1단계: 컨텍스트 로딩
 ```
 📖 읽어야 할 파일들:
-1. CLAUDE.md → 프로젝트 구조, 26개 기존 컴포넌트 확인
+1. claude.md → 프로젝트 구조, 26개 기존 컴포넌트 확인
 2. components/ui/claude.md → Input, Button 등 기존 폼 컴포넌트 패턴
 3. config/claude.md → brand.ts, constants.ts 사용 규칙
 
@@ -293,7 +293,7 @@ placeholder={uiText.forms.searchPlaceholder.ko}
 ```
 
 ```markdown
-// CLAUDE.md 업데이트
+// claude.md 업데이트
 🧩 components/ (27개)  ← 통계 업데이트
 
 ### 🔄 최근 주요 변경사항

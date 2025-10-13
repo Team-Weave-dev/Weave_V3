@@ -4,19 +4,15 @@
  */
 
 export const brand = {
-  // 브랜드명
+  // SECTION: Brand Identity - 브랜드명, 회사명, 소개 문구
   name: {
     ko: "Weave",
     en: "Weave"
   },
-
-  // 회사명
   company: {
     ko: "Weave",
     en: "Weave"
   },
-
-  // 설명
   description: {
     ko: "솔로프리너를 위한 완벽한 솔루션입니다.",
     en: "it's the perfect solution for solo entrepreneurs.",
@@ -25,16 +21,14 @@ export const brand = {
       en: "Freelancers and sole proprietors can manage clients, projects, and tax affairs all in one place."
     }
   },
-
-  // 테마 설정
+  // SECTION: Theme Tokens - 프라이머리 색상 및 전역 텍스트 클래스
   theme: {
     primaryTextClass: "text-primary",
     primaryAccentGradient: "from-primary to-primary/60",
     avatarBackgroundClass: "bg-primary/10",
     avatarTextClass: "text-primary"
   },
-
-  // 로고 경로
+  // SECTION: Brand Assets - 로고와 파비콘 경로
   logo: {
     favicon: "/favicon.ico",
     alt: {
@@ -42,8 +36,7 @@ export const brand = {
       en: "Weave logo"
     }
   },
-
-  // 메타데이터
+  // SECTION: Metadata - SEO 타이틀/설명 텍스트
   metadata: {
     title: {
       ko: "Weave",
@@ -54,16 +47,16 @@ export const brand = {
       en: "it's the perfect solution for solo entrepreneurs."
     }
   },
-
-  // 저작권
+  // SECTION: Legal Notice - 저작권 문구
   copyright: {
     ko: "© 2024 Weave. All rights reserved.",
     en: "© 2024 Weave. All rights reserved."
   }
 } as const
 
-// UI 텍스트 및 라벨
+// SECTION: UI Text Registry - 공통 UI 텍스트 모음
 export const uiText = {
+  // SECTION: UI Buttons - 기본 버튼 라벨, 크기 및 변형 텍스트
   buttons: {
     viewComponents: {
       ko: "컴포넌트 보기",
@@ -97,6 +90,7 @@ export const uiText = {
       destructive: { ko: "Destructive", en: "Destructive" }
     }
   },
+  // SECTION: UI Navigation - 상단 네비게이션 및 메뉴 텍스트
   navigation: {
     home: {
       ko: "홈",
@@ -139,6 +133,7 @@ export const uiText = {
       en: "Menu"
     }
   },
+  // SECTION: Notifications - 시스템 알림 텍스트
   notifications: {
     title: {
       ko: "알림",
@@ -153,12 +148,14 @@ export const uiText = {
       en: "Centralized component system is working successfully!"
     }
   },
+  // SECTION: Badges - 배지 라벨 텍스트
   badges: {
     shadcnBased: {
       ko: "shadcn 기반",
       en: "shadcn based"
     }
   },
+  // SECTION: Auth Menu - 인증 및 계정 영역 텍스트
   auth: {
     login: {
       ko: "로그인",
@@ -202,8 +199,8 @@ export const uiText = {
     }
   },
 
-  // 컴포넌트 데모 텍스트
   componentDemo: {
+    // SECTION: Component Demo Sections - 데모 섹션 제목과 설명
     sections: {
       buttons: {
         title: { ko: "버튼 & 배지", en: "Buttons & Badges" },
@@ -234,6 +231,7 @@ export const uiText = {
         description: { ko: "헤더 네비게이션과 관련된 컴포넌트를 확인하세요.", en: "Explore header navigation and related components." }
       }
     },
+    // SECTION: Layout Hero - 히어로 레이아웃 텍스트
     layoutHero: {
       centeredTitle: { ko: "히어로 · 중앙 CTA", en: "Hero · Centered CTA" },
       centeredDescription: {
@@ -241,6 +239,7 @@ export const uiText = {
         en: "Hero layout with headline and primary/secondary CTAs centered"
       }
     },
+    // SECTION: Demo Cards - 카드 컴포넌트 관련 문구
     cards: {
       interactive: { ko: "인터랙티브 카드", en: "Interactive Card" },
       hoverEffect: { ko: "호버 효과 카드", en: "Hover Effect Card" },
@@ -254,6 +253,7 @@ export const uiText = {
       teamCollaborationDesc: { ko: "실시간 협업", en: "Real-time Collaboration" },
       iconCards: { ko: "아이콘 카드", en: "Icon Cards" }
     },
+    // SECTION: Demo Forms - 폼 데모 텍스트
     forms: {
       projectCreate: { ko: "프로젝트 생성 폼", en: "Create Project Form" },
       projectCreateDesc: { ko: "새 프로젝트를 생성하는 폼 예시", en: "Example form for creating a new project" },
@@ -269,6 +269,7 @@ export const uiText = {
       mobileApp: { ko: "모바일 앱", en: "Mobile App" },
       desktopApp: { ko: "데스크톱 앱", en: "Desktop App" }
     },
+    // SECTION: Demo Button Variants - 데모 버튼 변형 설명
     buttons: {
       variantDescription: {
         default: {
@@ -285,6 +286,7 @@ export const uiText = {
         }
       }
     },
+    // SECTION: Demo Navigation - 데모 네비게이션 안내
     navigation: {
       menuExample: { ko: "상단 메뉴 예시", en: "Top Menu Example" },
       menuDescription: {
@@ -292,6 +294,7 @@ export const uiText = {
         en: "Check the header menu: \"Home\", \"Docs\", \"Team\" have no dropdown icon, only \"Projects\" shows a dropdown icon."
       }
     },
+    // SECTION: Demo Chart Data - 차트 목데이터 라벨
     chartData: {
       months: {
         january: { ko: "1월", en: "Jan" },
@@ -317,6 +320,7 @@ export const uiText = {
         other: { ko: "기타", en: "Other" }
       }
     },
+    // SECTION: Demo Status - 상태 배지 텍스트
     status: {
       title: {
         ko: "상태 표시 컴포넌트",
@@ -380,6 +384,7 @@ export const uiText = {
       }
     },
     // 프로젝트 관리 상태
+    // SECTION: Demo Project Status - 프로젝트 상태 배지
     projectStatus: {
       title: {
         ko: "프로젝트 상태",
@@ -415,6 +420,7 @@ export const uiText = {
       }
     },
     // 프로젝트 페이지 텍스트
+    // SECTION: Project Page Text - 프로젝트 페이지 텍스트
     projectPage: {
       header: {
         title: { ko: "프로젝트 관리", en: "Project Management" },
@@ -989,7 +995,7 @@ export const uiText = {
         cancel: { ko: "취소", en: "Cancel" }
       }
     },
-    // 색상 팔레트 시스템
+    // SECTION: Component Demo Color Palette - 색상 팔레트 텍스트
     colorPalette: {
       title: {
         ko: "색상 팔레트",
@@ -1020,7 +1026,7 @@ export const uiText = {
         en: "Project State Colors"
       }
     },
-    // 뷰 모드 시스템
+    // SECTION: Component Demo View Mode - 뷰 전환 텍스트
     viewMode: {
       title: {
         ko: "뷰 모드",
@@ -1049,7 +1055,7 @@ export const uiText = {
     }
   },
 
-  // 캘린더 관련 텍스트
+  // SECTION: Calendar Text - 캘린더 컴포넌트 라벨
   calendar: {
     title: {
       ko: "캘린더 컴포넌트",
@@ -1085,7 +1091,7 @@ export const uiText = {
     }
   },
 
-  // 차트 관련 텍스트
+  // SECTION: Chart Text - 차트 관련 라벨
   charts: {
     title: {
       ko: "차트 컴포넌트",
@@ -1153,7 +1159,7 @@ export const uiText = {
     }
   },
 
-  // 사용법 안내 텍스트
+  // SECTION: Usage Guide - 사용법 안내 텍스트
   usage: {
     title: {
       ko: "사용법",
@@ -1207,7 +1213,7 @@ export const uiText = {
     }
   },
 
-  // 데이터 탭 확장 텍스트
+  // SECTION: Data Tab - 데이터 탭 확장 텍스트
   data: {
     calendarAndCharts: {
       ko: "캘린더 & 차트 컴포넌트",
@@ -1219,7 +1225,7 @@ export const uiText = {
     }
   },
 
-  // 프로젝트 상태 텍스트
+  // SECTION: Project Status - 프로젝트 상태 라벨
   projectStatus: {
     planning: {
       ko: "기획",
@@ -1255,7 +1261,7 @@ export const uiText = {
     }
   },
 
-  // 캘린더 위젯 텍스트 (Calendar Widget Text)
+  // SECTION: Calendar Widget - 일정 위젯 텍스트
   calendarWidget: {
     eventForm: {
       titleNew: { ko: "새 일정 만들기", en: "Create New Event" },
@@ -1299,7 +1305,7 @@ export const uiText = {
     }
   },
 
-  // 설정 페이지 (2025-10-07 추가)
+  // SECTION: Settings Page - 사용자 설정 페이지 텍스트
   settings: {
     page: {
       title: { ko: "설정", en: "Settings" },
@@ -1438,7 +1444,7 @@ export const uiText = {
       }
     }
   },
-  // Storage & Conflict Resolution (2025-10-10 추가)
+  // SECTION: Storage Conflict Resolution - 저장소 충돌 해결 텍스트
   storage: {
     conflict: {
       // Dialog
@@ -1484,6 +1490,7 @@ export const uiText = {
 } as const
 
 // 라우트 경로
+// SECTION: Route Map - 주요 네비게이션 경로 상수
 export const routes = {
   home: "/",
   components: "/components",
@@ -1497,6 +1504,7 @@ export const routes = {
   settings: "/settings"
 } as const
 
+// SECTION: Header Navigation Config - 헤더 메뉴 구성 및 인증 액션
 export const headerNavigation = {
   brand: {
     href: routes.home,
@@ -1523,10 +1531,10 @@ export const headerNavigation = {
   },
 } as const
 
-// 기본 언어 설정
+// SECTION: Default Language - UI 기본 언어 코드
 export const defaultLanguage = 'ko' as const
 
-// 헬퍼 함수들
+// SECTION: Brand Helpers - 브랜드 및 메타데이터 조회
 export const getBrandName = (lang: 'ko' | 'en' = defaultLanguage) => brand.name[lang]
 export const getCompanyName = (lang: 'ko' | 'en' = defaultLanguage) => brand.company[lang]
 export const getDescription = (lang: 'ko' | 'en' = defaultLanguage) => brand.description[lang]
@@ -1541,6 +1549,7 @@ export const getMetadata = (lang: 'ko' | 'en' = defaultLanguage) => {
 }
 
 // UI 텍스트 헬퍼 함수들
+// SECTION: UI Text Helpers - 경로 기반 텍스트 조회
 export const getText = (path: string, lang: 'ko' | 'en' = defaultLanguage) => {
   const pathArray = path.split('.')
   let result: any = uiText
@@ -1553,7 +1562,7 @@ export const getText = (path: string, lang: 'ko' | 'en' = defaultLanguage) => {
   return result[lang] || result
 }
 
-// 버튼 텍스트 헬퍼들
+// SECTION: Button Text Helpers - 버튼 라벨 및 변형 조회
 export const getButtonText = {
   viewComponents: (lang: 'ko' | 'en' = defaultLanguage) => uiText.buttons.viewComponents[lang],
   submit: (lang: 'ko' | 'en' = defaultLanguage) => uiText.buttons.submit[lang],
@@ -1567,7 +1576,7 @@ export const getButtonText = {
   getVariant: (variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'destructive', lang: 'ko' | 'en' = defaultLanguage) => uiText.buttons.variants[variant][lang]
 }
 
-// 네비게이션 텍스트 헬퍼들
+// SECTION: Navigation Text Helpers - 네비게이션 라벨 조회
 export const getNavText = {
   home: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.home[lang],
   dashboard: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.dashboard[lang],
@@ -1581,6 +1590,7 @@ export const getNavText = {
   menuTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.navigation.menuTitle[lang]
 }
 
+// SECTION: Auth Text Helpers - 인증 및 계정 라벨
 export const getAuthText = {
   login: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.login[lang],
   signup: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.signup[lang],
@@ -1594,19 +1604,19 @@ export const getAuthText = {
   profileMenu: (lang: 'ko' | 'en' = defaultLanguage) => uiText.auth.profileMenu[lang]
 }
 
-// 알림 텍스트 헬퍼들
+// SECTION: Notification Text Helpers - 알림 메시지 라벨
 export const getNotificationText = {
   title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notifications.title[lang],
   center: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notifications.center[lang],
   systemSuccess: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notifications.systemSuccess[lang]
 }
 
-// 배지 텍스트 헬퍼들
+// SECTION: Badge Text Helpers - 배지 라벨
 export const getBadgeText = {
   shadcnBased: (lang: 'ko' | 'en' = defaultLanguage) => uiText.badges.shadcnBased[lang]
 }
 
-// 캘린더 텍스트 헬퍼들
+// SECTION: Calendar Text Helpers - 캘린더 라벨
 export const getCalendarText = {
   title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendar.title[lang],
   description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendar.description[lang],
@@ -1618,7 +1628,7 @@ export const getCalendarText = {
   weekday: (lang: 'ko' | 'en' = defaultLanguage) => uiText.calendar.weekday[lang]
 }
 
-// 차트 텍스트 헬퍼들
+// SECTION: Chart Text Helpers - 차트 라벨
 export const getChartText = {
   title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.charts.title[lang],
   description: (lang: 'ko' | 'en' = defaultLanguage) => uiText.charts.description[lang],
@@ -1644,7 +1654,7 @@ export const getChartText = {
   }
 }
 
-// 사용법 텍스트 헬퍼들
+// SECTION: Usage Text Helpers - 사용 안내 라벨
 export const getUsageText = {
   title: (lang: 'ko' | 'en' = defaultLanguage) => uiText.usage.title[lang],
   calendarUsage: (lang: 'ko' | 'en' = defaultLanguage) => uiText.usage.calendarUsage[lang],
@@ -1662,13 +1672,13 @@ export const getUsageText = {
   }
 }
 
-// 데이터 텍스트 헬퍼들
+// SECTION: Data Text Helpers - 데이터 탭 라벨
 export const getDataText = {
   calendarAndCharts: (lang: 'ko' | 'en' = defaultLanguage) => uiText.data.calendarAndCharts[lang],
   calendarAndChartsDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.data.calendarAndChartsDesc[lang]
 }
 
-// 컴포넌트 데모 텍스트 헬퍼들
+// SECTION: Component Demo Text Helpers - 데모 페이지 문구
 export const getComponentDemoText = {
   sections: {
     buttons: {

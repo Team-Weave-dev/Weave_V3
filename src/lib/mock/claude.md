@@ -1,730 +1,108 @@
-# mock/ - 가짜 데이터 생성 시스템
-
-## 🎭 Mock 데이터 시스템 개요
-
-이 디렉토리는 개발 및 테스트 환경에서 사용할 **일관성 있는 가짜 데이터**를 생성하는 시스템을 제공합니다. **시드 기반 생성**으로 예측 가능한 데이터를 보장하며, **실제 API 호출을 시뮬레이션**하여 실제 환경과 유사한 개발 경험을 제공합니다.
-
-## 📁 Mock 데이터 구조
-
-```
-mock/
-└── projects.ts    # 📊 프로젝트 관련 가짜 데이터 생성기
-```
-
-## 🏗️ Mock 시스템 원칙
-
-### 1. 시드 기반 일관성
-- **예측 가능한 데이터**: 동일한 시드로 동일한 결과 생성
-- **개발 환경 안정성**: 새로고침해도 같은 데이터 유지
-- **테스트 신뢰성**: 일관된 테스트 데이터 보장
-
-### 2. 실제 API 시뮬레이션
-- **네트워크 지연**: 실제 API 호출과 유사한 대기 시간
-- **비동기 패턴**: Promise 기반 인터페이스
-- **에러 처리**: 실패 시나리오 시뮬레이션
-
-### 3. 확장 가능한 구조
-- **모듈화**: 도메인별 독립적 데이터 생성기
-- **설정 가능**: 데이터 개수, 범위 등 커스터마이징
-- **타입 안전성**: TypeScript 인터페이스 완전 준수
-
-## 📊 projects.ts - 프로젝트 데이터 생성기
-
-### 개요
-프로젝트 관리 시스템의 **데이터 영속성**을 담당합니다. **Clean Slate 접근법**을 사용하여 사용자가 생성한 프로젝트만 로컬스토리지에 저장하고, Mock 데이터는 생성하지 않습니다.
-
-### 💾 Clean Slate 시스템
-
-**핵심 개념**:
-- ❌ Mock 데이터 자동 생성 없음
-- ✅ 사용자 생성 프로젝트만 localStorage에 저장
-- ✅ 새로고침 후에도 데이터 유지
-- ✅ 빈 상태에서 시작하여 진짜 사용자 데이터만 관리
-
-**로컬스토리지 키**:
-```typescript
-const CUSTOM_PROJECTS_KEY = 'weave_custom_projects'
-```
-
-### 로컬스토리지 기반 함수들
-
-#### 프로젝트 CRUD 작업
-
-**1. 프로젝트 추가**:
-```typescript
-export function addCustomProject(project: ProjectTableRow): void
-```
-- 새 프로젝트를 배열 맨 앞에 삽입 (최신 순 정렬)
-- localStorage에 즉시 저장
-- 저장 후 검증 로직 포함
-
-**2. 프로젝트 업데이트**:
-```typescript
-export function updateCustomProject(idOrNo: string, updates: Partial<ProjectTableRow>): boolean
-```
-- ID 또는 프로젝트 번호로 찾아서 업데이트
-- `modifiedDate` 자동 갱신
-- 성공 여부 반환 (boolean)
-
-**3. 프로젝트 삭제**:
-```typescript
-export function removeCustomProject(idOrNo: string): boolean
-```
-- ID 또는 프로젝트 번호로 삭제
-- 삭제 성공 여부 반환
-
-**4. 전체 삭제**:
-```typescript
-export function clearCustomProjects(): void
-```
-- 모든 사용자 생성 프로젝트 삭제
-- localStorage 키 완전 제거
-
-#### 데이터 조회
-
-**비동기 데이터 페칭**:
-```typescript
-export async function fetchMockProjects(): Promise<ProjectTableRow[]>
-```
-- 300ms 네트워크 지연 시뮬레이션
-- localStorage에서 사용자 생성 프로젝트만 반환
-- 빈 배열일 수 있음 (Clean Slate)
-
-**동기 데이터 조회**:
-```typescript
-export function getMockProjectById(id: string): ProjectTableRow | null
-```
-- ID 또는 프로젝트 번호로 검색
-- localStorage에서 직접 조회
-
-### SSR 안전성
-
-**모든 localStorage 작업은 클라이언트 전용**:
-```typescript
-function getCustomProjects(): ProjectTableRow[] {
-  // SSR 환경에서는 빈 배열 반환
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const stored = localStorage.getItem(CUSTOM_PROJECTS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Error reading custom projects from localStorage:', error);
-    return [];
-  }
-}
-```
-
-**특징**:
-- `typeof window === 'undefined'` 체크로 SSR 감지
-- try-catch로 안전한 에러 처리
-- 항상 안전한 폴백 값 반환 (빈 배열)
-
-### 기존 generateMockProjects() 함수
-
-**현재는 참조용으로만 유지**:
-```typescript
-export function generateMockProjects(): ProjectTableRow[]
-```
-- 시드 기반으로 일관된 20개의 Mock 데이터 생성
-- **Clean Slate 시스템에서는 사용하지 않음**
-- 테스트나 개발 참조용으로만 존재
-
-### 핵심 함수들
-
-#### 1. generateMockProjects()
-```typescript
-export function generateMockProjects(): ProjectTableRow[] {
-  // 20개의 시드 기반 프로젝트 생성
-  // 각 프로젝트마다 고유한 시드 값으로 일관성 보장
-}
-```
-
-**주요 특징**:
-- **20개 프로젝트**: 다양한 상태의 프로젝트 데이터
-- **시드 기반**: `seededRandom()` 함수로 예측 가능한 랜덤 값
-- **현실적인 관계**: 프로젝트 진행률과 결제 진행률의 논리적 상관관계
-- **다양한 상태**: 6가지 프로젝트 상태 고르게 분포
-
-#### 2. 시드 기반 랜덤 생성기
-```typescript
-const seededRandom = (seed: number): number => {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-};
-```
-
-**특징**:
-- **일관성 보장**: 같은 시드 → 같은 결과
-- **균등 분포**: 0~1 사이의 균등한 분포
-- **수학적 예측가능성**: `Math.sin()` 기반
-
-### 생성되는 데이터 속성
-
-#### 기본 정보
-```typescript
-{
-  id: 'project-1',                    // 고유 ID
-  no: 'WEAVE_001',                   // 프로젝트 번호
-  name: '프로젝트 1',                 // 프로젝트명
-  client: 'Client A',                // 클라이언트
-}
-```
-
-#### 일정 정보
-```typescript
-{
-  registrationDate: '2024-01-01',    // 등록일 (7일 간격 기준)
-  dueDate: '2024-03-31',            // 마감일 (등록일 + 최대 90일)
-  modifiedDate: '2024-02-15',       // 최종 수정일
-}
-```
-
-#### 진행 상태
-```typescript
-{
-  progress: 75,                      // 프로젝트 진행률 (0-100%)
-  paymentProgress: 60,               // 결제 진행률 (진행률과 연동)
-  status: 'in_progress',            // 프로젝트 상태
-}
-```
-
-#### 추가 플래그
-```typescript
-{
-  hasContract: true,                 // 계약서 존재 여부
-  hasBilling: false,                // 청구서 존재 여부
-  hasDocuments: true,               // 문서 존재 여부
-}
-```
-
-#### 문서 데이터 요약
-```typescript
-{
-  documents: DocumentInfo[];             // 문서 원본 목록 (유형별 최대 2개 생성)
-  documentStatus: ProjectDocumentStatus; // 카드 표기를 위한 요약 메타데이터
-}
-```
-
-- `DOCUMENT_TYPES` 배열을 기반으로 계약서/청구서/보고서/견적서/기타 문서를 시드 기반으로 생성합니다.
-- `documentStatus`는 각 유형별 존재 여부, 최신 저장일, 문서 개수를 계산하여 Overview 탭 카드가 즉시 사용할 수 있도록 제공합니다.
-- 문서가 없을 때는 `exists: false`, `status: 'none'`, `count: 0`으로 초기화되어 UI에서 `미보유` 상태가 노출됩니다.
-
-### 상태별 데이터 분포
-
-#### 프로젝트 상태 (6종)
-```typescript
-const statuses = [
-  'planning',     // 기획 중
-  'in_progress',  // 진행 중
-  'review',       // 검토 중
-  'completed',    // 완료됨
-  'on_hold',      // 보류됨
-  'cancelled'     // 취소됨
-];
-```
-
-#### 클라이언트 분포
-```typescript
-const clients = [
-  'Client A',     // 클라이언트 A
-  'Client B',     // 클라이언트 B
-  'Client C',     // 클라이언트 C
-  'Client D',     // 클라이언트 D
-  'Client E'      // 클라이언트 E
-];
-```
-
-### 진행률-결제율 연동 로직
-
-#### 스마트 결제 진행률 계산
-```typescript
-// 프로젝트 진행률에 따른 결제 진행률 계산
-let paymentProgress = 0;
-
-if (progress >= 80) {
-  // 80% 이상 진행: 결제도 80-100%
-  paymentProgress = Math.floor(80 + seededRandom(seed5) * 21);
-} else if (progress >= 50) {
-  // 50% 이상 진행: 결제는 30-80%
-  paymentProgress = Math.floor(30 + seededRandom(seed5) * 51);
-} else if (progress >= 20) {
-  // 20% 이상 진행: 결제는 10-40%
-  paymentProgress = Math.floor(10 + seededRandom(seed5) * 31);
-} else {
-  // 20% 미만 진행: 결제는 0-20%
-  paymentProgress = Math.floor(seededRandom(seed5) * 21);
-}
-
-// 완료된 프로젝트는 대부분 결제 완료
-if (statuses[statusIndex] === 'completed' && seededRandom(seed3 + seed4) > 0.3) {
-  paymentProgress = 100;
-}
-```
-
-**특징**:
-- **논리적 관계**: 프로젝트가 많이 진행될수록 결제도 많이 진행
-- **현실적 시뮬레이션**: 실제 비즈니스 패턴 반영
-- **예외 처리**: 완료 프로젝트의 대부분은 결제 완료
-
-## 🔍 데이터 조회 함수들
-
-### getMockProjectById()
-```typescript
-export function getMockProjectById(id: string): ProjectTableRow | null {
-  const projects = generateMockProjects();
-  return projects.find(p => p.id === id || p.no === id) || null;
-}
-```
-
-**특징**:
-- **유연한 검색**: ID 또는 프로젝트 번호로 검색
-- **타입 안전성**: null 반환으로 안전한 처리
-- **일관성**: 같은 기본 데이터 생성기 사용
-
-### 비동기 데이터 페칭
-
-#### fetchMockProjects()
-```typescript
-export async function fetchMockProjects(): Promise<ProjectTableRow[]> {
-  // 300ms 네트워크 지연 시뮬레이션
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return generateMockProjects();
-}
-```
-
-#### fetchMockProject()
-```typescript
-export async function fetchMockProject(id: string): Promise<ProjectTableRow | null> {
-  // 200ms 네트워크 지연 시뮬레이션
-  await new Promise(resolve => setTimeout(resolve, 200));
-  return getMockProjectById(id);
-}
-```
-
-**네트워크 지연 시뮬레이션**:
-- **전체 목록**: 300ms (더 많은 데이터)
-- **단일 항목**: 200ms (더 적은 데이터)
-- **현실적 경험**: 실제 API와 유사한 대기 시간
-
-## 🎯 사용 패턴
-
-### 기본 사용법
-```typescript
-import {
-  generateMockProjects,
-  getMockProjectById,
-  fetchMockProjects,
-  fetchMockProject
-} from '@/lib/mock/projects';
-
-// 동기 데이터 생성
-const projects = generateMockProjects();
-const project = getMockProjectById('project-1');
-
-// 비동기 데이터 페칭 (네트워크 시뮬레이션)
-const asyncProjects = await fetchMockProjects();
-const asyncProject = await fetchMockProject('WEAVE_001');
-```
-
-### React 컴포넌트에서 사용
-```typescript
-import { useEffect, useState } from 'react';
-import { fetchMockProjects } from '@/lib/mock/projects';
-import type { ProjectTableRow } from '@/lib/types/project-table.types';
-
-function ProjectList() {
-  const [projects, setProjects] = useState<ProjectTableRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const data = await fetchMockProjects();
-        setProjects(data);
-      } catch (error) {
-        console.error('프로젝트 로딩 실패:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProjects();
-  }, []);
-
-  if (loading) return <div>로딩 중...</div>;
-
-  return (
-    <div>
-      {projects.map(project => (
-        <ProjectCard key={project.id} project={project} />
-      ))}
-    </div>
-  );
-}
-```
-
-### 테스트에서 사용
-```typescript
-import { describe, it, expect } from 'vitest';
-import { generateMockProjects, getMockProjectById } from '@/lib/mock/projects';
-
-describe('프로젝트 Mock 데이터', () => {
-  it('항상 20개의 프로젝트를 생성한다', () => {
-    const projects = generateMockProjects();
-    expect(projects).toHaveLength(20);
-  });
-
-  it('동일한 결과를 반복 생성한다', () => {
-    const projects1 = generateMockProjects();
-    const projects2 = generateMockProjects();
-    expect(projects1).toEqual(projects2);
-  });
-
-  it('ID로 프로젝트를 찾을 수 있다', () => {
-    const project = getMockProjectById('project-1');
-    expect(project).toBeDefined();
-    expect(project?.id).toBe('project-1');
-  });
-
-  it('프로젝트 번호로도 찾을 수 있다', () => {
-    const project = getMockProjectById('WEAVE_001');
-    expect(project).toBeDefined();
-    expect(project?.no).toBe('WEAVE_001');
-  });
-});
-```
-
-## 🚀 확장 가이드
-
-### 새로운 Mock 데이터 생성기 추가
-
-#### 1. 클라이언트 데이터 생성기
-```typescript
-// src/lib/mock/clients.ts
-import type { Client } from '@/types/business';
-
-export function generateMockClients(): Client[] {
-  const industries = ['IT', '제조업', '서비스업', '교육', '금융'];
-
-  return Array.from({ length: 10 }, (_, i) => {
-    const seed = i * 1111 + 2222;
-
-    return {
-      id: `client-${i + 1}`,
-      name: `클라이언트 ${String.fromCharCode(65 + i)}`,
-      email: `client${i + 1}@example.com`,
-      phone: `010-${String(1000 + i).slice(1)}-${String(5000 + i).slice(1)}`,
-      company: `${String.fromCharCode(65 + i)} 컴퍼니`,
-      address: `서울시 강남구 테헤란로 ${100 + i * 10}`,
-      created_at: new Date(2024, 0, i * 3 + 1).toISOString(),
-      updated_at: new Date().toISOString(),
-      user_id: 'user-1'
-    };
-  });
-}
-```
-
-#### 2. 인보이스 데이터 생성기
-```typescript
-// src/lib/mock/invoices.ts
-import type { Invoice } from '@/types/business';
-
-export function generateMockInvoices(): Invoice[] {
-  const statuses: Invoice['status'][] = ['draft', 'sent', 'paid', 'overdue', 'cancelled'];
-
-  return Array.from({ length: 50 }, (_, i) => {
-    const seed = i * 3333 + 4444;
-    const issueDate = new Date(2024, 0, 1 + i * 2);
-    const dueDate = new Date(issueDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    const subtotal = 1000000 + Math.floor(seededRandom(seed) * 5000000);
-    const taxRate = 0.1;
-    const taxAmount = Math.floor(subtotal * taxRate);
-    const total = subtotal + taxAmount;
-
-    return {
-      id: `invoice-${i + 1}`,
-      invoice_number: `INV-${new Date().getFullYear()}-${String(i + 1).padStart(4, '0')}`,
-      client_id: `client-${(i % 10) + 1}`,
-      project_id: `project-${(i % 20) + 1}`,
-      status: statuses[Math.floor(seededRandom(seed + 1000) * statuses.length)],
-      issue_date: issueDate.toISOString(),
-      due_date: dueDate.toISOString(),
-      subtotal,
-      tax_rate: taxRate,
-      tax_amount: taxAmount,
-      total,
-      created_at: issueDate.toISOString(),
-      updated_at: new Date().toISOString(),
-      user_id: 'user-1'
-    };
-  });
-}
-```
-
-### Mock 데이터 설정 커스터마이징
-
-#### 환경별 설정
-```typescript
-// src/lib/mock/config.ts
-export const MOCK_CONFIG = {
-  // 개발 환경
-  development: {
-    projects: { count: 20, delay: 300 },
-    clients: { count: 10, delay: 200 },
-    invoices: { count: 50, delay: 250 }
-  },
-
-  // 테스트 환경
-  test: {
-    projects: { count: 5, delay: 0 },
-    clients: { count: 3, delay: 0 },
-    invoices: { count: 10, delay: 0 }
-  },
-
-  // 스토리북 환경
-  storybook: {
-    projects: { count: 3, delay: 100 },
-    clients: { count: 2, delay: 50 },
-    invoices: { count: 5, delay: 100 }
-  }
-};
-
-export function getMockConfig() {
-  const env = process.env.NODE_ENV || 'development';
-  return MOCK_CONFIG[env as keyof typeof MOCK_CONFIG];
-}
-```
-
-#### 동적 데이터 개수 조절
-```typescript
-export function generateMockProjects(count?: number): ProjectTableRow[] {
-  const config = getMockConfig();
-  const actualCount = count || config.projects.count;
-
-  return Array.from({ length: actualCount }, (_, i) => {
-    // 기존 생성 로직...
-  });
-}
-```
-
-## 📄 documents.ts - 프로젝트 문서 데이터 관리
-
-### 개요
-프로젝트별 문서 데이터를 **로컬스토리지에 영구 저장**하는 시스템입니다. 각 프로젝트는 독립적인 문서 목록을 가지며, 계약서/청구서/견적서/보고서 등 다양한 문서 유형을 지원합니다.
-
-### 💾 로컬스토리지 구조
-
-**로컬스토리지 키**:
-```typescript
-const PROJECT_DOCUMENTS_KEY = 'weave_project_documents'
-```
-
-**데이터 구조**:
-```typescript
-{
-  'project-1': [
-    {
-      id: 'doc-1',
-      name: '표준 용역 계약서',
-      type: 'contract',
-      status: 'complete',
-      savedAt: '2024-01-15T10:30:00Z',
-      content: '# 표준 용역 계약서\n\n...'
-    },
-    {
-      id: 'doc-2',
-      name: '프로젝트 견적서',
-      type: 'estimate',
-      status: 'complete',
-      savedAt: '2024-01-16T14:20:00Z',
-      content: '# 프로젝트 견적서\n\n...'
-    }
-  ],
-  'project-2': [ ... ]
-}
-```
-
-### 문서 CRUD 함수들
-
-#### 1. 문서 조회
-```typescript
-export function getProjectDocuments(projectId: string): DocumentInfo[]
-```
-- 특정 프로젝트의 모든 문서 반환
-- SSR 환경에서 빈 배열 반환
-- 에러 발생 시 빈 배열 반환 (안전한 폴백)
-
-#### 2. 문서 저장
-```typescript
-export function saveProjectDocuments(projectId: string, documents: DocumentInfo[]): void
-```
-- 프로젝트의 전체 문서 목록 저장
-- 기존 데이터 덮어쓰기
-- SSR 환경에서 안전하게 무시
-
-#### 3. 문서 추가
-```typescript
-export function addProjectDocument(projectId: string, document: DocumentInfo): void
-```
-- 새 문서를 프로젝트에 추가
-- 배열 맨 앞에 삽입 (최신 순)
-- 즉시 localStorage에 저장
-
-#### 4. 문서 삭제
-```typescript
-export function removeProjectDocument(projectId: string, documentId: string): void
-```
-- 특정 문서만 삭제
-- 나머지 문서는 유지
-
-#### 5. 프로젝트 문서 전체 삭제
-```typescript
-export function clearProjectDocuments(projectId: string): void
-```
-- 프로젝트의 모든 문서 삭제
-- localStorage에서 해당 프로젝트 키 제거
-
-### 🔧 디버깅 도구
-
-#### 1. 전체 상태 확인
-```typescript
-export function debugLocalStorageState(): void
-```
-- 모든 localStorage 키 출력
-- 프로젝트 문서 데이터 상세 분석
-- 콘솔에서 사용: `debugLocalStorageState()`
-
-**출력 예시**:
-```
-🔍 [DEBUG] === localStorage 상태 전체 점검 ===
-총 localStorage 키 개수: 3
-🗝️  weave_custom_projects: [...]
-🗝️  weave_project_documents: {"project-1":[...]}
-🗝️  preferredViewMode: "detail"
-```
-
-#### 2. 레거시 키 정리
-```typescript
-export function cleanupLegacyDocumentKeys(): void
-```
-- 이전 버전의 document 관련 키 제거
-- 데이터 중복 및 불일치 방지
-- 한 번만 실행하면 자동으로 정리
-
-#### 3. 전체 문서 초기화
-```typescript
-export function resetAllDocuments(): void
-```
-- **주의**: 모든 문서 데이터 삭제
-- 문서 관련 모든 localStorage 키 제거
-- 복구 불가능한 작업
-
-#### 4. 프로젝트 문서 상태 확인
-```typescript
-export function debugProjectDocuments(projectId: string): void
-```
-- 특정 프로젝트의 문서 상태 출력
-- 함수 반환값과 localStorage 직접 조회 비교
-- 데이터 불일치 감지
-
-**사용 예시**:
-```typescript
-// 브라우저 콘솔에서
-import { debugProjectDocuments } from '@/lib/mock/documents';
-debugProjectDocuments('project-1');
-```
-
-### SSR 안전성
-
-**모든 문서 작업은 클라이언트 전용**:
-```typescript
-export function getProjectDocuments(projectId: string): DocumentInfo[] {
-  if (typeof window === 'undefined') return [];
-
-  try {
-    const stored = localStorage.getItem(PROJECT_DOCUMENTS_KEY);
-    if (!stored) return [];
-
-    const allDocuments = JSON.parse(stored);
-    return allDocuments[projectId] || [];
-  } catch (error) {
-    console.error('Error reading project documents from localStorage:', error);
-    return [];
-  }
-}
-```
-
-**특징**:
-- `typeof window === 'undefined'` 체크
-- try-catch로 파싱 에러 방지
-- 항상 안전한 폴백 반환
-
-### 문서 타입 지원
-
-**지원되는 문서 유형**:
-```typescript
-type DocumentType =
-  | 'contract'    // 계약서
-  | 'invoice'     // 청구서
-  | 'estimate'    // 견적서
-  | 'report'      // 보고서
-  | 'other'       // 기타
-```
-
-**문서 상태**:
-```typescript
-type DocumentStatus =
-  | 'draft'       // 초안
-  | 'complete'    // 완료
-  | 'archived'    // 보관
-```
-
-### 데이터 흐름
-
-```
-사용자 액션 (문서 생성/수정/삭제)
-    ↓
-ProjectDocumentGeneratorModal 또는 DocumentManagement 탭
-    ↓
-addProjectDocument / removeProjectDocument
-    ↓
-localStorage.setItem('weave_project_documents', JSON.stringify(allDocuments))
-    ↓
-프로젝트 데이터 새로고침
-    ↓
-getProjectDocuments(projectId)
-    ↓
-UI 업데이트 (Overview 카드, Documents 탭)
-```
-
-## 📊 품질 메트릭
-
-### 데이터 품질 지표
-- **일관성**: 100% (시드 기반 생성으로 항상 동일한 결과)
-- **타입 안전성**: 100% (TypeScript 인터페이스 완전 준수)
-- **현실성**: 85% 이상 (실제 비즈니스 패턴 반영)
-- **다양성**: 모든 상태와 시나리오 고르게 분포
-
-### 성능 지표
-- **생성 속도**: < 10ms (20개 프로젝트)
-- **메모리 효율성**: 최소한의 메모리 사용
-- **네트워크 시뮬레이션**: 200-300ms 지연
-
-### 개발 경험
-- **예측 가능성**: 항상 동일한 데이터 순서
-- **디버깅 편의성**: 특정 ID로 특정 상태 재현 가능
-- **테스트 신뢰성**: 일관된 테스트 환경 보장
-
-## 🔗 관련 문서
-
-- [`../../types/project-table.types.ts`] - 프로젝트 테이블 타입 정의
-- [`../../types/business.ts`] - 비즈니스 도메인 타입 정의
-- [`../../app/projects/claude.md`](../../app/projects/claude.md) - 프로젝트 페이지에서의 사용법
-
----
-
-**이 Mock 데이터 시스템은 개발과 테스트에서 일관성 있고 현실적인 데이터 환경을 제공하여 개발 효율성을 극대화합니다.**
+# src/lib/mock - 목 데이터
+
+## 라인 가이드
+- 012~014: 디렉토리 목적
+- 015~018: 핵심 책임
+- 019~021: 구조 요약
+- 022~097: 파일 라인 맵
+- 098~100: 중앙화·모듈화·캡슐화
+- 101~104: 작업 규칙
+- 105~109: 관련 문서
+
+## 디렉토리 목적
+개발·테스트 중 사용할 목 데이터와 생성기를 제공합니다.
+
+## 핵심 책임
+- 프로젝트·클라이언트·문서 등 도메인별 목 데이터를 생성
+- UI 검증을 위한 샘플 데이터를 유지
+
+## 구조 요약
+- 하위 디렉토리가 없습니다.
+
+## 파일 라인 맵
+- calendar-events.ts 36~97 export loadCalendarEvents - 로컬스토리지에서 이벤트 로드 (Storage API 사용)
+- calendar-events.ts 098~165 export saveCalendarEvents - 로컬스토리지에 이벤트 저장 (Storage API 사용)
+- calendar-events.ts 166~199 export addCalendarEvent - 이벤트 추가 (React StrictMode 중복 방지)
+- calendar-events.ts 200~235 export updateCalendarEvent - 이벤트 수정 (React StrictMode 중복 방지)
+- calendar-events.ts 236~271 export deleteCalendarEvent - 이벤트 삭제 (React StrictMode 중복 방지)
+- calendar-events.ts 272~287 export resetCalendarEvents - 목데이터 리셋 (개발용)
+- calendar-events.ts 288~336 export debugLocalStorageState - localStorage의 모든 데이터를 로그로 출력하여 상태 확인
+- calendar-events.ts 337~416 export clearStaleCalendarData - 오래된/잘못된 데이터 구조를 감지하고 정리
+- calendar-events.ts 417~501 export resetAllCalendarData - 강제로 모든 캘린더 데이터를 초기화 (핵옵션)
+- calendar.ts 071~142 export toStorageCalendarEvent - Convert Dashboard CalendarEvent (UI type) to Storage CalendarEvent (Storage API entity) @param dashboardEvent - UI type CalendarEvent @param userId - Current user ID (default: '1') @returns Storage CalendarEvent entity
+- calendar.ts 143~298 export toDashboardCalendarEvent - Convert Storage CalendarEvent (Storage API entity) to Dashboard CalendarEvent (UI type) @param storageEvent - Storage API CalendarEvent entity @returns UI type CalendarEvent
+- documents.ts 46~76 export documentInfoToDocument - Convert DocumentInfo (UI type) to Document (Storage API entity) @param documentInfo - UI type DocumentInfo @param projectId - Project ID @param userId - Current user ID (default: '1') @returns Document entity for Storage API
+- documents.ts 077~276 export documentToDocumentInfo - Convert Document (Storage API entity) to DocumentInfo (UI type) @param document - Storage API Document entity @returns UI type DocumentInfo
+- documents.ts 277~360 export convertGeneratedDocumentToDocumentInfo - GeneratedDocument를 DocumentInfo로 변환하는 헬퍼 함수
+- documents.ts 361~425 export cleanupLegacyDocumentData - Clean up legacy document data from localStorage
+- exchange-rates.ts 08~66 export ExchangeRate - 환율 데이터 Mock 시스템 USD/KRW 환율 데이터를 제공합니다. 실제 서비스에서는 실시간 환율 API로 대체해야 합니다.
+- exchange-rates.ts 67~85 export getExchangeRate - 특정 날짜의 USD → KRW 환율을 가져옵니다. @param date - 날짜 문자열 (YYYY-MM-DD 또는 YYYY-MM 형식) @returns USD를 KRW로 환산하는 환율 @example ```typescript getExchangeRate('2024-03-15')  // 1340 getExchangeRate('2024-03')     // 1340 ```
+- exchange-rates.ts 086~102 export convertUSDToKRW - USD 금액을 KRW로 변환합니다. @param usdAmount - USD 금액 @param date - 기준 날짜 (환율 적용) @returns KRW로 변환된 금액 @example ```typescript convertUSDToKRW(1000, '2024-03-15')  // 1340000 ```
+- exchange-rates.ts 103~121 export convertKRWToUSD - KRW 금액을 USD로 변환합니다. @param krwAmount - KRW 금액 @param date - 기준 날짜 (환율 적용) @returns USD로 변환된 금액 @example ```typescript convertKRWToUSD(1340000, '2024-03-15')  // 1000 ```
+- exchange-rates.ts 122~137 export normalizeToKRW - 모든 통화를 KRW 기준으로 통일합니다. @param amount - 금액 @param currency - 통화 단위 ('KRW' | 'USD') @param date - 기준 날짜 (환율 적용) @returns KRW로 변환된 금액 @example ```typescript normalizeToKRW(50000000, 'KRW', '2024-03-15')  // 50000000 normalizeToKRW(50000, 'USD', '2024-03-15')     // 67000000 ```
+- exchange-rates.ts 138~141 export getCurrentExchangeRate - 현재 날짜의 환율을 가져옵니다. @returns 현재 USD/KRW 환율
+- projects.ts 40~43 const project
+- projects.ts 44~44 const allProjects - ID로 못 찾으면 no 필드로 검색
+- projects.ts 45~47 const foundByNo
+- projects.ts 48~56 const row
+- projects.ts 57~66 const row
+- projects.ts 67~88 const CUSTOM_PROJECTS_KEY - localStorage 키 상수
+- projects.ts 89~91 const projects - Storage API에서 모든 프로젝트 조회
+- projects.ts 092~113 const rows - Project → ProjectTableRow 변환
+- projects.ts 114~114 function toProject - ProjectTableRow를 Project 엔티티로 변환
+- projects.ts 115~117 const now
+- projects.ts 118~186 const normalizeDate - 날짜를 ISO 8601 형식으로 정규화하는 헬퍼 함수
+- projects.ts 187~242 function toProjectTableRow - Project 엔티티를 ProjectTableRow로 변환 (표시용)
+- projects.ts 243~250 function migrateProjectToWBS - 기존 프로젝트를 WBS 시스템으로 마이그레이션 @param project - 마이그레이션할 프로젝트 @returns WBS 데이터를 포함한 프로젝트 @description - 이미 wbsTasks가 있으면 그대로 반환 - 없으면 기존 progress 값을 유지하는 더미 태스크 생성 - 10개의 기본 작업으로 구성 (기존 진행률 유지)
+- projects.ts 251~253 const oldProgress - 기존 progress 값 (없으면 0)
+- projects.ts 254~254 const totalTasks - 10개의 더미 태스크 생성
+- projects.ts 255~257 const completedTasks
+- projects.ts 258~258 const taskNumber
+- projects.ts 259~285 const isCompleted
+- projects.ts 286~286 function migrateAllProjectsToWBS - 모든 프로젝트를 WBS 시스템으로 일괄 마이그레이션 @param projects - 마이그레이션할 프로젝트 배열 @returns 마이그레이션된 프로젝트 배열
+- projects.ts 287~288 let migrationCount
+- projects.ts 289~289 const migratedProjects
+- projects.ts 290~311 const needsMigration
+- projects.ts 312~333 let migrationAttempted - ============================================================================ Storage API 마이그레이션 (Migration to Storage API) ============================================================================ Legacy localStorage 데이터를 Storage API로 자동 마이그레이션합니다.
+- projects.ts 334~340 const existingProjects - 1. Storage API에 이미 데이터가 있는지 확인
+- projects.ts 341~350 const legacyData - 2. Legacy localStorage 키 확인
+- projects.ts 351~389 const migratedRows
+- projects.ts 390~410 const projectEntity - ProjectTableRow → Project 변환
+- projects.ts 411~411 const allProjects - 1. ID 또는 No로 프로젝트 찾기
+- projects.ts 412~443 const project
+- projects.ts 444~470 const updatedProject - 3. Storage API 업데이트 (실제 ID 사용)
+- projects.ts 471~496 const success
+- projects.ts 497~517 const allProjects
+- projects.ts 518~538 const customProjects - Storage API에서 프로젝트 로드
+- projects.ts 539~560 const project
+- projects.ts 561~570 const projects
+- projects.ts 571~571 const dueDate
+- projects.ts 572~572 const parsedDate
+- projects.ts 573~574 const isValidDate
+- projects.ts 575~575 let daysRemaining
+- projects.ts 576~578 let category
+- projects.ts 579~582 const now
+- projects.ts 583~603 const diffTime
+- projects.ts 604~624 const displayDays
+- projects.ts 625~635 const project
+- projects.ts 636~636 const parsedDate
+- projects.ts 637~641 const isValidDate
+- projects.ts 642~645 const now
+- projects.ts 646~646 const diffTime
+- projects.ts 647~648 const daysRemaining
+- projects.ts 649~649 const displayDays
+- projects.ts 650~664 let category
+- tasks.ts 044~101 export toTask - Convert DashboardTodoTask (Dashboard type) to Task (Storage API entity) @param todoTask - Dashboard type TodoTask @param userId - Current user ID (default: '1') @returns Task entity for Storage API
+- tasks.ts 102~366 export toTodoTask - Convert Task (Storage API entity) to TodoTask (Dashboard type) @param task - Storage API Task entity @param children - Child DashboardTodoTasks (for recursive conversion) @returns Dashboard type TodoTask
+
+## 중앙화·모듈화·캡슐화
+- 목 데이터는 src/lib/mock에서 관리하여 중복 생성을 방지
+
+## 작업 규칙
+- 실제 데이터 스키마가 변경되면 목 데이터도 동일하게 업데이트
+- 민감 정보가 포함되지 않도록 주의
+
+## 관련 문서
+- src/lib/claude.md
+- src/app/projects/claude.md
+- src/components/ui/claude.md

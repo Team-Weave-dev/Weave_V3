@@ -16,7 +16,7 @@ Claude가 모든 작업을 시작하기 전에 **현재 프로젝트 상태를 �
 
 #### 필수 읽기 파일 순서
 ```
-1. /CLAUDE.md
+1. /claude.md
    → 전체 프로젝트 구조, 현재 컴포넌트 개수(26개) 확인
 
 2. /src/components/claude.md
@@ -63,7 +63,7 @@ interface ComponentContext {
 
 #### 필수 읽기 파일 순서
 ```
-1. /CLAUDE.md → 프로젝트 구조
+1. /claude.md → 프로젝트 구조
 2. /src/hooks/claude.md → 1개 기존 훅(use-toast) 패턴
 3. /src/config/claude.md → 중앙화 시스템
 4. 관련 컴포넌트 파일들 → 훅 사용 패턴 확인
@@ -90,7 +90,7 @@ interface HookContext {
 
 #### 필수 읽기 파일 순서
 ```
-1. /CLAUDE.md → 프로젝트 구조
+1. /claude.md → 프로젝트 구조
 2. /src/app/claude.md → 2개 페이지, App Router 패턴
 3. /src/config/claude.md → 브랜드 시스템
 4. 기존 페이지 파일들 → layout.tsx, page.tsx 패턴
@@ -100,7 +100,7 @@ interface HookContext {
 
 #### 필수 읽기 파일 순서
 ```
-1. /CLAUDE.md → 전체 시스템 영향도
+1. /claude.md → 전체 시스템 영향도
 2. /src/config/claude.md → 2개 설정 파일 현황
 3. 모든 하위 claude.md → 설정 변경이 미치는 영향 범위
 4. 실제 설정 파일들 → brand.ts, constants.ts 현재 구조
@@ -113,7 +113,7 @@ interface HookContext {
 ### 1단계: 기본 프로젝트 상태 파악
 
 ```typescript
-// CLAUDE.md에서 추출할 정보
+// claude.md에서 추출할 정보
 interface ProjectOverview {
   structure: {
     components: "26개"
@@ -290,26 +290,26 @@ const SEARCH_HEIGHT = "40px"  // ❌ 매직 넘버
 
 ```
 컴포넌트 작업시:
-□ CLAUDE.md 읽음 - 전체 프로젝트 상태 파악
+□ claude.md 읽음 - 전체 프로젝트 상태 파악
 □ components/claude.md 읽음 - 컴포넌트 라이브러리 구조
 □ components/ui/claude.md 읽음 - 26개 기존 컴포넌트 패턴
 □ config/claude.md 읽음 - 중앙화 시스템 규칙
 □ 유사 컴포넌트 파일 읽음 - 구체적 구현 패턴
 
 훅 작업시:
-□ CLAUDE.md 읽음
+□ claude.md 읽음
 □ hooks/claude.md 읽음 - 기존 훅 패턴
 □ config/claude.md 읽음
 □ 훅 사용 컴포넌트들 읽음 - 사용 패턴
 
 페이지 작업시:
-□ CLAUDE.md 읽음
+□ claude.md 읽음
 □ app/claude.md 읽음 - App Router 패턴
 □ config/claude.md 읽음 - 브랜드 시스템
 □ 기존 페이지 파일들 읽음
 
 설정 작업시:
-□ CLAUDE.md 읽음 - 전체 영향도
+□ claude.md 읽음 - 전체 영향도
 □ config/claude.md 읽음 - 현재 설정 구조
 □ 모든 하위 claude.md 읽음 - 영향 범위
 □ 실제 설정 파일들 읽음

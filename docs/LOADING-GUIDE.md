@@ -354,7 +354,7 @@ export function Skeleton({
 
 - [`src/components/ui/claude.md`](../src/components/ui/claude.md) - UI 컴포넌트 상세 가이드
 - [`src/config/claude.md`](../src/config/claude.md) - 중앙화 설정 시스템
-- [`CLAUDE.md`](../CLAUDE.md) - 프로젝트 전체 가이드
+- [`claude.md`](../claude.md) - 프로젝트 전체 가이드
 
 ## 📞 도움말
 

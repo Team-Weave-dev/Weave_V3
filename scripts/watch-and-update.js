@@ -75,7 +75,7 @@ class ClaudeDocWatcher {
     const affected = new Set();
     const relativePath = path.relative(this.projectRoot, filePath);
 
-    // 항상 메인 CLAUDE.md 업데이트
+    // 항상 메인 claude.md 업데이트
     affected.add('main');
 
     // 파일 위치에 따른 영향받는 디렉토리 결정

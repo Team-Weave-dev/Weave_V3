@@ -7,7 +7,7 @@
 - `src/lib/` – Utilities, stores, and service helpers (e.g., `supabase/`).
 - `src/config/` – Centralized configuration.
 - `public/` – Static assets.
-- `docs/` – Project documentation; see `CLAUDE.md` and related files.
+- `docs/` – Project documentation; see `claude.md` and related files.
 - `scripts/` – Maintenance utilities (e.g., `update-claude-docs.js`).
 
 ## Build, Test, and Development Commands

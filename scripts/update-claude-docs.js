@@ -8,7 +8,7 @@
  * 기능:
  * - 파일/디렉토리 변경 감지
  * - 해당 claude.md 파일 자동 업데이트
- * - 메인 CLAUDE.md와 하위 claude.md 동기화
+ * - 메인 claude.md와 하위 claude.md 동기화
  * - 컴포넌트/훅/유틸리티 개수 자동 카운팅
  */
 
@@ -19,7 +19,7 @@ class ClaudeDocUpdater {
   constructor() {
     this.projectRoot = path.resolve(__dirname, '..');
     this.srcPath = path.join(this.projectRoot, 'src');
-    this.mainClaudePath = path.join(this.projectRoot, 'CLAUDE.md');
+    this.mainClaudePath = path.join(this.projectRoot, 'claude.md');
   }
 
   /**
@@ -110,12 +110,12 @@ class ClaudeDocUpdater {
   }
 
   /**
-   * 메인 CLAUDE.md 업데이트
+   * 메인 claude.md 업데이트
    */
   updateMainClaudeDoc() {
     try {
       if (!fs.existsSync(this.mainClaudePath)) {
-        console.error('메인 CLAUDE.md 파일을 찾을 수 없습니다.');
+        console.error('메인 claude.md 파일을 찾을 수 없습니다.');
         return false;
       }
 
@@ -135,7 +135,7 @@ class ClaudeDocUpdater {
 
 \`\`\`
 NEW_UI_Components/
-├── 📋 CLAUDE.md                      # 메인 프로젝트 문서 (이 파일)
+├── 📋 claude.md                      # 메인 프로젝트 문서 (이 파일)
 ├── 🔧 .claude/                       # MCP 설정
 ├── 📁 src/                           # 소스 코드 루트
 │   ├── 📋 claude.md                  # 소스 코드 전체 가이드
@@ -196,11 +196,11 @@ NEW_UI_Components/
       }
 
       fs.writeFileSync(this.mainClaudePath, content, 'utf8');
-      console.log('✅ 메인 CLAUDE.md 업데이트 완료');
+      console.log('✅ 메인 claude.md 업데이트 완료');
       return true;
 
     } catch (error) {
-      console.error('❌ 메인 CLAUDE.md 업데이트 실패:', error.message);
+      console.error('❌ 메인 claude.md 업데이트 실패:', error.message);
       return false;
     }
   }
@@ -451,7 +451,7 @@ ${utilList}
   updateAll() {
     console.log('🚀 Claude 문서 자동 업데이트 시작...\n');
 
-    // 메인 CLAUDE.md 업데이트
+    // 메인 claude.md 업데이트
     this.updateMainClaudeDoc();
 
     // 각 하위 디렉토리의 claude.md 업데이트
