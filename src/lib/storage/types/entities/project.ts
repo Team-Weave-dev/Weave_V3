@@ -422,25 +422,64 @@ export interface Project extends JsonObject {
  * Type guard for WBSTask
  */
 export function isWBSTask(data: unknown): data is WBSTask {
-  if (typeof data !== 'object' || data === null) return false;
+  if (typeof data !== 'object' || data === null) {
+    console.error('[isWBSTask] Not an object or null');
+    return false;
+  }
 
   const task = data as WBSTask;
 
   // Required fields
-  if (!task.id || typeof task.id !== 'string') return false;
-  if (!task.name || typeof task.name !== 'string') return false;
-  if (!['pending', 'in_progress', 'completed'].includes(task.status)) return false;
-  if (typeof task.order !== 'number') return false;
-  if (!isValidISODate(task.createdAt)) return false;
+  if (!task.id || typeof task.id !== 'string') {
+    console.error('[isWBSTask] Invalid id:', task.id);
+    return false;
+  }
+  if (!task.name || typeof task.name !== 'string') {
+    console.error('[isWBSTask] Invalid name:', task.name);
+    return false;
+  }
+  if (!['pending', 'in_progress', 'completed'].includes(task.status)) {
+    console.error('[isWBSTask] Invalid status:', task.status);
+    return false;
+  }
+  if (typeof task.order !== 'number') {
+    console.error('[isWBSTask] Invalid order:', task.order);
+    return false;
+  }
+  if (!isValidISODate(task.createdAt)) {
+    console.error('[isWBSTask] Invalid createdAt:', task.createdAt);
+    return false;
+  }
 
-  // Optional fields
-  if (task.description !== undefined && typeof task.description !== 'string') return false;
-  if (task.assignee !== undefined && typeof task.assignee !== 'string') return false;
-  if (task.startedAt !== undefined && !isValidISODate(task.startedAt)) return false;
-  if (task.completedAt !== undefined && !isValidISODate(task.completedAt)) return false;
+  // Optional fields with more lenient validation
+  if (task.description !== undefined && task.description !== null && typeof task.description !== 'string') {
+    console.error('[isWBSTask] Invalid description:', task.description);
+    return false;
+  }
+  if (task.assignee !== undefined && task.assignee !== null && typeof task.assignee !== 'string') {
+    console.error('[isWBSTask] Invalid assignee:', task.assignee);
+    return false;
+  }
 
-  // Date logic validation
-  if (task.startedAt && task.completedAt && !isValidDateRange(task.startedAt, task.completedAt)) {
+  // Optional timestamp fields - allow null or empty string
+  if (task.startedAt !== undefined && task.startedAt !== null && task.startedAt !== '') {
+    if (!isValidISODate(task.startedAt)) {
+      console.error('[isWBSTask] Invalid startedAt:', task.startedAt);
+      return false;
+    }
+  }
+  if (task.completedAt !== undefined && task.completedAt !== null && task.completedAt !== '') {
+    if (!isValidISODate(task.completedAt)) {
+      console.error('[isWBSTask] Invalid completedAt:', task.completedAt);
+      return false;
+    }
+  }
+
+  // Date logic validation - only if both dates are present and valid
+  if (task.startedAt && task.completedAt &&
+      task.startedAt !== '' && task.completedAt !== '' &&
+      !isValidDateRange(task.startedAt, task.completedAt)) {
+    console.error('[isWBSTask] Invalid date range:', { startedAt: task.startedAt, completedAt: task.completedAt });
     return false;
   }
 
@@ -469,50 +508,104 @@ export function isProject(data: unknown): data is Project {
   }
 
   // Required basic information
-  if (!p.no || typeof p.no !== 'string') return false;
-  if (!p.name || typeof p.name !== 'string') return false;
+  if (!p.no || typeof p.no !== 'string') {
+    console.error('[isProject] Invalid no:', p.no);
+    return false;
+  }
+  if (!p.name || typeof p.name !== 'string') {
+    console.error('[isProject] Invalid name:', p.name);
+    return false;
+  }
 
   // Status validation
   if (
     !['planning', 'in_progress', 'review', 'completed', 'on_hold', 'cancelled'].includes(p.status)
   ) {
+    console.error('[isProject] Invalid status:', p.status);
     return false;
   }
 
   // Progress validation (0-100 range)
-  if (!isNumberInRange(p.progress, 0, 100)) return false;
+  if (!isNumberInRange(p.progress, 0, 100)) {
+    console.error('[isProject] Invalid progress:', p.progress);
+    return false;
+  }
 
   // WBS Tasks validation (array and each element)
-  if (!Array.isArray(p.wbsTasks)) return false;
-  if (!p.wbsTasks.every(isWBSTask)) return false;
+  if (!Array.isArray(p.wbsTasks)) {
+    console.error('[isProject] wbsTasks is not an array:', p.wbsTasks);
+    return false;
+  }
+
+  // Validate each WBS task with detailed logging
+  for (let i = 0; i < p.wbsTasks.length; i++) {
+    if (!isWBSTask(p.wbsTasks[i])) {
+      console.error(`[isProject] Invalid WBS task at index ${i}:`, p.wbsTasks[i]);
+      return false;
+    }
+  }
 
   // Lazy loading flags
-  if (typeof p.hasContract !== 'boolean') return false;
-  if (typeof p.hasBilling !== 'boolean') return false;
-  if (typeof p.hasDocuments !== 'boolean') return false;
+  if (typeof p.hasContract !== 'boolean') {
+    console.error('[isProject] Invalid hasContract:', p.hasContract);
+    return false;
+  }
+  if (typeof p.hasBilling !== 'boolean') {
+    console.error('[isProject] Invalid hasBilling:', p.hasBilling);
+    return false;
+  }
+  if (typeof p.hasDocuments !== 'boolean') {
+    console.error('[isProject] Invalid hasDocuments:', p.hasDocuments);
+    return false;
+  }
 
   // Timestamps validation
-  if (!isValidISODate(p.createdAt)) return false;
-  if (!isValidISODate(p.updatedAt)) return false;
-  if (!isValidISODate(p.registrationDate)) return false;
-  if (!isValidISODate(p.modifiedDate)) return false;
+  if (!isValidISODate(p.createdAt)) {
+    console.error('[isProject] Invalid createdAt:', p.createdAt);
+    return false;
+  }
+  if (!isValidISODate(p.updatedAt)) {
+    console.error('[isProject] Invalid updatedAt:', p.updatedAt);
+    return false;
+  }
+  if (!isValidISODate(p.registrationDate)) {
+    console.error('[isProject] Invalid registrationDate:', p.registrationDate);
+    return false;
+  }
+  if (!isValidISODate(p.modifiedDate)) {
+    console.error('[isProject] Invalid modifiedDate:', p.modifiedDate);
+    return false;
+  }
 
   // Optional fields validation
-  if (p.clientId !== undefined && typeof p.clientId !== 'string') return false;
+  if (p.clientId !== undefined && typeof p.clientId !== 'string') {
+    console.error('[isProject] Invalid clientId:', p.clientId);
+    return false;
+  }
   if (p.description !== undefined && typeof p.description !== 'string') return false;
   if (p.projectContent !== undefined && typeof p.projectContent !== 'string') return false;
 
   // Optional progress validation
   if (p.paymentProgress !== undefined && !isNumberInRange(p.paymentProgress, 0, 100)) {
+    console.error('[isProject] Invalid paymentProgress:', p.paymentProgress);
     return false;
   }
 
   // Optional date validation
-  if (p.startDate !== undefined && !isValidISODate(p.startDate)) return false;
-  if (p.endDate !== undefined && !isValidISODate(p.endDate)) return false;
+  if (p.startDate !== undefined && !isValidISODate(p.startDate)) {
+    console.error('[isProject] Invalid startDate:', p.startDate);
+    return false;
+  }
+  if (p.endDate !== undefined && !isValidISODate(p.endDate)) {
+    console.error('[isProject] Invalid endDate:', p.endDate);
+    return false;
+  }
 
   // Date range validation
-  if (p.startDate && p.endDate && !isValidDateRange(p.startDate, p.endDate)) return false;
+  if (p.startDate && p.endDate && !isValidDateRange(p.startDate, p.endDate)) {
+    console.error('[isProject] Invalid date range:', { startDate: p.startDate, endDate: p.endDate });
+    return false;
+  }
 
   // Optional number validation
   if (p.budget !== undefined && typeof p.budget !== 'number') return false;
@@ -529,6 +622,7 @@ export function isProject(data: unknown): data is Project {
       p.settlementMethod
     )
   ) {
+    console.error('[isProject] Invalid settlementMethod:', p.settlementMethod);
     return false;
   }
 
@@ -538,6 +632,7 @@ export function isProject(data: unknown): data is Project {
       p.paymentStatus
     )
   ) {
+    console.error('[isProject] Invalid paymentStatus:', p.paymentStatus);
     return false;
   }
 
@@ -545,6 +640,7 @@ export function isProject(data: unknown): data is Project {
     p.priority !== undefined &&
     !['low', 'medium', 'high', 'urgent'].includes(p.priority)
   ) {
+    console.error('[isProject] Invalid priority:', p.priority);
     return false;
   }
 
@@ -552,11 +648,15 @@ export function isProject(data: unknown): data is Project {
     p.visibility !== undefined &&
     !['private', 'team', 'public'].includes(p.visibility)
   ) {
+    console.error('[isProject] Invalid visibility:', p.visibility);
     return false;
   }
 
   // Optional array validation
-  if (p.tags !== undefined && !isStringArray(p.tags)) return false;
+  if (p.tags !== undefined && !isStringArray(p.tags)) {
+    console.error('[isProject] Invalid tags:', p.tags);
+    return false;
+  }
 
   // Optional updated_by validation
   if (p.updated_by !== undefined && typeof p.updated_by !== 'string') return false;
@@ -566,7 +666,10 @@ export function isProject(data: unknown): data is Project {
 
   // DocumentStatus validation (if present)
   if (p.documentStatus !== undefined) {
-    if (typeof p.documentStatus !== 'object' || p.documentStatus === null) return false;
+    if (typeof p.documentStatus !== 'object' || p.documentStatus === null) {
+      console.error('[isProject] Invalid documentStatus (not an object):', p.documentStatus);
+      return false;
+    }
 
     // Validate each document type status
     const docTypes = ['contract', 'invoice', 'estimate', 'report', 'etc'] as const;
@@ -575,23 +678,39 @@ export function isProject(data: unknown): data is Project {
       if (!docStatus) continue;
 
       // Validate required fields
-      if (typeof docStatus.exists !== 'boolean') return false;
+      if (typeof docStatus.exists !== 'boolean') {
+        console.error(`[isProject] Invalid documentStatus.${docType}.exists:`, docStatus.exists);
+        return false;
+      }
       if (!['none', 'draft', 'completed', 'approved', 'sent'].includes(docStatus.status)) {
+        console.error(`[isProject] Invalid documentStatus.${docType}.status:`, docStatus.status);
         return false;
       }
 
-      // Validate optional fields
-      if (docStatus.lastUpdated !== undefined && !isValidISODate(docStatus.lastUpdated)) {
-        return false;
-      }
-      // Support both lastUpdated and latestSavedAt (legacy)
-      if ('latestSavedAt' in docStatus) {
-        const latestSavedAt = (docStatus as any).latestSavedAt;
-        if (latestSavedAt !== undefined && !isValidISODate(latestSavedAt)) {
+      // Validate optional timestamp fields with better error handling
+      if (docStatus.lastUpdated !== undefined) {
+        // Allow null or empty string (treat as undefined)
+        if (docStatus.lastUpdated === null || docStatus.lastUpdated === '') {
+          console.warn(`[isProject] documentStatus.${docType}.lastUpdated is null/empty, treating as undefined`);
+        } else if (!isValidISODate(docStatus.lastUpdated)) {
+          console.error(`[isProject] Invalid documentStatus.${docType}.lastUpdated:`, docStatus.lastUpdated);
           return false;
         }
       }
+
+      // Support both lastUpdated and latestSavedAt (legacy)
+      if ('latestSavedAt' in docStatus) {
+        const latestSavedAt = (docStatus as any).latestSavedAt;
+        if (latestSavedAt !== undefined && latestSavedAt !== null && latestSavedAt !== '') {
+          if (!isValidISODate(latestSavedAt)) {
+            console.error(`[isProject] Invalid documentStatus.${docType}.latestSavedAt:`, latestSavedAt);
+            return false;
+          }
+        }
+      }
+
       if (docStatus.count !== undefined && typeof docStatus.count !== 'number') {
+        console.error(`[isProject] Invalid documentStatus.${docType}.count:`, docStatus.count);
         return false;
       }
     }
