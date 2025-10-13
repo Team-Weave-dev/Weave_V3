@@ -45,6 +45,7 @@ import { RecentActivityWidget } from '@/components/ui/widgets/RecentActivityWidg
 import WeatherWidget from '@/components/ui/widgets/WeatherWidget';
 import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults';
+import { createDefaultWidgets } from './utils/defaultWidgets';
 
 interface ImprovedDashboardProps {
   initialWidgets?: ImprovedWidget[];
@@ -53,213 +54,6 @@ interface ImprovedDashboardProps {
   hideToolbar?: boolean;
   isCompactControlled?: boolean;
 }
-
-// 테스트 데이터
-
-
-// 캘린더 이벤트는 CalendarWidget에서 자체적으로 로컴스토리지에서 로드
-const mockCalendarEvents = undefined; // CalendarWidget이 자체적으로 로컴스토리지에서 로드
-
-// 레거시 코드 (삭제 예정)
-/*
-const OLD_mockCalendarEvents = [
-  {
-    id: 'event-1',
-    title: '프로젝트 킥오프 미팅',
-    description: '새 프로젝트 시작 회의',
-    date: new Date(),
-    startTime: '10:00',
-    endTime: '11:30',
-    type: 'meeting' as const
-  },
-  {
-    id: 'event-2',
-    title: '디자인 리뷰',
-    description: 'UI/UX 디자인 검토',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24),
-    startTime: '14:00',
-    endTime: '15:00',
-    type: 'meeting' as const
-  },
-  {
-    id: 'event-3',
-    title: '코드 리뷰 마감',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2),
-    allDay: true,
-    type: 'deadline' as const
-  },
-  {
-    id: 'event-4',
-    title: '주간 보고서 작성',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
-    startTime: '16:00',
-    type: 'task' as const
-  },
-  {
-    id: 'event-5',
-    title: '팀 빌딩 행사',
-    description: '분기별 팀 빌딩',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-    startTime: '18:00',
-    endTime: '21:00',
-    type: 'other' as const
-  },
-  {
-    id: 'event-6',
-    title: '클라이언트 데모',
-    description: 'Acme Corp 프로젝트 시연',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),
-    startTime: '15:00',
-    endTime: '16:30',
-    type: 'meeting' as const
-  },
-  {
-    id: 'event-7',
-    title: '스프린트 회고',
-    description: '2주차 스프린트 회고 미팅',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4),
-    startTime: '11:00',
-    endTime: '12:00',
-    type: 'meeting' as const
-  },
-  {
-    id: 'event-8',
-    title: '보안 감사',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 6),
-    allDay: true,
-    type: 'deadline' as const
-  },
-  {
-    id: 'event-9',
-    title: '기술 세미나',
-    description: 'React 19 새로운 기능',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 8),
-    startTime: '16:00',
-    endTime: '18:00',
-    type: 'other' as const
-  },
-  {
-    id: 'event-10',
-    title: '월간 성과 리뷰',
-    description: '팀 성과 및 KPI 검토',
-    date: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
-    startTime: '09:00',
-    endTime: '10:30',
-    type: 'meeting' as const
-  }
-];
-*/
-
-// 테스트용 Todo 데이터
-const mockTodoData = [
-  {
-    id: 'todo-1',
-    title: '프로젝트 제안서 작성',
-    completed: false,
-    priority: 'p1' as const,
-    depth: 0,
-    order: 0,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2)
-  },
-  {
-    id: 'todo-2',
-    title: '클라이언트 미팅 준비',
-    completed: false,
-    priority: 'p2' as const,
-    depth: 0,
-    order: 1,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12)
-  },
-  {
-    id: 'todo-3',
-    title: '디자인 시안 검토',
-    completed: true,
-    priority: 'p3' as const,
-    depth: 0,
-    order: 2,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
-    completedAt: new Date(Date.now() - 1000 * 60 * 60 * 6)
-  },
-  {
-    id: 'todo-4',
-    title: '개발 환경 설정',
-    completed: false,
-    priority: 'p3' as const,
-    depth: 0,
-    order: 3,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5)
-  },
-  {
-    id: 'todo-5',
-    title: '테스트 케이스 작성',
-    completed: false,
-    priority: 'p4' as const,
-    depth: 0,
-    order: 4,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
-  },
-  {
-    id: 'todo-6',
-    title: 'API 문서 업데이트',
-    completed: true,
-    priority: 'p2' as const,
-    depth: 0,
-    order: 5,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72),
-    completedAt: new Date(Date.now() - 1000 * 60 * 60 * 24)
-  },
-  {
-    id: 'todo-7',
-    title: '버그 수정: 로그인 이슈',
-    completed: false,
-    priority: 'p1' as const,
-    depth: 0,
-    order: 6,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24)
-  },
-  {
-    id: 'todo-8',
-    title: '성능 최적화 분석',
-    completed: false,
-    priority: 'p3' as const,
-    depth: 0,
-    order: 7,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36)
-  },
-  {
-    id: 'todo-9',
-    title: '데이터베이스 백업 스크립트',
-    completed: true,
-    priority: 'p2' as const,
-    depth: 0,
-    order: 8,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 96),
-    completedAt: new Date(Date.now() - 1000 * 60 * 60 * 48)
-  },
-  {
-    id: 'todo-10',
-    title: '릴리즈 노트 작성',
-    completed: false,
-    priority: 'p4' as const,
-    depth: 0,
-    order: 9,
-    sectionId: 'default',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8)
-  }
-];
-
-// 세무 일정 목 데이터 (TaxDeadlineWidget 내부에 하드코딩되어 있어 별도 데이터 불필요)
 
 export function ImprovedDashboard({
   initialWidgets = [],
@@ -324,221 +118,12 @@ export function ImprovedDashboard({
       return;
     }
 
-    if (initialWidgets.length > 0) {
-      // 시작 레이아웃: 9x8 그리드 기준으로 위치 설정
-      const defaultPos: Record<ImprovedWidget['type'], GridPosition> = {
-        // 9x8 그리드 기준 배치
-        calendar: { 
-          x: 0, y: 0, 
-          w: 5, 
-          h: 4 
-        }, // 캘린더 (왼쪽 상단, 5x4)
-        projectSummary: { 
-          x: 5, y: 0, 
-          w: 4, 
-          h: 4 
-        }, // 프로젝트 현황 (오른쪽 상단, 4x4)
-        kpiMetrics: { 
-          x: 0, y: 4, 
-          w: 5, 
-          h: 2 
-        }, // 핵심 성과 지표 (왼쪽 중단, 5x2)
-        taxDeadline: { 
-          x: 0, y: 6, 
-          w: 5, 
-          h: 2 
-        }, // 세무 일정 (왼쪽 하단, 5x2)
-        todoList: { 
-          x: 5, y: 4, 
-          w: 4, 
-          h: 4 
-        }, // 할 일 목록 (오른쪽 하단, 4x4)
-        revenueChart: {
-          x: 0, y: 8,
-          w: 3,
-          h: 2
-        }, // 매출 차트 (왼쪽 최하단, 3x2)
-        taxCalculator: {
-          x: 0, y: 0,
-          w: 2,
-          h: 2
-        }, // 세금 계산기 (기본 2x2)
-        recentActivity: {
-          x: 3, y: 8,
-          w: 3,
-          h: 2
-        }, // 최근 활동 (중앙 하단, 3x2)
-        weather: {
-          x: 0, y: 0,
-          w: 2,
-          h: 1
-        }, // 날씨 (기본 2x1)
-        custom: { 
-          x: 6, y: 8, 
-          w: 2, 
-          h: 2 
-        }, // 커스텀 (예비 공간, 2x2)
-      };
-      const seen = new Set<ImprovedWidget['type']>();
-      const selected: ImprovedWidget[] = [];
+    // 신규 사용자의 기본 위젯 배열 생성
+    const defaultWidgets = createDefaultWidgets();
 
-      for (const w of initialWidgets) {
-        if (seen.has(w.type)) continue;
-        seen.add(w.type);
-        const normalized: ImprovedWidget = {
-          ...w,
-          position: defaultPos[w.type] ?? w.position ?? { x: 0, y: 0, w: 4, h: 2 },
-          data: w.data, // ProjectSummaryWidget uses useProjectSummary hook for self-loading
-        };
-        selected.push(normalized);
-      }
-
-      // 누락된 타입은 기본 위젯으로 보충하여 한 타입당 1개 보장
-      const ensure = (type: ImprovedWidget['type'], widget: ImprovedWidget) => {
-        if (!seen.has(type)) {
-          selected.push(widget);
-          seen.add(type);
-        }
-      };
-      ensure('projectSummary', {
-        id: 'widget_project_1',
-        type: 'projectSummary',
-        title: '프로젝트 현황',
-        position: defaultPos.projectSummary,
-        data: undefined, // ProjectSummaryWidget uses useProjectSummary hook for self-loading
-        minW: 3,
-        minH: 2,
-      });
-      ensure('todoList', {
-        id: 'widget_todo_1',
-        type: 'todoList',
-        title: '할 일 목록',
-        position: defaultPos.todoList,
-        data: mockTodoData,
-        minW: 2,
-        minH: 2,
-        maxW: 5,
-      });
-      ensure('calendar', {
-        id: 'widget_calendar_1',
-        type: 'calendar',
-        title: '캘린더',
-        position: defaultPos.calendar,
-        data: undefined, // CalendarWidget이 자체적으로 로컴스토리지에서 로드
-        minW: 2,
-        minH: 2,
-        maxW: 6,
-        maxH: 4,
-      });
-      ensure('taxDeadline', {
-        id: 'widget_tax_1',
-        type: 'taxDeadline',
-        title: '세무 일정',
-        position: defaultPos.taxDeadline,
-        minW: 2,
-        minH: 2,
-      });
-      ensure('kpiMetrics', {
-        id: 'widget_kpi_1',
-        type: 'kpiMetrics',
-        title: '핵심 성과 지표',
-        position: defaultPos.kpiMetrics,
-        data: undefined, // KPIWidget이 useKPIMetrics 훅으로 자체 로드
-        minW: 4,
-        minH: 2,
-        maxW: 9,
-      });
-
-      selected.forEach((w) => addWidget(w));
-    } else {
-      // 테스트 위젯 생성 - 기본 크기 사용
-      const testWidgets: ImprovedWidget[] = [
-        {
-          id: 'widget_calendar_1',
-          type: 'calendar',
-          title: '캘린더',
-          position: { 
-            x: 0, y: 0, 
-            w: getDefaultWidgetSize('calendar').width,
-            h: getDefaultWidgetSize('calendar').height
-          },
-          data: undefined, // CalendarWidget이 자체적으로 로컴스토리지에서 로드
-          minW: getDefaultWidgetSize('calendar').minWidth || 2,
-          minH: getDefaultWidgetSize('calendar').minHeight || 2,
-          maxW: getDefaultWidgetSize('calendar').maxWidth || 6,
-          maxH: getDefaultWidgetSize('calendar').maxHeight || 6,
-        },
-        {
-          id: 'widget_project_1',
-          type: 'projectSummary',
-          title: '프로젝트 현황',
-          position: {
-            x: 3, y: 0,
-            w: getDefaultWidgetSize('projectSummary').width,
-            h: getDefaultWidgetSize('projectSummary').height
-          },
-          data: undefined, // ProjectSummaryWidget uses useProjectSummary hook for self-loading
-          minW: getDefaultWidgetSize('projectSummary').minWidth || 2,
-          minH: getDefaultWidgetSize('projectSummary').minHeight || 2,
-        },
-        {
-          id: 'widget_kpi_1',
-          type: 'kpiMetrics',
-          title: '핵심 성과 지표',
-          position: {
-            x: 5, y: 0,
-            w: getDefaultWidgetSize('kpiMetrics').width,
-            h: getDefaultWidgetSize('kpiMetrics').height
-          },
-          data: undefined, // KPIWidget uses useKPIMetrics hook for self-loading
-          minW: getDefaultWidgetSize('kpiMetrics').minWidth || 1,
-          minH: getDefaultWidgetSize('kpiMetrics').minHeight || 2,
-        },
-        {
-          id: 'widget_tax_1',
-          type: 'taxDeadline',
-          title: '세무 일정',
-          position: { 
-            x: 6, y: 0, 
-            w: getDefaultWidgetSize('taxDeadline').width,
-            h: getDefaultWidgetSize('taxDeadline').height
-          },
-          minW: getDefaultWidgetSize('taxDeadline').minWidth || 1,
-          minH: getDefaultWidgetSize('taxDeadline').minHeight || 2,
-        },
-        {
-          id: 'widget_todo_1',
-          type: 'todoList',
-          title: '할 일 목록',
-          position: { 
-            x: 7, y: 0, 
-            w: getDefaultWidgetSize('todoList').width,
-            h: getDefaultWidgetSize('todoList').height
-          },
-          data: mockTodoData,
-          minW: getDefaultWidgetSize('todoList').minWidth || 2,
-          minH: getDefaultWidgetSize('todoList').minHeight || 2,
-          maxW: getDefaultWidgetSize('todoList').maxWidth || 4,
-        },
-        {
-          id: 'widget_weather_1',
-          type: 'weather',
-          title: '날씨 정보',
-          position: { 
-            x: 0, y: 2, 
-            w: getDefaultWidgetSize('weather').width,
-            h: getDefaultWidgetSize('weather').height
-          },
-          data: { location: '서울' },
-          minW: getDefaultWidgetSize('weather').minWidth || 2,
-          minH: getDefaultWidgetSize('weather').minHeight || 1,
-          maxW: getDefaultWidgetSize('weather').maxWidth || 4,
-          maxH: getDefaultWidgetSize('weather').maxHeight || 3,
-        },
-      ];
-      testWidgets.forEach((w) => addWidget(w));
-    }
-  }, [isInitialized, widgets.length, initialWidgets, addWidget]); // 초기화 상태에 의존
+    // 위젯 추가
+    defaultWidgets.forEach((w) => addWidget(w));
+  }, [isInitialized, widgets.length, initialWidgets, addWidget]);
 
   // 중복 ID 위젯 정리 (개발/StrictMode에서 이중 마운트 대비)
   useEffect(() => {
@@ -558,33 +143,33 @@ export function ImprovedDashboard({
       setWidgets(dedup);
     }
   }, [widgets, setWidgets]);
-  
+
   // 반응형 그리드 계산
   useEffect(() => {
     const calculateGrid = () => {
       if (!containerRef.current) return;
-      
+
       const containerWidth = containerRef.current.clientWidth;
       const availableWidth = containerWidth;
-      
+
       const cellWidth = Math.floor(
         (availableWidth - (config.cols - 1) * config.gap) / config.cols
       );
-      
+
       setCellSize({
         width: Math.max(80, Math.min(200, cellWidth)),
         height: config.rowHeight
       });
     };
-    
+
     calculateGrid();
     window.addEventListener('resize', calculateGrid);
     return () => window.removeEventListener('resize', calculateGrid);
   }, [config.cols, config.gap, config.rowHeight]);
-  
+
   // ESC 키 처리는 대시보드 페이지에서 통합 관리
   // (편집 모드와 사이드바를 동시에 닫기 위해)
-  
+
   // Compact 레이아웃 적용 (세로 무한 확장 모드에서는 비활성화)
   useEffect(() => {
     const compact = isCompactControlled ?? isCompact;
@@ -594,7 +179,7 @@ export function ImprovedDashboard({
       compactWidgets(config.compactType as 'vertical' | 'horizontal');
     }
   }, [isCompactControlled, isCompact, config.compactType, config.maxRows, compactWidgets]);
-  
+
   // 드래그 핸들러
   const handleDragStart = useCallback((e: React.MouseEvent, widget: ImprovedWidget) => {
     // 편집 모드가 아니면 드래그 불가
@@ -603,36 +188,36 @@ export function ImprovedDashboard({
     if (widget.static) return;
     // isDraggable이 명시적으로 false인 경우만 드래그 불가
     if (widget.isDraggable === false) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     const startX = e.clientX;
     const startY = e.clientY;
     // 현재 위젯의 실제 위치를 시작점으로 사용
     const startPosition = { ...widget.position };
-    
+
     // 드래그 시작 상태 설정
     startDragging(widget.id, startPosition);
-    
+
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
-      
+
       // 픽셀을 그리드 단위로 변환 (그리드 스냅 없이 부드럽게)
       const gridCellWidth = cellSize.width + config.gap;
       const gridCellHeight = cellSize.height + config.gap;
-      
+
       const dx = Math.round(deltaX / gridCellWidth);
       const dy = Math.round(deltaY / gridCellHeight);
-      
+
       const newPosition: GridPosition = {
         x: Math.max(0, Math.min(config.cols - startPosition.w, startPosition.x + dx)),
         y: Math.max(0, startPosition.y + dy),
         w: startPosition.w,
         h: startPosition.h,
       };
-      
+
       // 실시간으로 위치 업데이트 (시각적 피드백)
       updateDragging(newPosition);
 
@@ -661,11 +246,11 @@ export function ImprovedDashboard({
       }
       callbacks?.onDrag?.(widget, newPosition, e);
     };
-    
+
     const handleMouseUp = (e: MouseEvent) => {
       // 최신 드래그 위치를 스토어에서 직접 조회 (클로저 스냅샷 문제 회피)
       const finalPosition = useImprovedDashboardStore.getState().editState.draggedWidget?.currentPosition;
-      
+
       if (finalPosition) {
         // 스왑 처리 시 충돌 해소 포함
         if (editState.dragOverWidgetId) {
@@ -683,7 +268,7 @@ export function ImprovedDashboard({
 
         callbacks?.onDragStop?.(widget, finalPosition, e);
       }
-      
+
       // 세로 무한 확장 모드에서는 자동 압축 비활성화
       // (자동 압축이 위젯을 위로 밀어내는 것을 방지)
       const compact = isCompactControlled ?? isCompact;
@@ -698,13 +283,13 @@ export function ImprovedDashboard({
 
       callbacks?.onLayoutChange?.(widgets);
     };
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-    
+
     callbacks?.onDragStart?.(widget, e.nativeEvent);
   }, [isEditMode, widgets, cellSize, config, editState, startDragging, updateDragging, stopDragging, moveWidgetWithPush, swapWidgets, checkCollision, setDragOverWidget, setHoveredPosition, callbacks, isCompact, compactWidgets]);
-  
+
   // 리사이즈 핸들러
   const handleResizeStart = useCallback((e: React.MouseEvent, widget: ImprovedWidget) => {
     // 편집 모드가 아니면 리사이즈 불가
@@ -713,49 +298,49 @@ export function ImprovedDashboard({
     if (widget.static) return;
     // isResizable이 명시적으로 false인 경우만 리사이즈 불가
     if (widget.isResizable === false) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     const startX = e.clientX;
     const startY = e.clientY;
     const startPosition = { ...widget.position };
-    
+
     startResizing(widget.id, startPosition);
-    
+
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - startX;
       const deltaY = e.clientY - startY;
-      
+
       // 픽셀을 그리드 단위로 변환
       const gridCellWidth = cellSize.width + config.gap;
       const gridCellHeight = cellSize.height + config.gap;
-      
+
       const dx = Math.round(deltaX / gridCellWidth);
       const dy = Math.round(deltaY / gridCellHeight);
-      
+
       const newPosition: GridPosition = {
         x: startPosition.x,
         y: startPosition.y,
         w: Math.max(1, startPosition.w + dx),
         h: Math.max(1, startPosition.h + dy),
       };
-      
+
       updateResizing(newPosition);
       callbacks?.onResize?.(widget, newPosition, e);
     };
-    
+
     const handleMouseUp = (e: MouseEvent) => {
       // 최신 리사이즈 위치를 스토어에서 직접 조회
       const finalPosition = useImprovedDashboardStore.getState().editState.resizingWidget?.currentPosition;
-      
+
       if (finalPosition) {
         // 스마트 리사이즈 사용 - 자동으로 최적의 전략 선택
         resizeWidgetSmart(widget.id, finalPosition);
-        
+
         callbacks?.onResizeStop?.(widget, finalPosition, e);
       }
-      
+
       // 세로 무한 확장 모드에서는 자동 압축 비활성화
       // (자동 압축이 위젯을 위로 밀어내는 것을 방지)
       const compact = isCompactControlled ?? isCompact;
@@ -770,14 +355,14 @@ export function ImprovedDashboard({
 
       callbacks?.onLayoutChange?.(widgets);
     };
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-    
+
     callbacks?.onResizeStart?.(widget, e.nativeEvent);
   }, [isEditMode, widgets, cellSize, config, editState, startResizing, updateResizing, stopResizing, resizeWidgetSmart, callbacks, isCompact, compactWidgets]);
-  
-  
+
+
   // 위젯 추가
   const handleAddWidget = useCallback(() => {
     const defaultSize = getDefaultWidgetSize('custom');
@@ -800,103 +385,58 @@ export function ImprovedDashboard({
   }, [findSpaceForWidget, addWidget]);
 
   // 레이아웃 초기화 (위젯 종류와 위치를 디폴트값으로 리셋)
-  const handleResetLayout = useCallback(() => {
+  const handleResetLayout = useCallback(async () => {
     // 확인 다이얼로그
     if (!confirm('위젯 배치를 초기 상태로 되돌리시겠습니까?\n(위젯 내부 데이터는 유지됩니다)')) {
       return;
     }
 
-    // 기본 위젯 위치 정의 (9x8 그리드 기준)
-    const defaultPos: Record<ImprovedWidget['type'], GridPosition> = {
-      calendar: { x: 0, y: 0, w: 5, h: 4 },
-      projectSummary: { x: 5, y: 0, w: 4, h: 4 },
-      kpiMetrics: { x: 0, y: 4, w: 5, h: 2 },
-      taxDeadline: { x: 0, y: 6, w: 5, h: 2 },
-      todoList: { x: 5, y: 4, w: 4, h: 4 },
-      revenueChart: { x: 0, y: 8, w: 3, h: 2 },
-      taxCalculator: { x: 0, y: 0, w: 2, h: 2 },
-      recentActivity: { x: 3, y: 8, w: 3, h: 2 },
-      weather: { x: 0, y: 0, w: 2, h: 1 },
-      custom: { x: 6, y: 8, w: 2, h: 2 },
-    };
+    // 기존 위젯 백업 (롤백용)
+    const previousWidgets = widgets;
 
-    // 스토어 초기화
-    resetStore();
+    // 기본 위젯 생성
+    const defaultWidgets = createDefaultWidgets();
 
-    // 기본 위젯 5개 추가
-    const defaultWidgets: ImprovedWidget[] = [
-      {
-        id: 'widget_calendar_1',
-        type: 'calendar',
-        title: '캘린더',
-        position: defaultPos.calendar,
-        data: undefined,
-        minW: 2,
-        minH: 2,
-        maxW: 6,
-        maxH: 4,
-      },
-      {
-        id: 'widget_project_1',
-        type: 'projectSummary',
-        title: '프로젝트 현황',
-        position: defaultPos.projectSummary,
-        data: undefined, // ProjectSummaryWidget uses useProjectSummary hook for self-loading
-        minW: 3,
-        minH: 2,
-      },
-      {
-        id: 'widget_kpi_1',
-        type: 'kpiMetrics',
-        title: '핵심 성과 지표',
-        position: defaultPos.kpiMetrics,
-        data: undefined, // KPIWidget uses useKPIMetrics hook for self-loading
-        minW: 4,
-        minH: 2,
-        maxW: 9,
-      },
-      {
-        id: 'widget_tax_1',
-        type: 'taxDeadline',
-        title: '세무 일정',
-        position: defaultPos.taxDeadline,
-        minW: 2,
-        minH: 2,
-      },
-      {
-        id: 'widget_todo_1',
-        type: 'todoList',
-        title: '할 일 목록',
-        position: defaultPos.todoList,
-        data: mockTodoData,
-        minW: 2,
-        minH: 2,
-        maxW: 5,
-      },
-    ];
+    // 1. Zustand 스토어에 즉시 반영 (UI 즉시 업데이트)
+    setWidgets(defaultWidgets);
 
-    // 위젯 추가
-    defaultWidgets.forEach((widget) => addWidget(widget));
-  }, [resetStore, addWidget]);
+    // 2. Storage에 저장 (LocalStorage + Supabase)
+    try {
+      const { dashboardService } = await import('@/lib/storage');
+
+      // 현재 config를 유지하면서 위젯만 초기화
+      await dashboardService.save(defaultWidgets, config);
+
+      console.log('✅ 위젯 초기화 완료: 6개 위젯 저장됨');
+      alert('위젯 배치가 초기 상태로 되돌려졌습니다.');
+    } catch (error) {
+      console.error('❌ 위젯 초기화 실패:', error);
+
+      // 실패 시 이전 상태로 롤백
+      setWidgets(previousWidgets);
+
+      alert('위젯 초기화 중 문제가 발생했습니다.\n다시 시도해주세요.');
+    }
+  }, [widgets, setWidgets, config]);
 
   // 드래그 오버 핸들러 (사이드바에서 대시보드로)
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    
+
     // 위젯 타입이 있는지 확인 (사이드바에서 드래그 중)
     if (e.dataTransfer.types.includes('widgetType')) {
       e.dataTransfer.dropEffect = 'copy';
-      
+
       // 드롭 위치 미리보기 (선택사항)
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
+
         // 그리드 좌표로 변환
         const gridX = Math.floor(x / (cellSize.width + config.gap));
         const gridY = Math.floor(y / (cellSize.height + config.gap));
-        
+
         // TODO: 드롭 위치 미리보기 UI 추가 가능
       }
     }
@@ -905,26 +445,26 @@ export function ImprovedDashboard({
   // 드롭 핸들러 (사이드바에서 대시보드로)
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    
+
     const widgetType = e.dataTransfer.getData('widgetType') as ImprovedWidget['type'];
     if (!widgetType) return;
-    
+
     // 위젯 타입별 기본 크기 가져오기
     const defaultSize = getDefaultWidgetSize(widgetType);
-    
+
     // 드롭 위치 계산
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       // 그리드 좌표로 변환
       const gridX = Math.floor(x / (cellSize.width + config.gap));
       const gridY = Math.floor(y / (cellSize.height + config.gap));
-      
+
       // 드롭 위치에서 시작하여 빈 공간 찾기
       let position: GridPosition | null = null;
-      
+
       // 먼저 드롭 위치에 배치 시도
       const dropPosition = {
         x: Math.max(0, Math.min(config.cols - defaultSize.width, gridX)),
@@ -932,27 +472,27 @@ export function ImprovedDashboard({
         w: defaultSize.width,
         h: defaultSize.height
       };
-      
+
       // 충돌 검사
-      const hasCollision = widgets.some(w => 
+      const hasCollision = widgets.some(w =>
         !(dropPosition.x + dropPosition.w <= w.position.x ||
           dropPosition.x >= w.position.x + w.position.w ||
           dropPosition.y + dropPosition.h <= w.position.y ||
           dropPosition.y >= w.position.y + w.position.h)
       );
-      
+
       if (!hasCollision) {
         position = dropPosition;
       } else {
         // 충돌이 있으면 가장 가까운 빈 공간 찾기
         position = findSpaceForWidget(defaultSize.width, defaultSize.height);
       }
-      
+
       if (!position) {
         alert('위젯을 추가할 공간이 없습니다.');
         return;
       }
-      
+
       // 위젯 타입별 제목 설정
       const widgetTitles: Record<ImprovedWidget['type'], string> = {
         calendar: '캘린더',
@@ -966,7 +506,7 @@ export function ImprovedDashboard({
         weather: '날씨 정보',
         custom: '새 위젯'
       };
-      
+
       // 새 위젯 생성
       const newWidget: ImprovedWidget = {
         id: `widget_${widgetType}_${Date.now()}`,
@@ -978,15 +518,15 @@ export function ImprovedDashboard({
         maxW: defaultSize.maxWidth,
         maxH: defaultSize.maxHeight,
       };
-      
+
       // 위젯 추가
       addWidget(newWidget);
-      
+
       // 콜백 호출 - onWidgetAdd가 없으므로 제거
       // callbacks?.onWidgetAdd?.(newWidget);
     }
   }, [widgets, cellSize, config.cols, config.gap, findSpaceForWidget, addWidget, callbacks]);
-  
+
   // 위젯 렌더링
   const renderWidget = useCallback((widget: ImprovedWidget) => {
     switch (widget.type) {
@@ -997,8 +537,8 @@ export function ImprovedDashboard({
           // projects prop 제거 - useProjectSummary 훅으로 자체 데이터 로드
         />;
       case 'todoList':
-        return <TodoListWidget 
-          title={widget.title} 
+        return <TodoListWidget
+          title={widget.title}
           // tasks prop을 전달하지 않아서 위젯 내부의 목데이터를 사용하도록 함
           // tasks={widget.data || mockTodoData}
         />;
@@ -1065,19 +605,19 @@ export function ImprovedDashboard({
         );
     }
   }, []);
-  
+
   // 위젯 스타일 계산
   const getWidgetStyle = useCallback((widget: ImprovedWidget): React.CSSProperties => {
     const isDragging = editState.draggedWidget?.id === widget.id;
     const isResizing = editState.resizingWidget?.id === widget.id;
-    
+
     // 드래그 중이면 draggedWidget의 currentPosition 사용, 아니면 위젯의 실제 position 사용
-    const position = isDragging && editState.draggedWidget?.currentPosition 
-      ? editState.draggedWidget.currentPosition 
+    const position = isDragging && editState.draggedWidget?.currentPosition
+      ? editState.draggedWidget.currentPosition
       : isResizing && editState.resizingWidget?.currentPosition
       ? editState.resizingWidget.currentPosition
       : widget.position;
-    
+
     const baseStyle = getTransformStyle(
       position,
       cellSize.width,
@@ -1086,7 +626,7 @@ export function ImprovedDashboard({
       config.useCSSTransforms,
       isDragging || isResizing // 드래그나 리사이즈 중이면 transition 스킵
     );
-    
+
     // 드래그나 리사이즈 중에는 z-index 높이기
     if (isDragging || isResizing) {
       return {
@@ -1094,10 +634,10 @@ export function ImprovedDashboard({
         zIndex: 50
       };
     }
-    
+
     return baseStyle;
   }, [cellSize, config.gap, config.useCSSTransforms, editState]);
-  
+
   // 반응형 컬럼 규칙(components 라이브러리의 훅 사용)
   useResponsiveCols(containerRef as React.RefObject<HTMLElement>, { onChange: setColumns, initialCols: config.cols });
 
@@ -1162,7 +702,7 @@ export function ImprovedDashboard({
             </Button>
           </div>
 
-          <Button 
+          <Button
             size="sm"
             variant="default"
             onClick={exitEditMode}
@@ -1172,7 +712,7 @@ export function ImprovedDashboard({
           </Button>
         </div>
       )}
-      
+
       {/* 그리드 컨테이너 - 드롭 존으로 사용 */}
       <div
         ref={containerRef}
@@ -1206,8 +746,8 @@ export function ImprovedDashboard({
               className={cn(
                 "absolute",
                 // 드래그나 리사이즈 중이 아닐 때만 transition 적용
-                editState.draggedWidget?.id !== widget.id && 
-                editState.resizingWidget?.id !== widget.id && 
+                editState.draggedWidget?.id !== widget.id &&
+                editState.resizingWidget?.id !== widget.id &&
                 "transition-all duration-200",
                 // 드래그 중일 때 스타일 (z-index는 getWidgetStyle에서 처리)
                 editState.draggedWidget?.id === widget.id && "cursor-grabbing opacity-90 scale-105",
@@ -1325,7 +865,7 @@ export function ImprovedDashboard({
                   )}
                   {renderWidget(widget)}
                 </div>
-                
+
                 {/* 크기 정보 표시 */}
                 {editState.resizingWidget?.id === widget.id && (
                   <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-2 py-1 rounded text-xs font-mono whitespace-nowrap z-50">
@@ -1335,7 +875,7 @@ export function ImprovedDashboard({
               </div>
             </div>
           ))}
-        
+
         {/* 드래그 플레이스홀더 */}
         {editState.hoveredPosition && !editState.dragOverWidgetId && (
           <div
