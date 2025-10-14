@@ -7,19 +7,28 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get('next') ?? '/'
 
   console.log('🔐 [AUTH CALLBACK] Started', { code: code ? '✓' : '✗', next })
+  console.log('🔐 [DEBUG] request.url:', request.url)
+  console.log('🔐 [DEBUG] origin:', origin)
+  console.log('🔐 [DEBUG] NODE_ENV:', process.env.NODE_ENV)
 
   if (code) {
     // Determine redirect URL based on environment
     const forwardedHost = request.headers.get('x-forwarded-host')
     const isLocalEnv = process.env.NODE_ENV === 'development'
 
+    console.log('🔐 [DEBUG] x-forwarded-host:', forwardedHost)
+    console.log('🔐 [DEBUG] isLocalEnv:', isLocalEnv)
+
     let redirectUrl: string
     if (isLocalEnv) {
       redirectUrl = `${origin}${next}`
+      console.log('🔐 [DEBUG] Using LOCAL origin')
     } else if (forwardedHost) {
       redirectUrl = `https://${forwardedHost}${next}`
+      console.log('🔐 [DEBUG] Using forwardedHost')
     } else {
       redirectUrl = `${origin}${next}`
+      console.log('🔐 [DEBUG] Using origin (fallback)')
     }
 
     console.log('🔐 [AUTH CALLBACK] Redirect URL:', redirectUrl)
