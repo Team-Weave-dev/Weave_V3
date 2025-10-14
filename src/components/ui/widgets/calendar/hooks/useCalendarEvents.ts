@@ -7,38 +7,68 @@ import type { CalendarEvent as StorageCalendarEvent } from '@/lib/storage/types/
 
 /**
  * Dashboard CalendarEvent → Storage CalendarEvent 변환
+ *
+ * IMPORTANT: handleDragEnd에서 이미 UTC 기반으로 계산된 startDate/endDate가 있을 경우,
+ * 해당 값을 우선적으로 사용합니다. 이는 timezone 변환 버그를 방지합니다.
  */
 function toStorageEvent(dashboardEvent: CalendarEvent): Omit<StorageCalendarEvent, 'id' | 'createdAt' | 'updatedAt'> {
-  const eventDate = dashboardEvent.date instanceof Date ? dashboardEvent.date : new Date(dashboardEvent.date);
+  // Check if pre-calculated startDate/endDate exist (from handleDragEnd)
+  const preCalculatedStartDate = (dashboardEvent as any).startDate;
+  const preCalculatedEndDate = (dashboardEvent as any).endDate;
 
-  // startDate 생성: date + startTime
-  let startDateTime = new Date(eventDate);
-  if (dashboardEvent.startTime) {
-    const [hours, minutes] = dashboardEvent.startTime.split(':').map(Number);
-    startDateTime.setHours(hours, minutes, 0, 0);
-  }
-  const startDate = startDateTime.toISOString();
+  let startDate: string;
+  let endDate: string;
 
-  // endDate 생성: date + endTime
-  let endDateTime = new Date(eventDate);
-  if (dashboardEvent.endTime) {
-    const [hours, minutes] = dashboardEvent.endTime.split(':').map(Number);
-    endDateTime.setHours(hours, minutes, 0, 0);
-  }
+  if (preCalculatedStartDate && preCalculatedEndDate) {
+    // Use pre-calculated UTC dates (from handleDragEnd)
+    // This prevents timezone conversion issues
+    startDate = preCalculatedStartDate;
+    endDate = preCalculatedEndDate;
 
-  // endDate가 startDate보다 이르거나 같으면 자동으로 1시간 추가
-  if (endDateTime.getTime() <= startDateTime.getTime()) {
-    if (dashboardEvent.allDay) {
-      // 종일 이벤트: 다음 날 자정으로 설정
-      endDateTime = new Date(startDateTime);
-      endDateTime.setDate(endDateTime.getDate() + 1);
-      endDateTime.setHours(0, 0, 0, 0);
-    } else {
-      // 일반 이벤트: 시작 시간 + 1시간
-      endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+    console.log('[toStorageEvent] Using pre-calculated dates:', {
+      startDate,
+      endDate,
+      source: 'handleDragEnd'
+    });
+  } else {
+    // Calculate from date + startTime/endTime (legacy behavior)
+    const eventDate = dashboardEvent.date instanceof Date ? dashboardEvent.date : new Date(dashboardEvent.date);
+
+    // startDate 생성: date + startTime
+    let startDateTime = new Date(eventDate);
+    if (dashboardEvent.startTime) {
+      const [hours, minutes] = dashboardEvent.startTime.split(':').map(Number);
+      startDateTime.setHours(hours, minutes, 0, 0);
     }
+    startDate = startDateTime.toISOString();
+
+    // endDate 생성: date + endTime
+    let endDateTime = new Date(eventDate);
+    if (dashboardEvent.endTime) {
+      const [hours, minutes] = dashboardEvent.endTime.split(':').map(Number);
+      endDateTime.setHours(hours, minutes, 0, 0);
+    }
+
+    // endDate가 startDate보다 이르거나 같으면 자동으로 1시간 추가
+    if (endDateTime.getTime() <= startDateTime.getTime()) {
+      if (dashboardEvent.allDay) {
+        // 종일 이벤트: 다음 날 자정으로 설정
+        endDateTime = new Date(startDateTime);
+        endDateTime.setDate(endDateTime.getDate() + 1);
+        endDateTime.setHours(0, 0, 0, 0);
+      } else {
+        // 일반 이벤트: 시작 시간 + 1시간
+        endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+      }
+    }
+    endDate = endDateTime.toISOString();
+
+    console.log('[toStorageEvent] Calculated dates from date+time:', {
+      startDate,
+      endDate,
+      source: 'date+time calculation'
+    });
   }
-  const endDate = endDateTime.toISOString();
 
   return {
     userId: 'current-user', // TODO: 실제 사용자 ID로 교체

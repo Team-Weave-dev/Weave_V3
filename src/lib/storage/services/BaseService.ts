@@ -102,6 +102,48 @@ export abstract class BaseService<T extends BaseEntity> {
   }
 
   /**
+   * Normalize date string to ISO format
+   */
+  protected normalizeDateString(dateStr: string | undefined): string | undefined {
+    if (!dateStr) return undefined;
+
+    try {
+      // Parse and re-format to ensure consistent ISO format
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    } catch {
+      // If parsing fails, return original
+    }
+
+    return dateStr;
+  }
+
+  /**
+   * Normalize entity dates for consistency
+   */
+  protected normalizeEntityDates(entity: any): any {
+    const normalized = { ...entity };
+
+    // Normalize common date fields
+    if (normalized.createdAt) {
+      normalized.createdAt = this.normalizeDateString(normalized.createdAt);
+    }
+    if (normalized.updatedAt) {
+      normalized.updatedAt = this.normalizeDateString(normalized.updatedAt);
+    }
+    if (normalized.startDate) {
+      normalized.startDate = this.normalizeDateString(normalized.startDate);
+    }
+    if (normalized.endDate) {
+      normalized.endDate = this.normalizeDateString(normalized.endDate);
+    }
+
+    return normalized;
+  }
+
+  /**
    * Update an existing entity
    */
   async update(id: string, updates: Partial<Omit<T, 'id' | 'createdAt'>>): Promise<T | null> {
@@ -122,20 +164,35 @@ export abstract class BaseService<T extends BaseEntity> {
       device_id: getDeviceId(),  // Track which device updated this entity
     } as T;
 
+    // Normalize dates for consistency
+    const normalizedEntity = this.normalizeEntityDates(updatedEntity) as T;
+
     // Validate updated entity
-    if (!this.isValidEntity(updatedEntity)) {
+    if (!this.isValidEntity(normalizedEntity)) {
       console.error('[BaseService.update] Validation failed for:', this.entityKey);
-      console.error('[BaseService.update] Entity data:', JSON.stringify(updatedEntity, null, 2));
+      console.error('[BaseService.update] Entity data:', JSON.stringify(normalizedEntity, null, 2));
+
+      // Provide more detailed debugging information
+      if (this.entityKey === 'events') {
+        const eventEntity = normalizedEntity as any;
+        console.error('[BaseService.update] Debugging event validation:');
+        console.error('- id:', eventEntity.id, 'type:', typeof eventEntity.id);
+        console.error('- userId:', eventEntity.userId, 'type:', typeof eventEntity.userId);
+        console.error('- title:', eventEntity.title, 'type:', typeof eventEntity.title);
+        console.error('- createdAt:', eventEntity.createdAt, 'valid:', !!(eventEntity.createdAt && !isNaN(Date.parse(eventEntity.createdAt))));
+        console.error('- updatedAt:', eventEntity.updatedAt, 'valid:', !!(eventEntity.updatedAt && !isNaN(Date.parse(eventEntity.updatedAt))));
+      }
+
       throw new Error(`Invalid entity data for ${this.entityKey}`);
     }
 
     // Update in array
-    entities[index] = updatedEntity;
+    entities[index] = normalizedEntity;
 
     // Save to storage
     await this.storage.set<T[]>(this.entityKey, entities);
 
-    return updatedEntity;
+    return normalizedEntity;
   }
 
   /**

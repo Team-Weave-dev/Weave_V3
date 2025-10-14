@@ -548,8 +548,10 @@ export function CalendarWidget({
 
       // For local calendar events, update directly
       // Storage의 CalendarEvent 타입은 startDate/endDate를 사용함
+      // IMPORTANT: startDate/endDate는 아래에서 새로 계산하므로 여기서 제외
+      const {startDate: _, endDate: __, ...eventWithoutDates} = event as any;
       const updatedEvent: CalendarEvent = {
-        ...event,
+        ...eventWithoutDates,
         date: newDate,  // 위젯 내부에서는 date 사용
       };
 
@@ -579,31 +581,73 @@ export function CalendarWidget({
         const endMin = endMinutes % 60;
         updatedEvent.endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
 
-        // Create startDate and endDate with time
-        startDate = new Date(newDate);
-        startDate.setHours(hour, minute, 0, 0);
+        // Create startDate and endDate with time (UTC 기준)
+        startDate = new Date(Date.UTC(
+          newDate.getFullYear(),
+          newDate.getMonth(),
+          newDate.getDate(),
+          hour, minute, 0, 0
+        ));
 
-        endDate = new Date(newDate);
-        endDate.setHours(endHour, endMin, 0, 0);
+        endDate = new Date(Date.UTC(
+          newDate.getFullYear(),
+          newDate.getMonth(),
+          newDate.getDate(),
+          endHour, endMin, 0, 0
+        ));
       } else {
-        // No specific time - use existing time or allDay
-        if (event.startTime && event.endTime) {
-          // Preserve existing time
+        // No specific time in droppableId - check event type
+        // Priority: allDay flag > existing time
+        if (event.allDay) {
+          // AllDay event - 00:00:00 UTC to next day 00:00:00 UTC
+          // 표준 allDay 이벤트: [start, end) 구간 (end는 포함하지 않음)
+          // allDay가 true면 startTime/endTime이 있어도 무시
+          startDate = new Date(Date.UTC(
+            newDate.getFullYear(),
+            newDate.getMonth(),
+            newDate.getDate(),
+            0, 0, 0, 0
+          ));
+
+          endDate = new Date(Date.UTC(
+            newDate.getFullYear(),
+            newDate.getMonth(),
+            newDate.getDate() + 1,  // 다음날 00:00:00
+            0, 0, 0, 0
+          ));
+        } else if (event.startTime && event.endTime) {
+          // Preserve existing time for timed events (UTC 기준)
           const [startHour, startMin] = event.startTime.split(':').map(Number);
           const [endHour, endMin] = event.endTime.split(':').map(Number);
 
-          startDate = new Date(newDate);
-          startDate.setHours(startHour, startMin, 0, 0);
+          startDate = new Date(Date.UTC(
+            newDate.getFullYear(),
+            newDate.getMonth(),
+            newDate.getDate(),
+            startHour, startMin, 0, 0
+          ));
 
-          endDate = new Date(newDate);
-          endDate.setHours(endHour, endMin, 0, 0);
+          endDate = new Date(Date.UTC(
+            newDate.getFullYear(),
+            newDate.getMonth(),
+            newDate.getDate(),
+            endHour, endMin, 0, 0
+          ));
         } else {
-          // AllDay event - 00:00:00 to 23:59:59
-          startDate = new Date(newDate);
-          startDate.setHours(0, 0, 0, 0);
+          // No time info and not allDay - default to allDay behavior
+          startDate = new Date(Date.UTC(
+            newDate.getFullYear(),
+            newDate.getMonth(),
+            newDate.getDate(),
+            0, 0, 0, 0
+          ));
 
-          endDate = new Date(newDate);
-          endDate.setHours(23, 59, 59, 999);
+          endDate = new Date(Date.UTC(
+            newDate.getFullYear(),
+            newDate.getMonth(),
+            newDate.getDate() + 1,
+            0, 0, 0, 0
+          ));
         }
       }
 

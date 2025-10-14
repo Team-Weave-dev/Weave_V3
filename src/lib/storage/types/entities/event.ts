@@ -150,6 +150,26 @@ export interface CalendarEvent extends JsonObject {
   status?: EventStatus;
 
   // ========================================
+  // Visual & Presentation
+  // ========================================
+
+  /** Event icon (optional) */
+  icon?: string | null;
+
+  /** Event color (hex or color name, optional) */
+  color?: string | null;
+
+  // ========================================
+  // Privacy & Settings
+  // ========================================
+
+  /** Is private event (optional) */
+  isPrivate?: boolean;
+
+  /** Is busy event (optional) */
+  isBusy?: boolean;
+
+  // ========================================
   // Attendees
   // ========================================
 
@@ -168,17 +188,23 @@ export interface CalendarEvent extends JsonObject {
   // ========================================
 
   /** Recurring event settings (optional) */
-  recurring?: EventRecurring;
+  recurring?: EventRecurring | null;
+
+  /** Recurrence end date (optional, ISO 8601) */
+  recurrenceEnd?: string | null;
+
+  /** Recurrence exceptions (optional) */
+  recurrenceExceptions?: string[] | null;
 
   // ========================================
   // Metadata
   // ========================================
 
-  /** Event color (hex or color name, optional) */
-  color?: string;
+  /** Additional metadata (optional) */
+  metadata?: Record<string, any> | null;
 
   /** Event tags (optional) */
-  tags?: string[];
+  tags?: string[] | null;
 
   /** Creation timestamp (ISO 8601) */
   createdAt: string;
@@ -258,16 +284,19 @@ export function isCalendarEvent(data: unknown): data is CalendarEvent {
   // Date range validation (startDate must be before endDate)
   if (!isValidDateRange(e.startDate, e.endDate)) return false;
 
-  // Optional fields
-  if (e.projectId !== undefined && typeof e.projectId !== 'string') return false;
-  if (e.clientId !== undefined && typeof e.clientId !== 'string') return false;
-  if (e.description !== undefined && typeof e.description !== 'string') return false;
-  if (e.location !== undefined && typeof e.location !== 'string') return false;
-  if (e.timezone !== undefined && typeof e.timezone !== 'string') return false;
-  if (e.color !== undefined && typeof e.color !== 'string') return false;
+  // Optional fields (allow null for Supabase compatibility)
+  if (e.projectId !== undefined && e.projectId !== null && typeof e.projectId !== 'string') return false;
+  if (e.clientId !== undefined && e.clientId !== null && typeof e.clientId !== 'string') return false;
+  if (e.description !== undefined && e.description !== null && typeof e.description !== 'string') return false;
+  if (e.location !== undefined && e.location !== null && typeof e.location !== 'string') return false;
+  if (e.timezone !== undefined && e.timezone !== null && typeof e.timezone !== 'string') return false;
+  if (e.color !== undefined && e.color !== null && typeof e.color !== 'string') return false;
+  if (e.icon !== undefined && e.icon !== null && typeof e.icon !== 'string') return false;
 
   // Optional boolean
   if (e.allDay !== undefined && typeof e.allDay !== 'boolean') return false;
+  if (e.isPrivate !== undefined && typeof e.isPrivate !== 'boolean') return false;
+  if (e.isBusy !== undefined && typeof e.isBusy !== 'boolean') return false;
 
   // Optional enum validation
   if (
@@ -295,10 +324,17 @@ export function isCalendarEvent(data: unknown): data is CalendarEvent {
     if (!e.reminders.every(isEventReminder)) return false;
   }
 
-  if (e.tags !== undefined && !isStringArray(e.tags)) return false;
+  if (e.tags !== undefined && e.tags !== null && !isStringArray(e.tags)) return false;
 
-  // Optional recurring validation
-  if (e.recurring !== undefined && !isEventRecurring(e.recurring)) return false;
+  // Optional recurring validation (null is allowed)
+  if (e.recurring !== undefined && e.recurring !== null && !isEventRecurring(e.recurring)) return false;
+
+  // Additional recurrence fields
+  if (e.recurrenceEnd !== undefined && e.recurrenceEnd !== null && !isValidISODate(e.recurrenceEnd)) return false;
+  if (e.recurrenceExceptions !== undefined && e.recurrenceExceptions !== null && !isStringArray(e.recurrenceExceptions)) return false;
+
+  // Optional metadata validation (allow any object or null)
+  if (e.metadata !== undefined && e.metadata !== null && typeof e.metadata !== 'object') return false;
 
   // Optional updated_by validation
   if (e.updated_by !== undefined && typeof e.updated_by !== 'string') return false;

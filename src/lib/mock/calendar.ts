@@ -173,7 +173,7 @@ export function toDashboardCalendarEvent(
     startTime,
     endTime,
     allDay: storageEvent.allDay,
-    color: storageEvent.color,
+    color: storageEvent.color || undefined,
     recurring,
     type: eventType,
   };
