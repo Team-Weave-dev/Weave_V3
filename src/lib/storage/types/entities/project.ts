@@ -577,26 +577,32 @@ export function isProject(data: unknown): data is Project {
     return false;
   }
 
-  // Optional fields validation
-  if (p.clientId !== undefined && typeof p.clientId !== 'string') {
+  // Optional fields validation (use != null to handle both null and undefined)
+  if (p.clientId != null && typeof p.clientId !== 'string') {
     console.error('[isProject] Invalid clientId:', p.clientId);
     return false;
   }
-  if (p.description !== undefined && typeof p.description !== 'string') return false;
-  if (p.projectContent !== undefined && typeof p.projectContent !== 'string') return false;
+  if (p.description != null && typeof p.description !== 'string') {
+    console.error('[isProject] Invalid description:', p.description);
+    return false;
+  }
+  if (p.projectContent != null && typeof p.projectContent !== 'string') {
+    console.error('[isProject] Invalid projectContent:', p.projectContent);
+    return false;
+  }
 
   // Optional progress validation
-  if (p.paymentProgress !== undefined && !isNumberInRange(p.paymentProgress, 0, 100)) {
+  if (p.paymentProgress != null && !isNumberInRange(p.paymentProgress, 0, 100)) {
     console.error('[isProject] Invalid paymentProgress:', p.paymentProgress);
     return false;
   }
 
   // Optional date validation
-  if (p.startDate !== undefined && !isValidISODate(p.startDate)) {
+  if (p.startDate != null && !isValidISODate(p.startDate)) {
     console.error('[isProject] Invalid startDate:', p.startDate);
     return false;
   }
-  if (p.endDate !== undefined && !isValidISODate(p.endDate)) {
+  if (p.endDate != null && !isValidISODate(p.endDate)) {
     console.error('[isProject] Invalid endDate:', p.endDate);
     return false;
   }
@@ -608,16 +614,28 @@ export function isProject(data: unknown): data is Project {
   }
 
   // Optional number validation
-  if (p.budget !== undefined && typeof p.budget !== 'number') return false;
-  if (p.actualCost !== undefined && typeof p.actualCost !== 'number') return false;
-  if (p.totalAmount !== undefined && typeof p.totalAmount !== 'number') return false;
+  if (p.budget != null && typeof p.budget !== 'number') {
+    console.error('[isProject] Invalid budget:', p.budget);
+    return false;
+  }
+  if (p.actualCost != null && typeof p.actualCost !== 'number') {
+    console.error('[isProject] Invalid actualCost:', p.actualCost);
+    return false;
+  }
+  if (p.totalAmount != null && typeof p.totalAmount !== 'number') {
+    console.error('[isProject] Invalid totalAmount:', p.totalAmount);
+    return false;
+  }
 
   // Optional string validation
-  if (p.currency !== undefined && typeof p.currency !== 'string') return false;
+  if (p.currency != null && typeof p.currency !== 'string') {
+    console.error('[isProject] Invalid currency:', p.currency);
+    return false;
+  }
 
   // Optional enum validation
   if (
-    p.settlementMethod !== undefined &&
+    p.settlementMethod != null &&
     !['not_set', 'advance_final', 'advance_interim_final', 'post_payment'].includes(
       p.settlementMethod
     )
@@ -627,7 +645,7 @@ export function isProject(data: unknown): data is Project {
   }
 
   if (
-    p.paymentStatus !== undefined &&
+    p.paymentStatus != null &&
     !['advance_completed', 'interim_completed', 'final_completed', 'not_started'].includes(
       p.paymentStatus
     )
@@ -637,7 +655,7 @@ export function isProject(data: unknown): data is Project {
   }
 
   if (
-    p.priority !== undefined &&
+    p.priority != null &&
     !['low', 'medium', 'high', 'urgent'].includes(p.priority)
   ) {
     console.error('[isProject] Invalid priority:', p.priority);
@@ -645,7 +663,7 @@ export function isProject(data: unknown): data is Project {
   }
 
   if (
-    p.visibility !== undefined &&
+    p.visibility != null &&
     !['private', 'team', 'public'].includes(p.visibility)
   ) {
     console.error('[isProject] Invalid visibility:', p.visibility);
@@ -653,19 +671,25 @@ export function isProject(data: unknown): data is Project {
   }
 
   // Optional array validation
-  if (p.tags !== undefined && !isStringArray(p.tags)) {
+  if (p.tags != null && !isStringArray(p.tags)) {
     console.error('[isProject] Invalid tags:', p.tags);
     return false;
   }
 
   // Optional updated_by validation
-  if (p.updated_by !== undefined && typeof p.updated_by !== 'string') return false;
+  if (p.updated_by != null && typeof p.updated_by !== 'string') {
+    console.error('[isProject] Invalid updated_by:', p.updated_by);
+    return false;
+  }
 
   // Optional device_id validation
-  if (p.device_id !== undefined && typeof p.device_id !== 'string') return false;
+  if (p.device_id != null && typeof p.device_id !== 'string') {
+    console.error('[isProject] Invalid device_id:', p.device_id);
+    return false;
+  }
 
   // DocumentStatus validation (if present)
-  if (p.documentStatus !== undefined) {
+  if (p.documentStatus != null) {
     if (typeof p.documentStatus !== 'object' || p.documentStatus === null) {
       console.error('[isProject] Invalid documentStatus (not an object):', p.documentStatus);
       return false;
@@ -688,10 +712,10 @@ export function isProject(data: unknown): data is Project {
       }
 
       // Validate optional timestamp fields with better error handling
-      if (docStatus.lastUpdated !== undefined) {
-        // Allow null or empty string (treat as undefined)
-        if (docStatus.lastUpdated === null || docStatus.lastUpdated === '') {
-          console.warn(`[isProject] documentStatus.${docType}.lastUpdated is null/empty, treating as undefined`);
+      if (docStatus.lastUpdated != null) {
+        // Allow empty string (treat as undefined)
+        if (docStatus.lastUpdated === '') {
+          console.warn(`[isProject] documentStatus.${docType}.lastUpdated is empty, treating as undefined`);
         } else if (!isValidISODate(docStatus.lastUpdated)) {
           console.error(`[isProject] Invalid documentStatus.${docType}.lastUpdated:`, docStatus.lastUpdated);
           return false;
@@ -701,7 +725,7 @@ export function isProject(data: unknown): data is Project {
       // Support both lastUpdated and latestSavedAt (legacy)
       if ('latestSavedAt' in docStatus) {
         const latestSavedAt = (docStatus as any).latestSavedAt;
-        if (latestSavedAt !== undefined && latestSavedAt !== null && latestSavedAt !== '') {
+        if (latestSavedAt != null && latestSavedAt !== '') {
           if (!isValidISODate(latestSavedAt)) {
             console.error(`[isProject] Invalid documentStatus.${docType}.latestSavedAt:`, latestSavedAt);
             return false;
@@ -709,7 +733,7 @@ export function isProject(data: unknown): data is Project {
         }
       }
 
-      if (docStatus.count !== undefined && typeof docStatus.count !== 'number') {
+      if (docStatus.count != null && typeof docStatus.count !== 'number') {
         console.error(`[isProject] Invalid documentStatus.${docType}.count:`, docStatus.count);
         return false;
       }

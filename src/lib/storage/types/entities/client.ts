@@ -151,12 +151,12 @@ export function isClientAddress(data: unknown): data is ClientAddress {
 
   const addr = data as ClientAddress;
 
-  // All fields are optional, just check types if present
-  if (addr.street !== undefined && typeof addr.street !== 'string') return false;
-  if (addr.city !== undefined && typeof addr.city !== 'string') return false;
-  if (addr.state !== undefined && typeof addr.state !== 'string') return false;
-  if (addr.zipCode !== undefined && typeof addr.zipCode !== 'string') return false;
-  if (addr.country !== undefined && typeof addr.country !== 'string') return false;
+  // All fields are optional, just check types if present (use != null to handle both null and undefined)
+  if (addr.street != null && typeof addr.street !== 'string') return false;
+  if (addr.city != null && typeof addr.city !== 'string') return false;
+  if (addr.state != null && typeof addr.state !== 'string') return false;
+  if (addr.zipCode != null && typeof addr.zipCode !== 'string') return false;
+  if (addr.country != null && typeof addr.country !== 'string') return false;
 
   return true;
 }
@@ -188,35 +188,35 @@ export function isClient(data: unknown): data is Client {
   if (!isValidISODate(c.createdAt)) return false;
   if (!isValidISODate(c.updatedAt)) return false;
 
-  // Optional fields with format validation
-  if (c.company !== undefined && typeof c.company !== 'string') return false;
-  if (c.email !== undefined && !isValidEmail(c.email)) return false;
-  if (c.phone !== undefined && typeof c.phone !== 'string') return false;
-  if (c.website !== undefined && !isValidURL(c.website)) return false;
+  // Optional fields with format validation (use != null to handle both null and undefined)
+  if (c.company != null && typeof c.company !== 'string') return false;
+  if (c.email != null && !isValidEmail(c.email)) return false;
+  if (c.phone != null && typeof c.phone !== 'string') return false;
+  if (c.website != null && !isValidURL(c.website)) return false;
 
   // Optional address validation
-  if (c.address !== undefined && !isClientAddress(c.address)) return false;
+  if (c.address != null && !isClientAddress(c.address)) return false;
 
   // Optional business fields
-  if (c.businessNumber !== undefined && typeof c.businessNumber !== 'string') return false;
-  if (c.taxId !== undefined && typeof c.taxId !== 'string') return false;
-  if (c.industry !== undefined && typeof c.industry !== 'string') return false;
+  if (c.businessNumber != null && typeof c.businessNumber !== 'string') return false;
+  if (c.taxId != null && typeof c.taxId !== 'string') return false;
+  if (c.industry != null && typeof c.industry !== 'string') return false;
 
   // Optional contacts array validation
-  if (c.contacts !== undefined) {
+  if (c.contacts != null) {
     if (!Array.isArray(c.contacts)) return false;
     if (!c.contacts.every(isClientContact)) return false;
   }
 
   // Optional metadata
-  if (c.tags !== undefined && !isStringArray(c.tags)) return false;
-  if (c.notes !== undefined && typeof c.notes !== 'string') return false;
+  if (c.tags != null && !isStringArray(c.tags)) return false;
+  if (c.notes != null && typeof c.notes !== 'string') return false;
 
   // Rating validation (1-5 range)
-  if (c.rating !== undefined && !isNumberInRange(c.rating, 1, 5)) return false;
+  if (c.rating != null && !isNumberInRange(c.rating, 1, 5)) return false;
 
   // Optional updated_by validation
-  if (c.updated_by !== undefined && typeof c.updated_by !== 'string') return false;
+  if (c.updated_by != null && typeof c.updated_by !== 'string') return false;
 
   return true;
 }

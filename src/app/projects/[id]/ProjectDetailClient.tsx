@@ -488,7 +488,21 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
     setEditState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const success = await updateCustomProject(project.no, editState.editingData);
+      // ✅ 빈 이름을 가진 WBS 태스크 필터링 (저장 전 데이터 정제)
+      const filteredData = {
+        ...editState.editingData,
+        wbsTasks: editState.editingData.wbsTasks.filter(task =>
+          task.name && task.name.trim() !== ''
+        )
+      };
+
+      console.log('🧹 WBS 태스크 필터링:', {
+        원본: editState.editingData.wbsTasks.length,
+        필터링후: filteredData.wbsTasks.length,
+        제거된개수: editState.editingData.wbsTasks.length - filteredData.wbsTasks.length
+      });
+
+      const success = await updateCustomProject(project.no, filteredData);
 
       if (success) {
         console.log('✅ 프로젝트 편집 성공:', {

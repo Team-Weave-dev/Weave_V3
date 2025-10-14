@@ -431,7 +431,7 @@ export function isDashboardSettings(data: unknown): data is DashboardSettings {
   const dashboard = data as DashboardSettings;
 
   if (!isDashboardLayout(dashboard.layout)) return false;
-  if (dashboard.theme !== undefined && !['light', 'dark', 'auto'].includes(dashboard.theme)) {
+  if (dashboard.theme != null && !['light', 'dark', 'auto'].includes(dashboard.theme)) {
     return false;
   }
 
@@ -463,10 +463,10 @@ export function isCalendarSettings(data: unknown): data is CalendarSettings {
   if (!['month', 'week', 'day', 'list'].includes(calendar.defaultView)) return false;
   if (![0, 1].includes(calendar.weekStartsOn)) return false;
 
-  // Optional fields
-  if (calendar.workingHours !== undefined && !isWorkingHours(calendar.workingHours)) return false;
-  if (calendar.holidays !== undefined && !isStringArray(calendar.holidays)) return false;
-  if (calendar.defaultReminders !== undefined) {
+  // Optional fields (use != null to handle both null and undefined)
+  if (calendar.workingHours != null && !isWorkingHours(calendar.workingHours)) return false;
+  if (calendar.holidays != null && !isStringArray(calendar.holidays)) return false;
+  if (calendar.defaultReminders != null) {
     if (!Array.isArray(calendar.defaultReminders)) return false;
     if (!calendar.defaultReminders.every((reminder) => typeof reminder === 'number')) return false;
   }
@@ -484,19 +484,19 @@ export function isProjectSettings(data: unknown): data is ProjectSettings {
 
   if (!['list', 'grid', 'kanban'].includes(projects.defaultView)) return false;
 
-  // Optional fields
+  // Optional fields (use != null to handle both null and undefined)
   if (
-    projects.sortBy !== undefined &&
+    projects.sortBy != null &&
     !['name', 'date', 'status', 'priority'].includes(projects.sortBy)
   ) {
     return false;
   }
 
-  if (projects.sortOrder !== undefined && !['asc', 'desc'].includes(projects.sortOrder)) {
+  if (projects.sortOrder != null && !['asc', 'desc'].includes(projects.sortOrder)) {
     return false;
   }
 
-  if (projects.itemsPerPage !== undefined && !isPositiveNumber(projects.itemsPerPage)) {
+  if (projects.itemsPerPage != null && !isPositiveNumber(projects.itemsPerPage)) {
     return false;
   }
 
@@ -511,14 +511,14 @@ export function isNotificationSettings(data: unknown): data is NotificationSetti
 
   const notifications = data as NotificationSettings;
 
-  // All fields are optional booleans
-  if (notifications.email !== undefined && typeof notifications.email !== 'boolean') return false;
-  if (notifications.push !== undefined && typeof notifications.push !== 'boolean') return false;
-  if (notifications.desktop !== undefined && typeof notifications.desktop !== 'boolean') return false;
-  if (notifications.sound !== undefined && typeof notifications.sound !== 'boolean') return false;
-  if (notifications.taskReminders !== undefined && typeof notifications.taskReminders !== 'boolean') return false;
-  if (notifications.eventReminders !== undefined && typeof notifications.eventReminders !== 'boolean') return false;
-  if (notifications.projectDeadlines !== undefined && typeof notifications.projectDeadlines !== 'boolean') return false;
+  // All fields are optional booleans (use != null to handle both null and undefined)
+  if (notifications.email != null && typeof notifications.email !== 'boolean') return false;
+  if (notifications.push != null && typeof notifications.push !== 'boolean') return false;
+  if (notifications.desktop != null && typeof notifications.desktop !== 'boolean') return false;
+  if (notifications.sound != null && typeof notifications.sound !== 'boolean') return false;
+  if (notifications.taskReminders != null && typeof notifications.taskReminders !== 'boolean') return false;
+  if (notifications.eventReminders != null && typeof notifications.eventReminders !== 'boolean') return false;
+  if (notifications.projectDeadlines != null && typeof notifications.projectDeadlines !== 'boolean') return false;
 
   return true;
 }
@@ -535,11 +535,11 @@ export function isUserPreferences(data: unknown): data is UserPreferences {
   if (!['ko', 'en'].includes(prefs.language)) return false;
   if (typeof prefs.timezone !== 'string' || !prefs.timezone) return false;
 
-  // Optional fields
-  if (prefs.dateFormat !== undefined && typeof prefs.dateFormat !== 'string') return false;
-  if (prefs.timeFormat !== undefined && !['12', '24'].includes(prefs.timeFormat)) return false;
-  if (prefs.currency !== undefined && typeof prefs.currency !== 'string') return false;
-  if (prefs.numberFormat !== undefined && typeof prefs.numberFormat !== 'string') return false;
+  // Optional fields (use != null to handle both null and undefined)
+  if (prefs.dateFormat != null && typeof prefs.dateFormat !== 'string') return false;
+  if (prefs.timeFormat != null && !['12', '24'].includes(prefs.timeFormat)) return false;
+  if (prefs.currency != null && typeof prefs.currency !== 'string') return false;
+  if (prefs.numberFormat != null && typeof prefs.numberFormat !== 'string') return false;
 
   return true;
 }
@@ -563,8 +563,8 @@ export function isSettings(data: unknown): data is Settings {
   if (!isNotificationSettings(s.notifications)) return false;
   if (!isUserPreferences(s.preferences)) return false;
 
-  // Optional updated_by validation
-  if (s.updated_by !== undefined && typeof s.updated_by !== 'string') return false;
+  // Optional updated_by validation (use != null to handle both null and undefined)
+  if (s.updated_by != null && typeof s.updated_by !== 'string') return false;
 
   return true;
 }

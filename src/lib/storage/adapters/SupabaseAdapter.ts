@@ -792,30 +792,11 @@ export class SupabaseAdapter implements StorageAdapter {
         }))
 
         await this.withRetry(async () => {
-          // 삭제-삽입 전략: LocalStorage와 완전 동기화
-          // 1. 기존 projects 모두 삭제
-          console.log('[SupabaseAdapter] Projects DELETE 시작:', { userId: this.userId })
-
-          const { error: deleteError } = await this.supabase
-            .from(tableName)
-            .delete()
-            .eq('user_id', this.userId)
-
-          if (deleteError) {
-            console.error('[SupabaseAdapter] Projects delete error:', {
-              code: deleteError.code,
-              message: deleteError.message,
-              details: deleteError.details,
-              hint: deleteError.hint
-            })
-            throw deleteError
-          }
-
-          console.log('[SupabaseAdapter] Projects DELETE 성공')
-
-          // 2. 새로운 projects 삽입 (배열이 비어있지 않을 때만)
+          // ⚠️ Projects는 UPSERT 전략 사용 (Documents에서 참조하므로 delete-insert 불가)
+          // Foreign key constraint 위반 방지: documents.project_id → projects.id (ON DELETE CASCADE)
+          // DELETE-INSERT 전략 사용 시 documents가 CASCADE DELETE되는 문제 발생!
           if (dataToStore.length > 0) {
-            console.log('[SupabaseAdapter] Projects INSERT 시작:', {
+            console.log('[SupabaseAdapter] Projects UPSERT 시작:', {
               count: dataToStore.length,
               firstProject: {
                 id: dataToStore[0].id,
@@ -825,23 +806,23 @@ export class SupabaseAdapter implements StorageAdapter {
               }
             })
 
-            const { error: insertError } = await this.supabase
+            const { error: upsertError } = await this.supabase
               .from(tableName)
-              .insert(dataToStore as any)
+              .upsert(dataToStore as any)  // id 기준 UPSERT (새 프로젝트 추가 또는 기존 업데이트)
 
-            if (insertError) {
-              console.error('[SupabaseAdapter] Projects insert error:', {
-                code: insertError.code,
-                message: insertError.message,
-                details: insertError.details,
-                hint: insertError.hint
+            if (upsertError) {
+              console.error('[SupabaseAdapter] Projects upsert error:', {
+                code: upsertError.code,
+                message: upsertError.message,
+                details: upsertError.details,
+                hint: upsertError.hint
               })
-              throw insertError
+              throw upsertError
             }
 
-            console.log('[SupabaseAdapter] Projects INSERT 성공:', dataToStore.length)
+            console.log('[SupabaseAdapter] Projects UPSERT 성공:', dataToStore.length)
           } else {
-            console.log('[SupabaseAdapter] Projects INSERT 건너뜀 (빈 배열)')
+            console.log('[SupabaseAdapter] Projects UPSERT 건너뜀 (빈 배열)')
           }
         })
         return
@@ -1256,9 +1237,15 @@ export class SupabaseAdapter implements StorageAdapter {
           const docStatus = doc.status || 'draft'
           const mappedStatus = statusMap[docStatus] || docStatus
 
-          // Type 검증: Supabase CHECK 제약
+          // Type 검증 및 변환: Document 엔티티 'etc' → Supabase 'other'
+          // Supabase CHECK 제약: ('contract', 'invoice', 'estimate', 'report', 'meeting_note', 'specification', 'proposal', 'other')
+          const typeMapping: Record<string, string> = {
+            'etc': 'other',  // Document 엔티티 'etc' → Supabase 'other'
+          }
+
           const validTypes = ['contract', 'invoice', 'estimate', 'report', 'meeting_note', 'specification', 'proposal', 'other']
-          let docType = doc.type || 'other'
+          let docType = typeMapping[doc.type] || doc.type || 'other'
+
           if (!validTypes.includes(docType)) {
             console.warn(`[SupabaseAdapter] Invalid document type "${docType}", converting to "other"`)
             docType = 'other'
@@ -1329,39 +1316,58 @@ export class SupabaseAdapter implements StorageAdapter {
           }
         })
 
+        // 디버깅: 변환된 documents 데이터 로그
+        console.log('[SupabaseAdapter] Documents dataToStore:', {
+          count: dataToStore.length,
+          firstDoc: dataToStore[0] ? {
+            id: dataToStore[0].id,
+            title: dataToStore[0].title,
+            type: dataToStore[0].type,
+            project_id: dataToStore[0].project_id,
+            user_id: dataToStore[0].user_id
+          } : null
+        })
+
         await this.withRetry(async () => {
-          // 삭제-삽입 전략: LocalStorage와 완전 동기화
-          // 1. 기존 documents 모두 삭제
-          const { error: deleteError } = await this.supabase
-            .from(tableName)
-            .delete()
-            .eq('user_id', this.userId)
-
-          if (deleteError) {
-            console.error('[SupabaseAdapter] Documents delete error:', {
-              code: deleteError.code,
-              message: deleteError.message,
-              details: deleteError.details,
-              hint: deleteError.hint
-            })
-            throw deleteError
-          }
-
-          // 2. 새로운 documents 삽입 (배열이 비어있지 않을 때만)
+          // ⚠️ Documents는 UPSERT 전략 사용 (Projects에서 참조하므로 delete-insert 불가)
+          // Foreign key constraint 위반 방지: projects.document_status 등에서 참조 가능
+          // Race condition 방지: 동시에 여러 문서가 추가될 때 DELETE-INSERT는 데이터 손실 발생
           if (dataToStore.length > 0) {
-            const { error: insertError } = await this.supabase
-              .from(tableName)
-              .insert(dataToStore as any)
+            console.log('[SupabaseAdapter] Documents UPSERT 시작:', {
+              count: dataToStore.length,
+              firstDoc: {
+                id: dataToStore[0].id,
+                title: dataToStore[0].title,
+                type: dataToStore[0].type,
+                project_id: dataToStore[0].project_id,
+                user_id: dataToStore[0].user_id
+              }
+            })
 
-            if (insertError) {
-              console.error('[SupabaseAdapter] Documents insert error:', {
-                code: insertError.code,
-                message: insertError.message,
-                details: insertError.details,
-                hint: insertError.hint
+            const { data: upsertData, error: upsertError } = await this.supabase
+              .from(tableName)
+              .upsert(dataToStore as any)  // id 기준 UPSERT (새 문서 추가 또는 기존 업데이트)
+              .select()  // 🔍 INSERT된 데이터를 반환받아 확인
+
+            if (upsertError) {
+              console.error('[SupabaseAdapter] ❌ Documents UPSERT 실패:', {
+                code: upsertError.code,
+                message: upsertError.message,
+                details: upsertError.details,
+                hint: upsertError.hint,
+                fullError: JSON.stringify(upsertError, null, 2)
               })
-              throw insertError
+              console.error('[SupabaseAdapter] 전송한 데이터:', JSON.stringify(dataToStore[0], null, 2))
+              throw upsertError
             }
+
+            console.log('[SupabaseAdapter] ✅ Documents UPSERT 성공:', {
+              count: dataToStore.length,
+              returnedData: upsertData ? upsertData.length : 0,
+              firstReturned: upsertData?.[0]
+            })
+          } else {
+            console.log('[SupabaseAdapter] Documents UPSERT 건너뜀 (빈 배열)')
           }
         })
         return

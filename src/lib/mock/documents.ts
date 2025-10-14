@@ -9,6 +9,7 @@ import type { DocumentInfo } from '../types/project-table.types';
 import type { GeneratedDocument } from '../document-generator/templates';
 import type { Document, DocumentCreate, DocumentStatus as StorageDocumentStatus } from '@/lib/storage/types/entities/document';
 import { documentService } from '@/lib/storage';
+import { createClient } from '@/lib/supabase/client';
 
 // ============================================================================
 // Type Conversion Functions
@@ -168,7 +169,8 @@ export async function getProjectDocuments(projectId: string): Promise<DocumentIn
       actualProjectId = project.id;
       console.log(`✅ [getProjectDocuments] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
     } else {
-      console.warn(`⚠️  [getProjectDocuments] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+      console.error(`❌ [getProjectDocuments] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+      throw new Error(`프로젝트를 찾을 수 없습니다: ${projectId}. 프로젝트가 존재하는지 확인해주세요.`);
     }
   }
 
@@ -180,6 +182,18 @@ export async function getProjectDocuments(projectId: string): Promise<DocumentIn
  * Add a new document to a project
  */
 export async function addProjectDocument(projectId: string, documentInfo: DocumentInfo): Promise<DocumentInfo> {
+  // 🔑 인증된 사용자 ID 가져오기
+  const supabase = createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    console.error('❌ [addProjectDocument] 인증된 사용자를 찾을 수 없습니다:', authError);
+    throw new Error('인증되지 않은 사용자입니다. 로그인 후 다시 시도해주세요.');
+  }
+
+  const userId = user.id;
+  console.log(`✅ [addProjectDocument] 인증된 userId: ${userId}`);
+
   // 🔑 프로젝트 번호(no)를 UUID로 변환
   // projectId가 'WEAVE_XXX' 형태(프로젝트 번호)라면 실제 UUID를 조회
   let actualProjectId = projectId;
@@ -197,12 +211,13 @@ export async function addProjectDocument(projectId: string, documentInfo: Docume
       actualProjectId = project.id;
       console.log(`✅ [addProjectDocument] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
     } else {
-      console.warn(`⚠️  [addProjectDocument] 프로젝트를 찾을 수 없습니다: ${projectId}`);
-      // 프로젝트를 찾지 못했지만 계속 진행 (LocalStorage에는 저장됨)
+      console.error(`❌ [addProjectDocument] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+      throw new Error(`프로젝트를 찾을 수 없습니다: ${projectId}. 프로젝트가 존재하는지 확인해주세요.`);
     }
   }
 
-  const document = documentInfoToDocument(documentInfo, actualProjectId);
+  // 📝 인증된 userId를 전달하여 Document 엔티티 생성
+  const document = documentInfoToDocument(documentInfo, actualProjectId, userId);
   const created = await documentService.create(document);
 
   // 📊 문서 추가 후 프로젝트의 document_status 자동 업데이트
@@ -256,6 +271,10 @@ export async function deleteProjectDocument(projectId: string, documentId: strin
 
     if (project && project.id) {
       actualProjectId = project.id;
+      console.log(`✅ [deleteProjectDocument] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
+    } else {
+      console.error(`❌ [deleteProjectDocument] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+      throw new Error(`프로젝트를 찾을 수 없습니다: ${projectId}. 프로젝트가 존재하는지 확인해주세요.`);
     }
   }
 
@@ -298,6 +317,10 @@ export async function deleteProjectDocumentsByType(
 
     if (project && project.id) {
       actualProjectId = project.id;
+      console.log(`✅ [deleteProjectDocumentsByType] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
+    } else {
+      console.error(`❌ [deleteProjectDocumentsByType] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+      throw new Error(`프로젝트를 찾을 수 없습니다: ${projectId}. 프로젝트가 존재하는지 확인해주세요.`);
     }
   }
 
@@ -340,6 +363,10 @@ export async function clearProjectDocuments(projectId: string): Promise<void> {
 
     if (project && project.id) {
       actualProjectId = project.id;
+      console.log(`✅ [clearProjectDocuments] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
+    } else {
+      console.error(`❌ [clearProjectDocuments] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+      throw new Error(`프로젝트를 찾을 수 없습니다: ${projectId}. 프로젝트가 존재하는지 확인해주세요.`);
     }
   }
 
@@ -482,6 +509,9 @@ export async function debugProjectDocuments(projectId: string): Promise<void> {
     if (project && project.id) {
       actualProjectId = project.id;
       console.log(`✅ [DEBUG] 프로젝트 번호 '${projectId}' → UUID '${actualProjectId}' 변환 완료`);
+    } else {
+      console.error(`❌ [debugProjectDocuments] 프로젝트를 찾을 수 없습니다: ${projectId}`);
+      throw new Error(`프로젝트를 찾을 수 없습니다: ${projectId}. 프로젝트가 존재하는지 확인해주세요.`);
     }
   }
 

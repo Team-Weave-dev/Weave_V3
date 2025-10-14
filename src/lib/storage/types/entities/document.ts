@@ -152,33 +152,33 @@ export function isDocument(data: unknown): data is Document {
   if (!isValidISODate(d.createdAt)) return false;
   if (!isValidISODate(d.updatedAt)) return false;
 
-  // Optional fields
-  if (d.content !== undefined && typeof d.content !== 'string') return false;
-  if (d.templateId !== undefined && typeof d.templateId !== 'string') return false;
+  // Optional fields (use != null to handle both null and undefined)
+  if (d.content != null && typeof d.content !== 'string') return false;
+  if (d.templateId != null && typeof d.templateId !== 'string') return false;
 
   // Optional source validation
   if (
-    d.source !== undefined &&
+    d.source != null &&
     !['generated', 'uploaded', 'imported'].includes(d.source)
   ) {
     return false;
   }
 
   // Optional number validation
-  if (d.version !== undefined && !isPositiveNumber(d.version)) return false;
-  if (d.size !== undefined && !isPositiveNumber(d.size)) return false;
+  if (d.version != null && !isPositiveNumber(d.version)) return false;
+  if (d.size != null && !isPositiveNumber(d.size)) return false;
 
   // Optional array validation
-  if (d.tags !== undefined && !isStringArray(d.tags)) return false;
+  if (d.tags != null && !isStringArray(d.tags)) return false;
 
   // Optional signatures validation
-  if (d.signatures !== undefined) {
+  if (d.signatures != null) {
     if (!Array.isArray(d.signatures)) return false;
     if (!d.signatures.every(isDocumentSignature)) return false;
   }
 
   // Optional updated_by validation
-  if (d.updated_by !== undefined && typeof d.updated_by !== 'string') return false;
+  if (d.updated_by != null && typeof d.updated_by !== 'string') return false;
 
   return true;
 }
