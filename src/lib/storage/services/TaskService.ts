@@ -34,7 +34,9 @@ export class TaskService extends BaseService<Task> {
   // ============================================================================
 
   /**
-   * Format date for activity log messages (YYYY-MM-DD HH:MM)
+   * Format date for activity log messages
+   * - All-day tasks (00:00 time): YYYY-MM-DD (date only)
+   * - Timed tasks: YYYY-MM-DD HH:MM (date and time)
    */
   private formatDateForLog(isoDate: string | undefined): string {
     if (!isoDate) return '없음';
@@ -44,10 +46,18 @@ export class TaskService extends BaseService<Task> {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
 
-      return `${year}-${month}-${day} ${hours}:${minutes}`;
+      // If time is 00:00, treat as all-day task and show date only
+      if (hours === 0 && minutes === 0) {
+        return `${year}-${month}-${day}`;
+      }
+
+      // For timed tasks, show date and time
+      const hoursStr = String(hours).padStart(2, '0');
+      const minutesStr = String(minutes).padStart(2, '0');
+      return `${year}-${month}-${day} ${hoursStr}:${minutesStr}`;
     } catch {
       return isoDate;
     }

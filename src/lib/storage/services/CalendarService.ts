@@ -42,6 +42,34 @@ export class CalendarService extends BaseService<CalendarEvent> {
   // ============================================================================
 
   /**
+   * Format date for activity log messages
+   * - All-day events: YYYY-MM-DD (date only)
+   * - Timed events: YYYY-MM-DD HH:MM (date and time)
+   */
+  private formatDateForLog(isoDate: string | undefined, isAllDay: boolean = false): string {
+    if (!isoDate) return '없음';
+
+    try {
+      const date = new Date(isoDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+
+      // For all-day events, only show date
+      if (isAllDay) {
+        return `${year}-${month}-${day}`;
+      }
+
+      // For timed events, show date and time
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}`;
+    } catch {
+      return isoDate;
+    }
+  }
+
+  /**
    * Get user information with dynamic import to avoid circular dependency
    */
   private async getUserInfo(userId: string): Promise<{ name: string; initials: string }> {
@@ -128,6 +156,10 @@ export class CalendarService extends BaseService<CalendarEvent> {
 
     // Track changes
     const changes: string[] = [];
+
+    // Determine if this is an all-day event (use updated value if provided, otherwise use old value)
+    const isAllDay = updates.allDay !== undefined ? updates.allDay : (oldEvent.allDay || false);
+
     if (updates.title && updates.title !== oldEvent.title) {
       changes.push(`제목: "${oldEvent.title}" → "${updates.title}"`);
     }
@@ -135,10 +167,10 @@ export class CalendarService extends BaseService<CalendarEvent> {
       changes.push(`상태: ${oldEvent.status} → ${updates.status}`);
     }
     if (updates.startDate && updates.startDate !== oldEvent.startDate) {
-      changes.push(`시작일: ${oldEvent.startDate} → ${updates.startDate}`);
+      changes.push(`시작일: ${this.formatDateForLog(oldEvent.startDate, isAllDay)} → ${this.formatDateForLog(updates.startDate, isAllDay)}`);
     }
     if (updates.endDate && updates.endDate !== oldEvent.endDate) {
-      changes.push(`종료일: ${oldEvent.endDate} → ${updates.endDate}`);
+      changes.push(`종료일: ${this.formatDateForLog(oldEvent.endDate, isAllDay)} → ${this.formatDateForLog(updates.endDate, isAllDay)}`);
     }
 
     if (changes.length > 0) {
