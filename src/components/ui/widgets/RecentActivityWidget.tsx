@@ -261,14 +261,8 @@ export function RecentActivityWidget({
                           <div className="space-y-1">
                             <p className={typography.widget.label}>
                               <span className="font-medium">{activity.user.name}</span>님이{' '}
-                              <span className="font-medium">{activity.target}</span>을(를){' '}
-                              {activity.action}
+                              {activity.description || `${activity.target}을(를) ${activity.action}`}
                             </p>
-                            {activity.description && (
-                              <p className={cn(typography.text.small, "text-muted-foreground")}>
-                                {activity.description}
-                              </p>
-                            )}
                           </div>
                         </div>
 

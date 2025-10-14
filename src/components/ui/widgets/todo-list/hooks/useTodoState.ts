@@ -193,11 +193,13 @@ export function useTodoState(props?: {
    * 단일 태스크를 Storage에 동기화
    * @param task - 동기화할 태스크 (Widget 타입, DELETE 시에는 id만 있어도 됨)
    * @param operation - 수행할 작업 ('create' | 'update' | 'delete')
+   * @param skipLog - 활동 로그 생성 건너뛰기 (내부 업데이트용)
    * @returns 성공 여부
    */
   const syncTaskToStorage = useCallback(async (
     task: TodoTask,
-    operation: 'create' | 'update' | 'delete'
+    operation: 'create' | 'update' | 'delete',
+    skipLog = false
   ): Promise<boolean> => {
     try {
       if (operation === 'delete') {
@@ -213,7 +215,7 @@ export function useTodoState(props?: {
       if (operation === 'create') {
         await taskService.create(taskEntity);
       } else {
-        await taskService.update(task.id, taskEntity);
+        await taskService.update(task.id, taskEntity, skipLog);
       }
       return true;
     } catch (error) {
@@ -437,6 +439,7 @@ export function useTodoState(props?: {
     }
 
     // 자식 태스크인 경우: 부모의 subtasks 배열 업데이트
+    // skipLog = true로 설정하여 활동 로그 생성 방지 (내부 업데이트)
     if (parentId) {
       const parent = prevTasks.find(t => t.id === parentId);
       if (parent) {
@@ -444,7 +447,7 @@ export function useTodoState(props?: {
           ...parent,
           children: [...(parent.children || []), newTask]
         };
-        await syncTaskToStorage(updatedParent, 'update');
+        await syncTaskToStorage(updatedParent, 'update', true); // skipLog = true
       }
     }
 

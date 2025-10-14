@@ -54,6 +54,31 @@ export class TaskService extends BaseService<Task> {
   }
 
   /**
+   * Add Korean particle based on whether the last character has a final consonant (받침)
+   * @param word - The word to add particle to
+   * @param withBatchim - Particle to use if word has 받침 (e.g., "을", "이")
+   * @param withoutBatchim - Particle to use if word has no 받침 (e.g., "를", "가")
+   * @returns Word with appropriate particle
+   */
+  private addKoreanParticle(word: string, withBatchim: string, withoutBatchim: string): string {
+    if (!word) return word;
+
+    const lastChar = word.charAt(word.length - 1);
+    const code = lastChar.charCodeAt(0);
+
+    // Check if it's a Korean character (가-힣)
+    if (code >= 0xAC00 && code <= 0xD7A3) {
+      // Calculate if it has 받침
+      // Korean syllables: 초성(19) × 중성(21) × 종성(28) = 11,172 combinations
+      const hasBatchim = (code - 0xAC00) % 28 !== 0;
+      return word + (hasBatchim ? withBatchim : withoutBatchim);
+    }
+
+    // For non-Korean characters (English, numbers, etc.), assume 받침 for conservative choice
+    return word + withBatchim;
+  }
+
+  /**
    * Get user information with dynamic import to avoid circular dependency
    */
   private async getUserInfo(userId: string): Promise<{ name: string; initials: string }> {
@@ -222,7 +247,7 @@ export class TaskService extends BaseService<Task> {
       userId: task.userId,
       userName: userInfo.name,
       userInitials: userInfo.initials,
-      description: `할일 "${task.title}"을(를) 생성했습니다.`,
+      description: `${this.addKoreanParticle(task.title, '을', '를')} 생성했습니다.`,
     });
 
     return task;
@@ -232,9 +257,10 @@ export class TaskService extends BaseService<Task> {
    * Override update to auto-normalize data and add activity logging
    * @param id - Task ID
    * @param updates - Partial task data
+   * @param skipLog - Skip activity logging (for internal updates like subtasks array)
    * @returns Updated task
    */
-  override async update(id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<Task | null> {
+  async update(id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>, skipLog = false): Promise<Task | null> {
     const oldTask = await this.getById(id);
     if (!oldTask) return null;
 
@@ -242,6 +268,11 @@ export class TaskService extends BaseService<Task> {
     const normalizedUpdates = this.normalizeTaskData(updates);
     const updatedTask = await super.update(id, normalizedUpdates);
     if (!updatedTask) return null;
+
+    // Skip activity logging if requested
+    if (skipLog) {
+      return updatedTask;
+    }
 
     // Track changes
     const changes: string[] = [];
@@ -270,7 +301,7 @@ export class TaskService extends BaseService<Task> {
         userId: updatedTask.userId,
         userName: userInfo.name,
         userInitials: userInfo.initials,
-        description: `할일 "${updatedTask.title}" 수정: ${changes.join(', ')}`,
+        description: `${this.addKoreanParticle(updatedTask.title, '을', '를')} 수정: ${changes.join(', ')}`,
       });
     }
 
@@ -300,7 +331,7 @@ export class TaskService extends BaseService<Task> {
         userId: task.userId,
         userName: userInfo.name,
         userInitials: userInfo.initials,
-        description: `할일 "${task.title}"을(를) 삭제했습니다.`,
+        description: `${this.addKoreanParticle(task.title, '을', '를')} 삭제했습니다.`,
       });
     }
 
@@ -478,7 +509,7 @@ export class TaskService extends BaseService<Task> {
         userId: updatedTask.userId,
         userName: userInfo.name,
         userInitials: userInfo.initials,
-        description: `할일 "${updatedTask.title}"을(를) 완료했습니다.`,
+        description: `${this.addKoreanParticle(updatedTask.title, '을', '를')} 완료했습니다.`,
       });
     }
 
@@ -607,11 +638,11 @@ export class TaskService extends BaseService<Task> {
       parentTaskId,
     });
 
-    // Update parent's subtasks array
+    // Update parent's subtasks array (skip activity log for internal update)
     const subtasks = parent.subtasks || [];
     await this.update(parentTaskId, {
       subtasks: [...subtasks, subtask.id],
-    });
+    }, true); // skipLog = true
 
     return subtask;
   }
@@ -623,13 +654,13 @@ export class TaskService extends BaseService<Task> {
     const parent = await this.getById(parentTaskId);
     if (!parent) return false;
 
-    // Remove from parent's subtasks array
+    // Remove from parent's subtasks array (skip activity log for internal update)
     const subtasks = parent.subtasks || [];
     const updatedSubtasks = subtasks.filter((id) => id !== subtaskId);
 
     await this.update(parentTaskId, {
       subtasks: updatedSubtasks,
-    });
+    }, true); // skipLog = true
 
     // Delete the subtask
     return this.delete(subtaskId);
@@ -681,7 +712,7 @@ export class TaskService extends BaseService<Task> {
 
     return this.update(taskId, {
       dependencies: [...dependencies, dependencyId],
-    });
+    }, true); // skipLog = true for internal dependency update
   }
 
   /**
@@ -696,7 +727,7 @@ export class TaskService extends BaseService<Task> {
 
     return this.update(taskId, {
       dependencies: updatedDependencies,
-    });
+    }, true); // skipLog = true for internal dependency update
   }
 
   /**
