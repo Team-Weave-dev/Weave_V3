@@ -18,8 +18,10 @@ import {
   addTodoTask,
   updateTodoTask,
   deleteTodoTask,
-  saveTodoTasks
+  saveTodoTasks,
+  toTask
 } from '@/lib/mock/tasks';
+import { taskService } from '@/lib/storage';
 import { todoSectionService } from '@/lib/storage';
 
 // ============================================================================
@@ -130,35 +132,20 @@ export function useTodoState(props?: {
       // Storage TodoSection[] → Widget TodoSection[] 변환
       const savedSections = storageSections.map(storageToWidgetSection);
 
-      console.log('Storage API savedTasks:', savedTasks);
-      console.log('Storage API savedTasks length:', savedTasks?.length);
-      console.log('Storage API savedTasks detail:', JSON.stringify(savedTasks, null, 2));
-      console.log('Storage API savedSections:', savedSections);
-      console.log('Storage API savedSections length:', savedSections?.length);
-      console.log('Storage API savedSections detail:', JSON.stringify(savedSections, null, 2));
-
       // Tasks나 Sections 중 하나라도 있으면 저장된 데이터 사용
       if ((savedTasks && savedTasks.length > 0) || (savedSections && savedSections.length > 0)) {
         // Use saved data if available
-        console.log('Returning saved data - tasks:', savedTasks?.length, 'sections:', savedSections?.length);
-        const result = {
+        return {
           tasks: savedTasks || [],
           sections: savedSections || []
         };
-        console.log('Final result:', result);
-        return result;
       } else {
         // Generate initial data only if both are empty
-        console.log('Generating initial data');
-        const initialData = generateInitialData();
-        console.log('Generated initial data:', initialData);
-        return initialData;
+        return generateInitialData();
       }
     } catch (error) {
       console.error('Failed to load todo data from Storage API:', error);
-      const initialData = generateInitialData();
-      console.log('Generated initial data after error:', initialData);
-      return initialData;
+      return generateInitialData();
     }
   }, []);
 
@@ -166,7 +153,6 @@ export function useTodoState(props?: {
   const getInitialData = useCallback(async () => {
     // If props tasks are provided and not empty, use them
     if (propsTasks && propsTasks.length > 0) {
-      console.log('Using tasks from props:', propsTasks);
       const sectionsFromTasks: TodoSection[] = Array.from(new Set(propsTasks.map(t => t.sectionId)))
         .filter((id): id is string => Boolean(id)) // Type guard to filter out undefined
         .map((sectionId, index) => ({
@@ -199,25 +185,52 @@ export function useTodoState(props?: {
     initializeData();
   }, []); // 한 번만 실행
 
-  // Storage API 동기화를 위한 헬퍼 함수
-  const setLocalTasks = useCallback((tasks: TodoTask[] | ((prev: TodoTask[]) => TodoTask[])) => {
-    // 1. State 업데이트를 위한 변수 (타입 명시)
-    let tasksToSave: TodoTask[] = [];
+  // ============================================================================
+  // Storage 동기화 헬퍼 함수
+  // ============================================================================
 
-    // 2. State setter - 순수하게 state만 업데이트
+  /**
+   * 단일 태스크를 Storage에 동기화
+   * @param task - 동기화할 태스크 (Widget 타입, DELETE 시에는 id만 있어도 됨)
+   * @param operation - 수행할 작업 ('create' | 'update' | 'delete')
+   * @returns 성공 여부
+   */
+  const syncTaskToStorage = useCallback(async (
+    task: TodoTask,
+    operation: 'create' | 'update' | 'delete'
+  ): Promise<boolean> => {
+    try {
+      if (operation === 'delete') {
+        // DELETE는 ID만 필요 - 타입 변환 없이 직접 삭제
+        await taskService.delete(task.id);
+        return true;
+      }
+
+      // CREATE/UPDATE는 전체 Task 엔티티 필요
+      const dashboardTask = widgetToDashboardTask(task);
+      const taskEntity = toTask(dashboardTask);
+
+      if (operation === 'create') {
+        await taskService.create(taskEntity);
+      } else {
+        await taskService.update(task.id, taskEntity);
+      }
+      return true;
+    } catch (error) {
+      console.error(`Failed to ${operation} task in Storage:`, error);
+      return false;
+    }
+  }, []);
+
+  /**
+   * React State만 업데이트 (Storage 동기화 없음)
+   * Storage 동기화는 각 핸들러에서 syncTaskToStorage를 직접 호출
+   */
+  const setLocalTasks = useCallback((tasks: TodoTask[] | ((prev: TodoTask[]) => TodoTask[])) => {
     setLocalTasksState((prevTasks) => {
       const newTasks = typeof tasks === 'function' ? tasks(prevTasks) : tasks;
-      tasksToSave = newTasks;  // Storage sync를 위해 저장
       return newTasks;
     });
-
-    // 3. State setter 외부에서 Storage sync (1번만 실행됨)
-    if (typeof window !== 'undefined' && tasksToSave.length >= 0) {
-      const dashboardTasks = tasksToSave.map(widgetToDashboardTask);
-      saveTodoTasks(dashboardTasks).catch((error) => {
-        console.error('Failed to save tasks to Storage API:', error);
-      });
-    }
   }, []);
 
   // sections 업데이트 (Storage API는 각 핸들러에서 직접 호출)
@@ -280,15 +293,19 @@ export function useTodoState(props?: {
     setLocalTasks(prev => prev.map(task => {
       if (task.id === taskId) {
         const updatedTask = { ...task, completed: !task.completed };
-        onTaskToggle?.(taskId);
 
-        // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-        notifyCalendarDataChanged({
-          source: 'todo',
-          changeType: 'update',
-          itemId: taskId,
-          timestamp: Date.now(),
-        });
+        // Defer callbacks to avoid state update issues
+        setTimeout(() => {
+          onTaskToggle?.(taskId);
+
+          // 실시간 동기화: 다른 위젯들에게 변경사항 알림
+          notifyCalendarDataChanged({
+            source: 'todo',
+            changeType: 'update',
+            itemId: taskId,
+            timestamp: Date.now(),
+          });
+        }, 0);
 
         return updatedTask;
       }
@@ -307,43 +324,62 @@ export function useTodoState(props?: {
     }));
   }, [setLocalTasks, onTaskToggle]);
 
-  const handleDeleteTask = useCallback((taskId: string) => {
-    // 자기 자신의 삭제 타임스탬프 기록 (이벤트 중복 방지용)
-    const deleteTimestamp = Date.now();
+  const handleDeleteTask = useCallback(async (taskId: string) => {
+    // Optimistic update: State 즉시 업데이트
+    const prevTasks = localTasks;
+    const taskToDelete = prevTasks.find(t => t.id === taskId) ||
+                         prevTasks.flatMap(t => t.children || []).find(c => c.id === taskId);
 
-    setLocalTasks(prev => {
-      const filtered = prev.map(task => {
-        if (task.id === taskId) {
-          onTaskDelete?.(taskId);
+    if (!taskToDelete) {
+      console.error('Task not found:', taskId);
+      return;
+    }
 
-          // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-          notifyCalendarDataChanged({
-            source: 'todo',
-            changeType: 'delete',
-            itemId: taskId,
-            timestamp: deleteTimestamp,
-          });
+    // 자식 태스크 ID 수집 (부모 삭제 시 자식도 함께 삭제)
+    // 외래 키 제약 조건 때문에 자식을 먼저 삭제한 후 부모를 삭제해야 함
+    const childrenToDelete = taskToDelete.children?.map(c => c.id) || [];
+    const allTasksToDelete = [...childrenToDelete, taskId]; // 자식 먼저, 부모 나중
 
-          return null; // Mark for removal
-        }
-        // Keep task but filter children
-        if (task.children?.length) {
-          const filteredChildren = task.children.filter(child => child.id !== taskId);
-          if (filteredChildren.length !== task.children.length) {
-            // Child was removed, return new task object
-            return {
-              ...task,
-              children: filteredChildren
-            };
-          }
-        }
-        return task;
-      }).filter((task): task is TodoTask => task !== null);
-      return filtered;
-    });
-  }, [setLocalTasks, onTaskDelete]);
+    // UI 즉시 업데이트
+    setLocalTasks(prev =>
+      prev
+        .filter(task => !allTasksToDelete.includes(task.id))
+        .map(task => ({
+          ...task,
+          children: task.children?.filter(child => !allTasksToDelete.includes(child.id))
+        }))
+    );
 
-  const handleAddTask = useCallback((title: string, sectionId?: string, parentId?: string, priority?: TodoPriority, dueDate?: Date) => {
+    // Storage 동기화 - 삭제할 모든 태스크 처리
+    let deleteSuccess = true;
+    for (const deleteId of allTasksToDelete) {
+      const success = await syncTaskToStorage({ id: deleteId } as TodoTask, 'delete');
+      if (!success) {
+        deleteSuccess = false;
+        break;
+      }
+    }
+
+    if (!deleteSuccess) {
+      // 실패 시 롤백
+      setLocalTasks(prevTasks);
+      console.error('Failed to delete tasks, rolled back');
+      return;
+    }
+
+    // 다른 위젯에 알림
+    setTimeout(() => {
+      onTaskDelete?.(taskId);
+      notifyCalendarDataChanged({
+        source: 'todo',
+        changeType: 'delete',
+        itemId: taskId,
+        timestamp: Date.now(),
+      });
+    }, 0);
+  }, [localTasks, setLocalTasks, syncTaskToStorage, onTaskDelete]);
+
+  const handleAddTask = useCallback(async (title: string, sectionId?: string, parentId?: string, priority?: TodoPriority, dueDate?: Date) => {
     // Ensure localTasks is an array
     const tasks = Array.isArray(localTasks) ? localTasks : [];
 
@@ -352,7 +388,7 @@ export function useTodoState(props?: {
     if (sections.length === 0) {
       const defaultSection: TodoSection = {
         id: 'default',
-        name: '📌 미구분', // brand.ts의 defaultSection 텍스트와 동일
+        name: '📌 미구분',
         order: 0,
         isExpanded: true
       };
@@ -377,89 +413,107 @@ export function useTodoState(props?: {
       dueDate,
     };
 
+    // Optimistic update: State 즉시 업데이트
+    const prevTasks = localTasks;
     setLocalTasks(prev => {
       if (parentId) {
-        return prev.map(task => {
-          if (task.id === parentId) {
-            return {
-              ...task,
-              children: [...(task.children || []), newTask],
-              isExpanded: true
-            };
-          }
-          return task;
-        });
+        return prev.map(task =>
+          task.id === parentId
+            ? { ...task, children: [...(task.children || []), newTask], isExpanded: true }
+            : task
+        );
       }
       return [...prev, newTask];
     });
 
-    onTaskAdd?.(newTask);
+    // Storage 동기화
+    const success = await syncTaskToStorage(newTask, 'create');
 
-    // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-    notifyCalendarDataChanged({
-      source: 'todo',
-      changeType: 'add',
-      itemId: newTask.id,
-      timestamp: Date.now(),
-    });
-  }, [localTasks, sections, setSections, setLocalTasks, onTaskAdd]);
+    if (!success) {
+      // 실패 시 롤백
+      setLocalTasks(prevTasks);
+      console.error('Failed to add task, rolled back');
+      return;
+    }
 
-  const handleUpdateTask = useCallback((taskId: string, updates: Partial<TodoTask>) => {
-    console.log('[useTodoState] handleUpdateTask called:', taskId, updates);
+    // 자식 태스크인 경우: 부모의 subtasks 배열 업데이트
+    if (parentId) {
+      const parent = prevTasks.find(t => t.id === parentId);
+      if (parent) {
+        const updatedParent = {
+          ...parent,
+          children: [...(parent.children || []), newTask]
+        };
+        await syncTaskToStorage(updatedParent, 'update');
+      }
+    }
 
-    setLocalTasks(prev => {
-      console.log('[useTodoState] Previous tasks:', prev);
+    // 다른 위젯에 알림
+    setTimeout(() => {
+      onTaskAdd?.(newTask);
+      notifyCalendarDataChanged({
+        source: 'todo',
+        changeType: 'add',
+        itemId: newTask.id,
+        timestamp: Date.now(),
+      });
+    }, 0);
+  }, [localTasks, sections, setSections, setLocalTasks, syncTaskToStorage, onTaskAdd]);
 
-      const updatedTasks = prev.map(task => {
+  const handleUpdateTask = useCallback(async (taskId: string, updates: Partial<TodoTask>) => {
+    // Optimistic update: State 즉시 업데이트
+    const prevTasks = localTasks;
+    let updatedTask: TodoTask | undefined;
+
+    setLocalTasks(prev =>
+      prev.map(task => {
         if (task.id === taskId) {
-          const updatedTask = { ...task, ...updates };
-          console.log('[useTodoState] Updated task:', updatedTask);
-
-          // Defer callbacks to avoid state update issues
-          setTimeout(() => {
-            onTaskUpdate?.(taskId, updates);
-
-            // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-            notifyCalendarDataChanged({
-              source: 'todo',
-              changeType: 'update',
-              itemId: taskId,
-              timestamp: Date.now(),
-            });
-          }, 0);
-
+          updatedTask = { ...task, ...updates };
           return updatedTask;
         }
         // Check children
         if (task.children?.length) {
           const hasChildUpdate = task.children.some(child => child.id === taskId);
           if (hasChildUpdate) {
-            // 하위 작업 업데이트 시에도 동기화 이벤트 발생
-            setTimeout(() => {
-              onTaskUpdate?.(taskId, updates);
-              notifyCalendarDataChanged({
-                source: 'todo',
-                changeType: 'update',
-                itemId: taskId,
-                timestamp: Date.now(),
-              });
-            }, 0);
-
             return {
               ...task,
-              children: task.children.map(child =>
-                child.id === taskId ? { ...child, ...updates } : child
-              )
+              children: task.children.map(child => {
+                if (child.id === taskId) {
+                  updatedTask = { ...child, ...updates };
+                  return updatedTask;
+                }
+                return child;
+              })
             };
           }
         }
         return task;
-      });
+      })
+    );
 
-      console.log('[useTodoState] Updated tasks:', updatedTasks);
-      return updatedTasks;
-    });
-  }, [setLocalTasks, onTaskUpdate]);
+    // Storage 동기화
+    if (updatedTask) {
+      const success = await syncTaskToStorage(updatedTask, 'update');
+
+      if (!success) {
+        // 실패 시 롤백
+        setLocalTasks(prevTasks);
+        console.error('Failed to update task, rolled back');
+        return;
+      }
+    }
+
+    // 다른 위젯에 알림
+    setTimeout(() => {
+      onTaskUpdate?.(taskId, updates);
+      notifyCalendarDataChanged({
+        source: 'todo',
+        changeType: 'update',
+        itemId: taskId,
+        timestamp: Date.now(),
+      });
+    }, 0);
+  }, [localTasks, setLocalTasks, syncTaskToStorage, onTaskUpdate]);
 
   // Section operations
   const handleToggleSection = useCallback((sectionId: string) => {
@@ -490,8 +544,6 @@ export function useTodoState(props?: {
 
       // todoSectionService.create를 호출하여 Storage에 저장
       await todoSectionService.create(storagePayload);
-
-      console.log('Section added to Storage API:', newWidgetSection.name);
     } catch (error) {
       console.error('Failed to add section to Storage API:', error);
       // 에러 발생 시 React 상태 롤백
@@ -507,7 +559,6 @@ export function useTodoState(props?: {
     // 2. Storage API에서 비동기 삭제
     try {
       await todoSectionService.delete(sectionId);
-      console.log('Section deleted from Storage API:', sectionId);
     } catch (error) {
       console.error('Failed to delete section from Storage API:', error);
       // 에러 발생 시에는 이미 UI가 업데이트되었으므로,
@@ -524,7 +575,6 @@ export function useTodoState(props?: {
     // 2. Storage API에 비동기 업데이트
     try {
       await todoSectionService.update(sectionId, { name });
-      console.log('Section updated in Storage API:', sectionId, name);
     } catch (error) {
       console.error('Failed to update section in Storage API:', error);
       // 에러 발생 시에는 이미 UI가 업데이트되었으므로,
@@ -551,8 +601,6 @@ export function useTodoState(props?: {
     };
     e.dataTransfer.setData('application/json', JSON.stringify(taskData));
     e.dataTransfer.setData('text/plain', task.title); // 폴백용
-
-    console.log('[TodoListWidget] Drag started for task:', task.id, task.title);
   }, []);
 
   const handleDragEnd = useCallback(() => {
@@ -635,16 +683,12 @@ export function useTodoState(props?: {
   useEffect(() => {
     const handleStorageChange = async () => {
       // Storage API에서 최신 데이터 다시 로드
-      console.log('[TodoListWidget] handleStorageChange called');
       try {
         const updatedTasks = await getTodoTasks();
-        console.log('[TodoListWidget] Storage API data:', updatedTasks);
 
         if (Array.isArray(updatedTasks)) {
           // React 상태 직접 업데이트 (Storage API 저장 없이)
-          console.log('[TodoListWidget] Updating local tasks with fresh data from Storage API:', updatedTasks);
           setLocalTasksState([...updatedTasks]);
-          console.log('[TodoListWidget] Local tasks updated successfully');
         }
       } catch (error) {
         console.error('Failed to sync todo data from Storage API:', error);
@@ -652,26 +696,14 @@ export function useTodoState(props?: {
     };
 
     const unsubscribe = addCalendarDataChangedListener((event) => {
-      const { source, changeType, itemId, timestamp } = event.detail;
-
-      console.log('[TodoListWidget] Received calendarDataChanged event:', event.detail);
-      console.log('[TodoListWidget] Event detail breakdown - source:', source, 'changeType:', changeType, 'itemId:', itemId);
+      const { source, changeType } = event.detail;
 
       // 투두 소스의 이벤트만 처리 (캘린더에서 발생한 이벤트)
-      // changeType을 any로 캐스팅하여 타입 체크 우회 (CalendarWidget에서 'update'와 'todo-date-update' 사용)
       if (source === 'todo') {
-        console.log('[TodoListWidget] Source is todo, checking changeType...');
         if ((changeType as any) === 'update' || (changeType as any) === 'todo-date-update') {
-          console.log('[TodoListWidget] Processing todo update from calendar, itemId:', itemId, 'changeType:', changeType);
-          console.log('[TodoListWidget] Calling handleStorageChange...');
-
           // localStorage 변경을 감지하여 상태 업데이트
           handleStorageChange();
-        } else {
-          console.log('[TodoListWidget] ChangeType not matched. Actual changeType:', changeType);
         }
-      } else {
-        console.log('[TodoListWidget] Source not matched. Actual source:', source);
       }
     });
 

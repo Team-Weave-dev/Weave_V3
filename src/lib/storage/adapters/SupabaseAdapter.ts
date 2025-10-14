@@ -949,39 +949,39 @@ export class SupabaseAdapter implements StorageAdapter {
         }
 
         await this.withRetry(async () => {
-          // 삭제-삽입 전략: LocalStorage와 완전 동기화
-          // 1. 기존 tasks 모두 삭제
-          const { error: deleteError } = await this.supabase
-            .from(tableName)
-            .delete()
-            .eq('user_id', this.userId)
-
-          if (deleteError) {
-            console.error('[SupabaseAdapter] Tasks delete error:', {
-              code: deleteError.code,
-              message: deleteError.message,
-              details: deleteError.details,
-              hint: deleteError.hint
-            })
-            throw deleteError
-          }
-
-          // 2. 새로운 tasks 삽입 (배열이 비어있지 않을 때만)
+          // ⚠️ Tasks는 UPSERT 전략 사용 (Projects/Tasks에서 참조하므로 delete-insert 불가)
+          // Foreign key constraint 위반 방지:
+          // - tasks.parent_task_id → tasks.id (부모-자식 관계)
+          // - projects에서 task 참조 가능
           if (dataToStore.length > 0) {
-            const { error: insertError } = await this.supabase
-              .from(tableName)
-              .insert(dataToStore as any)
+            console.log('[SupabaseAdapter] Tasks UPSERT 시작:', {
+              count: dataToStore.length,
+              firstTask: {
+                id: dataToStore[0].id,
+                title: dataToStore[0].title,
+                parent_task_id: dataToStore[0].parent_task_id,
+                user_id: dataToStore[0].user_id
+              }
+            })
 
-            if (insertError) {
-              console.error('[SupabaseAdapter] Tasks insert error:', {
-                code: insertError.code,
-                message: insertError.message,
-                details: insertError.details,
-                hint: insertError.hint,
-                fullError: JSON.stringify(insertError, null, 2)
+            const { error: upsertError } = await this.supabase
+              .from(tableName)
+              .upsert(dataToStore as any)  // id 기반 UPSERT (새 태스크 추가 또는 기존 업데이트)
+
+            if (upsertError) {
+              console.error('[SupabaseAdapter] Tasks upsert error:', {
+                code: upsertError.code,
+                message: upsertError.message,
+                details: upsertError.details,
+                hint: upsertError.hint,
+                fullError: JSON.stringify(upsertError, null, 2)
               })
-              throw insertError
+              throw upsertError
             }
+
+            console.log('[SupabaseAdapter] Tasks UPSERT 성공:', dataToStore.length)
+          } else {
+            console.log('[SupabaseAdapter] Tasks UPSERT 건너뜀 (빈 배열)')
           }
         })
         return
