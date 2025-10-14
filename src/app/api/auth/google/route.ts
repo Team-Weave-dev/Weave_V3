@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   console.log('🔵 [GOOGLE OAUTH] Starting Google OAuth flow...')
+  console.log('🔵 [ENV CHECK] NEXT_PUBLIC_SITE_URL:', process.env.NEXT_PUBLIC_SITE_URL)
+  console.log('🔵 [ENV CHECK] All NEXT_PUBLIC_ vars:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')))
 
   try {
     const supabase = await createClient()
