@@ -18,6 +18,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { getWidgetText } from '@/config/brand';
+import { useStorageInitStore } from '@/lib/stores/useStorageInitStore';
 
 export interface KPIMetric {
   id: string;
@@ -196,6 +197,9 @@ function calculateYearlyMetrics(
  * @returns 월간/연간 KPI 메트릭, 로딩 상태, 에러, 새로고침 함수
  */
 export function useKPIMetrics(): UseKPIMetricsReturn {
+  // Storage 초기화 상태
+  const storageInitialized = useStorageInitStore((state) => state.isInitialized);
+
   const [monthlyMetrics, setMonthlyMetrics] = useState<KPIMetric[]>([]);
   const [yearlyMetrics, setYearlyMetrics] = useState<KPIMetric[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,6 +231,11 @@ export function useKPIMetrics(): UseKPIMetricsReturn {
   }, []);
 
   useEffect(() => {
+    if (!storageInitialized) {
+      console.log('[useKPIMetrics] Waiting for storage initialization...');
+      return;
+    }
+
     loadMetrics();
 
     // Storage 구독 (프로젝트나 작업 변경 시 자동 리로드)
@@ -243,7 +252,7 @@ export function useKPIMetrics(): UseKPIMetricsReturn {
       unsubscribeProjects();
       unsubscribeTasks();
     };
-  }, [loadMetrics]);
+  }, [storageInitialized, loadMetrics]);
 
   return {
     monthlyMetrics,

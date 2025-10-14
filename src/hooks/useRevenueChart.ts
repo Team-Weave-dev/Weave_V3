@@ -11,6 +11,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { projectService } from '@/lib/storage';
 import type { Project } from '@/lib/storage/types/entities/project';
 import { getWidgetText } from '@/config/brand';
+import { useStorageInitStore } from '@/lib/stores/useStorageInitStore';
 
 export interface RevenueData {
   period: string;
@@ -165,6 +166,9 @@ function calculateYearlyRevenue(projects: Project[]): RevenueData[] {
  * @returns 월별/분기별/연간 매출 데이터, 로딩 상태, 에러, 새로고침 함수
  */
 export function useRevenueChart(): UseRevenueChartReturn {
+  // Storage 초기화 상태
+  const storageInitialized = useStorageInitStore((state) => state.isInitialized);
+
   const [monthlyData, setMonthlyData] = useState<RevenueData[]>([]);
   const [quarterlyData, setQuarterlyData] = useState<RevenueData[]>([]);
   const [yearlyData, setYearlyData] = useState<RevenueData[]>([]);
@@ -196,6 +200,11 @@ export function useRevenueChart(): UseRevenueChartReturn {
   }, []);
 
   useEffect(() => {
+    if (!storageInitialized) {
+      console.log('[useRevenueChart] Waiting for storage initialization...');
+      return;
+    }
+
     loadRevenueData();
 
     // Storage 구독 (프로젝트 변경 시 자동 리로드)
@@ -207,7 +216,7 @@ export function useRevenueChart(): UseRevenueChartReturn {
     return () => {
       unsubscribe();
     };
-  }, [loadRevenueData]);
+  }, [storageInitialized, loadRevenueData]);
 
   return {
     monthlyData,

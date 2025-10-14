@@ -11,6 +11,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { activityLogService } from '@/lib/storage';
 import type { ActivityLog } from '@/lib/storage/types/entities/activity-log';
 import type { ActivityItem, ActivityType, ActivityUser } from '@/types/dashboard';
+import { useStorageInitStore } from '@/lib/stores/useStorageInitStore';
 
 interface UseRecentActivityReturn {
   activities: ActivityItem[];
@@ -62,6 +63,9 @@ function activityLogToActivityItem(log: ActivityLog): ActivityItem {
  * @returns 최근 활동 내역, 로딩 상태, 에러, 새로고침 함수
  */
 export function useRecentActivity(): UseRecentActivityReturn {
+  // Storage 초기화 상태
+  const storageInitialized = useStorageInitStore((state) => state.isInitialized);
+
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -87,6 +91,11 @@ export function useRecentActivity(): UseRecentActivityReturn {
   }, []);
 
   useEffect(() => {
+    if (!storageInitialized) {
+      console.log('[useRecentActivity] Waiting for storage initialization...');
+      return;
+    }
+
     loadActivities();
 
     // Storage 구독: activity_logs 키 변경 시 자동 리로드
@@ -96,7 +105,7 @@ export function useRecentActivity(): UseRecentActivityReturn {
     );
 
     return () => unsubscribe();
-  }, [loadActivities]);
+  }, [storageInitialized, loadActivities]);
 
   return {
     activities,

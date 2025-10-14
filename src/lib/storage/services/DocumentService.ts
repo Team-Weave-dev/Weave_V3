@@ -34,6 +34,40 @@ export class DocumentService extends BaseService<Document> {
   // ============================================================================
 
   /**
+   * Get user information with dynamic import to avoid circular dependency
+   */
+  private async getUserInfo(userId: string): Promise<{ name: string; initials: string }> {
+    try {
+      const { userService } = await import('../index');
+      const user = await userService.getById(userId);
+
+      if (user) {
+        // Generate initials from user name (e.g., "홍길동" -> "홍길", "John Doe" -> "JD")
+        const nameParts = user.name.trim().split(/\s+/);
+        let initials = '';
+
+        if (nameParts.length === 1) {
+          // Single name: take first 2 characters (e.g., "홍길동" -> "홍길")
+          initials = nameParts[0].slice(0, 2);
+        } else {
+          // Multiple parts: take first character of each part (e.g., "John Doe" -> "JD")
+          initials = nameParts.map(part => part[0]).join('').slice(0, 2);
+        }
+
+        return {
+          name: user.name,
+          initials: initials.toUpperCase()
+        };
+      }
+    } catch (error) {
+      console.error('[DocumentService] Failed to get user info:', error);
+    }
+
+    // Fallback to default values
+    return { name: 'User', initials: 'U' };
+  }
+
+  /**
    * Create activity log with dynamic import to avoid circular dependency
    */
   private async createActivityLog(input: CreateActivityLogInput): Promise<void> {
@@ -53,6 +87,8 @@ export class DocumentService extends BaseService<Document> {
   override async create(data: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): Promise<Document> {
     const document = await super.create(data);
 
+    const userInfo = await this.getUserInfo(document.userId);
+
     await this.createActivityLog({
       type: 'create',
       action: '문서 생성',
@@ -60,8 +96,8 @@ export class DocumentService extends BaseService<Document> {
       entityId: document.id,
       entityName: document.name,
       userId: document.userId,
-      userName: 'User',
-      userInitials: 'U',
+      userName: userInfo.name,
+      userInitials: userInfo.initials,
       description: `문서 "${document.name}"을(를) 생성했습니다.`,
     });
 
@@ -94,6 +130,8 @@ export class DocumentService extends BaseService<Document> {
     }
 
     if (changes.length > 0) {
+      const userInfo = await this.getUserInfo(updatedDocument.userId);
+
       await this.createActivityLog({
         type: 'update',
         action: '문서 수정',
@@ -101,8 +139,8 @@ export class DocumentService extends BaseService<Document> {
         entityId: updatedDocument.id,
         entityName: updatedDocument.name,
         userId: updatedDocument.userId,
-        userName: 'User',
-        userInitials: 'U',
+        userName: userInfo.name,
+        userInitials: userInfo.initials,
         description: `문서 "${updatedDocument.name}" 수정: ${changes.join(', ')}`,
       });
     }
@@ -122,6 +160,8 @@ export class DocumentService extends BaseService<Document> {
     const result = await super.delete(id);
 
     if (result) {
+      const userInfo = await this.getUserInfo(document.userId);
+
       await this.createActivityLog({
         type: 'delete',
         action: '문서 삭제',
@@ -129,8 +169,8 @@ export class DocumentService extends BaseService<Document> {
         entityId: document.id,
         entityName: document.name,
         userId: document.userId,
-        userName: 'User',
-        userInitials: 'U',
+        userName: userInfo.name,
+        userInitials: userInfo.initials,
         description: `문서 "${document.name}"을(를) 삭제했습니다.`,
       });
     }

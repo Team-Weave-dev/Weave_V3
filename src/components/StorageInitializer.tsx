@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { initializeStorage } from '@/lib/storage'
 import { createClient } from '@/lib/supabase/client'
+import { useStorageInitStore } from '@/lib/stores/useStorageInitStore'
 
 /**
  * Storage 시스템 초기화 컴포넌트
@@ -11,13 +12,16 @@ import { createClient } from '@/lib/supabase/client'
  * - 인증 상태 확인 (Supabase Auth 완전히 로드될 때까지 대기)
  * - Phase 16: 인증 필수 - 비인증 사용자는 로그인 페이지로 리다이렉트
  * - Supabase-only 모드로 Storage 초기화
+ * - 전역 초기화 상태를 useStorageInitStore로 관리하여 다른 컴포넌트가 초기화 완료를 기다릴 수 있도록 함
  */
 export function StorageInitializer() {
   const [initialized, setInitialized] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { startInitializing, setInitialized: setGlobalInitialized, setError: setGlobalError } = useStorageInitStore()
 
   useEffect(() => {
     let mounted = true
+    startInitializing()
 
     async function init() {
       try {
@@ -35,6 +39,7 @@ export function StorageInitializer() {
           console.log('ℹ️ Public page - skipping Storage initialization')
           if (mounted) {
             setInitialized(true)
+            setGlobalInitialized(true)
           }
           return
         }
@@ -61,6 +66,7 @@ export function StorageInitializer() {
 
         if (mounted) {
           setInitialized(true)
+          setGlobalInitialized(true)
           console.log('✅ Storage system initialized successfully')
         }
       } catch (err) {
@@ -69,6 +75,7 @@ export function StorageInitializer() {
 
         if (mounted) {
           setError(errorMessage)
+          setGlobalError(errorMessage)
         }
       }
     }

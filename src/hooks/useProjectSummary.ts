@@ -12,6 +12,7 @@ import { projectService, clientService } from '@/lib/storage';
 import type { Project, WBSTask } from '@/lib/storage/types/entities/project';
 import type { ProjectReview } from '@/types/dashboard';
 import { getWidgetText } from '@/config/brand';
+import { useStorageInitStore } from '@/lib/stores/useStorageInitStore';
 
 /**
  * Project → ProjectReview 변환 함수
@@ -142,6 +143,9 @@ async function convertProjectToReview(project: Project): Promise<ProjectReview> 
  * @returns 프로젝트 목록, 로딩 상태, 에러, 새로고침 함수
  */
 export function useProjectSummary() {
+  // Storage 초기화 상태
+  const storageInitialized = useStorageInitStore((state) => state.isInitialized);
+
   const [projects, setProjects] = useState<ProjectReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -169,6 +173,11 @@ export function useProjectSummary() {
   }, []);
 
   useEffect(() => {
+    if (!storageInitialized) {
+      console.log('[useProjectSummary] Waiting for storage initialization...');
+      return;
+    }
+
     loadProjects();
 
     // Storage 구독 (프로젝트 변경 시 자동 리로드)
@@ -177,7 +186,7 @@ export function useProjectSummary() {
     return () => {
       unsubscribeProjects();
     };
-  }, [loadProjects]);
+  }, [storageInitialized, loadProjects]);
 
   return {
     projects,

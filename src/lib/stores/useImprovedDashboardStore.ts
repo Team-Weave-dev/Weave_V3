@@ -10,6 +10,7 @@ import { immer } from 'zustand/middleware/immer';
 import { ImprovedWidget, DashboardConfig, DashboardEditState } from '@/types/improved-dashboard';
 import { GridPosition, checkCollisionWithItems, constrainToBounds, findEmptySpace, compactLayout, optimizeLayout, checkCollision } from '@/lib/dashboard/grid-utils';
 import { dashboardService } from '@/lib/storage';
+import { useStorageInitStore } from './useStorageInitStore';
 
 interface ImprovedDashboardStore {
   // 초기화 상태
@@ -834,6 +835,17 @@ export { shallow } from 'zustand/shallow';
  * This should be called once when the app starts (after Storage initialization)
  */
 export async function initializeDashboardStore(): Promise<void> {
+  // Storage 초기화 대기
+  const storageInitialized = useStorageInitStore.getState().isInitialized;
+  if (!storageInitialized) {
+    console.log('[initializeDashboardStore] Waiting for storage initialization...');
+    // Storage가 초기화되지 않았으면 기본 위젯으로 시작
+    useImprovedDashboardStore.setState({
+      isInitialized: true,
+    });
+    return;
+  }
+
   try {
     console.log('🔄 Loading dashboard layout from storage...');
     const data = await dashboardService.load();

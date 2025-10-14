@@ -704,6 +704,40 @@ export class ProjectService extends BaseService<Project> {
   // ============================================================================
 
   /**
+   * Get user information with dynamic import to avoid circular dependency
+   */
+  private async getUserInfo(userId: string): Promise<{ name: string; initials: string }> {
+    try {
+      const { userService } = await import('../index');
+      const user = await userService.getById(userId);
+
+      if (user) {
+        // Generate initials from user name (e.g., "홍길동" -> "홍길", "John Doe" -> "JD")
+        const nameParts = user.name.trim().split(/\s+/);
+        let initials = '';
+
+        if (nameParts.length === 1) {
+          // Single name: take first 2 characters (e.g., "홍길동" -> "홍길")
+          initials = nameParts[0].slice(0, 2);
+        } else {
+          // Multiple parts: take first character of each part (e.g., "John Doe" -> "JD")
+          initials = nameParts.map(part => part[0]).join('').slice(0, 2);
+        }
+
+        return {
+          name: user.name,
+          initials: initials.toUpperCase()
+        };
+      }
+    } catch (error) {
+      console.error('[ProjectService] Failed to get user info:', error);
+    }
+
+    // Fallback to default values
+    return { name: 'User', initials: 'U' };
+  }
+
+  /**
    * Create activity log entry
    * Private helper to avoid circular dependency issues
    */
@@ -728,6 +762,8 @@ export class ProjectService extends BaseService<Project> {
   override async create(data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
     const project = await super.create(data);
 
+    const userInfo = await this.getUserInfo(project.userId);
+
     // Log activity
     await this.createActivityLog({
       type: 'create',
@@ -736,8 +772,8 @@ export class ProjectService extends BaseService<Project> {
       entityId: project.id,
       entityName: project.name,
       userId: project.userId,
-      userName: 'User', // TODO: Get from User entity
-      userInitials: 'U',
+      userName: userInfo.name,
+      userInitials: userInfo.initials,
       description: `프로젝트 "${project.name}"을(를) 생성했습니다.`,
     });
 
@@ -768,6 +804,8 @@ export class ProjectService extends BaseService<Project> {
 
     // Log activity only if there are meaningful changes
     if (changes.length > 0) {
+      const userInfo = await this.getUserInfo(updatedProject.userId);
+
       await this.createActivityLog({
         type: 'update',
         action: '프로젝트 수정',
@@ -775,8 +813,8 @@ export class ProjectService extends BaseService<Project> {
         entityId: updatedProject.id,
         entityName: updatedProject.name,
         userId: updatedProject.userId,
-        userName: 'User',
-        userInitials: 'U',
+        userName: userInfo.name,
+        userInitials: userInfo.initials,
         description: `프로젝트 "${updatedProject.name}" 수정: ${changes.join(', ')}`,
       });
     }
@@ -794,6 +832,8 @@ export class ProjectService extends BaseService<Project> {
     const success = await super.delete(id);
     if (!success) return false;
 
+    const userInfo = await this.getUserInfo(project.userId);
+
     // Log activity
     await this.createActivityLog({
       type: 'delete',
@@ -802,8 +842,8 @@ export class ProjectService extends BaseService<Project> {
       entityId: project.id,
       entityName: project.name,
       userId: project.userId,
-      userName: 'User',
-      userInitials: 'U',
+      userName: userInfo.name,
+      userInitials: userInfo.initials,
       description: `프로젝트 "${project.name}"을(를) 삭제했습니다.`,
     });
 
@@ -820,6 +860,8 @@ export class ProjectService extends BaseService<Project> {
     });
     if (!project) return null;
 
+    const userInfo = await this.getUserInfo(project.userId);
+
     // Log activity
     await this.createActivityLog({
       type: 'complete',
@@ -828,8 +870,8 @@ export class ProjectService extends BaseService<Project> {
       entityId: project.id,
       entityName: project.name,
       userId: project.userId,
-      userName: 'User',
-      userInitials: 'U',
+      userName: userInfo.name,
+      userInitials: userInfo.initials,
       description: `프로젝트 "${project.name}"을(를) 완료했습니다.`,
     });
 

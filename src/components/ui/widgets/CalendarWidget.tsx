@@ -553,6 +553,10 @@ export function CalendarWidget({
         date: newDate,  // 위젯 내부에서는 date 사용
       };
 
+      // Calculate startDate and endDate based on time information
+      let startDate: Date;
+      let endDate: Date;
+
       // If time is included in droppableId (WeekView, DayView)
       if (parts.length >= 6) {
         const hour = parseInt(parts[4]);
@@ -574,9 +578,42 @@ export function CalendarWidget({
         const endHour = Math.floor(endMinutes / 60);
         const endMin = endMinutes % 60;
         updatedEvent.endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+
+        // Create startDate and endDate with time
+        startDate = new Date(newDate);
+        startDate.setHours(hour, minute, 0, 0);
+
+        endDate = new Date(newDate);
+        endDate.setHours(endHour, endMin, 0, 0);
+      } else {
+        // No specific time - use existing time or allDay
+        if (event.startTime && event.endTime) {
+          // Preserve existing time
+          const [startHour, startMin] = event.startTime.split(':').map(Number);
+          const [endHour, endMin] = event.endTime.split(':').map(Number);
+
+          startDate = new Date(newDate);
+          startDate.setHours(startHour, startMin, 0, 0);
+
+          endDate = new Date(newDate);
+          endDate.setHours(endHour, endMin, 0, 0);
+        } else {
+          // AllDay event - 00:00:00 to 23:59:59
+          startDate = new Date(newDate);
+          startDate.setHours(0, 0, 0, 0);
+
+          endDate = new Date(newDate);
+          endDate.setHours(23, 59, 59, 999);
+        }
       }
 
+      // Add Storage-required fields (startDate/endDate as ISO strings)
+      (updatedEvent as any).startDate = startDate.toISOString();
+      (updatedEvent as any).endDate = endDate.toISOString();
+
       console.log('[CalendarWidget] Updating calendar event:', updatedEvent);
+      console.log('[CalendarWidget] startDate:', (updatedEvent as any).startDate);
+      console.log('[CalendarWidget] endDate:', (updatedEvent as any).endDate);
       updateEvent(updatedEvent);
     }
   };

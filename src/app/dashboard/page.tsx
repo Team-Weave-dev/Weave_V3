@@ -11,6 +11,7 @@ import Typography from '@/components/ui/typography'
 import { Settings, Save, Layers, Grid3x3, LayoutDashboard, PanelRightOpen, ArrowUp, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useImprovedDashboardStore, selectIsEditMode, initializeDashboardStore, setupDashboardAutoSave } from '@/lib/stores/useImprovedDashboardStore'
+import { useStorageInitStore } from '@/lib/stores/useStorageInitStore'
 import { WidgetSelectorModal } from '@/components/dashboard/WidgetSelectorModal'
 import { WidgetSidebar } from '@/components/dashboard/WidgetSidebar'
 import { ImprovedWidget } from '@/types/improved-dashboard'
@@ -21,6 +22,7 @@ import { createDefaultWidgets } from '@/components/dashboard/utils/defaultWidget
 export default function DashboardPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const storageInitialized = useStorageInitStore((state) => state.isInitialized)
   const [isCompact, setIsCompact] = useState(true)
   const [widgetModalOpen, setWidgetModalOpen] = useState(false)
   const [widgetSidebarOpen, setWidgetSidebarOpen] = useState(false)
@@ -212,8 +214,10 @@ export default function DashboardPage() {
 
   // 스토어 초기화 및 자동 저장 설정
   useEffect(() => {
-    // 로딩이 완료된 후에만 초기화 (Storage 초기화 대기)
-    if (loading) return
+    // 로딩이 완료되고 Storage 초기화가 완료된 후에만 대시보드 스토어 초기화
+    if (loading || !storageInitialized) return
+
+    console.log('📊 Initializing dashboard store after Storage initialization')
 
     // Supabase에서 대시보드 레이아웃 로드
     initializeDashboardStore()
@@ -222,7 +226,7 @@ export default function DashboardPage() {
     const cleanup = setupDashboardAutoSave()
 
     return cleanup
-  }, [loading])
+  }, [loading, storageInitialized])
 
   if (loading) {
     return <FullPageLoadingSpinner text={getLoadingText.data('ko')} />

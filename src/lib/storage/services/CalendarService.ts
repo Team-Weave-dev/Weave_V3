@@ -42,6 +42,40 @@ export class CalendarService extends BaseService<CalendarEvent> {
   // ============================================================================
 
   /**
+   * Get user information with dynamic import to avoid circular dependency
+   */
+  private async getUserInfo(userId: string): Promise<{ name: string; initials: string }> {
+    try {
+      const { userService } = await import('../index');
+      const user = await userService.getById(userId);
+
+      if (user) {
+        // Generate initials from user name (e.g., "홍길동" -> "홍길", "John Doe" -> "JD")
+        const nameParts = user.name.trim().split(/\s+/);
+        let initials = '';
+
+        if (nameParts.length === 1) {
+          // Single name: take first 2 characters (e.g., "홍길동" -> "홍길")
+          initials = nameParts[0].slice(0, 2);
+        } else {
+          // Multiple parts: take first character of each part (e.g., "John Doe" -> "JD")
+          initials = nameParts.map(part => part[0]).join('').slice(0, 2);
+        }
+
+        return {
+          name: user.name,
+          initials: initials.toUpperCase()
+        };
+      }
+    } catch (error) {
+      console.error('[CalendarService] Failed to get user info:', error);
+    }
+
+    // Fallback to default values
+    return { name: 'User', initials: 'U' };
+  }
+
+  /**
    * Create activity log with dynamic import to avoid circular dependency
    */
   private async createActivityLog(input: CreateActivityLogInput): Promise<void> {
@@ -61,6 +95,9 @@ export class CalendarService extends BaseService<CalendarEvent> {
   override async create(data: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<CalendarEvent> {
     const event = await super.create(data);
 
+    // Get actual user information
+    const userInfo = await this.getUserInfo(event.userId);
+
     await this.createActivityLog({
       type: 'create',
       action: '일정 생성',
@@ -68,8 +105,8 @@ export class CalendarService extends BaseService<CalendarEvent> {
       entityId: event.id,
       entityName: event.title,
       userId: event.userId,
-      userName: 'User',
-      userInitials: 'U',
+      userName: userInfo.name,
+      userInitials: userInfo.initials,
       description: `일정 "${event.title}"을(를) 생성했습니다.`,
     });
 
@@ -105,6 +142,9 @@ export class CalendarService extends BaseService<CalendarEvent> {
     }
 
     if (changes.length > 0) {
+      // Get actual user information
+      const userInfo = await this.getUserInfo(updatedEvent.userId);
+
       await this.createActivityLog({
         type: 'update',
         action: '일정 수정',
@@ -112,8 +152,8 @@ export class CalendarService extends BaseService<CalendarEvent> {
         entityId: updatedEvent.id,
         entityName: updatedEvent.title,
         userId: updatedEvent.userId,
-        userName: 'User',
-        userInitials: 'U',
+        userName: userInfo.name,
+        userInitials: userInfo.initials,
         description: `일정 "${updatedEvent.title}" 수정: ${changes.join(', ')}`,
       });
     }
@@ -133,6 +173,9 @@ export class CalendarService extends BaseService<CalendarEvent> {
     const result = await super.delete(id);
 
     if (result) {
+      // Get actual user information
+      const userInfo = await this.getUserInfo(event.userId);
+
       await this.createActivityLog({
         type: 'delete',
         action: '일정 삭제',
@@ -140,8 +183,8 @@ export class CalendarService extends BaseService<CalendarEvent> {
         entityId: event.id,
         entityName: event.title,
         userId: event.userId,
-        userName: 'User',
-        userInitials: 'U',
+        userName: userInfo.name,
+        userInitials: userInfo.initials,
         description: `일정 "${event.title}"을(를) 삭제했습니다.`,
       });
     }

@@ -8,6 +8,7 @@ import type {
   CalendarItemSource,
 } from '@/types/integrated-calendar';
 import { integratedCalendarManager } from '@/lib/calendar-integration';
+import { useStorageInitStore } from '@/lib/stores/useStorageInitStore';
 
 /**
  * 훅 옵션
@@ -95,6 +96,9 @@ export function useIntegratedCalendar(
     refreshInterval = 60000, // 1분
     fetchOnMount = true,
   } = options;
+
+  // Storage 초기화 상태
+  const storageInitialized = useStorageInitStore((state) => state.isInitialized);
 
   // 상태
   const [items, setItems] = useState<UnifiedCalendarItem[]>([]);
@@ -313,23 +317,28 @@ export function useIntegratedCalendar(
    * 초기 데이터 로드
    */
   useEffect(() => {
+    if (!storageInitialized) {
+      console.log('[useIntegratedCalendar] Waiting for storage initialization...');
+      return;
+    }
+
     if (fetchOnMount) {
       fetchItems();
     }
-  }, [fetchOnMount, fetchItems]);
+  }, [storageInitialized, fetchOnMount, fetchItems]);
 
   /**
    * 자동 새로고침
    */
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!storageInitialized || !autoRefresh) return;
 
     const intervalId = setInterval(() => {
       fetchItems();
     }, refreshInterval);
 
     return () => clearInterval(intervalId);
-  }, [autoRefresh, refreshInterval, fetchItems]);
+  }, [storageInitialized, autoRefresh, refreshInterval, fetchItems]);
 
   /**
    * 데이터 변경 구독
