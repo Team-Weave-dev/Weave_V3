@@ -197,35 +197,36 @@ export abstract class BaseService<T extends BaseEntity> {
 
   /**
    * Delete an entity by ID
-   * Uses remove() for proper DELETE query in Supabase instead of UPSERT
    */
   async delete(id: string): Promise<boolean> {
-    // Check if entity exists first
-    const entity = await this.getById(id);
-    if (!entity) {
+    const entities = await this.getAll();
+    const index = entities.findIndex((entity) => entity.id === id);
+
+    if (index === -1) {
       return false; // Entity not found
     }
 
-    // Build key with entity name and id (e.g., "tasks:abc-123")
-    // SupabaseAdapter.remove() expects this format to extract entity and id
-    const key = `${this.entityKey}:${id}`;
-    await this.storage.remove(key);
+    // Remove entity from array
+    entities.splice(index, 1);
+
+    // Save updated array
+    await this.storage.set<T[]>(this.entityKey, entities);
     return true;
   }
 
   /**
    * Delete multiple entities by IDs
-   * Uses remove() for proper DELETE queries in Supabase instead of UPSERT
    */
   async deleteMany(ids: string[]): Promise<number> {
-    let deletedCount = 0;
+    const entities = await this.getAll();
+    const idSet = new Set(ids);
 
-    // Delete each entity individually to trigger actual DELETE in Supabase
-    for (const id of ids) {
-      const success = await this.delete(id);
-      if (success) {
-        deletedCount++;
-      }
+    // Filter out entities to delete
+    const remaining = entities.filter((entity) => !idSet.has(entity.id));
+    const deletedCount = entities.length - remaining.length;
+
+    if (deletedCount > 0) {
+      await this.storage.set<T[]>(this.entityKey, remaining);
     }
 
     return deletedCount;
