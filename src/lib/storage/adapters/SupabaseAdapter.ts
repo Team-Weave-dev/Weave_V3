@@ -427,6 +427,38 @@ export class SupabaseAdapter implements StorageAdapter {
           updatedAt: data.updated_at,
         }
 
+      case 'activity_logs':
+        // ActivityLog transformation: metadata에서 필드 추출
+        return {
+          id: data.id,
+          userId: data.user_id,
+
+          // Activity info - metadata에서 추출
+          type: data.metadata?.type || 'create',
+          action: data.action,
+
+          // Entity info - resource_* → entity*
+          entityType: data.resource_type,
+          entityId: data.resource_id,
+          entityName: data.resource_name,
+
+          // User info - metadata에서 추출
+          userName: data.metadata?.userName || 'Unknown',
+          userInitials: data.metadata?.userInitials || 'U',
+
+          // Additional info
+          description: data.metadata?.description,
+          metadata: data.metadata || {},
+          changes: data.metadata?.changes,
+
+          // Timestamp - metadata.timestamp 또는 created_at 사용
+          timestamp: data.metadata?.timestamp || data.created_at,
+
+          // Base entity fields
+          createdAt: data.created_at,
+          updatedAt: data.created_at, // activity_logs에는 updated_at이 없으므로 created_at 사용
+        }
+
       default:
         // Unknown entity: return as-is
         console.warn(`Unknown entity type for transformation: ${entity}`)
