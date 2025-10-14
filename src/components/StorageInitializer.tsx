@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { initializeStorage } from '@/lib/storage'
 import { createClient } from '@/lib/supabase/client'
 import { useStorageInitStore } from '@/lib/stores/useStorageInitStore'
@@ -15,6 +16,7 @@ import { useStorageInitStore } from '@/lib/stores/useStorageInitStore'
  * - 전역 초기화 상태를 useStorageInitStore로 관리하여 다른 컴포넌트가 초기화 완료를 기다릴 수 있도록 함
  */
 export function StorageInitializer() {
+  const pathname = usePathname()
   const [initialized, setInitialized] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { startInitializing, setInitialized: setGlobalInitialized, setError: setGlobalError } = useStorageInitStore()
@@ -26,21 +28,20 @@ export function StorageInitializer() {
     async function init() {
       try {
         console.log('🔧 Starting Storage system initialization...')
+        console.log('📍 Current pathname:', pathname)
 
         // 공개 페이지 확인 (로그인, 회원가입, 홈 등)
-        const currentPath = window.location.pathname
         const publicPaths = ['/', '/login', '/signup', '/auth']
         const isPublicPath = publicPaths.some(path =>
-          currentPath === path || currentPath.startsWith(path + '/')
+          pathname === path || pathname.startsWith(path + '/')
         )
 
+        console.log('🔍 Is public path?', isPublicPath)
+
         // 공개 페이지에서는 Storage 초기화를 건너뜀
+        // 중요: Storage가 초기화되지 않았으므로 initialized 상태를 true로 설정하지 않음
         if (isPublicPath) {
-          console.log('ℹ️ Public page - skipping Storage initialization')
-          if (mounted) {
-            setInitialized(true)
-            setGlobalInitialized(true)
-          }
+          console.log('ℹ️ Public page - skipping Storage initialization (state remains uninitialized)')
           return
         }
 
@@ -85,7 +86,7 @@ export function StorageInitializer() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [pathname])
 
   // 초기화 중 에러 발생 시 개발 환경에서만 표시
   if (error && process.env.NODE_ENV === 'development') {
