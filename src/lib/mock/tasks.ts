@@ -47,11 +47,9 @@ export function toTask(todoTask: DashboardTodoTask, userId: string = '1'): Task 
 
   // Section ID를 tag로 변환
   const tags: string[] = [];
-  console.log(`[toTask] Converting TodoTask "${todoTask.title}" with sectionId: ${todoTask.sectionId}`);
 
   if (todoTask.sectionId) {
     tags.push(`section:${todoTask.sectionId}`);
-    console.log(`[toTask] Added section tag: section:${todoTask.sectionId}`);
   }
   if (todoTask.depth > 0) {
     tags.push(`depth:${todoTask.depth}`);
@@ -60,7 +58,7 @@ export function toTask(todoTask: DashboardTodoTask, userId: string = '1'): Task 
     tags.push(`order:${todoTask.order}`);
   }
 
-  // Children을 subtasks ID 배열로 변환
+  // Children을 subtasks ID 배열로 명시적 변환 (부모-자식 관계 유지)
   const subtasks = todoTask.children?.map(child => child.id) || [];
 
   // 날짜 변환 헬퍼: Date 객체 또는 문자열을 ISO string으로 안전하게 변환
@@ -82,13 +80,16 @@ export function toTask(todoTask: DashboardTodoTask, userId: string = '1'): Task 
     createdAt: toISOString(todoTask.createdAt) || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     parentTaskId: todoTask.parentId,
-    subtasks,
+    subtasks,  // 명시적으로 subtasks 배열 포함
     tags,
     // sectionId를 별도 필드로도 추가 (TodoListWidget 필터링용)
     ...(todoTask.sectionId && { sectionId: todoTask.sectionId }),
   };
 
-  console.log(`[toTask] Created Task with sectionId: ${task.sectionId} and tags:`, task.tags);
+  // 개발 모드에서만 로깅
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[toTask] Created Task "${task.title}" with sectionId: ${task.sectionId}, subtasks: [${subtasks.join(', ')}]`);
+  }
   return task as Task;
 }
 
@@ -121,7 +122,10 @@ export function toTodoTask(task: Task, children: DashboardTodoTask[] = []): Dash
     }
   }
 
-  console.log(`[toTodoTask] Task "${task.title}" - sectionId from field: ${(task as any).sectionId}, extracted sectionId: ${sectionId}`);
+  // 개발 모드에서만 로깅
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[toTodoTask] Task "${task.title}" - sectionId: ${sectionId}, children: ${children.length}`);
+  }
 
   const todoTask: DashboardTodoTask = {
     id: task.id,
@@ -218,6 +222,10 @@ export async function migrateLegacyTodoTasks(): Promise<void> {
 
 /**
  * Get all todo tasks (converts Task[] to DashboardTodoTask[])
+ *
+ * 부모-자식 관계 빌드 전략:
+ * 1. parent.subtasks 배열에서 자식 ID 탐색 (정상 케이스)
+ * 2. child.parentTaskId로 역방향 탐색 (subtasks 배열이 sync 안 된 경우)
  */
 export async function getTodoTasks(): Promise<DashboardTodoTask[]> {
   // Legacy migration (once)
@@ -235,14 +243,28 @@ export async function getTodoTasks(): Promise<DashboardTodoTask[]> {
     // 부모 태스크만 먼저 변환
     if (!task.parentTaskId) {
       const children: DashboardTodoTask[] = [];
+      const childIds = new Set<string>(); // 중복 방지
 
-      // 자식 태스크 변환
+      // 방법 1: 부모의 subtasks 배열에서 자식 ID 탐색
       if (task.subtasks && task.subtasks.length > 0) {
         for (const subtaskId of task.subtasks) {
-          const subtask = taskMap.get(subtaskId);
-          if (subtask) {
-            children.push(toTodoTask(subtask, []));
-          }
+          childIds.add(subtaskId);
+        }
+      }
+
+      // 방법 2: 모든 태스크를 순회하며 parentTaskId로 역방향 탐색
+      // (subtasks 배열이 sync 안 된 경우 대비)
+      for (const possibleChild of tasks) {
+        if (possibleChild.parentTaskId === task.id) {
+          childIds.add(possibleChild.id);
+        }
+      }
+
+      // 자식 태스크 변환 (중복 없이)
+      for (const childId of childIds) {
+        const subtask = taskMap.get(childId);
+        if (subtask) {
+          children.push(toTodoTask(subtask, []));
         }
       }
 
@@ -308,10 +330,31 @@ export async function deleteTodoTask(id: string): Promise<boolean> {
 }
 
 /**
+ * Check if a task has changed by comparing relevant fields
+ * @param existingTask - Current task in storage
+ * @param newTask - New task data
+ * @returns true if task has meaningful changes
+ */
+function hasTaskChanged(existingTask: Task, newTask: Task): boolean {
+  // Compare fields that matter for todo widget
+  return (
+    existingTask.title !== newTask.title ||
+    existingTask.status !== newTask.status ||
+    existingTask.priority !== newTask.priority ||
+    existingTask.dueDate !== newTask.dueDate ||
+    existingTask.completedAt !== newTask.completedAt ||
+    existingTask.parentTaskId !== newTask.parentTaskId ||
+    JSON.stringify(existingTask.tags || []) !== JSON.stringify(newTask.tags || []) ||
+    JSON.stringify(existingTask.subtasks || []) !== JSON.stringify(newTask.subtasks || [])
+  );
+}
+
+/**
  * Save all todo tasks (incremental update)
  *
  * ✅ 개선된 방식: 기존 태스크와 비교하여 create/update/delete만 수행
  * ❌ 이전 방식: 모든 태스크를 삭제하고 재생성 (비효율적)
+ * 🔥 최적화: 실제로 변경된 태스크만 업데이트하여 불필요한 activity log 방지
  */
 export async function saveTodoTasks(todoTasks: DashboardTodoTask[]): Promise<void> {
   // 1. 기존 태스크 조회
@@ -346,8 +389,14 @@ export async function saveTodoTasks(todoTasks: DashboardTodoTask[]): Promise<voi
     const task = toTask(todoTask);
 
     if (existingTaskIds.has(todoTask.id)) {
-      // 기존 태스크 업데이트
-      await taskService.update(todoTask.id, task);
+      // 기존 태스크 - 변경 여부 확인
+      const existingTask = existingTasks.find(t => t.id === todoTask.id);
+
+      if (existingTask && hasTaskChanged(existingTask, task)) {
+        // 실제로 변경된 경우에만 업데이트
+        await taskService.update(todoTask.id, task);
+      }
+      // 변경 없으면 업데이트 스킵 (불필요한 activity log 방지)
     } else {
       // 새 태스크 생성
       await taskService.create(task);

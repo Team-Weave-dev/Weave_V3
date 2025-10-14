@@ -15,7 +15,8 @@ const MiniEvent = React.memo(({
   displayMode = 'bar',
   isDragging = false // 드래그 중일 때 transition 비활성화
 }: MiniEventProps) => {
-  const config = eventTypeConfig[event.type || 'other'];
+  // 안전한 config 가져오기: event.type이 undefined, null, 빈 문자열이거나 존재하지 않는 타입이면 'other' 사용
+  const config = eventTypeConfig[event.type as keyof typeof eventTypeConfig] || eventTypeConfig.other;
 
   // 점 표시 모드 (아주 작은 높이)
   if (displayMode === 'dot') {
