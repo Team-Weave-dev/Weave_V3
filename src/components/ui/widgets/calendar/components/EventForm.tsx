@@ -37,10 +37,14 @@ const EventForm = React.memo(({
 }: EventFormProps) => {
   const [formData, setFormData] = useState(() => {
     // Initialize with event data if provided, otherwise use defaults
+    const defaultDate = selectedDate || new Date();
     if (event) {
+      const startDate = event.date ? format(new Date(event.date), 'yyyy-MM-dd') : format(defaultDate, 'yyyy-MM-dd');
+      const endDate = event.endDate ? format(new Date(event.endDate), 'yyyy-MM-dd') : startDate;
       return {
         title: event.title || '',
-        date: event.date ? format(new Date(event.date), 'yyyy-MM-dd') : format(selectedDate || new Date(), 'yyyy-MM-dd'),
+        startDate,
+        endDate,
         location: event.location || '',
         description: event.description || '',
         allDay: event.allDay !== undefined ? event.allDay : true,
@@ -49,9 +53,11 @@ const EventForm = React.memo(({
         type: (event.type || 'meeting') as CalendarEvent['type'],
       };
     }
+    const startDate = format(defaultDate, 'yyyy-MM-dd');
     return {
       title: '',
-      date: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+      startDate,
+      endDate: startDate, // 기본값은 시작일과 동일
       location: '',
       description: '',
       allDay: true,
@@ -63,9 +69,13 @@ const EventForm = React.memo(({
 
   useEffect(() => {
     if (event) {
+      const defaultDate = selectedDate || new Date();
+      const startDate = event.date ? format(new Date(event.date), 'yyyy-MM-dd') : format(defaultDate, 'yyyy-MM-dd');
+      const endDate = event.endDate ? format(new Date(event.endDate), 'yyyy-MM-dd') : startDate;
       setFormData({
         title: event.title || '',
-        date: event.date ? format(new Date(event.date), 'yyyy-MM-dd') : format(selectedDate || new Date(), 'yyyy-MM-dd'),
+        startDate,
+        endDate,
         location: event.location || '',
         description: event.description || '',
         allDay: event.allDay !== undefined ? event.allDay : true,
@@ -77,9 +87,24 @@ const EventForm = React.memo(({
   }, [event, selectedDate]);
 
   const handleSubmit = () => {
+    // 유효성 검사: 종료일이 시작일보다 이전인지 확인
+    if (new Date(formData.endDate) < new Date(formData.startDate)) {
+      alert('종료 날짜는 시작 날짜보다 이전일 수 없습니다.');
+      return;
+    }
+
+    // 같은 날인 경우, 시간 검증 (종일이 아닐 때)
+    if (!formData.allDay && formData.startDate === formData.endDate) {
+      if (formData.endTime <= formData.startTime) {
+        alert('같은 날인 경우 종료 시간은 시작 시간보다 늦어야 합니다.');
+        return;
+      }
+    }
+
     const eventData: Partial<CalendarEvent> = {
       title: formData.title || getEventFormText.defaultTitle('ko'),
-      date: new Date(formData.date),
+      date: new Date(formData.startDate),
+      endDate: new Date(formData.endDate),
       type: formData.type,
       allDay: formData.allDay,
       startTime: !formData.allDay ? formData.startTime : undefined,
@@ -104,9 +129,11 @@ const EventForm = React.memo(({
   };
 
   const handleReset = () => {
+    const startDate = format(selectedDate || new Date(), 'yyyy-MM-dd');
     setFormData({
       title: '',
-      date: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+      startDate,
+      endDate: startDate,
       location: '',
       description: '',
       allDay: true,
@@ -156,16 +183,37 @@ const EventForm = React.memo(({
         </Select>
       </div>
 
-      {/* 날짜 */}
-      <div className="space-y-2">
-        <Label htmlFor="event-date" className="text-xs">{getEventFormText.labelDate('ko')}</Label>
-        <Input
-          id="event-date"
-          type="date"
-          className="h-8"
-          value={formData.date}
-          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-        />
+      {/* 날짜 범위 */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-2">
+          <Label htmlFor="event-start-date" className="text-xs">{getEventFormText.labelStartDate('ko')}</Label>
+          <Input
+            id="event-start-date"
+            type="date"
+            className="h-8"
+            value={formData.startDate}
+            onChange={(e) => {
+              const newStartDate = e.target.value;
+              setFormData({
+                ...formData,
+                startDate: newStartDate,
+                // 종료일이 시작일보다 이전이면 자동으로 시작일과 같게 설정
+                endDate: new Date(formData.endDate) < new Date(newStartDate) ? newStartDate : formData.endDate
+              });
+            }}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="event-end-date" className="text-xs">{getEventFormText.labelEndDate('ko')}</Label>
+          <Input
+            id="event-end-date"
+            type="date"
+            className="h-8"
+            value={formData.endDate}
+            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            min={formData.startDate} // 시작일 이전 날짜는 선택 불가
+          />
+        </div>
       </div>
 
       {/* 종일 일정 토글 */}

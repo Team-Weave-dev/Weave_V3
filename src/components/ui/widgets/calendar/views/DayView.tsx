@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MiniEvent from '../components/MiniEvent';
@@ -20,9 +20,13 @@ const DayView = React.memo(({
   containerHeight
 }: CalendarViewProps) => {
   const hours = Array.from({ length: 24 }, (_, i) => i);
-  const dayEvents = events.filter(event =>
-    isSameDay(new Date(event.date), currentDate)
-  );
+  // 다중일 이벤트 지원: 현재 날짜가 이벤트 기간 내에 있는 이벤트 필터링
+  const dayEvents = events.filter(event => {
+    const eventStart = startOfDay(new Date(event.date));
+    const eventEnd = event.endDate ? endOfDay(new Date(event.endDate)) : eventStart;
+    const currentDay = startOfDay(currentDate);
+    return isWithinInterval(currentDay, { start: eventStart, end: eventEnd });
+  });
 
   // 종일 이벤트 필터링
   const allDayEvents = dayEvents.filter(e => e.allDay);

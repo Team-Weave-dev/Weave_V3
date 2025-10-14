@@ -31,19 +31,22 @@ function toStorageEvent(dashboardEvent: CalendarEvent): Omit<StorageCalendarEven
       source: 'handleDragEnd'
     });
   } else {
-    // Calculate from date + startTime/endTime (legacy behavior)
-    const eventDate = dashboardEvent.date instanceof Date ? dashboardEvent.date : new Date(dashboardEvent.date);
+    // Calculate from date/endDate + startTime/endTime
+    const startEventDate = dashboardEvent.date instanceof Date ? dashboardEvent.date : new Date(dashboardEvent.date);
+    const endEventDate = dashboardEvent.endDate
+      ? (dashboardEvent.endDate instanceof Date ? dashboardEvent.endDate : new Date(dashboardEvent.endDate))
+      : startEventDate;
 
     // startDate 생성: date + startTime
-    let startDateTime = new Date(eventDate);
+    let startDateTime = new Date(startEventDate);
     if (dashboardEvent.startTime) {
       const [hours, minutes] = dashboardEvent.startTime.split(':').map(Number);
       startDateTime.setHours(hours, minutes, 0, 0);
     }
     startDate = startDateTime.toISOString();
 
-    // endDate 생성: date + endTime
-    let endDateTime = new Date(eventDate);
+    // endDate 생성: endDate + endTime
+    let endDateTime = new Date(endEventDate);
     if (dashboardEvent.endTime) {
       const [hours, minutes] = dashboardEvent.endTime.split(':').map(Number);
       endDateTime.setHours(hours, minutes, 0, 0);
@@ -63,9 +66,10 @@ function toStorageEvent(dashboardEvent: CalendarEvent): Omit<StorageCalendarEven
     }
     endDate = endDateTime.toISOString();
 
-    console.log('[toStorageEvent] Calculated dates from date+time:', {
+    console.log('[toStorageEvent] Calculated dates from date/endDate+time:', {
       startDate,
       endDate,
+      hasEndDate: !!dashboardEvent.endDate,
       source: 'date+time calculation'
     });
   }
@@ -162,13 +166,8 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       // 이벤트 목록 새로고침
       await refreshEvents();
 
-      // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-      notifyCalendarDataChanged({
-        source: 'calendar',
-        changeType: 'add',
-        itemId: createdEvent.id, // CalendarService가 생성한 ID 사용
-        timestamp: Date.now(),
-      });
+      // NOTE: notifyCalendarDataChanged를 호출하지 않음
+      // 이유: 자기 자신도 이 알림을 듣고 있어서 refreshEvents()가 2번 호출되어 중복 표시됨
 
       return true;
     } catch (err) {
@@ -196,13 +195,8 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       // 이벤트 목록 새로고침
       await refreshEvents();
 
-      // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-      notifyCalendarDataChanged({
-        source: 'calendar',
-        changeType: 'update',
-        itemId: event.id,
-        timestamp: Date.now(),
-      });
+      // NOTE: notifyCalendarDataChanged를 호출하지 않음
+      // 이유: 자기 자신도 이 알림을 듣고 있어서 refreshEvents()가 2번 호출되어 중복 표시됨
 
       return true;
     } catch (err) {
@@ -227,13 +221,8 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       // 이벤트 목록 새로고침
       await refreshEvents();
 
-      // 실시간 동기화: 다른 위젯들에게 변경사항 알림
-      notifyCalendarDataChanged({
-        source: 'calendar',
-        changeType: 'delete',
-        itemId: eventId,
-        timestamp: Date.now(),
-      });
+      // NOTE: notifyCalendarDataChanged를 호출하지 않음
+      // 이유: 자기 자신도 이 알림을 듣고 있어서 refreshEvents()가 2번 호출되어 중복 표시됨
 
       return true;
     } catch (err) {

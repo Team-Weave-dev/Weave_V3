@@ -145,7 +145,8 @@ export interface CalendarEvent {
   title: string;
   description?: string;
   location?: string;
-  date: Date;
+  date: Date; // 시작 날짜
+  endDate?: Date; // 종료 날짜 (여러 날짜에 걸친 일정용)
   startTime?: string;
   endTime?: string;
   allDay?: boolean;

@@ -8,6 +8,9 @@ import {
   startOfWeek,
   endOfWeek,
   eachDayOfInterval,
+  isWithinInterval,
+  startOfDay,
+  endOfDay,
 } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -81,9 +84,13 @@ const WeekView = React.memo(({
           <div className="grid grid-cols-8 border-b bg-muted/30">
             <div className="text-xs p-2 text-muted-foreground">종일</div>
             {weekDays.map((day) => {
-              const dayAllDayEvents = allDayEvents.filter(event =>
-                isSameDay(new Date(event.date), day)
-              );
+              // 다중일 이벤트 지원: 시작일과 종료일 사이의 모든 날짜에 표시
+              const dayAllDayEvents = allDayEvents.filter(event => {
+                const eventStart = startOfDay(new Date(event.date));
+                const eventEnd = event.endDate ? endOfDay(new Date(event.endDate)) : eventStart;
+                const currentDay = startOfDay(day);
+                return isWithinInterval(currentDay, { start: eventStart, end: eventEnd });
+              });
 
               return (
                 <div
@@ -117,6 +124,7 @@ const WeekView = React.memo(({
               </div>
               {weekDays.map((day) => {
                 const dayEvents = events.filter(event => {
+                  // 시간대별 이벤트는 시작일에만 표시
                   if (!isSameDay(new Date(event.date), day)) return false;
                   if (event.allDay) return false;
                   if (!event.startTime) return false;

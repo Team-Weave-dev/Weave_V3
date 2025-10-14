@@ -46,12 +46,13 @@ export const loadCalendarEvents = async (): Promise<CalendarEvent[]> => {
 
         if (hasStartDate) {
           // Storage 형식: startDate를 date로 변환
-          return {
+          const convertedEvent = {
             id: event.id,
             title: event.title,
             description: event.description,
             location: event.location,
             date: new Date(event.startDate), // startDate를 date로 변환
+            endDate: event.endDate ? new Date(event.endDate) : undefined, // endDate 추가
             startTime: extractTime(event.startDate),
             endTime: extractTime(event.endDate),
             allDay: event.allDay,
@@ -60,12 +61,33 @@ export const loadCalendarEvents = async (): Promise<CalendarEvent[]> => {
             recurring: event.recurring,
             googleEventId: event.googleEventId
           };
+
+          console.log('[loadCalendarEvents] Storage format conversion:', {
+            title: event.title,
+            storageStartDate: event.startDate,
+            storageEndDate: event.endDate,
+            convertedDate: convertedEvent.date,
+            convertedEndDate: convertedEvent.endDate
+          });
+
+          return convertedEvent;
         } else {
           // Dashboard 형식: 그대로 date 변환만
-          return {
+          const convertedEvent = {
             ...event,
             date: new Date(event.date),
+            endDate: event.endDate ? new Date(event.endDate) : undefined,
           };
+
+          console.log('[loadCalendarEvents] Dashboard format conversion:', {
+            title: event.title,
+            originalDate: event.date,
+            originalEndDate: event.endDate,
+            convertedDate: convertedEvent.date,
+            convertedEndDate: convertedEvent.endDate
+          });
+
+          return convertedEvent;
         }
       });
     }
@@ -99,20 +121,23 @@ export const saveCalendarEvents = async (events: CalendarEvent[]): Promise<void>
   if (typeof window === 'undefined') return;
 
   try {
-    // Dashboard CalendarEvent (date) → Storage CalendarEvent (startDate/endDate) 변환
+    // Dashboard CalendarEvent (date/endDate) → Storage CalendarEvent (startDate/endDate) 변환
     const storageEvents = events.map(event => {
-      const eventDate = event.date instanceof Date ? event.date : new Date(event.date);
+      const startEventDate = event.date instanceof Date ? event.date : new Date(event.date);
+      const endEventDate = event.endDate
+        ? (event.endDate instanceof Date ? event.endDate : new Date(event.endDate))
+        : startEventDate;
 
       // startDate 생성: date + startTime
-      let startDateTime = new Date(eventDate);
+      let startDateTime = new Date(startEventDate);
       if (event.startTime) {
         const [hours, minutes] = event.startTime.split(':').map(Number);
         startDateTime.setHours(hours, minutes, 0, 0);
       }
       const startDate = startDateTime.toISOString();
 
-      // endDate 생성: date + endTime
-      let endDateTime = new Date(eventDate);
+      // endDate 생성: endDate + endTime
+      let endDateTime = new Date(endEventDate);
       if (event.endTime) {
         const [hours, minutes] = event.endTime.split(':').map(Number);
         endDateTime.setHours(hours, minutes, 0, 0);
@@ -131,6 +156,15 @@ export const saveCalendarEvents = async (events: CalendarEvent[]): Promise<void>
         }
       }
       const endDate = endDateTime.toISOString();
+
+      console.log('[saveCalendarEvents] Converting event:', {
+        title: event.title,
+        originalDate: event.date,
+        originalEndDate: event.endDate,
+        calculatedStartDate: startDate,
+        calculatedEndDate: endDate,
+        hasEndDate: !!event.endDate
+      });
 
       // Storage 형식으로 변환
       return {

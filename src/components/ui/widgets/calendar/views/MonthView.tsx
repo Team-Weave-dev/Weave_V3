@@ -13,6 +13,9 @@ import {
   endOfMonth,
   getDay,
   getWeek,
+  isWithinInterval,
+  startOfDay,
+  endOfDay,
 } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -155,9 +158,15 @@ const MonthView = React.memo(({
               </div>
             )}
             {week.map((day) => {
-              const dayEvents = events.filter(event => 
-                isSameDay(new Date(event.date), day)
-              );
+              // 다중일 이벤트 지원: 시작일과 종료일 사이의 모든 날짜에 이벤트 표시
+              const dayEvents = events.filter(event => {
+                const eventStart = startOfDay(new Date(event.date));
+                const eventEnd = event.endDate ? endOfDay(new Date(event.endDate)) : eventStart;
+                const currentDay = startOfDay(day);
+
+                // 현재 날짜가 이벤트 기간 내에 있는지 확인
+                return isWithinInterval(currentDay, { start: eventStart, end: eventEnd });
+              });
               const isSelected = selectedDate && isSameDay(day, selectedDate);
               const isCurrentMonth = isSameMonth(day, currentDate);
               const dayOfWeek = getDay(day);
