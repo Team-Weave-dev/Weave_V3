@@ -79,7 +79,7 @@ const AgendaView = React.memo(({
   const sortedDates = Object.keys(groupedEvents).sort();
   
   return (
-    <ScrollArea className="h-full" style={{ height: `${containerHeight}px` }}>
+    <ScrollArea style={{ height: `${containerHeight}px` }}>
       <div className="p-4 space-y-4">
         {sortedDates.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">

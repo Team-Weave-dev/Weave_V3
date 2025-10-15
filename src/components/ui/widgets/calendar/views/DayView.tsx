@@ -39,7 +39,7 @@ const DayView = React.memo(({
   const scrollAreaHeight = Math.max(300, containerHeight - totalHeaderHeight);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* 날짜 헤더 */}
       <div className="p-4 border-b flex-shrink-0" style={{ height: `${headerHeight}px` }}>
         <h3 className="text-lg font-semibold">

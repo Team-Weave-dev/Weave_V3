@@ -85,6 +85,10 @@ export default function FullScreenCalendarModal({
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
+  // Refs and container size tracking
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 1200, height: 800 });
+
   // Custom hooks
   // Calendar events hook (same as CalendarWidget) - for local calendar events
   const {
@@ -121,6 +125,43 @@ export default function FullScreenCalendarModal({
     const unsubscribe = addCalendarDataChangedListener(handleCalendarDataChanged);
     return () => unsubscribe();
   }, [refreshIntegratedItems]);
+
+  // Container size detection with ResizeObserver for responsive layout
+  React.useEffect(() => {
+    const updateSize = () => {
+      if (contentRef.current) {
+        const rect = contentRef.current.getBoundingClientRect();
+
+        // Calculate available space for calendar views
+        const navHeight = 60; // Navigation bar height
+        const padding = 32; // Padding (px-6 pb-6 = 24px + margin)
+
+        const availableWidth = Math.max(800, rect.width);
+        const availableHeight = Math.max(400, rect.height - navHeight - padding);
+
+        setContainerSize({
+          width: availableWidth,
+          height: availableHeight
+        });
+      }
+    };
+
+    // Initial size calculation
+    updateSize();
+
+    // Create ResizeObserver for responsive updates
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(updateSize);
+    });
+
+    if (contentRef.current) {
+      resizeObserver.observe(contentRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isOpen, currentView]); // Re-calculate when modal opens or view changes
 
   // Convert UnifiedCalendarItem to CalendarEvent
   const convertToCalendarEvents = React.useCallback((items: typeof integratedItems): CalendarEvent[] => {
@@ -429,7 +470,7 @@ export default function FullScreenCalendarModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0" hideClose>
+        <DialogContent className="w-[95vw] max-w-[1600px] h-[90vh] flex flex-col p-0" hideClose>
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-2xl font-bold">
@@ -505,9 +546,9 @@ export default function FullScreenCalendarModal({
             </div>
           </DialogHeader>
 
-          <div className="flex-1 overflow-hidden px-6 pb-6 flex flex-col">
-            {/* Navigation bar */}
-            <div className="calendar-nav mb-4 mt-4">
+          <div ref={contentRef} className="flex-1 flex flex-col px-6 pb-6 min-h-0">
+            {/* Navigation bar - Fixed */}
+            <div className="calendar-nav mb-4 mt-4 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Button
@@ -572,9 +613,9 @@ export default function FullScreenCalendarModal({
               </div>
             </div>
 
-            {/* View content with DragDropContext */}
+            {/* View content with DragDropContext - Scrollable */}
             <DragDropContext onDragEnd={handleDragEnd}>
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
                 {currentView === 'month' && (
                   <MonthView
                     currentDate={currentDate}
@@ -583,9 +624,11 @@ export default function FullScreenCalendarModal({
                     onEventClick={handleEventClick}
                     onDateDoubleClick={handleDateDoubleClick}
                     selectedDate={selectedDate}
-                    containerHeight={800}
-                    containerWidth={1200}
+                    containerHeight={containerSize.height}
+                    containerWidth={containerSize.width}
                     gridSize={{ w: 5, h: 5 }}
+                    weekStartsOn={settings.weekStartsOn}
+                    showWeekNumbers={settings.showWeekNumbers}
                     onTaskDateUpdate={handleTaskDateUpdate}
                   />
                 )}
@@ -597,7 +640,8 @@ export default function FullScreenCalendarModal({
                     onDateSelect={handleDateSelect}
                     onEventClick={handleEventClick}
                     onDateDoubleClick={handleDateDoubleClick}
-                    containerHeight={800}
+                    containerHeight={containerSize.height}
+                    weekStartsOn={settings.weekStartsOn}
                   />
                 )}
 
@@ -607,7 +651,7 @@ export default function FullScreenCalendarModal({
                     events={filteredEvents}
                     onEventClick={handleEventClick}
                     onDateDoubleClick={handleDateDoubleClick}
-                    containerHeight={800}
+                    containerHeight={containerSize.height}
                   />
                 )}
 
@@ -615,7 +659,7 @@ export default function FullScreenCalendarModal({
                   <AgendaView
                     events={filteredEvents}
                     onEventClick={handleEventClick}
-                    containerHeight={800}
+                    containerHeight={containerSize.height}
                   />
                 )}
               </div>

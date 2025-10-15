@@ -51,7 +51,7 @@ const WeekView = React.memo(({
   const adjustedScrollHeight = Math.max(300, containerHeight - adjustedHeaderHeight);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* 요일 헤더 */}
       <div className="flex-shrink-0" style={{ height: `${adjustedHeaderHeight}px` }}>
         <div className="grid grid-cols-8 border-b">
