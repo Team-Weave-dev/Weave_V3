@@ -38,23 +38,51 @@ export const loadCalendarEvents = async (): Promise<CalendarEvent[]> => {
 
   try {
     const events = await storage.get<any[]>(STORAGE_KEYS.EVENTS);
+    console.log('[loadCalendarEvents] Raw events from storage:', events);
     if (events && Array.isArray(events)) {
       // Storage CalendarEvent (startDate/endDate) → Dashboard CalendarEvent (date) 변환
       return events.map((event: any) => {
         // Storage 형식인지 Dashboard 형식인지 확인
         const hasStartDate = event.startDate && !event.date;
+        console.log('[loadCalendarEvents] Event format check:', {
+          title: event.title,
+          hasStartDate,
+          hasDate: !!event.date,
+          allDay: event.allDay,
+          rawEvent: event
+        });
 
         if (hasStartDate) {
           // Storage 형식: startDate를 date로 변환
+          let date: Date;
+          let endDate: Date | undefined;
+
+          if (event.allDay) {
+            // 종일 일정: UTC 날짜를 로컬 날짜로 변환 (타임존 제거)
+            const utcStartDate = new Date(event.startDate);
+            date = new Date(utcStartDate.getUTCFullYear(), utcStartDate.getUTCMonth(), utcStartDate.getUTCDate());
+
+            if (event.endDate) {
+              const utcEndDate = new Date(event.endDate);
+              // Supabase는 종료일을 YYYY-MM-DDT23:59:59+00:00 형식으로 저장 (이미 정확한 종료일)
+              // 따라서 그대로 변환 (날짜 빼기 불필요)
+              endDate = new Date(utcEndDate.getUTCFullYear(), utcEndDate.getUTCMonth(), utcEndDate.getUTCDate());
+            }
+          } else {
+            // 시간 일정: 그대로 로컬 타임존으로 변환
+            date = new Date(event.startDate);
+            endDate = event.endDate ? new Date(event.endDate) : undefined;
+          }
+
           const convertedEvent = {
             id: event.id,
             title: event.title,
             description: event.description,
             location: event.location,
-            date: new Date(event.startDate), // startDate를 date로 변환
-            endDate: event.endDate ? new Date(event.endDate) : undefined, // endDate 추가
-            startTime: extractTime(event.startDate),
-            endTime: extractTime(event.endDate),
+            date,
+            endDate,
+            startTime: event.allDay ? undefined : extractTime(event.startDate),
+            endTime: event.allDay ? undefined : extractTime(event.endDate),
             allDay: event.allDay,
             type: event.type,
             color: event.color,
@@ -64,6 +92,7 @@ export const loadCalendarEvents = async (): Promise<CalendarEvent[]> => {
 
           console.log('[loadCalendarEvents] Storage format conversion:', {
             title: event.title,
+            allDay: event.allDay,
             storageStartDate: event.startDate,
             storageEndDate: event.endDate,
             convertedDate: convertedEvent.date,
@@ -72,15 +101,35 @@ export const loadCalendarEvents = async (): Promise<CalendarEvent[]> => {
 
           return convertedEvent;
         } else {
-          // Dashboard 형식: 그대로 date 변환만
+          // Dashboard 형식: date 변환
+          let date: Date;
+          let endDate: Date | undefined;
+
+          // Dashboard 형식도 allDay 여부에 따라 다르게 처리
+          if (event.allDay && typeof event.date === 'string') {
+            // 종일 일정: ISO 문자열을 로컬 날짜로 변환
+            const dateObj = new Date(event.date);
+            date = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+
+            if (event.endDate) {
+              const endDateObj = new Date(event.endDate);
+              endDate = new Date(endDateObj.getFullYear(), endDateObj.getMonth(), endDateObj.getDate());
+            }
+          } else {
+            // 시간 일정 또는 이미 Date 객체: 그대로 변환
+            date = new Date(event.date);
+            endDate = event.endDate ? new Date(event.endDate) : undefined;
+          }
+
           const convertedEvent = {
             ...event,
-            date: new Date(event.date),
-            endDate: event.endDate ? new Date(event.endDate) : undefined,
+            date,
+            endDate,
           };
 
           console.log('[loadCalendarEvents] Dashboard format conversion:', {
             title: event.title,
+            allDay: event.allDay,
             originalDate: event.date,
             originalEndDate: event.endDate,
             convertedDate: convertedEvent.date,
@@ -128,37 +177,49 @@ export const saveCalendarEvents = async (events: CalendarEvent[]): Promise<void>
         ? (event.endDate instanceof Date ? event.endDate : new Date(event.endDate))
         : startEventDate;
 
-      // startDate 생성: date + startTime
-      let startDateTime = new Date(startEventDate);
-      if (event.startTime) {
-        const [hours, minutes] = event.startTime.split(':').map(Number);
-        startDateTime.setHours(hours, minutes, 0, 0);
-      }
-      const startDate = startDateTime.toISOString();
+      let startDate: string;
+      let endDate: string;
 
-      // endDate 생성: endDate + endTime
-      let endDateTime = new Date(endEventDate);
-      if (event.endTime) {
-        const [hours, minutes] = event.endTime.split(':').map(Number);
-        endDateTime.setHours(hours, minutes, 0, 0);
-      }
+      if (event.allDay) {
+        // 종일 일정: 사용자가 선택한 날짜를 UTC 자정으로 저장 (타임존 독립적)
+        const year = startEventDate.getFullYear();
+        const month = startEventDate.getMonth();
+        const day = startEventDate.getDate();
+        const utcStartDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+        startDate = utcStartDate.toISOString();
 
-      // ✅ 중요: endDate가 startDate보다 이르거나 같으면 자동으로 1시간 추가
-      if (endDateTime.getTime() <= startDateTime.getTime()) {
-        if (event.allDay) {
-          // 종일 이벤트: 다음 날 자정으로 설정
-          endDateTime = new Date(startDateTime);
-          endDateTime.setDate(endDateTime.getDate() + 1);
-          endDateTime.setHours(0, 0, 0, 0);
-        } else {
+        // 종료일도 UTC 23:59:59로 저장 (inclusive end)
+        const endYear = endEventDate.getFullYear();
+        const endMonth = endEventDate.getMonth();
+        const endDay = endEventDate.getDate();
+        const utcEndDate = new Date(Date.UTC(endYear, endMonth, endDay, 23, 59, 59, 999));
+        endDate = utcEndDate.toISOString();
+      } else {
+        // 시간 일정: 로컬 타임존 유지 후 UTC로 변환
+        let startDateTime = new Date(startEventDate);
+        if (event.startTime) {
+          const [hours, minutes] = event.startTime.split(':').map(Number);
+          startDateTime.setHours(hours, minutes, 0, 0);
+        }
+        startDate = startDateTime.toISOString();
+
+        let endDateTime = new Date(endEventDate);
+        if (event.endTime) {
+          const [hours, minutes] = event.endTime.split(':').map(Number);
+          endDateTime.setHours(hours, minutes, 0, 0);
+        }
+
+        // endDate가 startDate보다 이르거나 같으면 자동으로 1시간 추가
+        if (endDateTime.getTime() <= startDateTime.getTime()) {
           // 일반 이벤트: 시작 시간 + 1시간
           endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
         }
+        endDate = endDateTime.toISOString();
       }
-      const endDate = endDateTime.toISOString();
 
       console.log('[saveCalendarEvents] Converting event:', {
         title: event.title,
+        allDay: event.allDay,
         originalDate: event.date,
         originalEndDate: event.endDate,
         calculatedStartDate: startDate,

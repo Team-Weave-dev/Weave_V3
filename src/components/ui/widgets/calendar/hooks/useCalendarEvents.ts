@@ -38,37 +38,52 @@ function toStorageEvent(dashboardEvent: CalendarEvent): Omit<StorageCalendarEven
       : startEventDate;
 
     // startDate 생성: date + startTime
-    let startDateTime = new Date(startEventDate);
-    if (dashboardEvent.startTime) {
-      const [hours, minutes] = dashboardEvent.startTime.split(':').map(Number);
-      startDateTime.setHours(hours, minutes, 0, 0);
+    if (dashboardEvent.allDay) {
+      // 종일 일정: 사용자가 선택한 날짜를 UTC 자정으로 저장 (타임존 독립적)
+      const year = startEventDate.getFullYear();
+      const month = startEventDate.getMonth();
+      const day = startEventDate.getDate();
+      const utcDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      startDate = utcDate.toISOString();
+    } else {
+      // 시간 일정: 로컬 타임존 유지 후 UTC로 변환
+      let startDateTime = new Date(startEventDate);
+      if (dashboardEvent.startTime) {
+        const [hours, minutes] = dashboardEvent.startTime.split(':').map(Number);
+        startDateTime.setHours(hours, minutes, 0, 0);
+      }
+      startDate = startDateTime.toISOString();
     }
-    startDate = startDateTime.toISOString();
 
     // endDate 생성: endDate + endTime
-    let endDateTime = new Date(endEventDate);
-    if (dashboardEvent.endTime) {
-      const [hours, minutes] = dashboardEvent.endTime.split(':').map(Number);
-      endDateTime.setHours(hours, minutes, 0, 0);
-    }
+    if (dashboardEvent.allDay) {
+      // 종일 일정: 종료일은 해당 날짜의 23:59:59 UTC로 저장 (inclusive end)
+      const year = endEventDate.getFullYear();
+      const month = endEventDate.getMonth();
+      const day = endEventDate.getDate();
+      const utcDate = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+      endDate = utcDate.toISOString();
+    } else {
+      // 시간 일정: 로컬 타임존 유지 후 UTC로 변환
+      let endDateTime = new Date(endEventDate);
+      if (dashboardEvent.endTime) {
+        const [hours, minutes] = dashboardEvent.endTime.split(':').map(Number);
+        endDateTime.setHours(hours, minutes, 0, 0);
+      }
 
-    // endDate가 startDate보다 이르거나 같으면 자동으로 1시간 추가
-    if (endDateTime.getTime() <= startDateTime.getTime()) {
-      if (dashboardEvent.allDay) {
-        // 종일 이벤트: 다음 날 자정으로 설정
-        endDateTime = new Date(startDateTime);
-        endDateTime.setDate(endDateTime.getDate() + 1);
-        endDateTime.setHours(0, 0, 0, 0);
-      } else {
+      // endDate가 startDate보다 이르거나 같으면 자동으로 1시간 추가
+      const startDateTime = new Date(startDate);
+      if (endDateTime.getTime() <= startDateTime.getTime()) {
         // 일반 이벤트: 시작 시간 + 1시간
         endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
       }
+      endDate = endDateTime.toISOString();
     }
-    endDate = endDateTime.toISOString();
 
     console.log('[toStorageEvent] Calculated dates from date/endDate+time:', {
       startDate,
       endDate,
+      allDay: dashboardEvent.allDay,
       hasEndDate: !!dashboardEvent.endDate,
       source: 'date+time calculation'
     });

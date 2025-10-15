@@ -101,10 +101,17 @@ const EventForm = React.memo(({
       }
     }
 
+    // YYYY-MM-DD 문자열을 로컬 타임존 기준 Date로 변환
+    // new Date("YYYY-MM-DD")는 UTC로 해석되어 타임존 문제 발생
+    const parseLocalDate = (dateStr: string): Date => {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     const eventData: Partial<CalendarEvent> = {
       title: formData.title || getEventFormText.defaultTitle('ko'),
-      date: new Date(formData.startDate),
-      endDate: new Date(formData.endDate),
+      date: parseLocalDate(formData.startDate),
+      endDate: parseLocalDate(formData.endDate),
       type: formData.type,
       allDay: formData.allDay,
       startTime: !formData.allDay ? formData.startTime : undefined,
