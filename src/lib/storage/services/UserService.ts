@@ -14,7 +14,7 @@ import { BaseService } from './BaseService';
 /**
  * User domain service
  *
- * Manages user profiles with DualWrite mode support (LocalStorage + Supabase).
+ * Manages user profiles with Supabase as Single Source of Truth (SSOT).
  * Provides type-safe operations for user data management.
  */
 export class UserService extends BaseService<User> {
