@@ -154,6 +154,7 @@ export interface CalendarEvent {
   recurring?: 'daily' | 'weekly' | 'monthly' | 'yearly';
   type?: 'meeting' | 'task' | 'reminder' | 'deadline' | 'holiday' | 'other';
   googleEventId?: string; // Google Calendar integration ID
+  isReadOnly?: boolean; // 읽기 전용 플래그 (세무일정, 공휴일 등 시스템 생성 이벤트)
 }
 
 export interface CalendarWidgetProps {

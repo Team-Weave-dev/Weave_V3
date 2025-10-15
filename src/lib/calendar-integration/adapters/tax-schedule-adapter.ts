@@ -64,6 +64,9 @@ class TaxScheduleAdapter implements IDataAdapter<TaxSchedule> {
       // 시각화
       color: schedule.color || getTaxCategoryColor(schedule.category),
       icon: this.getIconForType(schedule.type),
+
+      // 권한 제어 - 세무 일정은 읽기 전용
+      isReadOnly: true,
     };
   }
 

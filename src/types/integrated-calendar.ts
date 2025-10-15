@@ -61,6 +61,9 @@ export interface UnifiedCalendarItem {
   // 시각화 속성
   color: string;                                  // 표시 색상
   icon?: string;                                  // 아이콘 이름
+
+  // 권한 제어
+  isReadOnly?: boolean;                           // 읽기 전용 플래그 (세무일정 등 시스템 생성 데이터)
 }
 
 /**

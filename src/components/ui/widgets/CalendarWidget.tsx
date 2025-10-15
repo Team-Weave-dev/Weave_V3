@@ -165,6 +165,7 @@ export function CalendarWidget({
         endTime: item.endTime,
         allDay: item.allDay,
         type: eventType,
+        isReadOnly: item.isReadOnly, // 읽기 전용 플래그 전달
       };
     });
   };

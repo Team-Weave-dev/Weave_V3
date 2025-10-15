@@ -150,6 +150,26 @@ const EventForm = React.memo(({
     });
   };
 
+  // 읽기 전용 이벤트는 수정 불가
+  if (event?.isReadOnly) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
+          이 일정은 시스템에서 생성된 읽기 전용 일정으로 수정할 수 없습니다.
+        </div>
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+          >
+            {getEventFormText.buttonCancel('ko')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4" onKeyDown={handleKeyDown}>
       <h4 className="font-medium text-sm">
