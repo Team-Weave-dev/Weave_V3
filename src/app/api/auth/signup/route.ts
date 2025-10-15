@@ -1,24 +1,39 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { signupSchema } from '@/lib/validation/auth'
+import { checkRateLimit } from '@/lib/ratelimit'
 
 export async function POST(request: Request) {
+  // Rate Limiting 체크
+  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown'
+  const rateLimitResult = await checkRateLimit(ip)
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: rateLimitResult.error },
+      {
+        status: 429,
+        headers: rateLimitResult.headers,
+      }
+    )
+  }
+
   try {
-    const { email, password, name } = await request.json()
+    const body = await request.json()
 
-    // Validate input
-    if (!email || !password) {
+    // 입력 검증
+    const result = signupSchema.safeParse(body)
+    if (!result.success) {
       return NextResponse.json(
-        { error: '이메일과 비밀번호를 입력해주세요.' },
+        {
+          error: result.error.issues[0].message,
+          issues: result.error.issues,
+        },
         { status: 400 }
       )
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: '비밀번호는 최소 6자 이상이어야 합니다.' },
-        { status: 400 }
-      )
-    }
+    const { email, password, name } = result.data // 검증된 데이터 사용
 
     const supabase = await createClient()
 
@@ -107,6 +122,14 @@ export async function POST(request: Request) {
     })
 
   } catch (error) {
+    // JSON 파싱 오류 처리
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        { error: '잘못된 요청 형식입니다.' },
+        { status: 400 }
+      )
+    }
+
     console.error('Unexpected error during signup:', error)
     return NextResponse.json(
       { error: '회원가입 중 오류가 발생했습니다.' },
