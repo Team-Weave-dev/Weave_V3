@@ -199,18 +199,17 @@ export abstract class BaseService<T extends BaseEntity> {
    * Delete an entity by ID
    */
   async delete(id: string): Promise<boolean> {
-    const entities = await this.getAll();
-    const index = entities.findIndex((entity) => entity.id === id);
-
-    if (index === -1) {
+    // Check if entity exists
+    const entity = await this.getById(id);
+    if (!entity) {
       return false; // Entity not found
     }
 
-    // Remove entity from array
-    entities.splice(index, 1);
+    // Supabase-only mode: Delete individual entity from database
+    // Build individual entity key: entityKey:id (e.g., "tasks:abc-123")
+    const individualKey = `${this.entityKey}:${id}`;
+    await this.storage.remove(individualKey);
 
-    // Save updated array
-    await this.storage.set<T[]>(this.entityKey, entities);
     return true;
   }
 
@@ -218,17 +217,25 @@ export abstract class BaseService<T extends BaseEntity> {
    * Delete multiple entities by IDs
    */
   async deleteMany(ids: string[]): Promise<number> {
-    const entities = await this.getAll();
-    const idSet = new Set(ids);
+    // Supabase-only mode: Delete each entity individually from database
+    // Remove each entity individually to trigger Supabase DELETE operations
+    const removalPromises = ids.map(async (id) => {
+      const individualKey = `${this.entityKey}:${id}`;
+      try {
+        await this.storage.remove(individualKey);
+        return true;
+      } catch (error) {
+        // Log warning but don't fail the entire operation
+        console.warn(`Failed to remove individual entity ${individualKey}:`, error);
+        return false;
+      }
+    });
 
-    // Filter out entities to delete
-    const remaining = entities.filter((entity) => !idSet.has(entity.id));
-    const deletedCount = entities.length - remaining.length;
+    // Wait for all removals to complete
+    const results = await Promise.all(removalPromises);
 
-    if (deletedCount > 0) {
-      await this.storage.set<T[]>(this.entityKey, remaining);
-    }
-
+    // Count successful deletions
+    const deletedCount = results.filter(success => success).length;
     return deletedCount;
   }
 
