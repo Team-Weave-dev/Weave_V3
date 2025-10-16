@@ -513,6 +513,10 @@ export class SupabaseAdapter implements StorageAdapter {
       }
 
       const data = await this.withRetry(async () => {
+        // Soft Delete를 지원하는 테이블 목록
+        const softDeleteTables = ['projects', 'tasks', 'events', 'documents', 'clients'];
+        const usesSoftDelete = softDeleteTables.includes(tableName);
+
         // Special handling for users table (id = PRIMARY KEY, no user_id column)
         if (entity === 'users' || entity === 'user') {
           if (id) {
@@ -536,16 +540,30 @@ export class SupabaseAdapter implements StorageAdapter {
         // Single entity query (other tables with user_id)
         if (id) {
           console.log(`[SupabaseAdapter.get] Fetching single ${entity} with id=${id}, user_id=${this.userId}`)
-          const query = this.supabase
+          let query = this.supabase
             .from(tableName)
             .select('*')
             .eq('user_id', this.userId)
-            .eq('id', id)
-            .single()
-          return await this.executeQuery<T>(query)
+            .eq('id', id);
+
+          // Soft Delete 필터 추가
+          if (usesSoftDelete) {
+            query = query.is('deleted_at', null);
+          }
+
+          return await this.executeQuery<T>(query.single())
         } else {
           console.log(`[SupabaseAdapter.get] Fetching all ${entity} for user_id=${this.userId} from table=${tableName}`)
-          const query = this.supabase.from(tableName).select('*').eq('user_id', this.userId)
+          let query = this.supabase
+            .from(tableName)
+            .select('*')
+            .eq('user_id', this.userId);
+
+          // Soft Delete 필터 추가
+          if (usesSoftDelete) {
+            query = query.is('deleted_at', null);
+          }
+
           const result = await this.executeQuery<T>(query)
           console.log(`[SupabaseAdapter.get] Query result for ${entity}:`, result)
           return result
@@ -817,9 +835,10 @@ export class SupabaseAdapter implements StorageAdapter {
               }
             })
 
-            const { error: upsertError } = await this.supabase
+            const { data: upsertedData, error: upsertError } = await this.supabase
               .from(tableName)
               .upsert(dataToStore as any)  // id 기준 UPSERT (새 프로젝트 추가 또는 기존 업데이트)
+              .select()  // 실제 저장 결과 확인
 
             if (upsertError) {
               console.error('[SupabaseAdapter] Projects upsert error:', {
@@ -831,7 +850,16 @@ export class SupabaseAdapter implements StorageAdapter {
               throw upsertError
             }
 
-            console.log('[SupabaseAdapter] Projects UPSERT 성공:', dataToStore.length)
+            console.log('[SupabaseAdapter] Projects UPSERT 성공:', {
+              저장개수: dataToStore.length,
+              실제저장: upsertedData?.length || 0,
+              첫번째: upsertedData?.[0] ? {
+                id: upsertedData[0].id,
+                no: upsertedData[0].no,
+                name: upsertedData[0].name,
+                wbs_tasks_count: upsertedData[0].wbs_tasks?.length || 0
+              } : null
+            })
           } else {
             console.log('[SupabaseAdapter] Projects UPSERT 건너뜀 (빈 배열)')
           }
@@ -988,7 +1016,52 @@ export class SupabaseAdapter implements StorageAdapter {
           return
         }
 
-        const dataToStore = eventsArray.map((event: any) => {
+        // Filter out invalid events (must have id and title at minimum)
+        const validEvents = eventsArray.filter((event: any) => {
+          if (!event || typeof event !== 'object') {
+            console.warn('[SupabaseAdapter] Skipping non-object event:', event);
+            return false;
+          }
+          if (!event.id || !event.title) {
+            console.warn('[SupabaseAdapter] Skipping event without id or title:', {
+              id: event.id,
+              title: event.title,
+              keys: Object.keys(event)
+            });
+            return false;
+          }
+          return true;
+        });
+
+        // Deduplicate events by ID (keep the last occurrence to preserve latest updates)
+        const deduplicatedEvents = Array.from(
+          new Map(validEvents.map((event: any) => [event.id, event])).values()
+        );
+
+        // Log if duplicates were removed
+        if (deduplicatedEvents.length < validEvents.length) {
+          const removedCount = validEvents.length - deduplicatedEvents.length;
+          console.warn(`[SupabaseAdapter] Removed ${removedCount} duplicate event(s)`);
+        }
+
+        if (deduplicatedEvents.length === 0) {
+          console.warn('[SupabaseAdapter] No valid events after filtering, skipping insert');
+          // Still need to delete existing events
+          await this.withRetry(async () => {
+            const { error: deleteError } = await this.supabase
+              .from(tableName)
+              .delete()
+              .eq('user_id', this.userId);
+
+            if (deleteError) {
+              console.error('[SupabaseAdapter] Events delete error:', deleteError);
+              throw deleteError;
+            }
+          });
+          return;
+        }
+
+        const dataToStore = deduplicatedEvents.map((event: any) => {
           // Detect format: Dashboard has 'date' field, Storage has 'startDate' field
           const isDashboardFormat = event.date && !event.startDate
 
@@ -1029,18 +1102,26 @@ export class SupabaseAdapter implements StorageAdapter {
             }
           } else {
             // Storage format: validate and use
-            const startDate = new Date(event.startDate)
-            const endDate = new Date(event.endDate)
-
-            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-              console.error(`Invalid date for event: start=${event.startDate}, end=${event.endDate}`)
+            if (!event.startDate || !event.endDate) {
+              console.warn('[SupabaseAdapter] Event missing dates, using fallback:', event.id);
               // Use current date as fallback
               const now = new Date()
               startTime = now.toISOString()
               endTime = new Date(now.getTime() + 3600000).toISOString()
             } else {
-              startTime = event.startDate
-              endTime = event.endDate
+              const startDate = new Date(event.startDate)
+              const endDate = new Date(event.endDate)
+
+              if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                console.error(`[SupabaseAdapter] Invalid date for event: start=${event.startDate}, end=${event.endDate}`)
+                // Use current date as fallback
+                const now = new Date()
+                startTime = now.toISOString()
+                endTime = new Date(now.getTime() + 3600000).toISOString()
+              } else {
+                startTime = event.startDate
+                endTime = event.endDate
+              }
             }
           }
 
@@ -1065,7 +1146,7 @@ export class SupabaseAdapter implements StorageAdapter {
             eventStatus = 'confirmed'
           }
 
-          return {
+          const transformedEvent = {
             // Identifiers
             id: this.isValidUUID(event.id) ? event.id : crypto.randomUUID(),
             user_id: this.userId,
@@ -1073,7 +1154,7 @@ export class SupabaseAdapter implements StorageAdapter {
             client_id: this.isValidUUID(event.clientId) ? event.clientId : null,
 
             // Basic info
-            title: event.title,
+            title: event.title || 'Untitled Event',
             description: event.description || null,
             location: event.location || null,
 
@@ -1112,7 +1193,16 @@ export class SupabaseAdapter implements StorageAdapter {
             created_at: event.createdAt || new Date().toISOString(),
             updated_at: new Date().toISOString(),
             // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+          };
+
+          return transformedEvent;
+        }).filter(event => {
+          // Final validation: ensure all required fields exist
+          const isValid = event && event.id && event.title && event.start_time && event.end_time && event.user_id;
+          if (!isValid) {
+            console.error('[SupabaseAdapter] Invalid transformed event, filtering out:', event);
           }
+          return isValid;
         })
 
         await this.withRetry(async () => {
@@ -1143,11 +1233,8 @@ export class SupabaseAdapter implements StorageAdapter {
               console.error('[SupabaseAdapter] Events insert error:', {
                 code: insertError.code,
                 message: insertError.message,
-                details: insertError.details,
-                hint: insertError.hint,
-                fullError: JSON.stringify(insertError, null, 2),
+                totalEvents: dataToStore.length
               })
-              console.error('[SupabaseAdapter] Events data being inserted (first item):', dataToStore[0])
               throw insertError
             }
           }
@@ -1559,6 +1646,10 @@ export class SupabaseAdapter implements StorageAdapter {
   /**
    * Remove a value from Supabase
    *
+   * Soft Delete 패턴 적용:
+   * - projects, tasks, events, documents, clients: UPDATE deleted_at = NOW()
+   * - 기타 테이블: 실제 DELETE 수행
+   *
    * @param key - Storage key to remove
    * @throws {StorageError} If query fails
    */
@@ -1579,22 +1670,73 @@ export class SupabaseAdapter implements StorageAdapter {
         )
       }
 
+      // Soft Delete를 지원하는 테이블 목록
+      const softDeleteTables = ['projects', 'tasks', 'events', 'documents', 'clients'];
+      const usesSoftDelete = softDeleteTables.includes(tableName);
+
       await this.withRetry(async () => {
-        // Special handling for users table (id = PRIMARY KEY, no user_id column)
-        const query = this.supabase
-          .from(tableName)
-          .delete()
-          .eq('id', id)
+        console.log(`[SupabaseAdapter.remove] 🔍 삭제 시작:`, {
+          tableName,
+          id,
+          deleteType: usesSoftDelete ? 'Soft Delete (함수 호출)' : 'Hard Delete (DELETE)',
+          currentUserId: this.userId
+        });
 
-        // Other tables: add user_id filter
-        if (entity !== 'users' && entity !== 'user') {
-          query.eq('user_id', this.userId)
-        }
+        if (usesSoftDelete) {
+          // ===== Soft Delete: RLS를 우회하는 안전한 함수 호출 =====
+          // RLS 정책 문제를 피하기 위해 SECURITY DEFINER 함수 사용
+          const functionName = `soft_delete_${tableName.slice(0, -1)}_safe`; // projects → soft_delete_project_safe
 
-        const { error } = await query
+          console.log(`[SupabaseAdapter.remove] 📞 함수 호출:`, {
+            functionName,
+            id
+          });
 
-        if (error) {
-          throw error
+          const { data, error } = await this.supabase.rpc(functionName, {
+            [`p_${tableName.slice(0, -1)}_id`]: id // p_project_id, p_task_id, etc.
+          });
+
+          if (error) {
+            console.error(`[SupabaseAdapter.remove] ❌ 함수 호출 실패:`, error);
+            throw error;
+          }
+
+          // 함수 응답 확인
+          const result = data as { success: boolean; error?: string; deleted_at?: string };
+
+          if (!result.success) {
+            console.error(`[SupabaseAdapter.remove] ❌ Soft Delete 실패:`, result.error);
+            throw new Error(result.error || 'Soft Delete failed');
+          }
+
+          console.log(`[SupabaseAdapter.remove] ✅ Soft Delete 완료:`, {
+            id,
+            tableName,
+            deleted_at: result.deleted_at
+          });
+        } else {
+          // ===== Hard Delete: 실제 행 삭제 =====
+          const deleteQuery = this.supabase
+            .from(tableName)
+            .delete()
+            .eq('id', id);
+
+          // user_id 필터 추가 (users 테이블 제외)
+          if (entity !== 'users' && entity !== 'user') {
+            deleteQuery.eq('user_id', this.userId);
+          }
+
+          const { error } = await deleteQuery;
+
+          if (error) {
+            console.error(`[SupabaseAdapter.remove] ❌ Hard Delete 실패:`, error);
+            throw error;
+          }
+
+          console.log(`[SupabaseAdapter.remove] ✅ Hard Delete 완료:`, {
+            id,
+            tableName
+          });
         }
       })
     } catch (error) {

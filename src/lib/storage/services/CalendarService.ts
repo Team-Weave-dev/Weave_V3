@@ -195,6 +195,7 @@ export class CalendarService extends BaseService<CalendarEvent> {
 
   /**
    * Override delete to add activity logging
+   * NOTE: Events are stored as an array, not individual keys
    * @param id - Event ID
    * @returns Success boolean
    */
@@ -202,10 +203,68 @@ export class CalendarService extends BaseService<CalendarEvent> {
     const event = await this.getById(id);
     if (!event) return false;
 
-    const result = await super.delete(id);
+    // Events are stored as an array, not individual keys
+    // Get all events, filter out the one to delete, then save the array
+    const events = await this.getAll();
+    const filteredEvents = events.filter(e => e.id !== id);
 
-    if (result) {
-      // Get actual user information
+    if (filteredEvents.length === events.length) {
+      // Event not found in array
+      return false;
+    }
+
+    // Save updated array (will trigger Supabase sync via DualWrite)
+    await this.storage.set<CalendarEvent[]>(this.entityKey, filteredEvents);
+
+    // Get actual user information
+    const userInfo = await this.getUserInfo(event.userId);
+
+    await this.createActivityLog({
+      type: 'delete',
+      action: '일정 삭제',
+      entityType: 'event',
+      entityId: event.id,
+      entityName: event.title,
+      userId: event.userId,
+      userName: userInfo.name,
+      userInitials: userInfo.initials,
+      description: `일정 "${event.title}"을(를) 삭제했습니다.`,
+    });
+
+    return true;
+  }
+
+  /**
+   * Override deleteMany for batch deletion
+   * NOTE: Events are stored as an array, not individual keys
+   * @param ids - Event IDs to delete
+   * @returns Number of deleted events
+   */
+  override async deleteMany(ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+
+    // Get events to log before deletion
+    const eventsToDelete = await Promise.all(
+      ids.map(id => this.getById(id))
+    );
+    const validEvents = eventsToDelete.filter((e): e is CalendarEvent => e !== null);
+
+    // Events are stored as an array
+    const events = await this.getAll();
+    const idSet = new Set(ids);
+    const filteredEvents = events.filter(e => !idSet.has(e.id));
+
+    const deletedCount = events.length - filteredEvents.length;
+
+    if (deletedCount === 0) {
+      return 0;
+    }
+
+    // Save updated array (will trigger Supabase sync via DualWrite)
+    await this.storage.set<CalendarEvent[]>(this.entityKey, filteredEvents);
+
+    // Log activities for each deleted event
+    for (const event of validEvents) {
       const userInfo = await this.getUserInfo(event.userId);
 
       await this.createActivityLog({
@@ -221,7 +280,36 @@ export class CalendarService extends BaseService<CalendarEvent> {
       });
     }
 
-    return result;
+    return deletedCount;
+  }
+
+  // ============================================================================
+  // Maintenance and Cleanup
+  // ============================================================================
+
+  /**
+   * Remove duplicate events from storage
+   * This utility method can be called to clean up any duplicate events
+   * that may have been created due to race conditions or bugs
+   * @returns Number of duplicate events removed
+   */
+  async removeDuplicateEvents(): Promise<number> {
+    const events = await this.getAll();
+
+    // Deduplicate events by ID (keep the last occurrence to preserve latest updates)
+    const deduplicatedEvents = Array.from(
+      new Map(events.map(event => [event.id, event])).values()
+    );
+
+    const duplicateCount = events.length - deduplicatedEvents.length;
+
+    if (duplicateCount > 0) {
+      console.log(`[CalendarService] Removed ${duplicateCount} duplicate event(s)`);
+      // Save deduplicated array
+      await this.storage.set<CalendarEvent[]>(this.entityKey, deduplicatedEvents);
+    }
+
+    return duplicateCount;
   }
 
   // ============================================================================

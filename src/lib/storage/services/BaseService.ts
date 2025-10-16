@@ -76,8 +76,15 @@ export abstract class BaseService<T extends BaseEntity> {
     // Get existing entities
     const entities = await this.getAll();
 
-    // Add new entity
-    entities.push(entity);
+    // Check for duplicate ID to prevent duplicates in array
+    const existingIndex = entities.findIndex(e => e.id === entityId);
+    if (existingIndex !== -1) {
+      // Replace existing entity instead of adding duplicate
+      entities[existingIndex] = entity;
+    } else {
+      // Add new entity
+      entities.push(entity);
+    }
 
     // Save to storage
     await this.storage.set<T[]>(this.entityKey, entities);
@@ -97,7 +104,19 @@ export abstract class BaseService<T extends BaseEntity> {
    * Get all entities
    */
   async getAll(): Promise<T[]> {
+    console.log(`[BaseService.getAll] 🔍 데이터 로드 시작:`, {
+      entityKey: this.entityKey,
+      storageMode: this.storage.constructor.name
+    });
+
     const entities = await this.storage.get<T[]>(this.entityKey);
+
+    console.log(`[BaseService.getAll] 📦 데이터 로드 완료:`, {
+      entityKey: this.entityKey,
+      count: entities?.length || 0,
+      first: entities?.[0] ? { id: entities[0].id } : null
+    });
+
     return entities || [];
   }
 
@@ -205,11 +224,24 @@ export abstract class BaseService<T extends BaseEntity> {
       return false; // Entity not found
     }
 
+    console.log(`[BaseService.delete] 🗑️ 삭제 시작:`, {
+      entityKey: this.entityKey,
+      id
+    });
+
     // Supabase-only mode: Delete individual entity from database
     // Build individual entity key: entityKey:id (e.g., "tasks:abc-123")
     const individualKey = `${this.entityKey}:${id}`;
     await this.storage.remove(individualKey);
 
+    // 중요: 개별 엔티티 삭제 후 전체 컬렉션 캐시도 무효화
+    // (개별 키: "projects:id", 컬렉션 키: "projects")
+    console.log(`[BaseService.delete] 🧹 컬렉션 캐시 무효화:`, {
+      entityKey: this.entityKey
+    });
+    this.storage.invalidateCachePattern(this.entityKey);
+
+    console.log(`[BaseService.delete] ✅ 삭제 완료`);
     return true;
   }
 

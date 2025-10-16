@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Filter, ChevronDown, ChevronUp, RotateCcw, AlertCircleIcon } from 'lucide-react';
 import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
 import { getViewModeText } from '@/config/brand';
-import { layout } from '@/config/constants';
+import { layout, wbsTask } from '@/config/constants';
 import { removeCustomProject, updateCustomProject } from '@/lib/mock/projects';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -372,7 +372,31 @@ export default function DetailView({
     setEditState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const success = await updateCustomProject(currentProject.no, editState.editingData);
+      // 빈 이름을 가진 WBS 태스크에 기본 이름 부여 (제거하지 않고 유지)
+      // config/constants.ts의 wbsTask.filter.shouldFilter 규칙 사용
+      const processedTasks = editState.editingData.wbsTasks.map(task => {
+        if (wbsTask.filter.shouldFilter(task.name)) {
+          console.log(`⚠️ 빈 이름 태스크 발견 (ID: ${task.id}), 기본 이름 부여: "${wbsTask.defaults.name}"`);
+          return {
+            ...task,
+            name: wbsTask.defaults.name
+          };
+        }
+        return task;
+      });
+
+      const filteredData = {
+        ...editState.editingData,
+        wbsTasks: processedTasks
+      };
+
+      console.log('🧹 WBS 태스크 처리:', {
+        원본개수: editState.editingData.wbsTasks.length,
+        처리후개수: filteredData.wbsTasks.length,
+        기본이름부여개수: processedTasks.filter(t => t.name === wbsTask.defaults.name).length
+      });
+
+      const success = await updateCustomProject(currentProject.no, filteredData);
 
       if (success) {
         console.log('✅ 프로젝트 편집 성공:', {

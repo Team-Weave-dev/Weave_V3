@@ -439,3 +439,21 @@ export const usageLimits = {
     displayUnit: 'MB' as const
   }
 } as const
+
+// WBS Task 규칙 (2025-10-17 추가)
+export const wbsTask = {
+  validation: {
+    minNameLength: 1,                    // 최소 이름 길이 (빈 문자열 방지)
+    maxNameLength: 200,                  // 최대 이름 길이
+    minDescriptionLength: 0,             // 최소 설명 길이 (선택사항)
+    maxDescriptionLength: 1000,          // 최대 설명 길이
+  },
+  defaults: {
+    name: '새 작업',                     // 빈 이름일 때 기본값
+    status: 'pending' as const,          // 기본 상태
+  },
+  filter: {
+    // 저장 전 필터링 규칙: 빈 이름을 가진 태스크 제거
+    shouldFilter: (taskName: string) => !taskName || taskName.trim() === ''
+  }
+} as const

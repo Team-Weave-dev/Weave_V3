@@ -97,14 +97,30 @@ export class StorageManager {
    * @returns The stored value or null if not found
    */
   async get<T extends JsonValue>(key: string): Promise<T | null> {
+    console.log(`[StorageManager.get] 🔍 요청:`, {
+      key,
+      adapter: this.adapter.constructor.name
+    });
+
     // Check cache first
     const cached = this.getCached<T>(key);
     if (cached !== null) {
+      console.log(`[StorageManager.get] 💾 캐시에서 반환:`, {
+        key,
+        hasData: !!cached
+      });
       return cached;
     }
 
     // Get from adapter
     const value = await this.adapter.get<T>(key);
+
+    console.log(`[StorageManager.get] 📦 어댑터에서 반환:`, {
+      key,
+      adapter: this.adapter.constructor.name,
+      hasData: value !== null,
+      dataLength: Array.isArray(value) ? value.length : null
+    });
 
     // Update cache if value exists
     if (value !== null) {
