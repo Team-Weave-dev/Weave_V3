@@ -740,57 +740,68 @@ export class SupabaseAdapter implements StorageAdapter {
         // 빈 배열이어도 DELETE 쿼리는 실행해야 함 (마지막 프로젝트 삭제 시)
         // dataToStore가 빈 배열이면 INSERT를 건너뛰도록 아래에서 처리
 
-        const dataToStore = projectsArray.map((project: any) => ({
-          // Identifiers
-          id: this.isValidUUID(project.id) ? project.id : crypto.randomUUID(),
-          user_id: this.userId,
-          // client_id must be UUID, not client name - set to null if not UUID format
-          client_id: this.isValidUUID(project.clientId) ? project.clientId : null,
-          no: project.no,
-          name: project.name,
-          description: project.description,
-          project_content: project.projectContent,
+        const dataToStore = projectsArray.map((project: any) => {
+          // Status 변환: Supabase CHECK 제약에 맞게 변환
+          // Supabase projects.status CHECK: ('planning', 'in_progress', 'review', 'completed', 'on_hold', 'cancelled')
+          const validStatuses = ['planning', 'in_progress', 'review', 'completed', 'on_hold', 'cancelled']
+          let projectStatus = project.status || 'planning'
 
-          // Status
-          status: project.status,
-          progress: project.progress,
-          payment_progress: project.paymentProgress,
+          if (!validStatuses.includes(projectStatus)) {
+            console.warn(`[SupabaseAdapter] Invalid project status "${projectStatus}", converting to "planning"`)
+            projectStatus = 'planning'
+          }
 
-          // Schedule (camelCase → snake_case)
-          registration_date: project.registrationDate,
-          modified_date: project.modifiedDate,
-          end_date: project.endDate || null,
-          start_date: project.startDate || null,
+          return {
+            // Identifiers
+            id: this.isValidUUID(project.id) ? project.id : crypto.randomUUID(),
+            user_id: this.userId,
+            // client_id must be UUID, not client name - set to null if not UUID format
+            client_id: this.isValidUUID(project.clientId) ? project.clientId : null,
+            no: project.no,
+            name: project.name,
+            description: project.description,
+            project_content: project.projectContent,
 
-          // Payment
-          settlement_method: project.settlementMethod,
-          payment_status: project.paymentStatus,
-          total_amount: project.totalAmount,
-          currency: project.currency,
+            // Status (검증된 값)
+            status: projectStatus,
+            progress: project.progress,
+            payment_progress: project.paymentProgress,
 
-          // WBS (JSONB)
-          wbs_tasks: project.wbsTasks || [],
+            // Schedule (camelCase → snake_case)
+            registration_date: project.registrationDate,
+            modified_date: project.modifiedDate,
+            end_date: project.endDate || null,
+            start_date: project.startDate || null,
 
-          // Document status (JSONB) - Supabase stores documents info here
-          document_status: project.documentStatus || {
-            contract: { exists: false, status: 'none' },
-            invoice: { exists: false, status: 'none' },
-            report: { exists: false, status: 'none' },
-            estimate: { exists: false, status: 'none' },
-            etc: { exists: false, status: 'none' }
-          },
+            // Payment
+            settlement_method: project.settlementMethod,
+            payment_status: project.paymentStatus,
+            total_amount: project.totalAmount,
+            currency: project.currency,
 
-          // Document flags (boolean)
-          has_contract: project.hasContract || false,
-          has_billing: project.hasBilling || false,
-          has_documents: project.hasDocuments || false,
+            // WBS (JSONB)
+            wbs_tasks: project.wbsTasks || [],
 
-          // Timestamps (camelCase → snake_case)
-          created_at: project.createdAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
-        }))
+            // Document status (JSONB) - Supabase stores documents info here
+            document_status: project.documentStatus || {
+              contract: { exists: false, status: 'none' },
+              invoice: { exists: false, status: 'none' },
+              report: { exists: false, status: 'none' },
+              estimate: { exists: false, status: 'none' },
+              etc: { exists: false, status: 'none' }
+            },
 
+            // Document flags (boolean)
+            has_contract: project.hasContract || false,
+            has_billing: project.hasBilling || false,
+            has_documents: project.hasDocuments || false,
+
+            // Timestamps (camelCase → snake_case)
+            created_at: project.createdAt || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+          }
+        })
         await this.withRetry(async () => {
           // ⚠️ Projects는 UPSERT 전략 사용 (Documents에서 참조하므로 delete-insert 불가)
           // Foreign key constraint 위반 방지: documents.project_id → projects.id (ON DELETE CASCADE)
@@ -1044,6 +1055,16 @@ export class SupabaseAdapter implements StorageAdapter {
             eventType = 'event'
           }
 
+          // Status 변환: Supabase CHECK 제약에 맞게 변환
+          // Supabase events.status CHECK: ('tentative', 'confirmed', 'cancelled')
+          const validStatuses = ['tentative', 'confirmed', 'cancelled']
+          let eventStatus = event.status || 'confirmed'
+
+          if (!validStatuses.includes(eventStatus)) {
+            console.warn(`[SupabaseAdapter] Invalid event status "${eventStatus}", converting to "confirmed"`)
+            eventStatus = 'confirmed'
+          }
+
           return {
             // Identifiers
             id: this.isValidUUID(event.id) ? event.id : crypto.randomUUID(),
@@ -1062,9 +1083,9 @@ export class SupabaseAdapter implements StorageAdapter {
             all_day: event.allDay || false,
             timezone: event.timezone || 'Asia/Seoul',
 
-            // Type and status (검증된 type)
+            // Type and status (검증된 값)
             type: eventType,
-            status: event.status || 'confirmed',
+            status: eventStatus,
 
             // Style
             color: event.color || '#3B82F6',
@@ -1141,40 +1162,52 @@ export class SupabaseAdapter implements StorageAdapter {
         // 빈 배열이어도 DELETE 쿼리는 실행해야 함 (마지막 클라이언트 삭제 시)
         // dataToStore가 빈 배열이면 INSERT를 건너뛰도록 아래에서 처리
 
-        const dataToStore = clientsArray.map((client: any) => ({
-          // Identifiers
-          id: this.isValidUUID(client.id) ? client.id : crypto.randomUUID(),
-          user_id: this.userId,
+        const dataToStore = clientsArray.map((client: any) => {
+          // Status 변환: Supabase CHECK 제약에 맞게 변환
+          // Supabase clients.status CHECK: ('active', 'inactive', 'archived')
+          const validStatuses = ['active', 'inactive', 'archived']
+          let clientStatus = client.status || 'active'
 
-          // Basic info
-          name: client.name,
-          company: client.company || null,
-          email: client.email || null,
-          phone: client.phone || null,
-          address: typeof client.address === 'string' ? client.address :
-                   (client.address ? JSON.stringify(client.address) : null),
+          if (!validStatuses.includes(clientStatus)) {
+            console.warn(`[SupabaseAdapter] Invalid client status "${clientStatus}", converting to "active"`)
+            clientStatus = 'active'
+          }
 
-          // Contact person (camelCase → snake_case)
-          // contacts 배열의 첫 번째 항목을 개별 필드로 변환
-          contact_person: client.contacts?.[0]?.name || null,
-          contact_phone: client.contacts?.[0]?.phone || null,
-          contact_email: client.contacts?.[0]?.email || null,
+          return {
+            // Identifiers
+            id: this.isValidUUID(client.id) ? client.id : crypto.randomUUID(),
+            user_id: this.userId,
 
-          // Business info (camelCase → snake_case)
-          business_number: client.businessNumber || null,
-          business_type: client.businessType || null,
-          industry: client.industry || null,
+            // Basic info
+            name: client.name,
+            company: client.company || null,
+            email: client.email || null,
+            phone: client.phone || null,
+            address: typeof client.address === 'string' ? client.address :
+                     (client.address ? JSON.stringify(client.address) : null),
 
-          // Metadata
-          notes: client.notes || null,
-          tags: client.tags || [],
-          status: client.status || 'active',
+            // Contact person (camelCase → snake_case)
+            // contacts 배열의 첫 번째 항목을 개별 필드로 변환
+            contact_person: client.contacts?.[0]?.name || null,
+            contact_phone: client.contacts?.[0]?.phone || null,
+            contact_email: client.contacts?.[0]?.email || null,
 
-          // Timestamps (camelCase → snake_case)
-          created_at: client.createdAt || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
-        }))
+            // Business info (camelCase → snake_case)
+            business_number: client.businessNumber || null,
+            business_type: client.businessType || null,
+            industry: client.industry || null,
+
+            // Metadata
+            notes: client.notes || null,
+            tags: client.tags || [],
+            status: clientStatus,
+
+            // Timestamps (camelCase → snake_case)
+            created_at: client.createdAt || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            // updated_by: this.userId,  // Phase 10.1: 마이그레이션 후 활성화
+          }
+        })
 
         await this.withRetry(async () => {
           // ⚠️ Clients는 UPSERT 전략 사용 (Projects에서 참조하므로 delete-insert 불가)
