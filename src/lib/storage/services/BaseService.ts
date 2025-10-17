@@ -256,11 +256,9 @@ export abstract class BaseService<T extends BaseEntity> {
    * Delete an entity by ID
    */
   async delete(id: string): Promise<boolean> {
-    // Get all entities
-    const entities = await this.getAll();
-    const index = entities.findIndex((entity) => entity.id === id);
-
-    if (index === -1) {
+    // Check if entity exists first
+    const entity = await this.getById(id);
+    if (!entity) {
       return false; // Entity not found
     }
 
@@ -269,13 +267,12 @@ export abstract class BaseService<T extends BaseEntity> {
       id
     });
 
-    // Remove from array
-    entities.splice(index, 1);
+    // Use storage.remove() to trigger Supabase soft delete
+    // The individual key format triggers the soft delete function in SupabaseAdapter
+    const individualKey = `${this.entityKey}:${id}`;
+    await this.storage.remove(individualKey);
 
-    // Save updated array to storage (this will also handle Supabase soft delete)
-    await this.storage.set<T[]>(this.entityKey, entities);
-
-    console.log(`[BaseService.delete] ✅ 삭제 완료 (배열에서 제거 + 저장)`);
+    console.log(`[BaseService.delete] ✅ 삭제 완료 (Soft delete 실행)`);
     return true;
   }
 

@@ -16,6 +16,9 @@ import { addProjectDocument } from '@/lib/mock/documents';
 import type { DocumentInfo } from '@/lib/types/project-table.types';
 import type { GeneratedDocument, ProjectDocumentCategory } from '@/lib/document-generator/templates';
 import { withMinimumDuration, getActualProjectStatus } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
+import { useSettings } from '@/hooks/useSettings';
+import type { ProjectView } from '@/lib/storage/types/entities/settings';
 
 export default function ProjectsView() {
   const router = useRouter();
@@ -25,12 +28,16 @@ export default function ProjectsView() {
   const urlViewMode = searchParams.get('view') as ViewMode | null;
   const selectedProjectId = searchParams.get('selected');
 
+  const [userId, setUserId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [isInitialized, setIsInitialized] = useState(false);
   const [rawProjectData, setRawProjectData] = useState<ProjectTableRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // useSettings hook - only enabled when userId is available
+  const { settings, updateProjectSettings } = useSettings(userId || '');
 
   // 프로젝트 데이터 새로고침 함수
   const refreshProjectData = useCallback(async () => {
@@ -90,8 +97,60 @@ export default function ProjectsView() {
     availableClients
   } = useProjectTable(rawProjectData, refreshProjectData);
 
+  // Helper: Map ViewMode to ProjectView for Supabase storage
+  const viewModeToProjectView = useCallback((mode: ViewMode): ProjectView => {
+    return mode === 'detail' ? 'grid' : 'list';
+  }, []);
+
+  // Helper: Map ProjectView to ViewMode for UI
+  const projectViewToViewMode = useCallback((view: ProjectView): ViewMode => {
+    return view === 'grid' ? 'detail' : 'list';
+  }, []);
+
+  // Get user ID on mount
   useEffect(() => {
-    if (!isInitialized) {
+    const getUserId = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          setUserId(session.user.id);
+        }
+      } catch (error) {
+        console.error('Failed to get user ID:', error);
+      }
+    };
+    getUserId();
+  }, []);
+
+  // Initialize view mode - prioritize Supabase, then URL, then localStorage
+  useEffect(() => {
+    if (!isInitialized && userId && settings) {
+      let initialMode: ViewMode = 'list';
+
+      // Priority 1: Supabase settings
+      if (settings.projects?.defaultView) {
+        initialMode = projectViewToViewMode(settings.projects.defaultView);
+        console.log('📦 Loaded view mode from Supabase:', initialMode);
+      }
+      // Priority 2: URL parameter
+      else if (urlViewMode === 'list' || urlViewMode === 'detail') {
+        initialMode = urlViewMode;
+        console.log('🔗 Loaded view mode from URL:', initialMode);
+      }
+      // Priority 3: localStorage (legacy fallback)
+      else {
+        const savedMode = localStorage.getItem('preferredViewMode') as ViewMode | null;
+        if (savedMode === 'list' || savedMode === 'detail') {
+          initialMode = savedMode;
+          console.log('💾 Loaded view mode from localStorage:', initialMode);
+        }
+      }
+
+      setViewMode(initialMode);
+      setIsInitialized(true);
+    } else if (!isInitialized && !userId) {
+      // No user yet, use URL or localStorage only
       if (urlViewMode === 'list' || urlViewMode === 'detail') {
         setViewMode(urlViewMode);
       } else {
@@ -102,7 +161,7 @@ export default function ProjectsView() {
       }
       setIsInitialized(true);
     }
-  }, [urlViewMode, isInitialized]);
+  }, [urlViewMode, isInitialized, userId, settings, projectViewToViewMode]);
 
   useEffect(() => {
     const currentUrlViewMode = searchParams.get('view') as ViewMode | null;
@@ -129,7 +188,21 @@ export default function ProjectsView() {
 
     // 뷰 모드 변경
     setViewMode(newMode);
+
+    // Save to localStorage (backward compatibility fallback)
     localStorage.setItem('preferredViewMode', newMode);
+
+    // Save to Supabase if userId is available
+    if (userId) {
+      try {
+        const projectView = viewModeToProjectView(newMode);
+        await updateProjectSettings({ defaultView: projectView });
+        console.log('✅ View mode saved to Supabase:', projectView);
+      } catch (error) {
+        console.error('Failed to save view mode to Supabase:', error);
+        // localStorage fallback is already done above
+      }
+    }
 
     const params = new URLSearchParams(searchParams.toString());
     params.set('view', newMode);
@@ -145,7 +218,7 @@ export default function ProjectsView() {
     // 페이드인 대기 후 전환 종료
     await new Promise(resolve => setTimeout(resolve, 50));
     setIsTransitioning(false);
-  }, [pathname, router, searchParams, sortedProjectData]);
+  }, [pathname, router, searchParams, sortedProjectData, userId, viewModeToProjectView, updateProjectSettings]);
 
   const handleProjectSelect = useCallback((projectNo: string) => {
     router.push(`/projects/${projectNo}`);
@@ -181,34 +254,87 @@ export default function ProjectsView() {
   }, [])
 
   // WEAVE_num 프로젝트 번호에서 다음 사용 가능한 번호를 찾는 헬퍼 함수
-  const getNextProjectNumber = useCallback((existingProjects: ProjectTableRow[]): string => {
-    // 기존 프로젝트들의 WEAVE_xxx 번호에서 xxx 부분을 추출하여 숫자로 변환
-    const existingNumbers = existingProjects
-      .map(p => p.no)
-      .filter(no => no.startsWith('WEAVE_'))
-      .map(no => {
-        const match = no.match(/^WEAVE_(\d+)$/);
-        return match ? parseInt(match[1], 10) : 0;
-      })
-      .filter(num => !isNaN(num));
+  // 소프트 삭제된 프로젝트도 포함하여 Supabase에서 최대 번호를 조회
+  const getNextProjectNumber = useCallback(async (): Promise<string> => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
 
-    console.log('📊 기존 WEAVE 번호들:', existingNumbers);
+      if (!session?.user?.id) {
+        console.warn('⚠️ 사용자 세션 없음 - 로컬 데이터로 폴백');
+        // 폴백: 로컬 데이터만 사용
+        const existingNumbers = rawProjectData
+          .map(p => p.no)
+          .filter(no => no.startsWith('WEAVE_'))
+          .map(no => {
+            const match = no.match(/^WEAVE_(\d+)$/);
+            return match ? parseInt(match[1], 10) : 0;
+          })
+          .filter(num => !isNaN(num));
 
-    // 최대값 찾기 (없으면 0)
-    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
-    const nextNumber = maxNumber + 1;
+        const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+        const nextNumber = maxNumber + 1;
+        return `WEAVE_${String(nextNumber).padStart(3, '0')}`;
+      }
 
-    console.log('🔢 다음 프로젝트 번호:', `WEAVE_${String(nextNumber).padStart(3, '0')}`);
-    return `WEAVE_${String(nextNumber).padStart(3, '0')}`;
-  }, []);
+      // Supabase에서 소프트 삭제된 프로젝트 포함 모든 프로젝트 조회
+      // deleted_at IS NOT NULL인 프로젝트도 포함하여 최대 번호 찾기
+      const { data: allProjects, error } = await supabase
+        .from('projects')
+        .select('no')
+        .eq('user_id', session.user.id)
+        .like('no', 'WEAVE_%');
+
+      if (error) {
+        console.error('❌ Supabase 쿼리 실패:', error);
+        throw error;
+      }
+
+      console.log('📊 Supabase에서 조회된 모든 프로젝트 (소프트 삭제 포함):', allProjects);
+
+      // WEAVE_xxx에서 숫자 추출
+      const existingNumbers = (allProjects || [])
+        .map(p => p.no)
+        .filter(no => no.startsWith('WEAVE_'))
+        .map(no => {
+          const match = no.match(/^WEAVE_(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(num => !isNaN(num));
+
+      console.log('🔢 추출된 WEAVE 번호들 (소프트 삭제 포함):', existingNumbers);
+
+      // 최대값 찾기 (없으면 0)
+      const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+      const nextNumber = maxNumber + 1;
+
+      console.log('✅ 다음 프로젝트 번호:', `WEAVE_${String(nextNumber).padStart(3, '0')}`);
+      return `WEAVE_${String(nextNumber).padStart(3, '0')}`;
+    } catch (error) {
+      console.error('❌ getNextProjectNumber 오류:', error);
+      // 에러 시 로컬 데이터로 폴백
+      const existingNumbers = rawProjectData
+        .map(p => p.no)
+        .filter(no => no.startsWith('WEAVE_'))
+        .map(no => {
+          const match = no.match(/^WEAVE_(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(num => !isNaN(num));
+
+      const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+      const nextNumber = maxNumber + 1;
+      return `WEAVE_${String(nextNumber).padStart(3, '0')}`;
+    }
+  }, [rawProjectData]);
 
   const handleProjectCreate = useCallback(async (newProject: Omit<ProjectTableRow, 'id' | 'no' | 'modifiedDate'>) => {
     console.log('🚀 ProjectsView: handleProjectCreate 호출됨!', newProject);
     try {
-      // 새 프로젝트 ID 및 번호 생성
+      // 새 프로젝트 ID 및 번호 생성 (소프트 삭제 프로젝트 포함하여 Supabase에서 조회)
       const timestamp = Date.now();
       const projectId = `project-${timestamp}`;
-      const projectNo = getNextProjectNumber(rawProjectData);
+      const projectNo = await getNextProjectNumber();
 
       const projectWithId: ProjectTableRow = {
         ...newProject,
