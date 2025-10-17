@@ -322,7 +322,7 @@ export function ImprovedDashboard({
       const newPosition: GridPosition = {
         x: startPosition.x,
         y: startPosition.y,
-        w: Math.max(1, startPosition.w + dx),
+        w: Math.max(1, Math.min(config.cols - startPosition.x, startPosition.w + dx)),
         h: Math.max(1, startPosition.h + dy),
       };
 

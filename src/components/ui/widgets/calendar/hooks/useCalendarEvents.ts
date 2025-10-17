@@ -6,6 +6,23 @@ import { calendarService } from '@/lib/storage';
 import type { CalendarEvent as StorageCalendarEvent } from '@/lib/storage/types/entities/event';
 
 /**
+ * Validate ISO date string
+ * @param dateStr - ISO date string to validate
+ * @returns true if valid, false otherwise
+ */
+function isValidISODate(dateStr: string): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+
+  try {
+    const date = new Date(dateStr);
+    // Check if date is valid and matches ISO format
+    return !isNaN(date.getTime()) && dateStr === date.toISOString();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Dashboard CalendarEvent → Storage CalendarEvent 변환
  *
  * IMPORTANT: handleDragEnd에서 이미 UTC 기반으로 계산된 startDate/endDate가 있을 경우,
@@ -87,6 +104,37 @@ function toStorageEvent(dashboardEvent: CalendarEvent): Omit<StorageCalendarEven
       hasEndDate: !!dashboardEvent.endDate,
       source: 'date+time calculation'
     });
+  }
+
+  // Validate dates before returning
+  if (!isValidISODate(startDate)) {
+    console.error('[toStorageEvent] Invalid startDate:', {
+      startDate,
+      title: dashboardEvent.title,
+      allDay: dashboardEvent.allDay,
+      originalDate: dashboardEvent.date
+    });
+    throw new Error(`Invalid startDate format: ${startDate}`);
+  }
+
+  if (!isValidISODate(endDate)) {
+    console.error('[toStorageEvent] Invalid endDate:', {
+      endDate,
+      title: dashboardEvent.title,
+      allDay: dashboardEvent.allDay,
+      originalEndDate: dashboardEvent.endDate
+    });
+    throw new Error(`Invalid endDate format: ${endDate}`);
+  }
+
+  // Validate that endDate is after startDate
+  if (new Date(endDate).getTime() <= new Date(startDate).getTime()) {
+    console.error('[toStorageEvent] endDate must be after startDate:', {
+      startDate,
+      endDate,
+      title: dashboardEvent.title
+    });
+    throw new Error('Event endDate must be after startDate');
   }
 
   return {

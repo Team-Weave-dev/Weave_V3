@@ -70,7 +70,17 @@ export abstract class BaseService<T extends BaseEntity> {
 
     // Validate entity
     if (!this.isValidEntity(entity)) {
-      throw new Error(`Invalid entity data for ${this.entityKey}`);
+      console.error('[BaseService.create] Validation failed:', {
+        entityKey: this.entityKey,
+        entityId: entity.id,
+        entityData: JSON.stringify(entity, null, 2),
+        requiredFields: {
+          id: { value: entity.id, type: typeof entity.id, valid: !!entity.id },
+          createdAt: { value: entity.createdAt, type: typeof entity.createdAt, valid: !!(entity.createdAt && !isNaN(Date.parse(entity.createdAt))) },
+          updatedAt: { value: entity.updatedAt, type: typeof entity.updatedAt, valid: !!(entity.updatedAt && !isNaN(Date.parse(entity.updatedAt))) }
+        }
+      });
+      throw new Error(`Invalid entity data for ${this.entityKey}: Check console for details`);
     }
 
     // Get existing entities
@@ -188,21 +198,31 @@ export abstract class BaseService<T extends BaseEntity> {
 
     // Validate updated entity
     if (!this.isValidEntity(normalizedEntity)) {
-      console.error('[BaseService.update] Validation failed for:', this.entityKey);
-      console.error('[BaseService.update] Entity data:', JSON.stringify(normalizedEntity, null, 2));
+      console.error('[BaseService.update] Validation failed:', {
+        entityKey: this.entityKey,
+        entityId: normalizedEntity.id,
+        entityData: JSON.stringify(normalizedEntity, null, 2),
+        requiredFields: {
+          id: { value: normalizedEntity.id, type: typeof normalizedEntity.id, valid: !!normalizedEntity.id },
+          createdAt: { value: normalizedEntity.createdAt, type: typeof normalizedEntity.createdAt, valid: !!(normalizedEntity.createdAt && !isNaN(Date.parse(normalizedEntity.createdAt))) },
+          updatedAt: { value: normalizedEntity.updatedAt, type: typeof normalizedEntity.updatedAt, valid: !!(normalizedEntity.updatedAt && !isNaN(Date.parse(normalizedEntity.updatedAt))) }
+        }
+      });
 
-      // Provide more detailed debugging information
+      // Provide entity-specific debugging information
       if (this.entityKey === 'events') {
         const eventEntity = normalizedEntity as any;
-        console.error('[BaseService.update] Debugging event validation:');
-        console.error('- id:', eventEntity.id, 'type:', typeof eventEntity.id);
-        console.error('- userId:', eventEntity.userId, 'type:', typeof eventEntity.userId);
-        console.error('- title:', eventEntity.title, 'type:', typeof eventEntity.title);
-        console.error('- createdAt:', eventEntity.createdAt, 'valid:', !!(eventEntity.createdAt && !isNaN(Date.parse(eventEntity.createdAt))));
-        console.error('- updatedAt:', eventEntity.updatedAt, 'valid:', !!(eventEntity.updatedAt && !isNaN(Date.parse(eventEntity.updatedAt))));
+        console.error('[BaseService.update] Event-specific validation:', {
+          userId: { value: eventEntity.userId, type: typeof eventEntity.userId, valid: !!eventEntity.userId },
+          title: { value: eventEntity.title, type: typeof eventEntity.title, valid: !!eventEntity.title },
+          startDate: { value: eventEntity.startDate, type: typeof eventEntity.startDate, valid: !!(eventEntity.startDate && !isNaN(Date.parse(eventEntity.startDate))) },
+          endDate: { value: eventEntity.endDate, type: typeof eventEntity.endDate, valid: !!(eventEntity.endDate && !isNaN(Date.parse(eventEntity.endDate))) },
+          type: { value: eventEntity.type, type: typeof eventEntity.type, valid: !!eventEntity.type },
+          status: { value: eventEntity.status, type: typeof eventEntity.status, valid: !!eventEntity.status }
+        });
       }
 
-      throw new Error(`Invalid entity data for ${this.entityKey}`);
+      throw new Error(`Invalid entity data for ${this.entityKey}: Check console for details`);
     }
 
     // Update in array
@@ -218,9 +238,11 @@ export abstract class BaseService<T extends BaseEntity> {
    * Delete an entity by ID
    */
   async delete(id: string): Promise<boolean> {
-    // Check if entity exists
-    const entity = await this.getById(id);
-    if (!entity) {
+    // Get all entities
+    const entities = await this.getAll();
+    const index = entities.findIndex((entity) => entity.id === id);
+
+    if (index === -1) {
       return false; // Entity not found
     }
 
@@ -229,19 +251,13 @@ export abstract class BaseService<T extends BaseEntity> {
       id
     });
 
-    // Supabase-only mode: Delete individual entity from database
-    // Build individual entity key: entityKey:id (e.g., "tasks:abc-123")
-    const individualKey = `${this.entityKey}:${id}`;
-    await this.storage.remove(individualKey);
+    // Remove from array
+    entities.splice(index, 1);
 
-    // 중요: 개별 엔티티 삭제 후 전체 컬렉션 캐시도 무효화
-    // (개별 키: "projects:id", 컬렉션 키: "projects")
-    console.log(`[BaseService.delete] 🧹 컬렉션 캐시 무효화:`, {
-      entityKey: this.entityKey
-    });
-    this.storage.invalidateCachePattern(this.entityKey);
+    // Save updated array to storage (this will also handle Supabase soft delete)
+    await this.storage.set<T[]>(this.entityKey, entities);
 
-    console.log(`[BaseService.delete] ✅ 삭제 완료`);
+    console.log(`[BaseService.delete] ✅ 삭제 완료 (배열에서 제거 + 저장)`);
     return true;
   }
 

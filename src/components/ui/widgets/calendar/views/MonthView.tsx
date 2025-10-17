@@ -164,19 +164,6 @@ const MonthView = React.memo(({
                 const eventEnd = event.endDate ? endOfDay(new Date(event.endDate)) : eventStart;
                 const currentDay = startOfDay(day);
 
-                // 디버깅: 이벤트 날짜 정보 출력
-                if (event.endDate && event.allDay) {
-                  console.log('[MonthView] Event date range:', {
-                    title: event.title,
-                    date: event.date,
-                    endDate: event.endDate,
-                    eventStart: eventStart.toISOString(),
-                    eventEnd: eventEnd.toISOString(),
-                    currentDay: currentDay.toISOString(),
-                    isWithin: isWithinInterval(currentDay, { start: eventStart, end: eventEnd })
-                  });
-                }
-
                 // 현재 날짜가 이벤트 기간 내에 있는지 확인
                 return isWithinInterval(currentDay, { start: eventStart, end: eventEnd });
               });

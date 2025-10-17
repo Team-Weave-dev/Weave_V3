@@ -1540,9 +1540,11 @@ export class SupabaseAdapter implements StorageAdapter {
         })
 
         await this.withRetry(async () => {
-          // ⚠️ Documents는 UPSERT 전략 사용 (Projects에서 참조하므로 delete-insert 불가)
-          // Foreign key constraint 위반 방지: projects.document_status 등에서 참조 가능
-          // Race condition 방지: 동시에 여러 문서가 추가될 때 DELETE-INSERT는 데이터 손실 발생
+          // ⚠️ Documents는 UPSERT + Soft Delete 전략 사용
+          // 1. 배열에 있는 문서는 UPSERT (INSERT or UPDATE)
+          // 2. 배열에 없는 기존 문서는 Soft Delete (deleted_at 업데이트)
+
+          // Step 1: UPSERT documents in the array
           if (dataToStore.length > 0) {
             console.log('[SupabaseAdapter] Documents UPSERT 시작:', {
               count: dataToStore.length,
@@ -1577,8 +1579,50 @@ export class SupabaseAdapter implements StorageAdapter {
               returnedData: upsertData ? upsertData.length : 0,
               firstReturned: upsertData?.[0]
             })
-          } else {
-            console.log('[SupabaseAdapter] Documents UPSERT 건너뜀 (빈 배열)')
+          }
+
+          // Step 2: Soft Delete documents NOT in the array
+          const currentDocIds = dataToStore.map((doc: any) => doc.id)
+
+          // Get all existing document IDs from Supabase (excluding already soft-deleted)
+          const { data: existingDocs, error: fetchError } = await this.supabase
+            .from(tableName)
+            .select('id')
+            .eq('user_id', this.userId)
+            .is('deleted_at', null)
+
+          if (fetchError) {
+            console.error('[SupabaseAdapter] Documents fetch error:', fetchError)
+            throw fetchError
+          }
+
+          // Find documents that exist in Supabase but NOT in current array (deleted documents)
+          const existingDocIds = (existingDocs || []).map((d: any) => d.id)
+          const deletedDocIds = existingDocIds.filter(id => !currentDocIds.includes(id))
+
+          if (deletedDocIds.length > 0) {
+            console.log('[SupabaseAdapter] Documents Soft Delete 시작:', {
+              count: deletedDocIds.length,
+              ids: deletedDocIds
+            })
+
+            // Soft delete each document using the safe function
+            for (const docId of deletedDocIds) {
+              const { data, error } = await this.supabase.rpc('soft_delete_document_safe', {
+                p_document_id: docId
+              })
+
+              if (error) {
+                console.error(`[SupabaseAdapter] Soft Delete 실패 (${docId}):`, error)
+              } else {
+                const result = data as { success: boolean; error?: string }
+                if (!result.success) {
+                  console.error(`[SupabaseAdapter] Soft Delete 실패 (${docId}):`, result.error)
+                }
+              }
+            }
+
+            console.log('[SupabaseAdapter] Documents Soft Delete 완료:', deletedDocIds.length)
           }
         })
         return
