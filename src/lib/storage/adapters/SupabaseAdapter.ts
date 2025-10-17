@@ -969,10 +969,11 @@ export class SupabaseAdapter implements StorageAdapter {
         }
 
         await this.withRetry(async () => {
-          // ⚠️ Tasks는 UPSERT 전략 사용 (Projects/Tasks에서 참조하므로 delete-insert 불가)
-          // Foreign key constraint 위반 방지:
-          // - tasks.parent_task_id → tasks.id (부모-자식 관계)
-          // - projects에서 task 참조 가능
+          // ⚠️ Tasks는 UPSERT + Soft Delete 전략 사용
+          // 1. 배열에 있는 태스크는 UPSERT (INSERT or UPDATE)
+          // 2. 배열에 없는 기존 태스크는 Soft Delete (deleted_at 업데이트)
+
+          // Step 1: UPSERT tasks in the array
           if (dataToStore.length > 0) {
             console.log('[SupabaseAdapter] Tasks UPSERT 시작:', {
               count: dataToStore.length,
@@ -1000,8 +1001,50 @@ export class SupabaseAdapter implements StorageAdapter {
             }
 
             console.log('[SupabaseAdapter] Tasks UPSERT 성공:', dataToStore.length)
-          } else {
-            console.log('[SupabaseAdapter] Tasks UPSERT 건너뜀 (빈 배열)')
+          }
+
+          // Step 2: Soft Delete tasks NOT in the array
+          const currentTaskIds = dataToStore.map((task: any) => task.id)
+
+          // Get all existing task IDs from Supabase (excluding already soft-deleted)
+          const { data: existingTasks, error: fetchError } = await this.supabase
+            .from(tableName)
+            .select('id')
+            .eq('user_id', this.userId)
+            .is('deleted_at', null)
+
+          if (fetchError) {
+            console.error('[SupabaseAdapter] Tasks fetch error:', fetchError)
+            throw fetchError
+          }
+
+          // Find tasks that exist in Supabase but NOT in current array (deleted tasks)
+          const existingTaskIds = (existingTasks || []).map((t: any) => t.id)
+          const deletedTaskIds = existingTaskIds.filter(id => !currentTaskIds.includes(id))
+
+          if (deletedTaskIds.length > 0) {
+            console.log('[SupabaseAdapter] Tasks Soft Delete 시작:', {
+              count: deletedTaskIds.length,
+              ids: deletedTaskIds
+            })
+
+            // Soft delete each task using the safe function
+            for (const taskId of deletedTaskIds) {
+              const { data, error } = await this.supabase.rpc('soft_delete_task_safe', {
+                p_task_id: taskId
+              })
+
+              if (error) {
+                console.error(`[SupabaseAdapter] Soft Delete 실패 (${taskId}):`, error)
+              } else {
+                const result = data as { success: boolean; error?: string }
+                if (!result.success) {
+                  console.error(`[SupabaseAdapter] Soft Delete 실패 (${taskId}):`, result.error)
+                }
+              }
+            }
+
+            console.log('[SupabaseAdapter] Tasks Soft Delete 완료:', deletedTaskIds.length)
           }
         })
         return
