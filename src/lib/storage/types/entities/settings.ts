@@ -27,7 +27,7 @@ export type WeekStartDay = 0 | 1;
 /**
  * Project view option
  */
-export type ProjectView = 'list' | 'grid' | 'kanban';
+export type ProjectView = 'list' | 'detail' | 'kanban';
 
 /**
  * Sort field option
@@ -482,7 +482,7 @@ export function isProjectSettings(data: unknown): data is ProjectSettings {
 
   const projects = data as ProjectSettings;
 
-  if (!['list', 'grid', 'kanban'].includes(projects.defaultView)) return false;
+  if (!['list', 'detail', 'kanban'].includes(projects.defaultView)) return false;
 
   // Optional fields (use != null to handle both null and undefined)
   if (

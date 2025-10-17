@@ -232,9 +232,9 @@ describe('SettingsService', () => {
     })
 
     it('should update project view', async () => {
-      const updated = await service.updateProjectView(userId, 'grid')
+      const updated = await service.updateProjectView(userId, 'detail')
 
-      expect(updated!.projects.defaultView).toBe('grid')
+      expect(updated!.projects.defaultView).toBe('detail')
     })
 
     it('should update project items per page', async () => {

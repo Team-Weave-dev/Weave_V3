@@ -142,7 +142,7 @@ export class SettingsService {
         weekStartsOn: 0, // Sunday
       },
       projects: {
-        defaultView: 'list',
+        defaultView: 'detail',
       },
       notifications: {},
       preferences: {

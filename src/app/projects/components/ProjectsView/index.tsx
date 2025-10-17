@@ -97,16 +97,6 @@ export default function ProjectsView() {
     availableClients
   } = useProjectTable(rawProjectData, refreshProjectData);
 
-  // Helper: Map ViewMode to ProjectView for Supabase storage
-  const viewModeToProjectView = useCallback((mode: ViewMode): ProjectView => {
-    return mode === 'detail' ? 'grid' : 'list';
-  }, []);
-
-  // Helper: Map ProjectView to ViewMode for UI
-  const projectViewToViewMode = useCallback((view: ProjectView): ViewMode => {
-    return view === 'grid' ? 'detail' : 'list';
-  }, []);
-
   // Get user ID on mount
   useEffect(() => {
     const getUserId = async () => {
@@ -130,7 +120,8 @@ export default function ProjectsView() {
 
       // Priority 1: Supabase settings
       if (settings.projects?.defaultView) {
-        initialMode = projectViewToViewMode(settings.projects.defaultView);
+        // ViewMode와 ProjectView가 이제 동일한 값을 가지므로 직접 타입 캐스팅
+        initialMode = settings.projects.defaultView as ViewMode;
         console.log('📦 Loaded view mode from Supabase:', initialMode);
       }
       // Priority 2: URL parameter
@@ -161,7 +152,7 @@ export default function ProjectsView() {
       }
       setIsInitialized(true);
     }
-  }, [urlViewMode, isInitialized, userId, settings, projectViewToViewMode]);
+  }, [urlViewMode, isInitialized, userId, settings]);
 
   useEffect(() => {
     const currentUrlViewMode = searchParams.get('view') as ViewMode | null;
@@ -195,7 +186,8 @@ export default function ProjectsView() {
     // Save to Supabase if userId is available
     if (userId) {
       try {
-        const projectView = viewModeToProjectView(newMode);
+        // ViewMode와 ProjectView가 이제 동일한 값을 가지므로 직접 타입 캐스팅
+        const projectView = newMode as ProjectView;
         await updateProjectSettings({ defaultView: projectView });
         console.log('✅ View mode saved to Supabase:', projectView);
       } catch (error) {
@@ -218,7 +210,7 @@ export default function ProjectsView() {
     // 페이드인 대기 후 전환 종료
     await new Promise(resolve => setTimeout(resolve, 50));
     setIsTransitioning(false);
-  }, [pathname, router, searchParams, sortedProjectData, userId, viewModeToProjectView, updateProjectSettings]);
+  }, [pathname, router, searchParams, sortedProjectData, userId, updateProjectSettings]);
 
   const handleProjectSelect = useCallback((projectNo: string) => {
     router.push(`/projects/${projectNo}`);
