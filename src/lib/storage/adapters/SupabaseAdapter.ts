@@ -1054,10 +1054,8 @@ export class SupabaseAdapter implements StorageAdapter {
       if (entity === 'events' && Array.isArray(value)) {
         const eventsArray = value as any[]
 
-        if (eventsArray.length === 0) {
-          console.warn(`No events found in events array`)
-          return
-        }
+        // Note: Empty array is valid - it means all events were deleted
+        // We should proceed to handle it (soft delete in Supabase)
 
         // Filter out invalid events (must have id and title at minimum)
         const validEvents = eventsArray.filter((event: any) => {
@@ -1088,19 +1086,10 @@ export class SupabaseAdapter implements StorageAdapter {
         }
 
         if (deduplicatedEvents.length === 0) {
-          console.warn('[SupabaseAdapter] No valid events after filtering, skipping insert');
-          // Still need to delete existing events
-          await this.withRetry(async () => {
-            const { error: deleteError } = await this.supabase
-              .from(tableName)
-              .delete()
-              .eq('user_id', this.userId);
-
-            if (deleteError) {
-              console.error('[SupabaseAdapter] Events delete error:', deleteError);
-              throw deleteError;
-            }
-          });
+          console.warn('[SupabaseAdapter] No valid events after filtering');
+          console.log('[SupabaseAdapter] Note: Empty array is valid - soft deletes should be handled via remove() method');
+          // Do NOT delete here - soft deletes are handled by CalendarService.delete() → storage.remove()
+          // This avoids hard delete and preserves deleted_at timestamps
           return;
         }
 

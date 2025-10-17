@@ -238,9 +238,10 @@ export async function getTodoTasks(): Promise<DashboardTodoTask[]> {
   tasks.forEach(task => taskMap.set(task.id, task));
 
   const todoTasks: DashboardTodoTask[] = [];
+  const processedTaskIds = new Set<string>(); // 이미 처리된 task ID 추적
 
   for (const task of tasks) {
-    // 부모 태스크만 먼저 변환
+    // 부모 태스크만 먼저 변환 (parentTaskId가 없는 task)
     if (!task.parentTaskId) {
       const children: DashboardTodoTask[] = [];
       const childIds = new Set<string>(); // 중복 방지
@@ -265,10 +266,29 @@ export async function getTodoTasks(): Promise<DashboardTodoTask[]> {
         const subtask = taskMap.get(childId);
         if (subtask) {
           children.push(toTodoTask(subtask, []));
+          processedTaskIds.add(childId); // 자식 task는 이미 처리됨
         }
       }
 
       todoTasks.push(toTodoTask(task, children));
+      processedTaskIds.add(task.id); // 부모 task도 처리됨
+    }
+  }
+
+  // Orphan tasks 처리: parentTaskId를 가지고 있지만 실제 부모가 존재하지 않는 task
+  // 또는 parentTaskId를 가지고 있지만 위의 로직에서 처리되지 않은 task
+  for (const task of tasks) {
+    if (!processedTaskIds.has(task.id)) {
+      // 이 task는 자식으로 처리되지 않았고, 부모로도 처리되지 않았음
+      // parentTaskId가 있는데 부모가 존재하지 않는 orphan task일 가능성
+      const parentExists = task.parentTaskId ? taskMap.has(task.parentTaskId) : false;
+
+      if (!parentExists) {
+        // 부모가 존재하지 않으면 최상위 task로 처리
+        console.warn(`[getTodoTasks] Orphan task detected: "${task.title}" (id: ${task.id}, parentTaskId: ${task.parentTaskId})`);
+        todoTasks.push(toTodoTask(task, []));
+        processedTaskIds.add(task.id);
+      }
     }
   }
 

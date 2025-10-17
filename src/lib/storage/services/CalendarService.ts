@@ -203,8 +203,17 @@ export class CalendarService extends BaseService<CalendarEvent> {
     const event = await this.getById(id);
     if (!event) return false;
 
-    // Events are stored as an array, not individual keys
-    // Get all events, filter out the one to delete, then save the array
+    // IMPORTANT: Call remove() first to trigger Supabase soft delete
+    // This will call SupabaseAdapter.remove() which uses soft_delete_event_safe()
+    try {
+      // remove() expects composite key format: 'events:id'
+      await this.storage.remove(`${this.entityKey}:${id}`);
+    } catch (error) {
+      console.error('[CalendarService.delete] Supabase soft delete failed:', error);
+      // Continue to update local storage even if Supabase fails
+    }
+
+    // Update local array for LocalStorage
     const events = await this.getAll();
     const filteredEvents = events.filter(e => e.id !== id);
 
@@ -213,7 +222,7 @@ export class CalendarService extends BaseService<CalendarEvent> {
       return false;
     }
 
-    // Save updated array (will trigger Supabase sync via DualWrite)
+    // Save updated array (LocalStorage only, Supabase already updated via remove())
     await this.storage.set<CalendarEvent[]>(this.entityKey, filteredEvents);
 
     // Get actual user information
