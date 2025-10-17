@@ -69,13 +69,18 @@ export class DocumentService extends BaseService<Document> {
 
   /**
    * Create activity log with dynamic import to avoid circular dependency
+   * ActivityLog is optional - failures are logged but don't affect operations
    */
   private async createActivityLog(input: CreateActivityLogInput): Promise<void> {
     try {
       const { activityLogService } = await import('../index');
       await activityLogService.createLog(input);
     } catch (error) {
-      console.error('[DocumentService] Failed to create activity log:', error);
+      // Silently fail - ActivityLog is optional and shouldn't block operations
+      // Only log in development for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[DocumentService] ActivityLog creation skipped:', error);
+      }
     }
   }
 
