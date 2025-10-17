@@ -9,6 +9,9 @@
 -- 함수 생성
 -- =====================================================
 
+-- 기존 함수가 있다면 먼저 삭제 (반환 타입 변경을 위해)
+DROP FUNCTION IF EXISTS get_all_project_numbers(UUID);
+
 CREATE OR REPLACE FUNCTION get_all_project_numbers(p_user_id UUID)
 RETURNS TABLE (no TEXT) AS $$
 BEGIN
