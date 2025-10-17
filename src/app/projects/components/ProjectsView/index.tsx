@@ -277,24 +277,21 @@ export default function ProjectsView() {
         return `WEAVE_${String(nextNumber).padStart(3, '0')}`;
       }
 
-      // Supabase에서 소프트 삭제된 프로젝트 포함 모든 프로젝트 조회
-      // deleted_at IS NOT NULL인 프로젝트도 포함하여 최대 번호 찾기
-      const { data: allProjects, error } = await supabase
-        .from('projects')
-        .select('no')
-        .eq('user_id', session.user.id)
-        .like('no', 'WEAVE_%');
+      // Supabase RPC 함수 호출: 소프트 삭제된 프로젝트 포함 모든 번호 조회
+      // RLS 정책을 우회하여 deleted_at IS NOT NULL인 프로젝트도 포함
+      const { data: allProjectNumbers, error } = await supabase
+        .rpc('get_all_project_numbers', { p_user_id: session.user.id });
 
       if (error) {
-        console.error('❌ Supabase 쿼리 실패:', error);
+        console.error('❌ Supabase RPC 호출 실패:', error);
         throw error;
       }
 
-      console.log('📊 Supabase에서 조회된 모든 프로젝트 (소프트 삭제 포함):', allProjects);
+      console.log('📊 Supabase에서 조회된 모든 프로젝트 번호 (소프트 삭제 포함):', allProjectNumbers);
 
       // WEAVE_xxx에서 숫자 추출
-      const existingNumbers = (allProjects || [])
-        .map(p => p.no)
+      const existingNumbers = (allProjectNumbers || [])
+        .map((row: { no: string }) => row.no)
         .filter(no => no.startsWith('WEAVE_'))
         .map(no => {
           const match = no.match(/^WEAVE_(\d+)$/);
