@@ -1206,37 +1206,85 @@ export class SupabaseAdapter implements StorageAdapter {
         })
 
         await this.withRetry(async () => {
-          // 삭제-삽입 전략: LocalStorage와 완전 동기화
-          // 1. 기존 events 모두 삭제
-          const { error: deleteError } = await this.supabase
-            .from(tableName)
-            .delete()
-            .eq('user_id', this.userId)
+          // ⚠️ Events는 UPSERT + Soft Delete 전략 사용
+          // 1. 배열에 있는 이벤트는 UPSERT (INSERT or UPDATE)
+          // 2. 배열에 없는 기존 이벤트는 Soft Delete (deleted_at 업데이트)
 
-          if (deleteError) {
-            console.error('[SupabaseAdapter] Events delete error:', {
-              code: deleteError.code,
-              message: deleteError.message,
-              details: deleteError.details,
-              hint: deleteError.hint
+          // Step 1: UPSERT events in the array
+          if (dataToStore.length > 0) {
+            console.log('[SupabaseAdapter] Events UPSERT 시작:', {
+              count: dataToStore.length,
+              firstEvent: {
+                id: dataToStore[0].id,
+                title: dataToStore[0].title,
+                start_time: dataToStore[0].start_time,
+                user_id: dataToStore[0].user_id
+              }
             })
-            throw deleteError
+
+            const { error: upsertError } = await this.supabase
+              .from(tableName)
+              .upsert(dataToStore as any)  // id 기반 UPSERT (새 이벤트 추가 또는 기존 업데이트)
+
+            if (upsertError) {
+              console.error('[SupabaseAdapter] Events upsert error:', {
+                code: upsertError.code,
+                message: upsertError.message,
+                details: upsertError.details,
+                hint: upsertError.hint,
+                totalEvents: dataToStore.length,
+                fullError: JSON.stringify(upsertError, null, 2)
+              })
+
+              throw upsertError
+            }
+
+            console.log('[SupabaseAdapter] Events UPSERT 성공:', dataToStore.length)
           }
 
-          // 2. 새로운 events 삽입 (배열이 비어있지 않을 때만)
-          if (dataToStore.length > 0) {
-            const { error: insertError } = await this.supabase
-              .from(tableName)
-              .insert(dataToStore as any)
+          // Step 2: Soft Delete events NOT in the array
+          // Get all event IDs in the current array
+          const currentEventIds = dataToStore.map((event: any) => event.id)
 
-            if (insertError) {
-              console.error('[SupabaseAdapter] Events insert error:', {
-                code: insertError.code,
-                message: insertError.message,
-                totalEvents: dataToStore.length
+          // Get all existing event IDs from Supabase (excluding already soft-deleted)
+          const { data: existingEvents, error: fetchError } = await this.supabase
+            .from(tableName)
+            .select('id')
+            .eq('user_id', this.userId)
+            .is('deleted_at', null)
+
+          if (fetchError) {
+            console.error('[SupabaseAdapter] Events fetch error:', fetchError)
+            throw fetchError
+          }
+
+          // Find events that exist in Supabase but NOT in current array (deleted events)
+          const existingEventIds = (existingEvents || []).map((e: any) => e.id)
+          const deletedEventIds = existingEventIds.filter(id => !currentEventIds.includes(id))
+
+          if (deletedEventIds.length > 0) {
+            console.log('[SupabaseAdapter] Events Soft Delete 시작:', {
+              count: deletedEventIds.length,
+              ids: deletedEventIds
+            })
+
+            // Soft delete each event using the safe function
+            for (const eventId of deletedEventIds) {
+              const { data, error } = await this.supabase.rpc('soft_delete_event_safe', {
+                p_event_id: eventId
               })
-              throw insertError
+
+              if (error) {
+                console.error(`[SupabaseAdapter] Soft Delete 실패 (${eventId}):`, error)
+              } else {
+                const result = data as { success: boolean; error?: string }
+                if (!result.success) {
+                  console.error(`[SupabaseAdapter] Soft Delete 실패 (${eventId}):`, result.error)
+                }
+              }
             }
+
+            console.log('[SupabaseAdapter] Events Soft Delete 완료:', deletedEventIds.length)
           }
         })
         return

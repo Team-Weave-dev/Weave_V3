@@ -600,9 +600,12 @@ export function CalendarWidget({
         // No specific time in droppableId - check event type
         // Priority: allDay flag > existing time
         if (event.allDay) {
-          // AllDay event - 00:00:00 UTC to next day 00:00:00 UTC
-          // 표준 allDay 이벤트: [start, end) 구간 (end는 포함하지 않음)
-          // allDay가 true면 startTime/endTime이 있어도 무시
+          // AllDay event - preserve multi-day duration
+          // Calculate original duration in days
+          const originalStart = new Date(event.date);
+          const originalEnd = event.endDate ? new Date(event.endDate) : originalStart;
+          const durationDays = Math.ceil((originalEnd.getTime() - originalStart.getTime()) / (1000 * 60 * 60 * 24));
+
           startDate = new Date(Date.UTC(
             newDate.getFullYear(),
             newDate.getMonth(),
@@ -610,12 +613,25 @@ export function CalendarWidget({
             0, 0, 0, 0
           ));
 
-          endDate = new Date(Date.UTC(
-            newDate.getFullYear(),
-            newDate.getMonth(),
-            newDate.getDate() + 1,  // 다음날 00:00:00
-            0, 0, 0, 0
-          ));
+          // Multi-day event: preserve duration
+          // Same-day event: endDate = startDate 23:59:59 (inclusive end)
+          if (durationDays > 0) {
+            // Multi-day: add duration to new start date
+            endDate = new Date(Date.UTC(
+              newDate.getFullYear(),
+              newDate.getMonth(),
+              newDate.getDate() + durationDays,
+              23, 59, 59, 999
+            ));
+          } else {
+            // Same-day: end at 23:59:59 of start date
+            endDate = new Date(Date.UTC(
+              newDate.getFullYear(),
+              newDate.getMonth(),
+              newDate.getDate(),
+              23, 59, 59, 999
+            ));
+          }
         } else if (event.startTime && event.endTime) {
           // Preserve existing time for timed events (UTC 기준)
           const [startHour, startMin] = event.startTime.split(':').map(Number);
