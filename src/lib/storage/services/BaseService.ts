@@ -70,14 +70,16 @@ export abstract class BaseService<T extends BaseEntity> {
 
     // Validate entity
     if (!this.isValidEntity(entity)) {
+      // Type assertion to access fields for debugging
+      const debugEntity = entity as BaseEntity;
       console.error('[BaseService.create] Validation failed:', {
         entityKey: this.entityKey,
-        entityId: entity.id,
+        entityId: debugEntity.id,
         entityData: JSON.stringify(entity, null, 2),
         requiredFields: {
-          id: { value: entity.id, type: typeof entity.id, valid: !!entity.id },
-          createdAt: { value: entity.createdAt, type: typeof entity.createdAt, valid: !!(entity.createdAt && !isNaN(Date.parse(entity.createdAt))) },
-          updatedAt: { value: entity.updatedAt, type: typeof entity.updatedAt, valid: !!(entity.updatedAt && !isNaN(Date.parse(entity.updatedAt))) }
+          id: { value: debugEntity.id, type: typeof debugEntity.id, valid: !!debugEntity.id },
+          createdAt: { value: debugEntity.createdAt, type: typeof debugEntity.createdAt, valid: !!(debugEntity.createdAt && !isNaN(Date.parse(debugEntity.createdAt))) },
+          updatedAt: { value: debugEntity.updatedAt, type: typeof debugEntity.updatedAt, valid: !!(debugEntity.updatedAt && !isNaN(Date.parse(debugEntity.updatedAt))) }
         }
       });
       throw new Error(`Invalid entity data for ${this.entityKey}: Check console for details`);
@@ -198,14 +200,16 @@ export abstract class BaseService<T extends BaseEntity> {
 
     // Validate updated entity
     if (!this.isValidEntity(normalizedEntity)) {
+      // Type assertion to access fields for debugging
+      const debugEntity = normalizedEntity as BaseEntity;
       console.error('[BaseService.update] Validation failed:', {
         entityKey: this.entityKey,
-        entityId: normalizedEntity.id,
+        entityId: debugEntity.id,
         entityData: JSON.stringify(normalizedEntity, null, 2),
         requiredFields: {
-          id: { value: normalizedEntity.id, type: typeof normalizedEntity.id, valid: !!normalizedEntity.id },
-          createdAt: { value: normalizedEntity.createdAt, type: typeof normalizedEntity.createdAt, valid: !!(normalizedEntity.createdAt && !isNaN(Date.parse(normalizedEntity.createdAt))) },
-          updatedAt: { value: normalizedEntity.updatedAt, type: typeof normalizedEntity.updatedAt, valid: !!(normalizedEntity.updatedAt && !isNaN(Date.parse(normalizedEntity.updatedAt))) }
+          id: { value: debugEntity.id, type: typeof debugEntity.id, valid: !!debugEntity.id },
+          createdAt: { value: debugEntity.createdAt, type: typeof debugEntity.createdAt, valid: !!(debugEntity.createdAt && !isNaN(Date.parse(debugEntity.createdAt))) },
+          updatedAt: { value: debugEntity.updatedAt, type: typeof debugEntity.updatedAt, valid: !!(debugEntity.updatedAt && !isNaN(Date.parse(debugEntity.updatedAt))) }
         }
       });
 

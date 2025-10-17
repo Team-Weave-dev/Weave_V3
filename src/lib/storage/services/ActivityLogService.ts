@@ -35,7 +35,7 @@ export class ActivityLogService extends BaseService<ActivityLog> {
   async createLog(input: CreateActivityLogInput): Promise<ActivityLog> {
     const now = new Date().toISOString()
 
-    const activityLog: Omit<ActivityLog, 'id' | 'createdAt' | 'updatedAt'> = {
+    const activityLog: Omit<ActivityLog, 'id' | 'createdAt' | 'updatedAt'> & { timestamp: string } = {
       ...input,
       timestamp: now,
     }
