@@ -292,12 +292,12 @@ export default function ProjectsView() {
       // WEAVE_xxx에서 숫자 추출
       const existingNumbers = (allProjectNumbers || [])
         .map((row: { no: string }) => row.no)
-        .filter(no => no.startsWith('WEAVE_'))
-        .map(no => {
+        .filter((no: string) => no.startsWith('WEAVE_'))
+        .map((no: string) => {
           const match = no.match(/^WEAVE_(\d+)$/);
           return match ? parseInt(match[1], 10) : 0;
         })
-        .filter(num => !isNaN(num));
+        .filter((num: number) => !isNaN(num));
 
       console.log('🔢 추출된 WEAVE 번호들 (소프트 삭제 포함):', existingNumbers);
 
