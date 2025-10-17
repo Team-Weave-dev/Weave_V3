@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { brand, getCompanyName, getLogoAlt, getCopyright } from "@/config/brand"
+import { NewsletterForm } from "@/components/ui/newsletter-form"
 
 // 기본 푸터
 interface BasicFooterProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -86,13 +85,10 @@ const BasicFooter = React.forwardRef<HTMLDivElement, BasicFooterProps>(
               <p className="text-sm text-muted-foreground">
                 {newsletter.description}
               </p>
-              <div className="flex space-x-2">
-                <Input
-                  placeholder={newsletter.placeholder}
-                  className="flex-1"
-                />
-                <Button size="sm">{newsletter.buttonText}</Button>
-              </div>
+              <NewsletterForm
+                placeholder={newsletter.placeholder}
+                buttonText={newsletter.buttonText}
+              />
             </div>
           )}
         </div>

@@ -241,8 +241,7 @@ export default function Home() {
               items: [
                 { label: "대시보드", href: "/dashboard" },
                 { label: "프로젝트 관리", href: "/projects" },
-                { label: "세무 신고", href: "/tax-management" },
-                { label: "컴포넌트", href: routes.components }
+                { label: "세무 신고", href: "/tax-management" }
               ]
             },
             {
@@ -250,8 +249,7 @@ export default function Home() {
               items: [
                 { label: "소개", href: "#" },
                 { label: "팀", href: "#" },
-                { label: "채용", href: "#" },
-                { label: "연락처", href: "#" }
+                { label: "문의하기", href: "#" }
               ]
             },
             {
@@ -259,7 +257,6 @@ export default function Home() {
               items: [
                 { label: "문서", href: "#" },
                 { label: "가이드", href: "#" },
-                { label: "API", href: "#" },
                 { label: "커뮤니티", href: "#" }
               ]
             }
@@ -271,7 +268,6 @@ export default function Home() {
             buttonText: "구독"
           }}
           socialLinks={[
-            { label: "GitHub", href: "#" },
             { label: "Twitter", href: "#" },
             { label: "LinkedIn", href: "#" }
           ]}

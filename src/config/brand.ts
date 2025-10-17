@@ -49,8 +49,8 @@ export const brand = {
   },
   // SECTION: Legal Notice - 저작권 문구
   copyright: {
-    ko: "© 2024 Weave. All rights reserved.",
-    en: "© 2024 Weave. All rights reserved."
+    ko: "© 2025 Weave. All rights reserved.",
+    en: "© 2025 Weave. All rights reserved."
   }
 } as const
 
