@@ -457,3 +457,51 @@ export const wbsTask = {
     shouldFilter: (taskName: string) => !taskName || taskName.trim() === ''
   }
 } as const
+
+// Notification Banner 디자인 토큰 (2025-10-18 추가)
+export const notificationBanner = {
+  // 타입별 색상 스타일
+  types: {
+    notice: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      text: 'text-blue-900',
+      icon: 'text-blue-600',
+      button: 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+    },
+    alert: {
+      bg: 'bg-yellow-50',
+      border: 'border-yellow-200',
+      text: 'text-yellow-900',
+      icon: 'text-yellow-600',
+      button: 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700'
+    },
+    urgent: {
+      bg: 'bg-red-50',
+      border: 'border-red-200',
+      text: 'text-red-900',
+      icon: 'text-red-600',
+      button: 'bg-red-100 hover:bg-red-200 text-red-700'
+    }
+  },
+  // 레이아웃
+  layout: {
+    zIndex: 50,                           // 상단 고정 배너 z-index (dialog, dropdown과 동일)
+    maxWidth: '1200px',                   // 배너 최대 폭
+    padding: 'px-4 py-3',                 // 내부 패딩
+    gap: 'gap-3',                         // 아이콘/텍스트/버튼 간격
+    containerGap: 'space-y-2'             // 여러 배너 간 간격
+  },
+  // 애니메이션
+  animation: {
+    duration: '300ms',
+    slideIn: 'animate-slide-down',        // 진입 애니메이션
+    slideOut: 'animate-slide-up',         // 퇴장 애니메이션
+    transition: 'transition-all duration-300 ease-in-out'
+  },
+  // 제한
+  limits: {
+    maxSimultaneous: 3,                   // 최대 동시 표시 개수
+    defaultPriority: 100                  // 기본 우선순위
+  }
+} as const

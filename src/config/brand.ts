@@ -1488,6 +1488,53 @@ export const uiText = {
       failureTitle: { ko: "충돌 해결 실패", en: "Conflict Resolution Failed" },
       failureDesc: { ko: "충돌 해결에 실패했습니다. 다시 시도해주세요.", en: "Failed to resolve conflict. Please try again." }
     }
+  },
+  // SECTION: Notification Banner - 공지/알림 배너 텍스트 (2025-10-18 추가)
+  notificationBanner: {
+    // 타입별 아리아 라벨
+    ariaLabel: {
+      notice: { ko: "공지사항 배너", en: "Notice Banner" },
+      alert: { ko: "알림 배너", en: "Alert Banner" },
+      urgent: { ko: "긴급 알림 배너", en: "Urgent Alert Banner" }
+    },
+    // 닫기 버튼
+    closeButton: {
+      label: { ko: "배너 닫기", en: "Close Banner" },
+      ariaLabel: { ko: "배너 닫기", en: "Close banner" }
+    },
+    // 웹훅 액션 기본 텍스트
+    webhookAction: {
+      defaultButton: { ko: "참여하기", en: "Participate" },
+      reviewButton: { ko: "별점 남기기", en: "Leave a Review" },
+      confirmButton: { ko: "확인했습니다", en: "Confirm" },
+      participateButton: { ko: "이벤트 참여", en: "Join Event" }
+    },
+    // 에러 메시지
+    error: {
+      loadFailed: { ko: "배너를 불러올 수 없습니다", en: "Failed to load banners" },
+      dismissFailed: { ko: "배너 닫기에 실패했습니다", en: "Failed to dismiss banner" },
+      webhookFailed: { ko: "요청 전송에 실패했습니다", en: "Failed to send request" }
+    },
+    // 성공 메시지
+    success: {
+      webhookSent: { ko: "요청이 전송되었습니다", en: "Request sent successfully" },
+      reviewSubmitted: { ko: "별점이 제출되었습니다", en: "Review submitted" }
+    },
+    // 로딩 상태
+    loading: {
+      text: { ko: "배너 불러오는 중...", en: "Loading banners..." },
+      webhookSending: { ko: "전송 중...", en: "Sending..." }
+    },
+    // 리뷰 모달 (별점/간단 리뷰)
+    reviewModal: {
+      title: { ko: "별점 남기기", en: "Leave a Review" },
+      ratingLabel: { ko: "별점 선택", en: "Select Rating" },
+      reviewLabel: { ko: "간단한 리뷰 (선택사항)", en: "Brief Review (Optional)" },
+      reviewPlaceholder: { ko: "사용 경험을 공유해주세요", en: "Share your experience" },
+      submitButton: { ko: "제출", en: "Submit" },
+      cancelButton: { ko: "취소", en: "Cancel" },
+      requiredRating: { ko: "별점을 선택해주세요", en: "Please select a rating" }
+    }
   }
 } as const
 
@@ -2998,4 +3045,44 @@ export const getConflictText = {
   // Toast Messages
   failureTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.failureTitle[lang],
   failureDesc: (lang: 'ko' | 'en' = defaultLanguage) => uiText.storage.conflict.failureDesc[lang],
+}
+
+// Notification Banner 헬퍼 함수 (2025-10-18 추가)
+export const getNotificationBannerText = {
+  // 타입별 아리아 라벨
+  noticeAriaLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.ariaLabel.notice[lang],
+  alertAriaLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.ariaLabel.alert[lang],
+  urgentAriaLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.ariaLabel.urgent[lang],
+
+  // 닫기 버튼
+  closeLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.closeButton.label[lang],
+  closeAriaLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.closeButton.ariaLabel[lang],
+
+  // 웹훅 액션
+  defaultButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.webhookAction.defaultButton[lang],
+  reviewButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.webhookAction.reviewButton[lang],
+  confirmButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.webhookAction.confirmButton[lang],
+  participateButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.webhookAction.participateButton[lang],
+
+  // 에러 메시지
+  loadFailed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.error.loadFailed[lang],
+  dismissFailed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.error.dismissFailed[lang],
+  webhookFailed: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.error.webhookFailed[lang],
+
+  // 성공 메시지
+  webhookSent: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.success.webhookSent[lang],
+  reviewSubmitted: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.success.reviewSubmitted[lang],
+
+  // 로딩 상태
+  loadingText: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.loading.text[lang],
+  webhookSending: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.loading.webhookSending[lang],
+
+  // 리뷰 모달
+  reviewModalTitle: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.reviewModal.title[lang],
+  ratingLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.reviewModal.ratingLabel[lang],
+  reviewLabel: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.reviewModal.reviewLabel[lang],
+  reviewPlaceholder: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.reviewModal.reviewPlaceholder[lang],
+  submitButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.reviewModal.submitButton[lang],
+  cancelButton: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.reviewModal.cancelButton[lang],
+  requiredRating: (lang: 'ko' | 'en' = defaultLanguage) => uiText.notificationBanner.reviewModal.requiredRating[lang],
 }
