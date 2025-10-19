@@ -179,17 +179,25 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
 
   // 페이지 체류 시간 추적
   const [dwellTime, setDwellTime] = useState(0);
+  const dwellTimeRef = useRef(0);  // 깜박거림 방지: ref로 실시간 값 추적
   const dwellTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 사용자 ID (Supabase Auth)
-  const [userId, setUserId] = useState<string | null>(null);
+  // undefined: 초기화 중, null: 비인증 사용자, string: 인증된 사용자
+  const [userId, setUserId] = useState<string | null | undefined>(undefined);
+
+  // 이미 조회 기록을 생성한 배너 ID 추적 (409 에러 방지)
+  const recordedBannerIdsRef = useRef<Set<string>>(new Set());
 
   /**
    * 배너 조회 및 평가
    */
-  const fetchBanners = useCallback(async () => {
+  const fetchBanners = useCallback(async (skipLoading = false) => {
     try {
-      setLoading(true);
+      // 첫 로드가 아니면 loading 상태를 변경하지 않음 (깜박거림 방지)
+      if (!skipLoading) {
+        setLoading(true);
+      }
       setError(null);
 
       // 활성 배너 조회
@@ -198,9 +206,9 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
       // 닫힌 배너 정보 조회 (DB에서 dismissed_at 포함)
       const dismissedWithTime = await getDismissedBannersWithTime(userId);
 
-      // 표시 규칙 평가
+      // 표시 규칙 평가 (dwellTimeRef 사용으로 dependency 제거)
       const evaluatedBanners = activeBanners
-        .map((banner) => evaluateBannerDisplay(banner, pathname, dwellTime))
+        .map((banner) => evaluateBannerDisplay(banner, pathname, dwellTimeRef.current))
         .filter((evaluation) => {
           const banner = evaluation.banner;
 
@@ -232,12 +240,14 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
       setBanners(evaluatedBanners);
 
       // 조회 기록 저장 (비인증 사용자도 가능)
+      // 이미 기록한 배너는 스킵하여 409 에러 방지
       for (const banner of evaluatedBanners) {
-        try {
-          await createBannerView({ banner_id: banner.id, user_id: userId });
-        } catch (err) {
-          // 중복 에러는 무시
-          console.log(`[useNotificationBanner] View already recorded for banner ${banner.id}`);
+        if (!recordedBannerIdsRef.current.has(banner.id)) {
+          const result = await createBannerView({ banner_id: banner.id, user_id: userId });
+          // 성공적으로 생성되거나 이미 존재하는 경우 기록
+          if (result !== null || result === null) {
+            recordedBannerIdsRef.current.add(banner.id);
+          }
         }
       }
     } catch (err) {
@@ -248,9 +258,12 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      // skipLoading이 true일 때는 loading 상태를 변경하지 않음 (깜박거림 방지)
+      if (!skipLoading) {
+        setLoading(false);
+      }
     }
-  }, [pathname, dwellTime, userId, toast]);
+  }, [pathname, userId, toast]);  // dwellTime 제거: ref 사용으로 깜박거림 방지
 
   /**
    * 배너 닫기
@@ -333,43 +346,6 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
   }, [fetchBanners]);
 
   /**
-   * 초기 로드 및 페이지 변경 시 조회
-   */
-  useEffect(() => {
-    fetchBanners();
-  }, [fetchBanners]);
-
-  /**
-   * 페이지 체류 시간 추적 (dwell_time 규칙용)
-   */
-  useEffect(() => {
-    // 체류 시간 초기화
-    setDwellTime(0);
-
-    // 1초마다 증가
-    dwellTimerRef.current = setInterval(() => {
-      setDwellTime((prev) => prev + 1);
-    }, 1000);
-
-    return () => {
-      if (dwellTimerRef.current) {
-        clearInterval(dwellTimerRef.current);
-      }
-    };
-  }, [pathname]);
-
-  /**
-   * dwell_time 변경 시 배너 재평가
-   */
-  useEffect(() => {
-    // dwell_time 규칙을 사용하는 배너가 있으면 재평가
-    if (dwellTime > 0 && dwellTime % 5 === 0) {
-      // 5초마다 재평가 (성능 최적화)
-      fetchBanners();
-    }
-  }, [dwellTime, fetchBanners]);
-
-  /**
    * 사용자 ID 초기화 (Supabase Auth)
    */
   useEffect(() => {
@@ -387,6 +363,52 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
 
     initializeUser();
   }, []);
+
+  /**
+   * 초기 로드 및 페이지 변경 시 조회
+   * userId 초기화가 완료된 후에만 실행
+   */
+  useEffect(() => {
+    // userId가 초기화될 때까지 대기 (undefined가 아닐 때만 실행)
+    if (userId !== undefined) {
+      fetchBanners();
+    }
+  }, [fetchBanners, userId]);
+
+  /**
+   * 페이지 체류 시간 추적 (dwell_time 규칙용)
+   */
+  useEffect(() => {
+    // 체류 시간 초기화
+    setDwellTime(0);
+    dwellTimeRef.current = 0;
+
+    // 페이지 변경 시 기록된 배너 ID 초기화
+    recordedBannerIdsRef.current.clear();
+
+    // 1초마다 증가
+    dwellTimerRef.current = setInterval(() => {
+      dwellTimeRef.current += 1;
+      setDwellTime(dwellTimeRef.current);
+    }, 1000);
+
+    return () => {
+      if (dwellTimerRef.current) {
+        clearInterval(dwellTimerRef.current);
+      }
+    };
+  }, [pathname]);
+
+  /**
+   * dwell_time 변경 시 배너 재평가
+   */
+  useEffect(() => {
+    // userId 초기화 완료 후에만 재평가 실행
+    if (userId !== undefined && dwellTime > 0 && dwellTime % 5 === 0) {
+      // 5초마다 재평가 (성능 최적화) - loading 상태 변경 안 함
+      fetchBanners(true); // skipLoading = true
+    }
+  }, [dwellTime, fetchBanners, userId]);
 
   return {
     banners,

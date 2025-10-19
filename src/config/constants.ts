@@ -490,7 +490,7 @@ export const notificationBanner = {
     maxWidth: '1200px',                   // 배너 최대 폭
     padding: 'px-4 py-3',                 // 내부 패딩
     gap: 'gap-3',                         // 아이콘/텍스트/버튼 간격
-    containerGap: 'space-y-2'             // 여러 배너 간 간격
+    containerGap: 'space-y-1'             // 여러 배너 간 간격 (최소화)
   },
   // 애니메이션
   animation: {

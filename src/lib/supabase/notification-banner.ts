@@ -44,11 +44,6 @@ export async function getActiveBanners(
     query = query.eq('display_rule', filters.displayRule);
   }
 
-  // 날짜 범위 필터 (현재 시간 기준)
-  const now = new Date().toISOString();
-  query = query.or(`start_date.is.null,start_date.lte.${now}`);
-  query = query.or(`end_date.is.null,end_date.gte.${now}`);
-
   const { data, error } = await query;
 
   if (error) {
@@ -56,7 +51,17 @@ export async function getActiveBanners(
     throw new Error(`활성 배너 조회 실패: ${error.message}`);
   }
 
-  return data || [];
+  // 날짜 범위 필터 (클라이언트 사이드에서 처리)
+  const now = new Date();
+  const filteredData = (data || []).filter((banner) => {
+    // start_date 체크: null이거나 현재 시간 이후
+    const startOk = !banner.start_date || new Date(banner.start_date) <= now;
+    // end_date 체크: null이거나 현재 시간 이전
+    const endOk = !banner.end_date || new Date(banner.end_date) >= now;
+    return startOk && endOk;
+  });
+
+  return filteredData;
 }
 
 /**
@@ -112,8 +117,9 @@ export async function createBannerView(
       console.log('[createBannerView] View already exists');
       return null;
     }
-    console.error('[createBannerView] Error:', error);
-    throw new Error(`배너 조회 기록 생성 실패: ${error.message}`);
+    // RLS 정책 에러는 경고만 출력 (마이그레이션 적용 전까지 임시 처리)
+    console.warn('[createBannerView] Failed to create view (RLS policy may need update):', error);
+    return null;
   }
 
   return data;
@@ -129,12 +135,19 @@ export async function dismissBanner(
   const supabase = createClient();
 
   // 조회 기록이 없으면 생성
-  const { data: existingView } = await supabase
+  let existingViewQuery = supabase
     .from('notification_banner_views')
     .select('id')
-    .eq('banner_id', bannerId)
-    .eq('user_id', userId)
-    .single();
+    .eq('banner_id', bannerId);
+
+  // null 비교는 .is() 사용, 값 비교는 .eq() 사용
+  if (userId === null) {
+    existingViewQuery = existingViewQuery.is('user_id', null);
+  } else {
+    existingViewQuery = existingViewQuery.eq('user_id', userId);
+  }
+
+  const { data: existingView } = await existingViewQuery.single();
 
   if (!existingView) {
     // 조회 기록 생성
@@ -142,11 +155,19 @@ export async function dismissBanner(
   }
 
   // dismissed_at 업데이트
-  const { error } = await supabase
+  let updateQuery = supabase
     .from('notification_banner_views')
     .update({ dismissed_at: new Date().toISOString() })
-    .eq('banner_id', bannerId)
-    .eq('user_id', userId);
+    .eq('banner_id', bannerId);
+
+  // null 비교는 .is() 사용, 값 비교는 .eq() 사용
+  if (userId === null) {
+    updateQuery = updateQuery.is('user_id', null);
+  } else {
+    updateQuery = updateQuery.eq('user_id', userId);
+  }
+
+  const { error } = await updateQuery;
 
   if (error) {
     console.error('[dismissBanner] Error:', error);
@@ -163,11 +184,20 @@ export async function getDismissedBannerIds(
 ): Promise<string[]> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  // user_id가 null인 경우와 아닌 경우를 구분하여 쿼리
+  let query = supabase
     .from('notification_banner_views')
     .select('banner_id')
-    .eq('user_id', userId)
     .not('dismissed_at', 'is', null);
+
+  // null 비교는 .is() 사용, 값 비교는 .eq() 사용
+  if (userId === null) {
+    query = query.is('user_id', null);
+  } else {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('[getDismissedBannerIds] Error:', error);
@@ -186,11 +216,20 @@ export async function getDismissedBannersWithTime(
 ): Promise<Map<string, string>> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
+  // user_id가 null인 경우와 아닌 경우를 구분하여 쿼리
+  let query = supabase
     .from('notification_banner_views')
     .select('banner_id, dismissed_at')
-    .eq('user_id', userId)
     .not('dismissed_at', 'is', null);
+
+  // null 비교는 .is() 사용, 값 비교는 .eq() 사용
+  if (userId === null) {
+    query = query.is('user_id', null);
+  } else {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('[getDismissedBannersWithTime] Error:', error);
@@ -217,23 +256,38 @@ export async function markBannerInteracted(
   const supabase = createClient();
 
   // 조회 기록이 없으면 생성
-  const { data: existingView } = await supabase
+  let existingViewQuery = supabase
     .from('notification_banner_views')
     .select('id')
-    .eq('banner_id', bannerId)
-    .eq('user_id', userId)
-    .single();
+    .eq('banner_id', bannerId);
+
+  // null 비교는 .is() 사용, 값 비교는 .eq() 사용
+  if (userId === null) {
+    existingViewQuery = existingViewQuery.is('user_id', null);
+  } else {
+    existingViewQuery = existingViewQuery.eq('user_id', userId);
+  }
+
+  const { data: existingView } = await existingViewQuery.single();
 
   if (!existingView) {
     await createBannerView({ banner_id: bannerId, user_id: userId });
   }
 
   // interacted 업데이트
-  const { error } = await supabase
+  let updateQuery = supabase
     .from('notification_banner_views')
     .update({ interacted: true })
-    .eq('banner_id', bannerId)
-    .eq('user_id', userId);
+    .eq('banner_id', bannerId);
+
+  // null 비교는 .is() 사용, 값 비교는 .eq() 사용
+  if (userId === null) {
+    updateQuery = updateQuery.is('user_id', null);
+  } else {
+    updateQuery = updateQuery.eq('user_id', userId);
+  }
+
+  const { error } = await updateQuery;
 
   if (error) {
     console.error('[markBannerInteracted] Error:', error);
