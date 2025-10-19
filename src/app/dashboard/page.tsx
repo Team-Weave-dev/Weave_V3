@@ -242,7 +242,7 @@ export default function DashboardPage() {
         !isMobile && widgetSidebarOpen && isCollapsed ? "lg:mr-16" :
         "mr-0"
       )}>
-        <div className="container mx-auto pt-4 px-6 pb-6">
+        <div className="container mx-auto p-6">
         {/* 헤더 */}
         <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
