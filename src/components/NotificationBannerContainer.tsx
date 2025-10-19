@@ -35,48 +35,43 @@ export function NotificationBannerContainer({
   // 최대 개수 제한
   const visibleBanners = banners.slice(0, maxBanners);
 
-  // 배너가 없으면 렌더링하지 않음
-  if (loading || visibleBanners.length === 0) {
-    return null;
-  }
+  // 배너가 없어도 Header 공간은 확보
+  const hasBanners = !loading && visibleBanners.length > 0;
 
   return (
     <div
       className={cn(
-        // 위치
-        'fixed left-0 right-0',
-        position === 'top' ? 'top-0' : 'bottom-0',
-        // Z-index
-        `z-[${notificationBanner.layout.zIndex}]`,
-        // 여백 (헤더 높이 고려)
-        position === 'top' ? 'mt-16' : 'mb-4',
-        // 포인터 이벤트
-        'pointer-events-none'
+        // Static positioning - 컨텐츠를 밀어냄
+        'w-full',
+        // Fixed Header 아래 배치 (Header는 fixed, h-14 sm:h-16)
+        'pt-14 sm:pt-16',
+        // 하단 간격
+        hasBanners ? 'pb-2' : 'pb-0',
       )}
       role="region"
       aria-label="Notification Banners"
     >
-      {/* 중앙 정렬 컨테이너 */}
-      <div
-        className={cn(
-          'mx-auto px-4',
-          // 최대 폭
-          `max-w-[${notificationBanner.layout.maxWidth}]`,
-          // 배너 간 간격
-          notificationBanner.layout.containerGap,
-          // 포인터 이벤트 활성화
-          'pointer-events-auto'
-        )}
-      >
-        {visibleBanners.map((banner) => (
-          <NotificationBanner
-            key={banner.id}
-            banner={banner}
-            onDismiss={dismissBanner}
-            onWebhookAction={triggerWebhook}
-          />
-        ))}
-      </div>
+      {/* 배너가 있을 때만 컨텐츠 렌더링 */}
+      {hasBanners && (
+        <div
+          className={cn(
+            'mx-auto px-4',
+            // 최대 폭 (Tailwind 클래스 직접 사용)
+            'max-w-7xl',
+            // 배너 간 간격
+            notificationBanner.layout.containerGap,
+          )}
+        >
+          {visibleBanners.map((banner) => (
+            <NotificationBanner
+              key={banner.id}
+              banner={banner}
+              onDismiss={dismissBanner}
+              onWebhookAction={triggerWebhook}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

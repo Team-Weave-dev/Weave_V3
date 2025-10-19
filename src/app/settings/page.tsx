@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Header } from '@/components/ui/header'
 import { getSettingsText } from '@/config/brand'
 import { layout } from '@/config/constants'
 import { cn } from '@/lib/utils'
@@ -38,15 +37,13 @@ export default function SettingsPage() {
   }, [router, pathname])
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main
-        className={cn(
-          layout.page.container,
-          "px-4 sm:px-6 lg:px-12",
-          "pt-[calc(5rem+1.5rem)] pb-20"
-        )}
-      >
+    <main
+      className={cn(
+        layout.page.container,
+        "px-4 sm:px-6 lg:px-12",
+        "pt-4 pb-20"
+      )}
+    >
       <div className={layout.page.section.stack}>
         {/* 페이지 헤더 */}
         <div className="space-y-2">
@@ -87,7 +84,6 @@ export default function SettingsPage() {
           </TabsContent>
         </Tabs>
       </div>
-      </main>
-    </div>
+    </main>
   )
 }
