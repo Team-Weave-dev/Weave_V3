@@ -209,17 +209,17 @@ export async function getDismissedBannerIds(
 
 /**
  * 사용자가 닫은 배너 상세 정보 조회 (리셋 판단용)
- * - banner_id와 dismissed_at 반환
+ * - banner_id, dismissed_at, interacted 반환
  */
 export async function getDismissedBannersWithTime(
   userId: string | null
-): Promise<Map<string, string>> {
+): Promise<Map<string, { dismissedAt: string; interacted: boolean }>> {
   const supabase = createClient();
 
   // user_id가 null인 경우와 아닌 경우를 구분하여 쿼리
   let query = supabase
     .from('notification_banner_views')
-    .select('banner_id, dismissed_at')
+    .select('banner_id, dismissed_at, interacted')
     .not('dismissed_at', 'is', null);
 
   // null 비교는 .is() 사용, 값 비교는 .eq() 사용
@@ -236,10 +236,13 @@ export async function getDismissedBannersWithTime(
     return new Map();
   }
 
-  const map = new Map<string, string>();
+  const map = new Map<string, { dismissedAt: string; interacted: boolean }>();
   (data || []).forEach((view) => {
     if (view.dismissed_at) {
-      map.set(view.banner_id, view.dismissed_at);
+      map.set(view.banner_id, {
+        dismissedAt: view.dismissed_at,
+        interacted: view.interacted || false,
+      });
     }
   });
 

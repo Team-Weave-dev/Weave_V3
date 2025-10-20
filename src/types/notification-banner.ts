@@ -19,7 +19,8 @@ export type NotificationBannerType = 'notice' | 'alert' | 'urgent';
  * 표시 규칙
  * - always: 항상 표시 (사용자가 닫을 때까지)
  * - user_action: 특정 사용자 행동 시 표시 (예: 페이지 방문)
- * - dwell_time: 특정 시간 체류 후 표시
+ *   * dwell_time_seconds를 함께 설정하면 페이지 방문 + 체류 시간 모두 체크
+ * - dwell_time: 특정 시간 체류 후 표시 (페이지 구분 없음)
  */
 export type DisplayRule = 'always' | 'user_action' | 'dwell_time';
 
@@ -57,6 +58,7 @@ export interface NotificationBanner {
   dwell_time_seconds: number | null;
   webhook_url: string | null;
   webhook_button_text: string | null;
+  action_type: WebhookActionType | null;
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;
@@ -110,11 +112,24 @@ export interface WebhookPayloadBase {
 }
 
 /**
+ * 리뷰 컨텍스트 (페이지별 추가 정보)
+ */
+export interface ReviewContext {
+  /** 페이지 식별자 (예: "dashboard", "projects") */
+  page: string;
+  /** 선택한 항목 값 (예: "calendar", "document-management") */
+  selectedOption?: string;
+  /** 추가 메타데이터 */
+  metadata?: Record<string, any>;
+}
+
+/**
  * 리뷰 웹훅 데이터
  */
 export interface ReviewWebhookData {
   rating: number; // 1-5
   review?: string; // 선택적 리뷰 텍스트
+  context?: ReviewContext; // 페이지별 컨텍스트
 }
 
 /**

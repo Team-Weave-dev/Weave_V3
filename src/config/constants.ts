@@ -505,3 +505,50 @@ export const notificationBanner = {
     defaultPriority: 100                  // 기본 우선순위
   }
 } as const
+
+// Review Context - 페이지별 리뷰 수집 옵션 (2025-10-20 추가)
+export interface ReviewOption {
+  value: string;
+  label: string;
+}
+
+export interface PageReviewContext {
+  label: string;           // 선택 필드 라벨
+  placeholder: string;     // 선택 필드 플레이스홀더
+  options: ReviewOption[]; // 선택 가능한 항목들
+}
+
+/**
+ * 페이지별 리뷰 컨텍스트 설정
+ * 배너 시스템의 review 액션에서 페이지별 추가 선택 필드를 표시할 때 사용
+ */
+export const reviewContexts: Record<string, PageReviewContext> = {
+  dashboard: {
+    label: '가장 마음에 드는 위젯',
+    placeholder: '위젯을 선택하세요',
+    options: [
+      { value: 'calendar', label: '캘린더' },
+      { value: 'todo-list', label: '할일 목록' },
+      { value: 'project-summary', label: '프로젝트 요약' },
+      { value: 'tax-schedule', label: '세무 일정' },
+      { value: 'tax-calculator', label: '세금 계산기' },
+      { value: 'recent-activity', label: '최근 활동' },
+      { value: 'weather', label: '날씨' },
+      { value: 'kpi-metrics', label: 'KPI 지표' },
+      { value: 'revenue-chart', label: '매출 차트' },
+    ],
+  },
+  projects: {
+    label: '가장 마음에 드는 기능',
+    placeholder: '기능을 선택하세요',
+    options: [
+      { value: 'detail-view', label: '상세 정보 보기' },
+      { value: 'document-management', label: '문서 관리' },
+      { value: 'progress-tracking', label: '진행률 추적' },
+      { value: 'status-management', label: '상태 관리' },
+      { value: 'financial-overview', label: '재무 정보' },
+      { value: 'task-management', label: '작업 관리' },
+      { value: 'timeline-view', label: '타임라인 보기' },
+    ],
+  },
+} as const

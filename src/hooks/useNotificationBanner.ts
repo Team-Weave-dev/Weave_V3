@@ -110,6 +110,10 @@ function saveLocalDismissedBanner(bannerId: string): void {
 
 /**
  * 배너 표시 규칙 평가
+ *
+ * user_action과 dwell_time을 동시에 적용 가능:
+ * - user_action이면서 dwell_time_seconds가 설정되어 있으면 둘 다 체크
+ * - 예: 특정 페이지 + 10초 체류 후 표시
  */
 function evaluateBannerDisplay(
   banner: NotificationBanner,
@@ -124,7 +128,7 @@ function evaluateBannerDisplay(
       return { banner, shouldDisplay: true };
 
     case 'user_action':
-      // 특정 경로 방문 시 표시
+      // 특정 경로 방문 시 표시 (+ 선택적으로 체류 시간 체크)
       if (!trigger_action) {
         return { banner, shouldDisplay: false, reason: 'trigger_action not configured' };
       }
@@ -132,18 +136,36 @@ function evaluateBannerDisplay(
       // trigger_action 형식: "page_visit:/dashboard"
       if (trigger_action.startsWith('page_visit:')) {
         const targetPath = trigger_action.replace('page_visit:', '');
-        const matches = currentPath === targetPath || currentPath.startsWith(targetPath);
-        return {
-          banner,
-          shouldDisplay: matches,
-          reason: matches ? undefined : `Current path ${currentPath} does not match ${targetPath}`,
-        };
+        const pathMatches = currentPath === targetPath || currentPath.startsWith(targetPath);
+
+        if (!pathMatches) {
+          return {
+            banner,
+            shouldDisplay: false,
+            reason: `Current path ${currentPath} does not match ${targetPath}`,
+          };
+        }
+
+        // 경로 일치 + dwell_time_seconds 설정이 있으면 체류 시간도 체크
+        if (dwell_time_seconds !== null && dwell_time_seconds !== undefined) {
+          const dwellSufficient = dwellTime >= dwell_time_seconds;
+          return {
+            banner,
+            shouldDisplay: dwellSufficient,
+            reason: dwellSufficient
+              ? undefined
+              : `Path matches but dwell time ${dwellTime}s < required ${dwell_time_seconds}s`,
+          };
+        }
+
+        // 경로만 일치하면 표시
+        return { banner, shouldDisplay: true };
       }
 
       return { banner, shouldDisplay: false, reason: 'Unknown trigger_action format' };
 
     case 'dwell_time':
-      // 체류 시간 조건
+      // 체류 시간 조건만 체크
       if (dwell_time_seconds === null || dwell_time_seconds === undefined) {
         return { banner, shouldDisplay: false, reason: 'dwell_time_seconds not configured' };
       }
@@ -204,7 +226,7 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
       const activeBanners = await getActiveBanners();
 
       // 닫힌 배너 정보 조회 (DB에서 dismissed_at 포함)
-      const dismissedWithTime = await getDismissedBannersWithTime(userId);
+      const dismissedWithTime = await getDismissedBannersWithTime(userId ?? null);
 
       // 표시 규칙 평가 (dwellTimeRef 사용으로 dependency 제거)
       const evaluatedBanners = activeBanners
@@ -213,10 +235,16 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
           const banner = evaluation.banner;
 
           // 닫힌 적이 있는지 확인
-          const dismissedAt = dismissedWithTime.get(banner.id);
-          if (dismissedAt) {
+          const dismissedInfo = dismissedWithTime.get(banner.id);
+          if (dismissedInfo) {
+            // 한 번 인터랙션(웹훅 제출)한 배너는 다시 표시하지 않음
+            if (dismissedInfo.interacted) {
+              console.log(`[useNotificationBanner] Banner ${banner.id} already interacted - permanently hidden`);
+              return false;
+            }
+
             // 리셋 주기에 따라 다시 표시할지 결정
-            const shouldReset = shouldResetBanner(dismissedAt, banner.reset_period);
+            const shouldReset = shouldResetBanner(dismissedInfo.dismissedAt, banner.reset_period);
             if (!shouldReset) {
               console.log(`[useNotificationBanner] Banner ${banner.id} dismissed (reset_period: ${banner.reset_period})`);
               return false; // 리셋되지 않았으면 제외
@@ -243,7 +271,7 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
       // 이미 기록한 배너는 스킵하여 409 에러 방지
       for (const banner of evaluatedBanners) {
         if (!recordedBannerIdsRef.current.has(banner.id)) {
-          const result = await createBannerView({ banner_id: banner.id, user_id: userId });
+          const result = await createBannerView({ banner_id: banner.id, user_id: userId ?? null });
           // 성공적으로 생성되거나 이미 존재하는 경우 기록
           if (result !== null || result === null) {
             recordedBannerIdsRef.current.add(banner.id);
@@ -274,7 +302,7 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
       saveLocalDismissedBanner(bannerId);
 
       // DB 업데이트
-      await dismissBannerApi(bannerId, userId);
+      await dismissBannerApi(bannerId, userId ?? null);
 
       // UI 업데이트
       setBanners((prev) => prev.filter((b) => b.id !== bannerId));
@@ -298,7 +326,7 @@ export function useNotificationBanner(): UseNotificationBannerReturn {
   ) => {
     try {
       // 인터랙션 기록
-      await markBannerInteracted(bannerId, userId);
+      await markBannerInteracted(bannerId, userId ?? null);
 
       // 웹훅 API Route로 POST
       const response = await fetch('/api/notification-banner/webhook', {
