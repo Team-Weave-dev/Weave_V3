@@ -41,6 +41,22 @@ export default function TaxManagementPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
+          {/* 뉴스레터 섹션 */}
+          <div className="mb-6 p-6 bg-background/50 rounded-lg border border-muted">
+            <div className="text-center mb-4">
+              <h3 className={`font-semibold ${typography.title.subsection} mb-2`}>뉴스레터</h3>
+              <p className={`${typography.text.base} text-muted-foreground`}>
+                최신 업데이트를 받아보세요
+              </p>
+            </div>
+            <div className="max-w-md mx-auto">
+              <NewsletterForm
+                placeholder="이메일 주소"
+                buttonText="구독"
+              />
+            </div>
+          </div>
+
           <div className="bg-muted/50 rounded-lg p-6 space-y-4">
             <h3 className={`font-semibold ${typography.title.subsection} mb-4`}>{getTaxManagementText.plannedServices.title('ko')}</h3>
             
@@ -162,23 +178,6 @@ export default function TaxManagementPage() {
         </Card>
       </div>
 
-      {/* 뉴스레터 섹션 */}
-      <Card className="mt-6">
-        <CardHeader className="text-center">
-          <CardTitle className={typography.title.subsection}>뉴스레터</CardTitle>
-          <CardDescription className={typography.text.base}>
-            최신 업데이트를 받아보세요
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="max-w-md mx-auto">
-            <NewsletterForm
-              placeholder="이메일 주소"
-              buttonText="구독"
-            />
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
