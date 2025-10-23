@@ -18,6 +18,7 @@ import { layout, wbsTask } from '@/config/constants';
 import { removeCustomProject, updateCustomProject } from '@/lib/mock/projects';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { getActualProjectStatus } from '@/lib/utils';
 
 // 편집 가능한 프로젝트 데이터 인터페이스
 interface EditableProjectData {
@@ -125,8 +126,8 @@ export default function DetailView({
         project.no.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.client.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // 상태 필터
-      const statusMatch = statusFilter === 'all' || project.status === statusFilter;
+      // 상태 필터 - getActualProjectStatus를 사용하여 실제 표시 상태로 필터링
+      const statusMatch = statusFilter === 'all' || getActualProjectStatus(project) === statusFilter;
 
       // 클라이언트 필터
       const clientMatch = clientFilter === 'all' || project.client === clientFilter;
