@@ -1,12 +1,13 @@
 "use client"
 
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { uiText } from '@/config/brand'
 import { plans } from '@/config/constants'
 import type { Usage, PlanType } from '@/lib/types/settings.types'
+import { projectService, dashboardService } from '@/lib/storage'
 
 /**
  * 사용량 탭 컴포넌트
@@ -14,29 +15,57 @@ import type { Usage, PlanType } from '@/lib/types/settings.types'
  */
 export default function UsageTab() {
   const lang = 'ko' as const
+  const [projectCount, setProjectCount] = useState(0)
+  const [widgetCount, setWidgetCount] = useState(0)
+  const [loading, setLoading] = useState(true)
 
-  // Mock 데이터 (실제로는 API에서 가져옴)
+  // 현재 요금제 (실제로는 사용자 설정에서 가져와야 함)
   const currentPlan: PlanType = 'pro'
   const planLimits = useMemo(() => plans[currentPlan].limits, [currentPlan])
 
+  // 실제 프로젝트 수와 위젯 수 가져오기
+  useEffect(() => {
+    async function fetchUsageData() {
+      try {
+        setLoading(true)
+
+        // 프로젝트 수 카운트
+        const projects = await projectService.getAll()
+        setProjectCount(projects.length)
+
+        // 위젯 수 카운트
+        const dashboardData = await dashboardService.load()
+        if (dashboardData) {
+          setWidgetCount(dashboardData.widgets.length)
+        }
+      } catch (error) {
+        console.error('Failed to fetch usage data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUsageData()
+  }, [])
+
   const usage: Usage = useMemo(() => ({
     projects: {
-      current: 5,
+      current: projectCount,
       limit: planLimits.projects
     },
     widgets: {
-      current: 12,
+      current: widgetCount,
       limit: planLimits.widgets
     },
     storage: {
-      used: 768, // MB
+      used: 0, // 준비중
       total: planLimits.storage,
-      percentage: 75
+      percentage: 0
     },
     aiService: {
       available: planLimits.aiService
     }
-  }), [planLimits])
+  }), [projectCount, widgetCount, planLimits])
 
   const formatLimit = useCallback((limit: number) => {
     return limit === -1 ? uiText.settings.usage.unlimited[lang] : limit.toString()
@@ -114,38 +143,42 @@ export default function UsageTab() {
         </CardContent>
       </Card>
 
-      {/* 스토리지 사용량 */}
+      {/* 스토리지 사용량 - 준비중 */}
       <Card>
         <CardHeader>
           <CardTitle>{uiText.settings.usage.storage.title[lang]}</CardTitle>
           <CardDescription>
-            {formatStorage(usage.storage.used)} / {formatStorage(usage.storage.total)} ({usage.storage.percentage}%)
+            스토리지 버킷 연결 대기 중
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Progress
-            value={usage.storage.percentage}
-            className="h-2"
-          />
+          <div className="text-center py-4">
+            <Badge variant="secondary" className="text-sm">
+              준비중
+            </Badge>
+            <p className="text-xs text-muted-foreground mt-2">
+              추후 사용량을 확인할 수 있습니다.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
-      {/* AI 서비스 */}
+      {/* AI 서비스 - 준비중 */}
       <Card>
         <CardHeader>
           <CardTitle>{uiText.settings.usage.aiService.title[lang]}</CardTitle>
+          <CardDescription>
+            AI 서비스 통합 대기 중
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">
-              {uiText.settings.usage.aiService.status[lang]}
-            </span>
-            <Badge variant={usage.aiService.available ? "default" : "secondary"}>
-              {usage.aiService.available
-                ? uiText.settings.usage.aiService.available[lang]
-                : uiText.settings.usage.aiService.unavailable[lang]
-              }
+          <div className="text-center py-4">
+            <Badge variant="secondary" className="text-sm">
+              준비중
             </Badge>
+            <p className="text-xs text-muted-foreground mt-2">
+              AI 서비스가 통합되면 사용량을 확인할 수 있습니다.
+            </p>
           </div>
         </CardContent>
       </Card>
