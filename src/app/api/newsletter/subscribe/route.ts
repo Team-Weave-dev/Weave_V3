@@ -34,6 +34,7 @@ import {
 interface SubscribeRequestBody {
   email: string
   honeypot?: string // 봇 방지용 필드 (사람은 비워둠)
+  source?: string // 구독 출처 (기본값: website_footer)
 }
 
 /**
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
     const payload: WebhookPayload = {
       email: normalizedEmail,
       timestamp: new Date().toISOString(),
-      source: 'website_footer',
+      source: body.source || 'website_footer',
       userAgent: request.headers.get('user-agent') || undefined
     }
 

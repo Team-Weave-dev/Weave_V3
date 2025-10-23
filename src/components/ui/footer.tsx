@@ -88,6 +88,7 @@ const BasicFooter = React.forwardRef<HTMLDivElement, BasicFooterProps>(
               <NewsletterForm
                 placeholder={newsletter.placeholder}
                 buttonText={newsletter.buttonText}
+                source="website_footer"
               />
             </div>
           )}

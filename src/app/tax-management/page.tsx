@@ -52,6 +52,7 @@ export default function TaxManagementPage() {
               <NewsletterForm
                 placeholder="이메일 주소"
                 buttonText="구독"
+                source="tax_management"
               />
             </div>
           </div>

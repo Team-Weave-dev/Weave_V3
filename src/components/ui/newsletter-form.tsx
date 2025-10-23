@@ -14,6 +14,8 @@ export interface NewsletterFormProps {
   placeholder?: string
   /** 버튼 텍스트 */
   buttonText?: string
+  /** 구독 출처 (예: 'website_footer', 'tax_management') */
+  source?: string
   /** 폼 제출 시 콜백 (선택사항) */
   onSuccess?: (email: string) => void
   /** 에러 발생 시 콜백 (선택사항) */
@@ -44,6 +46,7 @@ export interface NewsletterFormProps {
 export function NewsletterForm({
   placeholder = "이메일 주소",
   buttonText = "구독",
+  source = "website_footer",
   onSuccess,
   onError
 }: NewsletterFormProps) {
@@ -91,7 +94,8 @@ export function NewsletterForm({
         },
         body: JSON.stringify({
           email: email.trim(),
-          honeypot // 봇이 채우는 필드
+          honeypot, // 봇이 채우는 필드
+          source // 구독 출처
         })
       })
 
