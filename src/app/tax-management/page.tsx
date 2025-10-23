@@ -5,6 +5,7 @@ import Typography from '@/components/ui/typography'
 import { getTaxManagementText } from '@/config/brand'
 import { layout, typography } from '@/config/constants'
 import { FileText, Calculator, Building2, Clock } from 'lucide-react'
+import { NewsletterForm } from '@/components/ui/newsletter-form'
 
 export default function TaxManagementPage() {
   return (
@@ -160,6 +161,24 @@ export default function TaxManagementPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 뉴스레터 섹션 */}
+      <Card className="mt-6">
+        <CardHeader className="text-center">
+          <CardTitle className={typography.title.subsection}>뉴스레터</CardTitle>
+          <CardDescription className={typography.text.base}>
+            최신 업데이트를 받아보세요
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-md mx-auto">
+            <NewsletterForm
+              placeholder="이메일 주소"
+              buttonText="구독"
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
