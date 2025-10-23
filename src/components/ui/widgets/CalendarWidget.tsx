@@ -250,13 +250,62 @@ export function CalendarWidget({
       new Map(allEvents.map(event => [event.id, event])).values()
     );
 
+    // Apply source filter first
+    let filtered = uniqueEvents;
+    if (sourceFilters.sources && sourceFilters.sources.length > 0) {
+      filtered = uniqueEvents.filter(event => {
+        // Determine event source based on ID prefix
+        if (event.id.startsWith('todo-')) return sourceFilters.sources?.includes('todo');
+        if (event.id.startsWith('tax-')) return sourceFilters.sources?.includes('tax');
+        if (event.id.startsWith('calendar-event-')) return sourceFilters.sources?.includes('calendar');
+        // Default to calendar source for events without prefix
+        return sourceFilters.sources?.includes('calendar');
+      });
+    }
+
     // Apply search filter
-    if (!searchQuery) return uniqueEvents;
-    return uniqueEvents.filter(event =>
+    if (!searchQuery) return filtered;
+    return filtered.filter(event =>
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [events, integratedItems, searchQuery]);
+  }, [events, integratedItems, searchQuery, sourceFilters]);
+
+  // Calculate accurate source counts including local calendar events
+  const sourceCountStats = useMemo(() => {
+    // Convert integrated items to CalendarEvent format (todo, tax)
+    const integratedEvents = convertToCalendarEvents(integratedItems);
+
+    // Merge local calendar events with integrated events
+    const allEvents = [...events, ...integratedEvents];
+
+    // Remove duplicates by ID
+    const uniqueEvents = Array.from(
+      new Map(allEvents.map(event => [event.id, event])).values()
+    );
+
+    // Count events by source
+    const counts = {
+      calendar: 0,
+      todo: 0,
+      tax: 0,
+    };
+
+    uniqueEvents.forEach(event => {
+      if (event.id.startsWith('todo-')) {
+        counts.todo++;
+      } else if (event.id.startsWith('tax-')) {
+        counts.tax++;
+      } else if (event.id.startsWith('calendar-event-')) {
+        counts.calendar++;
+      } else {
+        // Default to calendar source
+        counts.calendar++;
+      }
+    });
+
+    return counts;
+  }, [events, integratedItems]);
 
   // Source filter toggle handler
   const toggleSourceFilter = (source: CalendarItemSource) => {
@@ -801,7 +850,7 @@ export function CalendarWidget({
               {(['calendar', 'todo', 'tax'] as CalendarItemSource[]).map((source) => {
                 const activeSources = sourceFilters.sources || ['calendar', 'todo', 'tax'];
                 const isActive = activeSources.includes(source);
-                const count = sourceStats.bySource[source] || 0;
+                const count = sourceCountStats[source] || 0;
 
                 const sourceColors = {
                   calendar: 'bg-blue-100 text-blue-700 border-blue-200',
