@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -780,31 +781,43 @@ export function CalendarWidget({
               </Popover>
               
               {/* View mode selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 px-2">
-                    {viewModes.find(v => v.value === currentView)?.label}
-                    <ChevronRight className="h-3 w-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>보기 모드</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {viewModes.map((mode) => {
-                    const Icon = viewModeIcons[mode.icon as keyof typeof viewModeIcons];
-                    return (
-                      <DropdownMenuItem
-                        key={mode.value}
-                        onClick={() => handleViewChange(mode.value)}
-                        className={currentView === mode.value ? "bg-accent" : ""}
-                      >
-                        <Icon className="h-4 w-4 mr-2" />
-                        {mode.label}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <TooltipProvider>
+                <Tooltip>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 px-2">
+                          {(() => {
+                            const currentMode = viewModes.find(v => v.value === currentView);
+                            const Icon = currentMode ? viewModeIcons[currentMode.icon as keyof typeof viewModeIcons] : Grid3x3;
+                            return <Icon className="h-4 w-4" />;
+                          })()}
+                        </Button>
+                      </TooltipTrigger>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>보기 모드</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {viewModes.map((mode) => {
+                        const Icon = viewModeIcons[mode.icon as keyof typeof viewModeIcons];
+                        return (
+                          <DropdownMenuItem
+                            key={mode.value}
+                            onClick={() => handleViewChange(mode.value)}
+                            className={currentView === mode.value ? "bg-accent" : ""}
+                          >
+                            <Icon className="h-4 w-4 mr-2" />
+                            {mode.label}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <TooltipContent>
+                    <p>{viewModes.find(v => v.value === currentView)?.label}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               {/* Source Filter */}
               <Button
