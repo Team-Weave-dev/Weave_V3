@@ -44,9 +44,8 @@ export default function TaxManagementPage() {
           {/* 뉴스레터 섹션 */}
           <div className="mb-6 p-6 bg-background/50 rounded-lg border border-muted">
             <div className="text-center mb-4">
-              <h3 className={`font-semibold ${typography.title.subsection} mb-2`}>뉴스레터</h3>
               <p className={`${typography.text.base} text-muted-foreground`}>
-                최신 업데이트를 받아보세요
+                세무 서비스 업데이트 소식을 가장 먼저 받아보세요
               </p>
             </div>
             <div className="max-w-md mx-auto">
