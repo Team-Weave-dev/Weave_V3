@@ -40,6 +40,9 @@ export default function UsageTab() {
         }
       } catch (error) {
         console.error('Failed to fetch usage data:', error)
+        // 스토리지가 초기화되지 않았거나 인증이 필요한 경우 기본값 사용
+        setProjectCount(0)
+        setWidgetCount(0)
       } finally {
         setLoading(false)
       }
