@@ -223,7 +223,7 @@ function ProjectCard({
   
   return (
     <Link
-      href={`/projects/${project.id}`}
+      href={`/projects?view=detail&selected=${project.id}`}
       className={cn(
         "group relative block overflow-hidden rounded-lg border bg-card p-3 transition-all duration-200",
         "hover:shadow-sm hover:border-primary/20",
