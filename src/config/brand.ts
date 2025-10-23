@@ -1399,13 +1399,19 @@ export const uiText = {
         unlimited: { ko: "위젯을 무제한으로 생성할 수 있습니다", en: "You can create unlimited widgets" }
       },
       storage: {
-        title: { ko: "스토리지", en: "Storage" }
+        title: { ko: "스토리지", en: "Storage" },
+        pending: { ko: "스토리지 버킷 연결 대기 중", en: "Storage bucket connection pending" },
+        pendingBadge: { ko: "준비중", en: "Coming Soon" },
+        pendingMessage: { ko: "추후 사용량을 확인할 수 있습니다.", en: "Usage information will be available soon." }
       },
       aiService: {
         title: { ko: "AI 서비스", en: "AI Service" },
         status: { ko: "이용 가능 여부", en: "Availability" },
         available: { ko: "이용 가능", en: "Available" },
-        unavailable: { ko: "이용 불가", en: "Unavailable" }
+        unavailable: { ko: "이용 불가", en: "Unavailable" },
+        pending: { ko: "AI 서비스 통합 대기 중", en: "AI service integration pending" },
+        pendingBadge: { ko: "준비중", en: "Coming Soon" },
+        pendingMessage: { ko: "AI 서비스가 통합되면 사용량을 확인할 수 있습니다.", en: "Usage information will be available once AI service is integrated." }
       }
     },
     plan: {
@@ -2819,13 +2825,19 @@ export const getWidgetText = {
         title: { ko: "스토리지", en: "Storage" },
         used: { ko: "사용 중", en: "Used" },
         total: { ko: "전체", en: "Total" },
-        percentage: { ko: "사용률", en: "Usage" }
+        percentage: { ko: "사용률", en: "Usage" },
+        pending: { ko: "스토리지 버킷 연결 대기 중", en: "Storage bucket connection pending" },
+        pendingBadge: { ko: "준비중", en: "Coming Soon" },
+        pendingMessage: { ko: "추후 사용량을 확인할 수 있습니다.", en: "Usage information will be available soon." }
       },
       aiService: {
         title: { ko: "AI 서비스", en: "AI Service" },
         available: { ko: "이용 가능", en: "Available" },
         notAvailable: { ko: "이용 불가", en: "Not Available" },
-        upgradeRequired: { ko: "Pro 요금제에서 이용 가능합니다", en: "Available in Pro plan" }
+        upgradeRequired: { ko: "Pro 요금제에서 이용 가능합니다", en: "Available in Pro plan" },
+        pending: { ko: "AI 서비스 통합 대기 중", en: "AI service integration pending" },
+        pendingBadge: { ko: "준비중", en: "Coming Soon" },
+        pendingMessage: { ko: "AI 서비스가 통합되면 사용량을 확인할 수 있습니다.", en: "Usage information will be available once AI service is integrated." }
       }
     },
     // 요금제 탭

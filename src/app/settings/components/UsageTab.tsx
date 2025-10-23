@@ -148,16 +148,16 @@ export default function UsageTab() {
         <CardHeader>
           <CardTitle>{uiText.settings.usage.storage.title[lang]}</CardTitle>
           <CardDescription>
-            스토리지 버킷 연결 대기 중
+            {uiText.settings.usage.storage.pending[lang]}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">
             <Badge variant="secondary" className="text-sm">
-              준비중
+              {uiText.settings.usage.storage.pendingBadge[lang]}
             </Badge>
             <p className="text-xs text-muted-foreground mt-2">
-              추후 사용량을 확인할 수 있습니다.
+              {uiText.settings.usage.storage.pendingMessage[lang]}
             </p>
           </div>
         </CardContent>
@@ -168,16 +168,16 @@ export default function UsageTab() {
         <CardHeader>
           <CardTitle>{uiText.settings.usage.aiService.title[lang]}</CardTitle>
           <CardDescription>
-            AI 서비스 통합 대기 중
+            {uiText.settings.usage.aiService.pending[lang]}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">
             <Badge variant="secondary" className="text-sm">
-              준비중
+              {uiText.settings.usage.aiService.pendingBadge[lang]}
             </Badge>
             <p className="text-xs text-muted-foreground mt-2">
-              AI 서비스가 통합되면 사용량을 확인할 수 있습니다.
+              {uiText.settings.usage.aiService.pendingMessage[lang]}
             </p>
           </div>
         </CardContent>
