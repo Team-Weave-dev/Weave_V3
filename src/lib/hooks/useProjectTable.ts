@@ -12,6 +12,7 @@ import { PROJECT_COLUMNS } from '@/lib/config/project-columns';
 import { removeCustomProject } from '@/lib/mock/projects';
 import { createClient } from '@/lib/supabase/client';
 import { settingsService } from '@/lib/storage';
+import { getActualProjectStatus } from '@/lib/utils';
 
 // 중앙화된 칼럼 설정 사용 - 개요 탭과 동일한 데이터 소스
 const DEFAULT_COLUMNS: ProjectTableColumn[] = PROJECT_COLUMNS;
@@ -201,10 +202,10 @@ export function useProjectTable(initialData: ProjectTableRow[] = [], onProjectsC
       });
     }
 
-    // 상태 필터 적용
+    // 상태 필터 적용 - getActualProjectStatus를 사용하여 실제 표시 상태로 필터링
     if (config.filters.statusFilter !== 'all') {
       filtered = filtered.filter(row =>
-        row.status === config.filters.statusFilter
+        getActualProjectStatus(row) === config.filters.statusFilter
       );
     }
 
