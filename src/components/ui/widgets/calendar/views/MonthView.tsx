@@ -148,13 +148,13 @@ const MonthView = React.memo(({
       </div>
       
       {/* 날짜 그리드 - 정확한 높이 할당 */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-auto">
+      <div className="flex flex-col flex-1 min-h-0">
         {weeks.map((week, weekIndex) => {
           // 주 번호 계산 (첫 번째 날짜 기준)
           const weekNumber = getWeek(week[0], { weekStartsOn, locale: ko });
 
           return (
-          <div key={weekIndex} className={cn("grid border-b last:border-0", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")}>
+          <div key={weekIndex} className={cn("grid border-b last:border-0 flex-1", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")}>
             {showWeekNumbers && (
               <div className="border-r flex items-center justify-center text-[10px] font-medium text-muted-foreground bg-muted/30">
                 {weekNumber}
@@ -195,9 +195,9 @@ const MonthView = React.memo(({
                         isToday(day) && "bg-primary/10",
                         isSelected && "ring-2 ring-inset ring-primary",
                         snapshot.isDraggingOver && "bg-primary/20 ring-2 ring-primary",
-                        dragOverDate && isSameDay(dragOverDate, day) && "bg-primary/20 ring-2 ring-primary"
+                        dragOverDate && isSameDay(dragOverDate, day) && "bg-primary/20 ring-2 ring-primary",
+                        "h-full"
                       )}
-                      style={{ minHeight: `${cellHeight}px`, maxHeight: `${cellHeight}px` }}
                       onClick={() => onDateSelect?.(day)}
                       onDoubleClick={() => onDateDoubleClick?.(day)}
                       // HTML5 Drag and Drop API for cross-widget dragging (TodoListWidget → CalendarWidget)
