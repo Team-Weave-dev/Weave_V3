@@ -37,7 +37,10 @@ export function useResponsiveCols(
 
   useEffect(() => {
     const update = () => {
-      const width = containerRef.current?.clientWidth ?? window.innerWidth
+      // 모바일(<768px)에서는 viewport width 기준, 데스크톱에서는 container width 기준
+      const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0
+      const containerWidth = containerRef.current?.clientWidth ?? viewportWidth
+      const width = viewportWidth < 768 ? viewportWidth : containerWidth
       const next = getColsForWidth(width, breakpoints)
       setCols(next)
     }

@@ -149,15 +149,29 @@ export function ImprovedDashboard({
     const calculateGrid = () => {
       if (!containerRef.current) return;
 
+      // 모바일에서는 viewport width 기준, 데스크톱에서는 container width 기준
+      const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
       const containerWidth = containerRef.current.clientWidth;
-      const availableWidth = containerWidth;
+
+      // 모바일(768px 미만)에서는 viewport 기준 + 패딩 제외 (좌우 24px)
+      // 데스크톱에서는 container 기준
+      const availableWidth = viewportWidth < 768
+        ? viewportWidth - 48  // 모바일: viewport - 좌우 패딩(24px * 2)
+        : containerWidth;
 
       const cellWidth = Math.floor(
         (availableWidth - (config.cols - 1) * config.gap) / config.cols
       );
 
+      // 화면 크기에 따라 최소 셀 크기 동적 조정
+      // 모바일 (480px 미만): 40px, 데스크톱 (480px 이상): 60px
+      const minCellSize = viewportWidth < 480 ? 40 : 60;
+      const maxCellSize = 200;
+
+      const finalCellWidth = Math.max(minCellSize, Math.min(maxCellSize, cellWidth));
+
       setCellSize({
-        width: Math.max(80, Math.min(200, cellWidth)),
+        width: finalCellWidth,
         height: config.rowHeight
       });
     };
