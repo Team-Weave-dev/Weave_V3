@@ -173,17 +173,69 @@ export function useTodoState(props?: {
   const [sectionsRaw, setSectionsRaw] = useState<TodoSection[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initial data 비동기 로드
+  // Initial data 비동기 로드 및 Supabase 변경사항 감지
   useEffect(() => {
+    let isMounted = true;
+
     const initializeData = async () => {
       const data = await getInitialData();
-      setLocalTasksState(data.tasks);
-      setSectionsRaw(data.sections);
-      setIsInitialized(true);
+      if (isMounted) {
+        setLocalTasksState(data.tasks);
+        setSectionsRaw(data.sections);
+        setIsInitialized(true);
+      }
     };
 
     initializeData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []); // 한 번만 실행
+
+  // Supabase 동기화: 캘린더나 다른 위젯에서 변경한 내용을 실시간 반영
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const reloadFromStorage = async () => {
+      try {
+        // Storage API에서 최신 데이터 다시 로드
+        const updatedTasks = await getTodoTasks();
+        const storageSections = await todoSectionService.getAll();
+
+        if (Array.isArray(updatedTasks)) {
+          // Dashboard TodoTask[] → Widget TodoTask[] 변환
+          const widgetTasks = updatedTasks.map(dashboardToWidgetTask);
+          setLocalTasksState(widgetTasks);
+        }
+
+        if (Array.isArray(storageSections) && storageSections.length > 0) {
+          const widgetSections = storageSections.map(storageToWidgetSection);
+          setSectionsRaw(widgetSections);
+        }
+      } catch (error) {
+        console.error('Failed to reload todo data from Storage:', error);
+      }
+    };
+
+    // 캘린더 이벤트 리스너 (다른 위젯에서의 변경사항 감지)
+    const unsubscribe = addCalendarDataChangedListener((event) => {
+      const { source, changeType } = event.detail;
+
+      // 투두 소스의 이벤트만 처리
+      if (source === 'todo') {
+        reloadFromStorage();
+      }
+    });
+
+    // storage 이벤트 리스너 (다른 탭/윈도우에서의 변경사항 감지)
+    window.addEventListener('storage', reloadFromStorage);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', reloadFromStorage);
+    };
+  }, [isInitialized]); // isInitialized가 true가 된 후에만 실행
 
   // ============================================================================
   // Storage 동기화 헬퍼 함수
@@ -681,44 +733,6 @@ export function useTodoState(props?: {
     setDragOverSection(null);
   }, [draggedTask, sections, setSections, setLocalTasks]);
 
-  // 실시간 동기화: 다른 위젯(캘린더)에서의 변경사항 감지
-
-  useEffect(() => {
-    const handleStorageChange = async () => {
-      // Storage API에서 최신 데이터 다시 로드
-      try {
-        const updatedTasks = await getTodoTasks();
-
-        if (Array.isArray(updatedTasks)) {
-          // React 상태 직접 업데이트 (Storage API 저장 없이)
-          setLocalTasksState([...updatedTasks]);
-        }
-      } catch (error) {
-        console.error('Failed to sync todo data from Storage API:', error);
-      }
-    };
-
-    const unsubscribe = addCalendarDataChangedListener((event) => {
-      const { source, changeType } = event.detail;
-
-      // 투두 소스의 이벤트만 처리 (캘린더에서 발생한 이벤트)
-      if (source === 'todo') {
-        if ((changeType as any) === 'update' || (changeType as any) === 'todo-date-update') {
-          // localStorage 변경을 감지하여 상태 업데이트
-          handleStorageChange();
-        }
-      }
-    });
-
-    // storage 이벤트 리스너 추가 (다른 탭/윈도우에서의 변경사항 감지)
-    window.addEventListener('storage', handleStorageChange);
-
-    // 컴포넌트 언마운트 시 리스너 해제
-    return () => {
-      unsubscribe();
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [setLocalTasks]);
 
   // Date groups for date view
   const dateGroups = useMemo(() => {
