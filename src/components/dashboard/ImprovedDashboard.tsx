@@ -145,9 +145,16 @@ export function ImprovedDashboard({
   }, [widgets.length, setWidgets]);
 
   // 반응형 그리드 계산
+  const configRef = useRef(config);
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
   useEffect(() => {
     const calculateGrid = () => {
       if (!containerRef.current) return;
+
+      const currentConfig = configRef.current;
 
       // 모바일에서는 viewport width 기준, 데스크톱에서는 container width 기준
       const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
@@ -160,7 +167,7 @@ export function ImprovedDashboard({
         : containerWidth;
 
       const cellWidth = Math.floor(
-        (availableWidth - (config.cols - 1) * config.gap) / config.cols
+        (availableWidth - (currentConfig.cols - 1) * currentConfig.gap) / currentConfig.cols
       );
 
       // 화면 크기에 따라 최소 셀 크기 동적 조정
@@ -172,14 +179,14 @@ export function ImprovedDashboard({
 
       setCellSize({
         width: finalCellWidth,
-        height: config.rowHeight
+        height: currentConfig.rowHeight
       });
     };
 
     calculateGrid();
     window.addEventListener('resize', calculateGrid);
     return () => window.removeEventListener('resize', calculateGrid);
-  }, [config.cols, config.gap, config.rowHeight]);
+  }, []);
 
   // ESC 키 처리는 대시보드 페이지에서 통합 관리
   // (편집 모드와 사이드바를 동시에 닫기 위해)
@@ -670,8 +677,13 @@ export function ImprovedDashboard({
 
   // 반응형 컬럼 규칙(components 라이브러리의 훅 사용)
   // cols 변경 시 자동으로 위젯 위치 최적화
+  const colsRef = useRef(config.cols);
+  useEffect(() => {
+    colsRef.current = config.cols;
+  }, [config.cols]);
+
   const handleColsChange = useCallback((newCols: number) => {
-    const oldCols = config.cols;
+    const oldCols = colsRef.current;
     setColumns(newCols);
 
     // cols가 실제로 변경되었고 위젯이 있을 때만 최적화 수행
@@ -681,7 +693,7 @@ export function ImprovedDashboard({
         optimizeWidgetLayout();
       }, 100);
     }
-  }, [config.cols, setColumns, optimizeWidgetLayout, widgets.length]);
+  }, [setColumns, optimizeWidgetLayout, widgets.length]);
 
   useResponsiveCols(containerRef as React.RefObject<HTMLElement>, {
     onChange: handleColsChange,

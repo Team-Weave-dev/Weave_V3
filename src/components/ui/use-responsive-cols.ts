@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react'
+import { RefObject, useEffect, useRef, useState } from 'react'
 
 export type ColsBreakpoints = {
   desktop: { minWidth: number; cols: number }
@@ -35,6 +35,12 @@ export function useResponsiveCols(
     return initialCols ?? getColsForWidth(width, breakpoints)
   })
 
+  // onChange를 ref로 추적하여 무한 루프 방지
+  const onChangeRef = useRef(onChange)
+  useEffect(() => {
+    onChangeRef.current = onChange
+  }, [onChange])
+
   useEffect(() => {
     const update = () => {
       // 모바일(<768px)에서는 viewport width 기준, 데스크톱에서는 container width 기준
@@ -51,8 +57,8 @@ export function useResponsiveCols(
 
   // onChange 콜백은 별도의 useEffect에서 처리하여 렌더링 사이클 분리
   useEffect(() => {
-    onChange?.(cols)
-  }, [cols, onChange])
+    onChangeRef.current?.(cols)
+  }, [cols])
 
   return cols
 }
