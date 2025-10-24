@@ -1003,7 +1003,7 @@ export const selectEditState = (state: ImprovedDashboardStore) => state.editStat
 export const selectIsEditMode = (state: ImprovedDashboardStore) => state.editState.isEditMode;
 export const selectSelectedWidget = (state: ImprovedDashboardStore) => {
   const currentWidgets = state.layouts[state.currentBreakpoint];
-  return currentWidgets.find(w => w.id === state.editState.selectedWidgetId);
+  return currentWidgets?.find(w => w.id === state.editState.selectedWidgetId);
 };
 
 // shallow 비교 export

@@ -118,7 +118,7 @@ interface WidgetSidebarProps {
 }
 
 export function WidgetSidebar({ isOpen, onClose, onCollapseChange, className }: WidgetSidebarProps) {
-  const widgets = useImprovedDashboardStore(useShallow(selectWidgets))
+  const widgets = useImprovedDashboardStore(useShallow(selectWidgets)) || []
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
   const removeWidget = useImprovedDashboardStore(state => state.removeWidget)
   const findSpaceForWidget = useImprovedDashboardStore(state => state.findSpaceForWidget)

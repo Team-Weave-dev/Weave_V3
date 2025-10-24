@@ -402,7 +402,7 @@ export default function DashboardPage() {
         open={widgetModalOpen}
         onOpenChange={setWidgetModalOpen}
         onSelectWidget={handleSelectWidget}
-        existingWidgets={widgets}
+        existingWidgets={widgets || []}
       />
 
       {/* 초기화 확인 모달 */}

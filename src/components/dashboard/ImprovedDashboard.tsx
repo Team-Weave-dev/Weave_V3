@@ -64,7 +64,7 @@ export function ImprovedDashboard({
 }: ImprovedDashboardProps) {
   // 스토어 구독
   const isInitialized = useImprovedDashboardStore((state) => state.isInitialized);
-  const widgets = useImprovedDashboardStore(selectWidgets);
+  const widgets = useImprovedDashboardStore(selectWidgets) || [];
   const config = useImprovedDashboardStore(selectConfig);
   const editState = useImprovedDashboardStore(selectEditState);
   const isEditMode = useImprovedDashboardStore(selectIsEditMode);
