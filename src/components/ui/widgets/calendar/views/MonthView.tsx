@@ -125,7 +125,7 @@ const MonthView = React.memo(({
   const displayMode = getDisplayMode();
   
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* 요일 헤더 - 컴팩트 */}
       <div className={cn("grid border-b flex-shrink-0", showWeekNumbers ? "grid-cols-8" : "grid-cols-7")} style={{ height: `${headerHeight}px` }}>
         {showWeekNumbers && (
@@ -148,7 +148,7 @@ const MonthView = React.memo(({
       </div>
       
       {/* 날짜 그리드 - 정확한 높이 할당 */}
-      <div className="flex flex-col">
+      <div className="flex flex-col flex-1 min-h-0 overflow-auto">
         {weeks.map((week, weekIndex) => {
           // 주 번호 계산 (첫 번째 날짜 기준)
           const weekNumber = getWeek(week[0], { weekStartsOn, locale: ko });
