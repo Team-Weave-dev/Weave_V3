@@ -142,7 +142,7 @@ export function ImprovedDashboard({
     if (hasDup) {
       setWidgets(dedup);
     }
-  }, [widgets, setWidgets]);
+  }, [widgets.length, setWidgets]);
 
   // 반응형 그리드 계산
   useEffect(() => {
@@ -655,7 +655,24 @@ export function ImprovedDashboard({
   }, [cellSize, config.gap, config.useCSSTransforms, editState]);
 
   // 반응형 컬럼 규칙(components 라이브러리의 훅 사용)
-  useResponsiveCols(containerRef as React.RefObject<HTMLElement>, { onChange: setColumns, initialCols: config.cols });
+  // cols 변경 시 자동으로 위젯 위치 최적화
+  const handleColsChange = useCallback((newCols: number) => {
+    const oldCols = config.cols;
+    setColumns(newCols);
+
+    // cols가 실제로 변경되었고 위젯이 있을 때만 최적화 수행
+    if (oldCols !== newCols && widgets.length > 0) {
+      // 약간의 지연을 두어 setColumns가 먼저 적용되도록 함
+      setTimeout(() => {
+        optimizeWidgetLayout();
+      }, 100);
+    }
+  }, [config.cols, setColumns, optimizeWidgetLayout, widgets.length]);
+
+  useResponsiveCols(containerRef as React.RefObject<HTMLElement>, {
+    onChange: handleColsChange,
+    initialCols: config.cols
+  });
 
   // 컨테이너 최소 높이 동적 계산 (세로 무한 확장 지원)
   const containerMinHeight = useMemo(() => {
@@ -675,9 +692,9 @@ export function ImprovedDashboard({
     <div className={cn("w-full", className)}>
       {/* 툴바 - hideToolbar가 false이고 편집 모드일 때만 표시 */}
       {!hideToolbar && isEditMode && (
-        <div className="flex items-center justify-between py-4">
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleAddWidget}>
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 py-4">
+          <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleAddWidget} className="w-full md:flex-none md:min-w-[140px]">
               <Plus className="h-4 w-4 mr-2" />
               {getDashboardText.addWidget('ko')}
             </Button>
@@ -685,6 +702,7 @@ export function ImprovedDashboard({
               size="sm"
               variant={isCompact ? "default" : "outline"}
               onClick={() => setIsCompact(!isCompact)}
+              className="w-full md:flex-none md:min-w-[140px]"
             >
               <Layers className="h-4 w-4 mr-2" />
               {getDashboardText.autoLayout('ko')}
@@ -694,6 +712,7 @@ export function ImprovedDashboard({
               variant="outline"
               onClick={() => compactWidgets('vertical')}
               title="위젯들을 상단으로 정렬합니다"
+              className="w-full md:flex-none md:min-w-[140px]"
             >
               <ArrowUp className="h-4 w-4 mr-2" />
               {getDashboardText.verticalAlign('ko')}
@@ -703,6 +722,7 @@ export function ImprovedDashboard({
               variant="outline"
               onClick={() => optimizeWidgetLayout()}
               title="빈 공간을 최소화하여 위젯을 최적 배치합니다"
+              className="w-full md:flex-none md:min-w-[140px]"
             >
               <Grid3x3 className="h-4 w-4 mr-2" />
               {getDashboardText.optimizeLayout('ko')}
@@ -712,6 +732,7 @@ export function ImprovedDashboard({
               variant="outline"
               onClick={handleResetLayout}
               title="위젯 배치를 초기 상태로 되돌립니다"
+              className="w-full md:flex-none md:min-w-[140px]"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               {getDashboardText.resetLayout('ko')}
@@ -737,6 +758,7 @@ export function ImprovedDashboard({
                 // 저장 실패 시 편집 모드를 유지하여 사용자가 재시도할 수 있도록 함
               }
             }}
+            className="w-full md:w-auto"
           >
             <Save className="h-4 w-4 mr-2" />
             {getDashboardText.complete('ko')}

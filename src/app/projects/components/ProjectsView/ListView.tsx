@@ -209,7 +209,7 @@ export default function ListView({
     <>
       {/* Filter Bar */}
       <div className="mb-6 p-4 bg-background rounded-lg border">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <SimpleViewModeSwitch
             mode={viewMode}
             onModeChange={onViewModeChange}
@@ -218,11 +218,12 @@ export default function ListView({
               detail: getViewModeText.detailView('ko')
             }}
             ariaLabel={getViewModeText.title('ko')}
+            className="sm:flex-shrink-0"
           />
           <Input
             type="text"
             placeholder={getProjectPageText.searchPlaceholder('ko')}
-            className="flex-1 min-w-64"
+            className="flex-1 min-w-0 sm:min-w-64"
             value={config.filters.searchQuery}
             onChange={(e) => updateConfig({
               ...config,
@@ -231,17 +232,18 @@ export default function ListView({
             })}
           />
 
-          <div className={`flex items-center ${layout.page.header.actions} flex-shrink-0`}>
+          <div className={`flex flex-wrap items-center ${layout.page.header.actions} gap-2`}>
             {/* 삭제 버튼 */}
             {!loading && paginatedData.length > 0 && (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={toggleDeleteMode}
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-none"
               >
                 <Trash2 className={layout.heights.icon} />
-                {isDeleteMode ? getProjectPageText.exitDeleteMode('ko') : getProjectPageText.deleteButton('ko')}
+                <span className="hidden sm:inline">{isDeleteMode ? getProjectPageText.exitDeleteMode('ko') : getProjectPageText.deleteButton('ko')}</span>
+                <span className="sm:hidden">{isDeleteMode ? '종료' : '삭제'}</span>
               </Button>
             )}
 
@@ -250,7 +252,7 @@ export default function ListView({
               variant="secondary"
               size="sm"
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="gap-2"
+              className="gap-2 flex-1 sm:flex-none"
             >
               <Filter className={layout.heights.icon} />
               {getProjectPageText.filterButton('ko')}
@@ -267,10 +269,11 @@ export default function ListView({
                 variant="secondary"
                 size="sm"
                 onClick={() => setIsColumnSettingsOpen(!isColumnSettingsOpen)}
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-none"
               >
                 <Settings className={layout.heights.icon} />
-                {getProjectPageText.columnSettingsButton('ko')}
+                <span className="hidden sm:inline">{getProjectPageText.columnSettingsButton('ko')}</span>
+                <span className="sm:hidden">컬럼</span>
                 {isColumnSettingsOpen ? (
                   <ChevronUp className={layout.heights.icon} />
                 ) : (

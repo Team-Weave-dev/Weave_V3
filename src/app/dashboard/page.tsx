@@ -245,26 +245,27 @@ export default function DashboardPage() {
         <div className="container mx-auto p-6">
         {/* 헤더 */}
         <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
             <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
               <LayoutDashboard className="w-6 h-6 text-primary" />
             </div>
-            <div className="min-w-0 flex-1">
-              <Typography variant="h2" className="text-2xl text-foreground mb-1">
+            <div>
+              <Typography variant="h2" className="text-2xl text-foreground mb-1 whitespace-nowrap">
                 {getDashboardText.title('ko')}
               </Typography>
-              <Typography variant="body1" className="text-muted-foreground">
+              <Typography variant="body1" className="text-muted-foreground whitespace-nowrap">
                 {getDashboardText.subtitle('ko')}
               </Typography>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 flex-shrink-0">
           {!isEditMode ? (
             <Button
               size="sm"
               variant="outline"
               onClick={enterEditMode}
+              className="w-full md:w-auto"
             >
               <Settings className="h-4 w-4 mr-2" />
               {getDashboardText.editMode('ko')}
@@ -277,6 +278,7 @@ export default function DashboardPage() {
                 size="sm"
                 variant={widgetSidebarOpen ? "default" : "outline"}
                 onClick={() => setWidgetSidebarOpen(!widgetSidebarOpen)}
+                className="w-full md:w-auto"
               >
                 <PanelRightOpen className="h-4 w-4 mr-2" />
                 {widgetSidebarOpen ? getDashboardText.closeWidget('ko') : getDashboardText.addWidget('ko')}
@@ -285,6 +287,7 @@ export default function DashboardPage() {
                 size="sm"
                 variant={isCompact ? "default" : "outline"}
                 onClick={() => setIsCompact(!isCompact)}
+                className="w-full md:w-auto"
               >
                 <Layers className="h-4 w-4 mr-2" />
                 {getDashboardText.autoLayout('ko')}
@@ -293,6 +296,7 @@ export default function DashboardPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => compactWidgets('vertical')}
+                className="w-full md:w-auto"
               >
                 <ArrowUp className="h-4 w-4 mr-2" />
                 {getDashboardText.verticalAlign('ko')}
@@ -301,6 +305,7 @@ export default function DashboardPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => optimizeWidgetLayout()}
+                className="w-full md:w-auto"
               >
                 <Grid3x3 className="h-4 w-4 mr-2" />
                 {getDashboardText.optimizeLayout('ko')}
@@ -310,11 +315,12 @@ export default function DashboardPage() {
                 variant="outline"
                 onClick={handleResetLayout}
                 title={getDashboardText.resetLayoutTooltip('ko')}
+                className="w-full md:w-auto"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 {getDashboardText.resetLayout('ko')}
               </Button>
-              <div className="h-6 w-px bg-border mx-1" />
+              <div className="hidden md:block h-6 w-px bg-border mx-1" />
               <Button
                 size="sm"
                 variant="default"
@@ -322,6 +328,7 @@ export default function DashboardPage() {
                   exitEditMode()
                   setWidgetSidebarOpen(false)  // 사이드바 닫기
                 }}
+                className="w-full md:w-auto"
               >
                 <Save className="h-4 w-4 mr-2" />
                 {getDashboardText.complete('ko')}

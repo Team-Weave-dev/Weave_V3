@@ -39,7 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 type IconName =
@@ -303,7 +303,7 @@ export function Header({ variant = 'default', className }: HeaderProps = {}) {
                   <div className="flex flex-col h-full">
                     {/* Mobile Menu Header */}
                     <div className="flex items-center justify-between pb-4 border-b">
-                      <h3 className="text-lg font-semibold">{getNavText.menuTitle(lang)}</h3>
+                      <SheetTitle className="text-lg font-semibold">{getNavText.menuTitle(lang)}</SheetTitle>
                     </div>
 
                     {/* Mobile User Info */}

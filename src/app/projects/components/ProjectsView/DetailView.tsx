@@ -573,7 +573,7 @@ export default function DetailView({
     <>
       {/* Filter Bar */}
       <div className="mb-6 p-4 bg-background rounded-lg border">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <SimpleViewModeSwitch
             mode={viewMode}
             onModeChange={onViewModeChange}
@@ -582,11 +582,12 @@ export default function DetailView({
               detail: getViewModeText.detailView('ko')
             }}
             ariaLabel={getViewModeText.title('ko')}
+            className="sm:flex-shrink-0"
           />
           <Input
             type="text"
             placeholder={getProjectPageText.searchPlaceholder('ko')}
-            className="flex-1 min-w-64"
+            className="flex-1 min-w-0 sm:min-w-64"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -594,13 +595,13 @@ export default function DetailView({
             }}
           />
 
-          <div className={`flex items-center ${layout.page.header.actions} flex-shrink-0`}>
+          <div className={`flex flex-wrap items-center ${layout.page.header.actions} gap-2`}>
             {/* 필터 버튼 */}
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="gap-2"
+              className="gap-2 flex-1 sm:flex-none"
             >
               <Filter className={layout.heights.icon} />
               {getProjectPageText.filterButton('ko')}

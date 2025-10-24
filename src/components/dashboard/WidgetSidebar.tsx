@@ -220,7 +220,7 @@ export function WidgetSidebar({ isOpen, onClose, onCollapseChange, className }: 
       <div
         className={cn(
           'fixed top-0 right-0 h-full z-40 transition-all duration-300 ease-in-out',
-          isCollapsed ? 'w-16' : 'w-80',
+          isCollapsed ? 'w-16' : 'w-[280px] sm:w-80',
           isOpen ? 'translate-x-0' : 'translate-x-full',
           className
         )}
