@@ -77,13 +77,16 @@ const MonthView = React.memo(({
   const headerHeight = 24; // 헤더 높이 축소
   const weekCount = weeks.length;
   const borderHeight = weekCount + 1; // 각 행의 border 1px + 헤더 border
-  const availableHeight = Math.max(200, containerHeight - headerHeight - borderHeight - 8); // 최소 높이 보장
+  // containerHeight가 없으면 기본값 사용 (CSS로 제어)
+  const defaultHeight = 600;
+  const availableHeight = Math.max(200, (containerHeight || defaultHeight) - headerHeight - borderHeight - 8); // 최소 높이 보장
   const cellHeight = Math.max(24, Math.floor(availableHeight / weekCount));
-  
+
   // 개선된 반응형 표시 모드 결정 - 점 모드 제거, 최소 2열 지원
   const getDisplayMode = () => {
     // 1. 컨테이너 실제 너비 기반 우선 판단
-    const actualWidth = containerWidth || (containerHeight * (effectiveGridSize.w || 4) / (effectiveGridSize.h || 3));
+    const defaultWidth = 800;
+    const actualWidth = containerWidth || ((containerHeight || defaultHeight) * (effectiveGridSize.w || 4) / (effectiveGridSize.h || 3));
     const estimatedCellWidth = actualWidth / 7; // 7일 기준
     
     // 2. 그리드 크기와 픽셀 크기를 종합적으로 고려

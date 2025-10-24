@@ -36,7 +36,8 @@ const DayView = React.memo(({
   const headerHeight = 60;
   const allDayHeight = hasAllDayEvents ? 80 : 0;
   const totalHeaderHeight = headerHeight + allDayHeight;
-  const scrollAreaHeight = Math.max(300, containerHeight - totalHeaderHeight);
+  const defaultHeight = 600;
+  const scrollAreaHeight = Math.max(300, (containerHeight || defaultHeight) - totalHeaderHeight);
 
   return (
     <div className="flex flex-col">

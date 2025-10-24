@@ -40,15 +40,16 @@ const WeekView = React.memo(({
   
   // 동적 높이 계산
   const headerHeight = 60;
-  const scrollAreaHeight = Math.max(300, containerHeight - headerHeight);
-  
+  const defaultHeight = 600;
+  const scrollAreaHeight = Math.max(300, (containerHeight || defaultHeight) - headerHeight);
+
   // 종일 이벤트 필터링
   const allDayEvents = events.filter(event => event.allDay);
   const hasAllDayEvents = allDayEvents.length > 0;
 
   // 종일 이벤트가 있을 경우 헤더 높이 조정
   const adjustedHeaderHeight = hasAllDayEvents ? headerHeight + 60 : headerHeight;
-  const adjustedScrollHeight = Math.max(300, containerHeight - adjustedHeaderHeight);
+  const adjustedScrollHeight = Math.max(300, (containerHeight || defaultHeight) - adjustedHeaderHeight);
 
   return (
     <div className="flex flex-col">

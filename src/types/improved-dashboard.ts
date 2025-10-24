@@ -203,3 +203,55 @@ export interface DashboardTheme {
   borderRadius: number;
   shadow: string;
 }
+
+/**
+ * 브레이크포인트 키 타입
+ * mobile: 768px 미만 (cols=2)
+ * tablet: 768~1099px (cols=6)
+ * desktop: 1100px 이상 (cols=9)
+ */
+export type BreakpointKey = 'mobile' | 'tablet' | 'desktop';
+
+/**
+ * 브레이크포인트별 위젯 레이아웃
+ */
+export interface BreakpointLayouts {
+  mobile?: ImprovedWidget[];
+  tablet?: ImprovedWidget[];
+  desktop?: ImprovedWidget[];
+}
+
+/**
+ * Supabase 저장용 대시보드 레이아웃 데이터
+ */
+export interface DashboardLayoutData {
+  currentBreakpoint: BreakpointKey;
+  layouts: BreakpointLayouts;
+  config: DashboardConfig;
+}
+
+/**
+ * 대시보드 프리셋
+ * 사용자가 저장한 레이아웃 스냅샷
+ */
+export interface DashboardPreset {
+  id: string;
+  name: string;
+  description?: string;
+  layouts: BreakpointLayouts;
+  config: DashboardConfig;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 프리셋 메타데이터 (목록용)
+ */
+export interface DashboardPresetMeta {
+  id: string;
+  name: string;
+  description?: string;
+  widgetCount: number;
+  createdAt: string;
+  updatedAt: string;
+}

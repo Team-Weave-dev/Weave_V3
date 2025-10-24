@@ -122,7 +122,7 @@ export interface CalendarViewProps {
   onDateSelect?: (date: Date) => void;
   onEventClick?: (event: CalendarEvent) => void;
   onDateDoubleClick?: (date: Date, time?: string) => void;
-  containerHeight: number;
+  containerHeight?: number; // Optional - CSS height 사용 시 불필요
   containerWidth?: number;
   selectedDate?: Date;
   gridSize?: { w: number; h: number };

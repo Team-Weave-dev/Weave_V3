@@ -10,10 +10,12 @@ import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner'
 import Typography from '@/components/ui/typography'
 import { Settings, Save, Layers, Grid3x3, LayoutDashboard, PanelRightOpen, ArrowUp, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useImprovedDashboardStore, selectIsEditMode, initializeDashboardStore, setupDashboardAutoSave } from '@/lib/stores/useImprovedDashboardStore'
+import { useImprovedDashboardStore, selectIsEditMode, selectWidgets, initializeDashboardStore, setupDashboardAutoSave } from '@/lib/stores/useImprovedDashboardStore'
 import { useStorageInitStore } from '@/lib/stores/useStorageInitStore'
+import { useShallow } from 'zustand/react/shallow'
 import { WidgetSelectorModal } from '@/components/dashboard/WidgetSelectorModal'
 import { WidgetSidebar } from '@/components/dashboard/WidgetSidebar'
+import { PresetManager } from '@/components/dashboard/PresetManager'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults'
 import { ConfirmDialog } from '@/components/ui/dialogConfirm'
@@ -75,7 +77,7 @@ export default function DashboardPage() {
   ]
   
   const isEditMode = useImprovedDashboardStore(selectIsEditMode)
-  const widgets = useImprovedDashboardStore(state => state.widgets)
+  const widgets = useImprovedDashboardStore(useShallow(selectWidgets))
   const enterEditMode = useImprovedDashboardStore(state => state.enterEditMode)
   const exitEditMode = useImprovedDashboardStore(state => state.exitEditMode)
   const compactWidgets = useImprovedDashboardStore(state => state.compactWidgets)
@@ -350,6 +352,7 @@ export default function DashboardPage() {
                 <RotateCcw className="h-4 w-4 mr-2" />
                 {getDashboardText.resetLayout('ko')}
               </Button>
+              <PresetManager className="w-full md:w-auto" />
               <div className="hidden md:block h-6 w-px bg-border mx-1" />
               <Button
                 size="sm"

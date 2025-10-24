@@ -30,7 +30,7 @@ const iconMap = {
 interface AgendaViewProps {
   events: CalendarEvent[];
   onEventClick?: (event: CalendarEvent) => void;
-  containerHeight: number;
+  containerHeight?: number; // Optional - CSS height 사용 시 불필요
 }
 
 /**
@@ -79,7 +79,7 @@ const AgendaView = React.memo(({
   const sortedDates = Object.keys(groupedEvents).sort();
   
   return (
-    <ScrollArea style={{ height: `${containerHeight}px` }}>
+    <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
         {sortedDates.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">

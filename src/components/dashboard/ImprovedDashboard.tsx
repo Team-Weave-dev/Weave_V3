@@ -851,7 +851,8 @@ export function ImprovedDashboard({
               try {
                 const { dashboardService } = await import('@/lib/storage');
                 const currentState = useImprovedDashboardStore.getState();
-                await dashboardService.save(currentState.widgets, currentState.config);
+                const currentWidgets = currentState.layouts[currentState.currentBreakpoint] || [];
+                await dashboardService.save(currentWidgets, currentState.config);
                 console.log('✅ Dashboard saved successfully');
 
                 // 저장 성공 후 편집 모드 종료

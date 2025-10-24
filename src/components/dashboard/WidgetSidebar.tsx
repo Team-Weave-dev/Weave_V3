@@ -22,7 +22,8 @@ import {
   ChevronLeft
 } from 'lucide-react'
 import { ImprovedWidget } from '@/types/improved-dashboard'
-import { useImprovedDashboardStore } from '@/lib/stores/useImprovedDashboardStore'
+import { useImprovedDashboardStore, selectWidgets } from '@/lib/stores/useImprovedDashboardStore'
+import { useShallow } from 'zustand/react/shallow'
 
 // Widget types and their configurations
 const widgetConfigs = [
@@ -117,7 +118,10 @@ interface WidgetSidebarProps {
 }
 
 export function WidgetSidebar({ isOpen, onClose, onCollapseChange, className }: WidgetSidebarProps) {
-  const { widgets, addWidget, removeWidget, findSpaceForWidget } = useImprovedDashboardStore()
+  const widgets = useImprovedDashboardStore(useShallow(selectWidgets))
+  const addWidget = useImprovedDashboardStore(state => state.addWidget)
+  const removeWidget = useImprovedDashboardStore(state => state.removeWidget)
+  const findSpaceForWidget = useImprovedDashboardStore(state => state.findSpaceForWidget)
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hoveredWidget, setHoveredWidget] = useState<string | null>(null)

@@ -107,7 +107,6 @@ export function CalendarWidget({
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   
   // Custom hooks
   const {
@@ -171,48 +170,7 @@ export function CalendarWidget({
     });
   };
 
-  // Container size detection with optimization
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current && contentRef.current) {
-        const cardRect = containerRef.current.getBoundingClientRect();
-        const contentRect = contentRef.current.getBoundingClientRect();
-
-        const navBar = contentRef.current.querySelector('.calendar-nav');
-        const navHeight = navBar ? navBar.getBoundingClientRect().height : 32;
-
-        const horizontalPadding = 8;
-        const verticalPadding = 12;
-
-        const availableWidth = contentRect.width - horizontalPadding;
-        const availableHeight = Math.max(100, contentRect.height - navHeight - verticalPadding);
-
-        setContainerSize({
-          width: availableWidth,
-          height: availableHeight
-        });
-      }
-    };
-
-    updateSize();
-    const timeoutId = setTimeout(updateSize, 100);
-
-    const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(updateSize);
-    });
-
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-    if (contentRef.current) {
-      resizeObserver.observe(contentRef.current);
-    }
-
-    return () => {
-      clearTimeout(timeoutId);
-      resizeObserver.disconnect();
-    };
-  }, [currentView]);
+  // ResizeObserver 제거 - CSS로 100% 크기 사용
 
   // 실시간 동기화: 모달에서 발생한 변경사항을 감지하여 이벤트 새로고침
   useEffect(() => {
@@ -970,15 +928,13 @@ export function CalendarWidget({
                   onEventClick={handleEventClick}
                   onDateDoubleClick={handleDateDoubleClick}
                   selectedDate={selectedDate}
-                  containerHeight={containerSize.height}
-                  containerWidth={containerSize.width}
                   gridSize={effectiveGridSize}
                   weekStartsOn={settings.weekStartsOn}
                   showWeekNumbers={settings.showWeekNumbers}
                   onTaskDateUpdate={handleTaskDateUpdate}
                 />
               )}
-              
+
               {currentView === 'week' && (
                 <WeekView
                   currentDate={currentDate}
@@ -986,26 +942,23 @@ export function CalendarWidget({
                   onDateSelect={handleDateSelect}
                   onEventClick={handleEventClick}
                   onDateDoubleClick={handleDateDoubleClick}
-                  containerHeight={containerSize.height}
                   weekStartsOn={settings.weekStartsOn}
                 />
               )}
-              
+
               {currentView === 'day' && (
                 <DayView
                   currentDate={currentDate}
                   events={filteredEvents}
                   onEventClick={handleEventClick}
                   onDateDoubleClick={handleDateDoubleClick}
-                  containerHeight={containerSize.height}
                 />
               )}
-              
+
               {currentView === 'agenda' && (
                 <AgendaView
                   events={filteredEvents}
                   onEventClick={handleEventClick}
-                  containerHeight={containerSize.height}
                 />
               )}
               </div>
