@@ -83,6 +83,7 @@ export default function DashboardPage() {
   const findSpaceForWidget = useImprovedDashboardStore(state => state.findSpaceForWidget)
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
   const resetStore = useImprovedDashboardStore(state => state.resetStore)
+  const setColumns = useImprovedDashboardStore(state => state.setColumns)
 
   // ESC 키로 편집 모드와 사이드바 동시에 닫기
   useEffect(() => {
@@ -141,15 +142,19 @@ export default function DashboardPage() {
     // 4. 스토어 초기화
     resetStore()
 
-    // 5. 최적화된 위젯 추가
+    // 5. 올바른 cols 값으로 설정 (resetStore가 기본값 9로 리셋하므로)
+    setColumns(currentCols)
+
+    // 6. 최적화된 위젯 추가
     optimizedWidgets.forEach((widget) => {
       addWidget(widget)
     })
 
-    // 6. 초기화 확인 모달 닫기
+    // 7. 초기화 확인 모달 닫기
     setResetConfirmOpen(false)
 
     console.log('✅ 대시보드 초기화 완료: 6개 위젯으로 재설정 (모바일 최적화 적용)', {
+      currentCols,
       widgets: optimizedWidgets.map(w => ({ type: w.type, position: w.position }))
     })
   }
@@ -263,11 +268,11 @@ export default function DashboardPage() {
       <div className={cn(
         "transition-all duration-300 ease-in-out",
         // 모바일에서는 사이드바가 오버레이 방식으로 동작
-        !isMobile && widgetSidebarOpen && !isCollapsed ? "lg:mr-80" : 
+        !isMobile && widgetSidebarOpen && !isCollapsed ? "lg:mr-80" :
         !isMobile && widgetSidebarOpen && isCollapsed ? "lg:mr-16" :
         "mr-0"
       )}>
-        <div className="container mx-auto px-3 py-6 sm:px-6">
+        <div className="px-4 py-6 sm:px-6 lg:px-12">
         {/* 헤더 */}
         <div className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">

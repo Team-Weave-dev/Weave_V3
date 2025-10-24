@@ -43,7 +43,7 @@ import { KPIWidget } from '@/components/ui/widgets/KPIWidget';
 import { RevenueChartWidget } from '@/components/ui/widgets/RevenueChartWidget';
 import { RecentActivityWidget } from '@/components/ui/widgets/RecentActivityWidget';
 import WeatherWidget from '@/components/ui/widgets/WeatherWidget';
-import { useResponsiveCols } from '@/components/ui/use-responsive-cols';
+import { useResponsiveCols, getColsForWidth } from '@/components/ui/use-responsive-cols';
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults';
 import { createDefaultWidgets } from './utils/defaultWidgets';
 
@@ -105,7 +105,18 @@ export function ImprovedDashboard({
   const containerRef = useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = useState({ width: 120, height: 120 });
   const [isCompact, setIsCompact] = useState(isCompactControlled ?? true);
-  
+
+  // 디버깅: 현재 상태 로그
+  useEffect(() => {
+    console.log('🔍 Dashboard State:', {
+      configCols: config.cols,
+      widgetCount: widgets.length,
+      widgetWidths: widgets.map(w => ({ id: w.id, type: w.type, w: w.position.w, x: w.position.x })),
+      cellSize,
+      viewportWidth: typeof window !== 'undefined' ? window.innerWidth : 0
+    });
+  }, [config.cols, widgets, cellSize]);
+
   // 초기화
   useEffect(() => {
     // 스토어 초기화가 완료되지 않았으면 대기
@@ -160,10 +171,19 @@ export function ImprovedDashboard({
       const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
       const containerWidth = containerRef.current.clientWidth;
 
-      // 모바일(768px 미만)에서는 viewport 기준 + 패딩 제외 (좌우 12px)
-      // 데스크톱에서는 container 기준
+      // 헤더와 동일한 패딩 구조 적용: px-4 sm:px-6 lg:px-12
+      // 모바일 (<640px): px-4 = 16px (좌우 32px)
+      // sm (640px-1023px): px-6 = 24px (좌우 48px)
+      // lg (1024px+): px-12 = 48px (좌우 96px)
+      let padding = 32; // 기본값: 모바일 (px-4)
+      if (viewportWidth >= 1024) {
+        padding = 96; // lg: px-12
+      } else if (viewportWidth >= 640) {
+        padding = 48; // sm: px-6
+      }
+
       const availableWidth = viewportWidth < 768
-        ? viewportWidth - 24  // 모바일: viewport - 좌우 패딩(12px * 2)
+        ? viewportWidth - padding  // 모바일: viewport - 헤더와 동일한 패딩
         : containerWidth;
 
       const cellWidth = Math.floor(
@@ -728,10 +748,24 @@ export function ImprovedDashboard({
     }
   }, [setColumns, optimizeWidgetLayout, widgets.length]);
 
+  // 초기 cols를 현재 뷰포트 기반으로 계산
+  const initialCols = useMemo(() => {
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    return getColsForWidth(viewportWidth);
+  }, []);
+
   useResponsiveCols(containerRef as React.RefObject<HTMLElement>, {
     onChange: handleColsChange,
-    initialCols: config.cols
+    initialCols: initialCols  // 뷰포트 기반 초기값 사용
   });
+
+  // 마운트 시 즉시 올바른 cols 값으로 초기화
+  useEffect(() => {
+    if (config.cols !== initialCols) {
+      console.log('🔧 초기 cols 동기화:', { currentCols: config.cols, initialCols });
+      setColumns(initialCols);
+    }
+  }, []); // 마운트 시 한 번만 실행
 
   // 컨테이너 최소 높이 동적 계산 (세로 무한 확장 지원)
   const containerMinHeight = useMemo(() => {
