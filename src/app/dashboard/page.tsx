@@ -111,21 +111,46 @@ export default function DashboardPage() {
     setResetConfirmOpen(true)
   }
 
-  const confirmResetLayout = () => {
-    // 스토어 초기화
+  const confirmResetLayout = async () => {
+    // 1. 기본 위젯 생성
+    const defaultWidgets = createDefaultWidgets()
+
+    // 2. 모바일 최적화: 현재 뷰포트 기반 cols 계산
+    const { optimizeLayout } = await import('@/lib/dashboard/grid-utils')
+    const { getColsForWidth } = await import('@/components/ui/use-responsive-cols')
+
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200
+    const currentCols = getColsForWidth(viewportWidth)
+    const config = useImprovedDashboardStore.getState().config
+    const optimizedConfig = { ...config, cols: currentCols }
+
+    console.log('🔧 초기화 최적화 설정:', {
+      viewportWidth,
+      currentCols,
+      configCols: config.cols
+    })
+
+    // 3. 레이아웃 최적화 적용
+    const positions = defaultWidgets.map(w => w.position)
+    const optimizedPositions = optimizeLayout(positions, optimizedConfig)
+    const optimizedWidgets = defaultWidgets.map((widget, index) => ({
+      ...widget,
+      position: optimizedPositions[index]
+    }))
+
+    // 4. 스토어 초기화
     resetStore()
 
-    // 기본 위젯 6개 추가 (createDefaultWidgets 사용)
-    const defaultWidgets = createDefaultWidgets()
-    defaultWidgets.forEach((widget) => {
+    // 5. 최적화된 위젯 추가
+    optimizedWidgets.forEach((widget) => {
       addWidget(widget)
     })
 
-    // 초기화 확인 모달 닫기
+    // 6. 초기화 확인 모달 닫기
     setResetConfirmOpen(false)
 
-    console.log('✅ 대시보드 초기화 완료: 6개 위젯으로 재설정', {
-      widgets: defaultWidgets.map(w => w.type)
+    console.log('✅ 대시보드 초기화 완료: 6개 위젯으로 재설정 (모바일 최적화 적용)', {
+      widgets: optimizedWidgets.map(w => ({ type: w.type, position: w.position }))
     })
   }
 

@@ -429,8 +429,15 @@ export function ImprovedDashboard({
 
     // 2. 모바일 최적화: 저장 전에 레이아웃 최적화 적용
     const { optimizeLayout } = await import('@/lib/dashboard/grid-utils');
+    const { getColsForWidth } = await import('@/components/ui/use-responsive-cols');
+
+    // 현재 뷰포트 너비로 cols 계산 (모바일 대응)
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const currentCols = getColsForWidth(viewportWidth);
+    const optimizedConfig = { ...config, cols: currentCols };
+
     const positions = defaultWidgets.map(w => w.position);
-    const optimizedPositions = optimizeLayout(positions, config);
+    const optimizedPositions = optimizeLayout(positions, optimizedConfig);
 
     // 최적화된 위치로 위젯 업데이트
     const optimizedWidgets = defaultWidgets.map((widget, index) => ({
