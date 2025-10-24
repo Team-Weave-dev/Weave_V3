@@ -759,11 +759,22 @@ export function ImprovedDashboard({
     initialCols: initialCols  // 뷰포트 기반 초기값 사용
   });
 
-  // 마운트 시 즉시 올바른 cols 값으로 초기화
+  // 마운트 시 즉시 올바른 cols 값으로 초기화 및 위젯 레이아웃 최적화
   useEffect(() => {
-    if (config.cols !== initialCols) {
-      console.log('🔧 초기 cols 동기화:', { currentCols: config.cols, initialCols });
-      setColumns(initialCols);
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const correctCols = getColsForWidth(viewportWidth);
+    if (config.cols !== correctCols && widgets.length > 0) {
+      console.log('🔧 초기 cols 동기화 및 레이아웃 최적화:', {
+        currentCols: config.cols,
+        correctCols,
+        viewportWidth,
+        widgetCount: widgets.length
+      });
+      setColumns(correctCols);
+      // cols 변경 후 위젯 레이아웃 최적화
+      setTimeout(() => {
+        optimizeWidgetLayout();
+      }, 100);
     }
   }, []); // 마운트 시 한 번만 실행
 

@@ -272,7 +272,7 @@ export default function DashboardPage() {
         !isMobile && widgetSidebarOpen && isCollapsed ? "lg:mr-16" :
         "mr-0"
       )}>
-        <div className="px-4 py-6 sm:px-6 lg:px-12">
+        <div className="max-w-screen-2xl mx-auto px-4 py-6 sm:px-6 lg:px-12">
         {/* 헤더 */}
         <div className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
