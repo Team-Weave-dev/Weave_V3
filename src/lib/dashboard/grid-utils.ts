@@ -450,9 +450,16 @@ export function optimizeLayout(
   const result: GridPosition[] = [];
 
   sortedItems.forEach((item, index) => {
+    // 모바일(cols <= 2)에서는 모든 위젯을 전체 너비로 확장
+    // 그 외에는 위젯 너비가 cols보다 크면 cols에 맞게 조정
+    const adjustedItem = {
+      ...item,
+      w: cols <= 2 ? cols : Math.min(item.w, cols)
+    };
+
     // 첫 번째 위젯은 (0, 0)에 배치
     if (result.length === 0) {
-      result.push({ ...item, x: 0, y: 0 });
+      result.push({ ...adjustedItem, x: 0, y: 0 });
       return;
     }
 
@@ -463,8 +470,8 @@ export function optimizeLayout(
 
     // 가능한 모든 위치를 탐색
     for (let y = 0; y < 100; y++) { // 최대 탐색 범위
-      for (let x = 0; x <= cols - item.w; x++) {
-        const testPosition: GridPosition = { ...item, x, y };
+      for (let x = 0; x <= cols - adjustedItem.w; x++) {
+        const testPosition: GridPosition = { ...adjustedItem, x, y };
 
         // 그리드 경계 확인
         if (!isWithinBounds(testPosition, config)) continue;
@@ -494,13 +501,13 @@ export function optimizeLayout(
     if (bestPosition) {
       result.push(bestPosition);
     } else {
-      // 빈 공간을 못 찾으면 findEmptySpace 사용
-      const fallbackPosition = findEmptySpace(item.w, item.h, result, config);
+      // 빈 공간을 못 찾으면 findEmptySpace 사용 (조정된 너비 사용)
+      const fallbackPosition = findEmptySpace(adjustedItem.w, adjustedItem.h, result, config);
       if (fallbackPosition) {
-        result.push({ ...item, ...fallbackPosition });
+        result.push({ ...adjustedItem, ...fallbackPosition });
       } else {
-        // 최악의 경우 원래 위치 유지
-        result.push(item);
+        // 최악의 경우 조정된 크기로 원래 위치 유지
+        result.push(adjustedItem);
         console.error(`위젯 ${index}: 배치 실패, 원래 위치 유지`);
       }
     }

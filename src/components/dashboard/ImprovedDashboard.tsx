@@ -424,13 +424,29 @@ export function ImprovedDashboard({
     // 기존 위젯 백업 (롤백용)
     const previousWidgets = widgets;
 
-    // 기본 위젯 생성 (새로운 6개 위젯)
+    // 1. 기본 위젯 생성 (새로운 6개 위젯)
     const defaultWidgets = createDefaultWidgets();
 
-    // 1. Zustand 스토어에 즉시 반영 (UI 즉시 업데이트)
-    setWidgets(defaultWidgets);
+    // 2. 모바일 최적화: 저장 전에 레이아웃 최적화 적용
+    const { optimizeLayout } = await import('@/lib/dashboard/grid-utils');
+    const positions = defaultWidgets.map(w => w.position);
+    const optimizedPositions = optimizeLayout(positions, config);
 
-    // 2. Storage에 저장 (LocalStorage + Supabase)
+    // 최적화된 위치로 위젯 업데이트
+    const optimizedWidgets = defaultWidgets.map((widget, index) => ({
+      ...widget,
+      position: optimizedPositions[index],
+    }));
+
+    console.log('🎯 위젯 최적화 완료:', {
+      before: defaultWidgets.map(w => `${w.type}(w:${w.position.w})`),
+      after: optimizedWidgets.map(w => `${w.type}(w:${w.position.w})`)
+    });
+
+    // 3. Zustand 스토어에 최적화된 위젯 반영 (UI 즉시 업데이트)
+    setWidgets(optimizedWidgets);
+
+    // 4. Storage에 최적화된 위젯 저장 (LocalStorage + Supabase)
     try {
       const { dashboardService } = await import('@/lib/storage');
 
@@ -444,12 +460,13 @@ export function ImprovedDashboard({
         }
       }
 
-      // 현재 config를 유지하면서 위젯만 초기화
-      await dashboardService.save(defaultWidgets, config);
+      // 현재 config를 유지하면서 최적화된 위젯 저장
+      await dashboardService.save(optimizedWidgets, config);
 
-      console.log('✅ 위젯 초기화 완료: 6개 위젯 저장됨', {
-        widgets: defaultWidgets.map(w => w.type)
+      console.log('✅ 위젯 초기화 완료: 최적화된 6개 위젯 저장됨', {
+        widgets: optimizedWidgets.map(w => `${w.type}(w:${w.position.w})`)
       });
+
       alert('위젯 배치가 초기 상태로 되돌려졌습니다.');
     } catch (error) {
       console.error('❌ 위젯 초기화 실패:', error);

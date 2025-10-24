@@ -10,8 +10,8 @@ export type ColsBreakpoints = {
 export const defaultColsBreakpoints: ColsBreakpoints = {
   desktop: { minWidth: 1100, cols: 9 },  // 컨테이너 최대폭 1300px - 패딩 감안
   tablet: { minWidth: 768, cols: 6 },
-  phone: { minWidth: 480, cols: 3 },     // 모바일 가로모드
-  tiny: { minWidth: 0, cols: 2 },        // 모바일 세로모드 (최적)
+  phone: { minWidth: 600, cols: 3 },     // 태블릿/모바일 가로모드 (600px 이상)
+  tiny: { minWidth: 0, cols: 2 },        // 모바일 세로모드 (600px 미만) - 2열 그리드
 }
 
 export function getColsForWidth(width: number, bp: ColsBreakpoints = defaultColsBreakpoints): number {
