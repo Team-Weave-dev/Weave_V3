@@ -160,10 +160,10 @@ export function ImprovedDashboard({
       const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
       const containerWidth = containerRef.current.clientWidth;
 
-      // 모바일(768px 미만)에서는 viewport 기준 + 패딩 제외 (좌우 24px)
+      // 모바일(768px 미만)에서는 viewport 기준 + 패딩 제외 (좌우 12px)
       // 데스크톱에서는 container 기준
       const availableWidth = viewportWidth < 768
-        ? viewportWidth - 48  // 모바일: viewport - 좌우 패딩(24px * 2)
+        ? viewportWidth - 24  // 모바일: viewport - 좌우 패딩(12px * 2)
         : containerWidth;
 
       const cellWidth = Math.floor(
