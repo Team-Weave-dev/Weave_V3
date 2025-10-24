@@ -50,7 +50,7 @@ export default function ProjectHeader({
   return (
     <div className="mb-6">
       {/* Title and Actions Row */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
             <Briefcase className="w-6 h-6 text-primary" />
@@ -75,7 +75,7 @@ export default function ProjectHeader({
             className="flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            {getProjectPageText.newProject('ko')}
+            <span className="hidden md:inline">{getProjectPageText.newProject('ko')}</span>
           </Button>
         </div>
       </div>
