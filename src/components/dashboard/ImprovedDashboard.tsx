@@ -177,9 +177,18 @@ export function ImprovedDashboard({
 
       const finalCellWidth = Math.max(minCellSize, Math.min(maxCellSize, cellWidth));
 
-      setCellSize({
-        width: finalCellWidth,
-        height: currentConfig.rowHeight
+      setCellSize(prev => {
+        const newSize = {
+          width: finalCellWidth,
+          height: currentConfig.rowHeight
+        };
+
+        // 값이 변경되지 않았으면 이전 상태 유지하여 무한 루프 방지
+        if (prev.width === newSize.width && prev.height === newSize.height) {
+          return prev;
+        }
+
+        return newSize;
       });
     };
 
