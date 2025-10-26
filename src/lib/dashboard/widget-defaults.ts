@@ -25,7 +25,7 @@ export const WIDGET_DEFAULT_SIZES: Record<WidgetType, WidgetDefaultSize> = {
     minWidth: 2,
     minHeight: 2,
     maxWidth: 5,
-    maxHeight: 5
+    maxHeight: 6  // 최대 세로 사이즈 6으로 증가
   },
   projectSummary: {
     width: 2,

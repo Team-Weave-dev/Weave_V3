@@ -82,7 +82,29 @@ export async function POST(request: Request) {
           user_id: authData.user.id,
           dashboard: {
             layout: 'grid',
-            widgets: [],
+            widgets: [
+              {
+                id: 'widget_calendar_1',
+                type: 'calendar',
+                title: '캘린더',
+                position: { x: 0, y: 0, w: 6, h: 5 },
+                data: undefined,
+                minW: 2,
+                minH: 2,
+                maxW: 6,
+                maxH: 6,
+              },
+              {
+                id: 'widget_todo_1',
+                type: 'todoList',
+                title: '할 일 목록',
+                position: { x: 6, y: 0, w: 3, h: 5 },
+                data: undefined,
+                minW: 2,
+                minH: 2,
+                maxW: 5,
+              }
+            ],
             theme: 'light',
             showSidebar: true,
             compactView: false
