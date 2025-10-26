@@ -15,7 +15,8 @@ import {
   Trash2,
   Maximize2,
   Layers,
-  Settings
+  Settings,
+  Save
 } from 'lucide-react'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDashboardText } from '@/config/brand'
@@ -29,6 +30,8 @@ interface WidgetEditSidebarProps {
   onRemove: (id: string) => void
   autoCompact: boolean
   onAutoCompactChange: (value: boolean) => void
+  onComplete: () => void
+  isMobile: boolean
   className?: string
 }
 
@@ -40,6 +43,7 @@ interface WidgetEditCardProps {
   onMoveDown: () => void
   onResize: (width: number, height: number) => void
   onRemove: () => void
+  isMobile: boolean
 }
 
 function WidgetEditCard({
@@ -49,7 +53,8 @@ function WidgetEditCard({
   onMoveUp,
   onMoveDown,
   onResize,
-  onRemove
+  onRemove,
+  isMobile
 }: WidgetEditCardProps) {
   const [width, setWidth] = useState(widget.position.w)
   const [height, setHeight] = useState(widget.position.h)
@@ -122,20 +127,23 @@ function WidgetEditCard({
 
       {/* 크기 조절 */}
       <div className="space-y-3 pt-2 border-t">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">너비</Label>
-            <span className="text-xs font-medium">{width}</span>
+        {/* 모바일에서는 너비 조절 숨김 (1열 고정) */}
+        {!isMobile && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">너비</Label>
+              <span className="text-xs font-medium">{width}</span>
+            </div>
+            <Slider
+              value={[width]}
+              onValueChange={handleWidthChange}
+              min={widget.minW || 2}
+              max={widget.maxW || 9}
+              step={1}
+              className="touch-manipulation"
+            />
           </div>
-          <Slider
-            value={[width]}
-            onValueChange={handleWidthChange}
-            min={widget.minW || 2}
-            max={widget.maxW || 9}
-            step={1}
-            className="touch-manipulation"
-          />
-        </div>
+        )}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">높이</Label>
@@ -175,6 +183,8 @@ export function WidgetEditSidebar({
   onRemove,
   autoCompact,
   onAutoCompactChange,
+  onComplete,
+  isMobile,
   className
 }: WidgetEditSidebarProps) {
   return (
@@ -255,13 +265,23 @@ export function WidgetEditSidebar({
                 onMoveDown={() => onReorder(widget.id, 'down')}
                 onResize={(w, h) => onResize(widget.id, w, h)}
                 onRemove={() => onRemove(widget.id)}
+                isMobile={isMobile}
               />
             ))
           )}
         </div>
 
-        {/* 푸터 도움말 */}
-        <div className="flex-shrink-0 p-4 border-t bg-muted/30">
+        {/* 푸터: 완료 버튼 */}
+        <div className="flex-shrink-0 p-4 border-t space-y-2">
+          <Button
+            size="lg"
+            variant="default"
+            onClick={onComplete}
+            className="w-full touch-manipulation"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            편집 완료
+          </Button>
           <p className="text-xs text-muted-foreground text-center">
             💡 위/아래 버튼으로 위젯 순서를 변경하고,
             슬라이더로 크기를 조절하세요

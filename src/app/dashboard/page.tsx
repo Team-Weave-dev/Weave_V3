@@ -285,7 +285,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const checkScreenSize = () => {
       const width = window.innerWidth
-      setIsMobile(width < 1024)
+      setIsMobile(width < 768)  // 768px 미만을 모바일로 간주
       // 작은 화면에서 사이드바가 열려있고 확장된 상태면 자동으로 축소
       if (width < 768 && widgetSidebarOpen && !isCollapsed) {
         setIsCollapsed(true)
@@ -388,68 +388,84 @@ export default function DashboardPage() {
           ) : (
             // 편집 모드 툴바
             <>
-              {/* 위젯 추가/닫기 토글 버튼 */}
-              <Button
-                size="sm"
-                variant={widgetSidebarOpen ? "default" : "outline"}
-                onClick={() => setWidgetSidebarOpen(!widgetSidebarOpen)}
-                className="w-full md:w-auto"
-              >
-                <PanelRightOpen className="h-4 w-4 mr-2" />
-                {widgetSidebarOpen ? getDashboardText.closeWidget('ko') : getDashboardText.addWidget('ko')}
-              </Button>
-              <Button
-                size="sm"
-                variant={isCompact ? "default" : "outline"}
-                onClick={() => setIsCompact(!isCompact)}
-                className="w-full md:w-auto"
-              >
-                <Layers className="h-4 w-4 mr-2" />
-                {getDashboardText.autoLayout('ko')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => compactWidgets('vertical')}
-                className="w-full md:w-auto"
-              >
-                <ArrowUp className="h-4 w-4 mr-2" />
-                {getDashboardText.verticalAlign('ko')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => optimizeWidgetLayout()}
-                className="w-full md:w-auto"
-              >
-                <Grid3x3 className="h-4 w-4 mr-2" />
-                {getDashboardText.optimizeLayout('ko')}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleResetLayout}
-                title={getDashboardText.resetLayoutTooltip('ko')}
-                className="w-full md:w-auto"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                {getDashboardText.resetLayout('ko')}
-              </Button>
-              <PresetManager className="w-full md:w-auto" />
-              <div className="hidden md:block h-6 w-px bg-border mx-1" />
-              <Button
-                size="sm"
-                variant="default"
-                onClick={() => {
-                  exitEditMode()
-                  setWidgetSidebarOpen(false)
-                  setWidgetEditSidebarOpen(false)
-                }}
-                className="w-full md:w-auto"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {getDashboardText.complete('ko')}
-              </Button>
+              {/* 모바일 편집 모드: 위젯 편집 사이드바 열기 버튼만 표시 */}
+              {isMobile ? (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => setWidgetEditSidebarOpen(true)}
+                  className="w-full"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  위젯 편집
+                </Button>
+              ) : (
+                // 데스크톱 편집 모드: 전체 툴바
+                <>
+                  {/* 위젯 추가/닫기 토글 버튼 */}
+                  <Button
+                    size="sm"
+                    variant={widgetSidebarOpen ? "default" : "outline"}
+                    onClick={() => setWidgetSidebarOpen(!widgetSidebarOpen)}
+                    className="w-full md:w-auto"
+                  >
+                    <PanelRightOpen className="h-4 w-4 mr-2" />
+                    {widgetSidebarOpen ? getDashboardText.closeWidget('ko') : getDashboardText.addWidget('ko')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={isCompact ? "default" : "outline"}
+                    onClick={() => setIsCompact(!isCompact)}
+                    className="w-full md:w-auto"
+                  >
+                    <Layers className="h-4 w-4 mr-2" />
+                    {getDashboardText.autoLayout('ko')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => compactWidgets('vertical')}
+                    className="w-full md:w-auto"
+                  >
+                    <ArrowUp className="h-4 w-4 mr-2" />
+                    {getDashboardText.verticalAlign('ko')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => optimizeWidgetLayout()}
+                    className="w-full md:w-auto"
+                  >
+                    <Grid3x3 className="h-4 w-4 mr-2" />
+                    {getDashboardText.optimizeLayout('ko')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleResetLayout}
+                    title={getDashboardText.resetLayoutTooltip('ko')}
+                    className="w-full md:w-auto"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    {getDashboardText.resetLayout('ko')}
+                  </Button>
+                  <PresetManager className="w-full md:w-auto" />
+                  <div className="hidden md:block h-6 w-px bg-border mx-1" />
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => {
+                      exitEditMode()
+                      setWidgetSidebarOpen(false)
+                      setWidgetEditSidebarOpen(false)
+                    }}
+                    className="w-full md:w-auto"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {getDashboardText.complete('ko')}
+                  </Button>
+                </>
+              )}
             </>
           )}
           </div>
@@ -500,6 +516,11 @@ export default function DashboardPage() {
           onRemove={handleWidgetRemove}
           autoCompact={autoCompact}
           onAutoCompactChange={setAutoCompact}
+          onComplete={() => {
+            exitEditMode()
+            setWidgetEditSidebarOpen(false)
+          }}
+          isMobile={isMobile}
           className="shadow-2xl"
         />
       )}
