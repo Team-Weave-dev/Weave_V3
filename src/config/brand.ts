@@ -1365,7 +1365,10 @@ export const uiText = {
         none: { ko: "등록된 결제 수단이 없습니다", en: "No payment method registered" },
         add: { ko: "결제 수단 추가", en: "Add Payment Method" },
         change: { ko: "변경", en: "Change" },
-        remove: { ko: "삭제", en: "Remove" }
+        remove: { ko: "삭제", en: "Remove" },
+        pending: { ko: "결제 서비스 통합 대기 중", en: "Payment service integration pending" },
+        pendingBadge: { ko: "준비중", en: "Coming Soon" },
+        pendingMessage: { ko: "결제 서비스가 통합되면 이용할 수 있습니다.", en: "Payment services will be available once integrated." }
       },
       history: {
         title: { ko: "결제 내역", en: "Billing History" },
@@ -1375,7 +1378,10 @@ export const uiText = {
         status: { ko: "상태", en: "Status" },
         invoice: { ko: "영수증", en: "Invoice" },
         download: { ko: "다운로드", en: "Download" },
-        none: { ko: "결제 내역이 없습니다", en: "No billing history" }
+        none: { ko: "결제 내역이 없습니다", en: "No billing history" },
+        pending: { ko: "결제 서비스 통합 대기 중", en: "Payment service integration pending" },
+        pendingBadge: { ko: "준비중", en: "Coming Soon" },
+        pendingMessage: { ko: "결제 내역은 서비스 통합 후 확인할 수 있습니다.", en: "Billing history will be available after service integration." }
       },
       status: {
         paid: { ko: "결제 완료", en: "Paid" },

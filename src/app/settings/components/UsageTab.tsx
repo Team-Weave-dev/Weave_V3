@@ -20,7 +20,7 @@ export default function UsageTab() {
   const [loading, setLoading] = useState(true)
 
   // 현재 요금제 (실제로는 사용자 설정에서 가져와야 함)
-  const currentPlan: PlanType = 'pro'
+  const currentPlan: PlanType = 'free'
   const planLimits = useMemo(() => plans[currentPlan].limits, [currentPlan])
 
   // 실제 프로젝트 수와 위젯 수 가져오기
