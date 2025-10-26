@@ -131,12 +131,10 @@ export function WidgetSidebar({
 }: WidgetSidebarProps) {
   const widgets = useImprovedDashboardStore(useShallow(selectWidgets)) || []
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
-  const removeWidget = useImprovedDashboardStore(state => state.removeWidget)
   const findSpaceForWidget = useImprovedDashboardStore(state => state.findSpaceForWidget)
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hoveredWidget, setHoveredWidget] = useState<string | null>(null)
-  const [isDragOverRemoveZone, setIsDragOverRemoveZone] = useState(false)
   const dragImageRef = useRef<HTMLDivElement>(null)
 
   // ESC 키 처리는 대시보드 페이지에서 통합 관리
@@ -193,24 +191,6 @@ export function WidgetSidebar({
     setDraggedWidget(null)
   }
 
-  // Handle widget from dashboard being dragged to sidebar for removal
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    const widgetId = e.dataTransfer.types.includes('widgetId')
-    if (widgetId) {
-      e.dataTransfer.dropEffect = 'move'
-    }
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    const widgetId = e.dataTransfer.getData('widgetId')
-    if (widgetId) {
-      // Remove widget from dashboard
-      removeWidget(widgetId)
-    }
-  }
-
   // Quick add widget (without drag)
   const handleQuickAdd = (type: ImprovedWidget['type']) => {
     // 요금제 제한 체크 - 빠른 추가 전에 제한 확인
@@ -252,8 +232,6 @@ export function WidgetSidebar({
           isOpen ? 'translate-x-0' : 'translate-x-full',
           className
         )}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
       >
         {/* Sidebar Content */}
         <div className="h-full bg-background border-l flex flex-col">
@@ -397,40 +375,6 @@ export function WidgetSidebar({
               </div>
             )}
           </ScrollArea>
-
-          {/* Footer - Drop zone indicator */}
-          {!isCollapsed && (
-            <div 
-              className="p-4 border-t bg-muted/30"
-              onDragOver={(e) => {
-                e.preventDefault()
-                if (e.dataTransfer.types.includes('widgetId')) {
-                  setIsDragOverRemoveZone(true)
-                }
-              }}
-              onDragLeave={() => setIsDragOverRemoveZone(false)}
-              onDrop={(e) => {
-                e.preventDefault()
-                const widgetId = e.dataTransfer.getData('widgetId')
-                if (widgetId) {
-                  removeWidget(widgetId)
-                  setIsDragOverRemoveZone(false)
-                }
-              }}
-            >
-              <div className={cn(
-                "text-center p-4 border-2 border-dashed rounded-lg transition-all duration-200",
-                isDragOverRemoveZone 
-                  ? "border-destructive bg-destructive/10 scale-105 animate-pulse" 
-                  : "border-muted-foreground/30 hover:border-destructive/50 hover:bg-destructive/5"
-              )}>
-                <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                  <span className={cn("text-lg", isDragOverRemoveZone && "animate-bounce")}>🗑️</span>
-                  <span>위젯을 여기로 드래그하여 제거</span>
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

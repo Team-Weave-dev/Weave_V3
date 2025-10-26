@@ -972,52 +972,20 @@ export function ImprovedDashboard({
                         const target = e.target as HTMLElement;
                         const isResizeHandle = target.closest('[data-resize-handle]');
                         const isDeleteButton = target.closest('[data-delete-button]');
-                        const isRemoveHandle = target.closest('[data-remove-handle]');
 
-                        if (!isResizeHandle && !isDeleteButton && !isRemoveHandle) {
+                        if (!isResizeHandle && !isDeleteButton) {
                           handleDragStart(e, widget);
                         }
                       }}
                     />
                   )}
 
-                  {/* 편집 모드 상단 헤더 - 아이콘과 제거 핸들만 */}
+                  {/* 편집 모드 상단 헤더 - 이동 아이콘 */}
                   {isEditMode && !widget.static && widget.isDraggable !== false && (
-                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-gray-100/50 to-transparent dark:from-gray-800/50 z-30 flex items-center justify-between px-2 pointer-events-none">
+                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-gray-100/50 to-transparent dark:from-gray-800/50 z-30 flex items-center justify-center px-2 pointer-events-none">
                       {/* 이동 아이콘 (시각적 힌트) */}
                       <div className="flex-1 h-full flex items-center justify-center">
                         <Grip className="h-4 w-4 text-gray-400" />
-                      </div>
-
-                      {/* 제거 핸들 (오른쪽) - HTML5 드래그 */}
-                      <div
-                        data-remove-handle
-                        className="h-6 w-6 cursor-grab hover:bg-red-100 rounded flex items-center justify-center transition-colors pointer-events-auto"
-                        draggable
-                        onDragStart={(e) => {
-                          e.stopPropagation(); // 이동 핸들과 충돌 방지
-                          // HTML5 드래그 시작 (사이드바로 제거용)
-                          e.dataTransfer.effectAllowed = 'move';
-                          e.dataTransfer.setData('widgetId', widget.id);
-                          e.dataTransfer.setData('widgetType', widget.type);
-
-                          // 드래그 이미지 설정
-                          const dragImage = document.createElement('div');
-                          dragImage.className = 'p-3 rounded-lg shadow-lg bg-white border-2 border-dashed border-red-400';
-                          dragImage.innerHTML = `<div class="flex items-center gap-2"><span>🗑️ ${widget.title}</span></div>`;
-                          dragImage.style.position = 'fixed';
-                          dragImage.style.top = '-1000px';
-                          dragImage.style.left = '-1000px';
-                          document.body.appendChild(dragImage);
-                          e.dataTransfer.setDragImage(dragImage, 50, 20);
-                          setTimeout(() => document.body.removeChild(dragImage), 0);
-                        }}
-                        onDragEnd={() => {
-                          // 드래그 종료 시 정리
-                        }}
-                        title="사이드바로 드래그하여 제거"
-                      >
-                        <span className="text-xs">🗑️</span>
                       </div>
                     </div>
                   )}
