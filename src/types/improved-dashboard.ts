@@ -87,6 +87,7 @@ export interface DashboardEditState {
   } | null;
   hoveredPosition: GridPosition | null;
   dragOverWidgetId: string | null;
+  autoCompact: boolean; // 리사이즈/이동 후 자동 정렬 여부
 }
 
 /**

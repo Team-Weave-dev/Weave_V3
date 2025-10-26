@@ -15,6 +15,7 @@ import { useStorageInitStore } from '@/lib/stores/useStorageInitStore'
 import { useShallow } from 'zustand/react/shallow'
 import { WidgetSelectorModal } from '@/components/dashboard/WidgetSelectorModal'
 import { WidgetSidebar } from '@/components/dashboard/WidgetSidebar'
+import { WidgetEditSidebar } from '@/components/dashboard/WidgetEditSidebar'
 import { PresetManager } from '@/components/dashboard/PresetManager'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults'
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const [isCompact, setIsCompact] = useState(true)
   const [widgetModalOpen, setWidgetModalOpen] = useState(false)
   const [widgetSidebarOpen, setWidgetSidebarOpen] = useState(false)
+  const [widgetEditSidebarOpen, setWidgetEditSidebarOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
@@ -92,12 +94,17 @@ export default function DashboardPage() {
   
   const isEditMode = useImprovedDashboardStore(selectIsEditMode)
   const widgets = useImprovedDashboardStore(useShallow(selectWidgets))
+  const autoCompact = useImprovedDashboardStore(state => state.editState.autoCompact)
   const enterEditMode = useImprovedDashboardStore(state => state.enterEditMode)
   const exitEditMode = useImprovedDashboardStore(state => state.exitEditMode)
   const compactWidgets = useImprovedDashboardStore(state => state.compactWidgets)
   const optimizeWidgetLayout = useImprovedDashboardStore(state => state.optimizeWidgetLayout)
   const findSpaceForWidget = useImprovedDashboardStore(state => state.findSpaceForWidget)
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
+  const removeWidget = useImprovedDashboardStore(state => state.removeWidget)
+  const reorderWidget = useImprovedDashboardStore(state => state.reorderWidget)
+  const updateWidget = useImprovedDashboardStore(state => state.updateWidget)
+  const setAutoCompact = useImprovedDashboardStore(state => state.setAutoCompact)
   const resetStore = useImprovedDashboardStore(state => state.resetStore)
   const setColumns = useImprovedDashboardStore(state => state.setColumns)
 
@@ -111,17 +118,68 @@ export default function DashboardPage() {
         if (widgetSidebarOpen) {
           setWidgetSidebarOpen(false)
         }
+        if (widgetEditSidebarOpen) {
+          setWidgetEditSidebarOpen(false)
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isEditMode, widgetSidebarOpen, exitEditMode])
+  }, [isEditMode, widgetSidebarOpen, widgetEditSidebarOpen, exitEditMode])
+
+  // 편집 모드 진입 시 모바일이면 편집 사이드바 자동 열기
+  useEffect(() => {
+    if (isEditMode && isMobile) {
+      setWidgetEditSidebarOpen(true)
+      setWidgetSidebarOpen(false) // 위젯 추가 사이드바는 닫기
+    }
+  }, [isEditMode, isMobile])
   
   const handleAddWidget = () => {
     // 사이드바 방식으로 변경
     setWidgetSidebarOpen(true)
     setWidgetModalOpen(false)
+  }
+
+  // 위젯 순서 변경 핸들러
+  const handleWidgetReorder = (id: string, direction: 'up' | 'down') => {
+    reorderWidget(id, direction)
+
+    // 자동 정렬이 활성화되어 있으면 정렬 수행
+    if (autoCompact) {
+      compactWidgets('vertical')
+    }
+  }
+
+  // 위젯 크기 조절 핸들러
+  const handleWidgetResize = (id: string, width: number, height: number) => {
+    const widget = widgets?.find(w => w.id === id)
+    if (!widget) return
+
+    updateWidget(id, {
+      position: {
+        ...widget.position,
+        w: width,
+        h: height
+      }
+    })
+
+    // 자동 정렬이 활성화되어 있으면 정렬 수행
+    if (autoCompact) {
+      setTimeout(() => compactWidgets('vertical'), 100)
+    }
+  }
+
+  // 위젯 삭제 핸들러
+  const handleWidgetRemove = (id: string) => {
+    removeWidget(id)
+    refreshLimits()
+
+    // 자동 정렬이 활성화되어 있으면 정렬 수행
+    if (autoCompact) {
+      setTimeout(() => compactWidgets('vertical'), 100)
+    }
   }
 
   const handleResetLayout = () => {
@@ -384,7 +442,8 @@ export default function DashboardPage() {
                 variant="default"
                 onClick={() => {
                   exitEditMode()
-                  setWidgetSidebarOpen(false)  // 사이드바 닫기
+                  setWidgetSidebarOpen(false)
+                  setWidgetEditSidebarOpen(false)
                 }}
                 className="w-full md:w-auto"
               >
@@ -407,23 +466,43 @@ export default function DashboardPage() {
       </div>
       
       {/* 모바일에서 오버레이 백드롭 */}
-      {isMobile && widgetSidebarOpen && (
-        <div 
+      {isMobile && (widgetSidebarOpen || widgetEditSidebarOpen) && (
+        <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setWidgetSidebarOpen(false)}
+          onClick={() => {
+            setWidgetSidebarOpen(false)
+            setWidgetEditSidebarOpen(false)
+          }}
         />
       )}
-      
-      {/* 위젯 사이드바 (새로운 방식) */}
-      <WidgetSidebar
-        isOpen={widgetSidebarOpen}
-        onClose={() => setWidgetSidebarOpen(false)}
-        onCollapseChange={setIsCollapsed}
-        className={isMobile ? "shadow-2xl" : ""}
-        currentWidgetCount={widgets?.length || 0}
-        widgetLimit={plan === 'free' ? 3 : -1}
-        onLimitExceeded={() => setWidgetLimitAlertOpen(true)}
-      />
+
+      {/* 위젯 추가 사이드바 (데스크톱 또는 모바일 비편집 모드) */}
+      {(!isMobile || !isEditMode) && (
+        <WidgetSidebar
+          isOpen={widgetSidebarOpen}
+          onClose={() => setWidgetSidebarOpen(false)}
+          onCollapseChange={setIsCollapsed}
+          className={isMobile ? "shadow-2xl" : ""}
+          currentWidgetCount={widgets?.length || 0}
+          widgetLimit={plan === 'free' ? 3 : -1}
+          onLimitExceeded={() => setWidgetLimitAlertOpen(true)}
+        />
+      )}
+
+      {/* 위젯 편집 사이드바 (모바일 편집 모드 전용) */}
+      {isMobile && isEditMode && (
+        <WidgetEditSidebar
+          isOpen={widgetEditSidebarOpen}
+          onClose={() => setWidgetEditSidebarOpen(false)}
+          widgets={widgets || []}
+          onReorder={handleWidgetReorder}
+          onResize={handleWidgetResize}
+          onRemove={handleWidgetRemove}
+          autoCompact={autoCompact}
+          onAutoCompactChange={setAutoCompact}
+          className="shadow-2xl"
+        />
+      )}
       
       {/* 위젯 선택 모달 (기존 방식 - 백업용) */}
       <WidgetSelectorModal

@@ -39,6 +39,7 @@ interface ImprovedDashboardStore {
   updateWidget: (id: string, updates: Partial<ImprovedWidget>) => void;
   updateWidgetPosition: (id: string, position: GridPosition) => void;
   removeWidget: (id: string) => void;
+  reorderWidget: (id: string, direction: 'up' | 'down') => void;
   moveWidget: (id: string, position: GridPosition) => void;
   resizeWidget: (id: string, position: GridPosition) => void;
   resizeWidgetWithPush: (id: string, position: GridPosition) => void;
@@ -71,6 +72,7 @@ interface ImprovedDashboardStore {
   selectWidget: (widgetId: string | null) => void;
   setHoveredPosition: (position: GridPosition | null) => void;
   setDragOverWidget: (widgetId: string | null) => void;
+  setAutoCompact: (value: boolean) => void;
 
   // 유틸리티 액션
   resetStore: () => void;
@@ -112,6 +114,7 @@ const initialEditState: DashboardEditState = {
   resizingWidget: null,
   hoveredPosition: null,
   dragOverWidgetId: null,
+  autoCompact: true, // 기본값: 자동 정렬 활성화
 };
 
 // Zustand 스토어 생성 (Storage API 연동)
@@ -218,6 +221,26 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
             state.editState.resizingWidget = null;
             state.editState.isResizing = false;
           }
+        }),
+
+        reorderWidget: (id, direction) => set((state) => {
+          const currentWidgets = state.layouts[state.currentBreakpoint] || [];
+          const index = currentWidgets.findIndex(w => w.id === id);
+
+          if (index === -1) return;
+
+          // 이동할 새 인덱스 계산
+          const newIndex = direction === 'up' ? index - 1 : index + 1;
+
+          // 범위 체크
+          if (newIndex < 0 || newIndex >= currentWidgets.length) return;
+
+          // 배열 재배치
+          const reordered = [...currentWidgets];
+          const [removed] = reordered.splice(index, 1);
+          reordered.splice(newIndex, 0, removed);
+
+          state.layouts[state.currentBreakpoint] = reordered;
         }),
 
         moveWidget: (id, position) => set((state) => {
@@ -848,6 +871,10 @@ export const useImprovedDashboardStore = create<ImprovedDashboardStore>()(
 
         setDragOverWidget: (widgetId) => set((state) => {
           state.editState.dragOverWidgetId = widgetId;
+        }),
+
+        setAutoCompact: (value) => set((state) => {
+          state.editState.autoCompact = value;
         }),
 
         // 유틸리티 액션
