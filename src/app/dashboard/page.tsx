@@ -108,18 +108,21 @@ export default function DashboardPage() {
   const resetStore = useImprovedDashboardStore(state => state.resetStore)
   const setColumns = useImprovedDashboardStore(state => state.setColumns)
 
-  // ESC 키로 편집 모드와 사이드바 동시에 닫기
+  // ESC 키로 레이어별로 순차적으로 닫기 (Progressive Dismissal)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isEditMode) {
-          exitEditMode()
-        }
+        // 1. 위젯 추가 사이드바가 열려있으면 이것만 닫기
         if (widgetSidebarOpen) {
           setWidgetSidebarOpen(false)
         }
-        if (widgetEditSidebarOpen) {
+        // 2. 편집 사이드바가 열려있으면 이것만 닫기
+        else if (widgetEditSidebarOpen) {
           setWidgetEditSidebarOpen(false)
+        }
+        // 3. 편집 모드가 활성화되어 있으면 종료
+        else if (isEditMode) {
+          exitEditMode()
         }
       }
     }
@@ -143,9 +146,10 @@ export default function DashboardPage() {
   }
 
   // 편집 사이드바에서 위젯 추가 사이드바 열기 (모바일 전용)
+  // 편집 사이드바는 유지하고 추가 사이드바를 위에 오버레이
   const handleOpenWidgetSelectorFromEdit = () => {
-    setWidgetEditSidebarOpen(false)
     setWidgetSidebarOpen(true)
+    // 편집 사이드바는 닫지 않음 (뒤에 유지)
   }
 
   // 위젯 순서 변경 핸들러
@@ -487,13 +491,24 @@ export default function DashboardPage() {
       </div>
       </div>
       
-      {/* 모바일에서 오버레이 백드롭 */}
-      {isMobile && (widgetSidebarOpen || widgetEditSidebarOpen) && (
+      {/* 사이드바 오버레이 백드롭 - 모바일 및 데스크톱 모두 */}
+      {(widgetSidebarOpen || widgetEditSidebarOpen) && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className={cn(
+            "fixed inset-0 z-30 transition-colors",
+            // 모바일: 어두운 배경
+            isMobile ? "bg-black/50" :
+            // 데스크톱: 투명하지만 클릭 가능
+            "bg-transparent"
+          )}
           onClick={() => {
-            setWidgetSidebarOpen(false)
-            setWidgetEditSidebarOpen(false)
+            // 추가 사이드바가 열려있으면 추가만 닫기 (편집은 유지)
+            if (widgetSidebarOpen) {
+              setWidgetSidebarOpen(false)
+            } else {
+              // 편집 사이드바만 열려있으면 편집 닫기
+              setWidgetEditSidebarOpen(false)
+            }
           }}
         />
       )}

@@ -251,14 +251,18 @@ export function WidgetEditSidebar({
                 onCheckedChange={onAutoCompactChange}
                 className="touch-manipulation"
               />
+              {/* 구분선 */}
+              <div className="h-6 w-px bg-border" />
+              {/* 위젯 추가 버튼 */}
               <Button
                 size="sm"
-                variant="ghost"
+                variant="outline"
                 onClick={onOpenWidgetSelector}
-                className="touch-manipulation h-8 w-8 p-0"
+                className="touch-manipulation h-8 px-3 gap-1"
                 title="위젯 추가"
               >
                 <Plus className="h-4 w-4" />
+                <span className="text-xs">추가</span>
               </Button>
             </div>
           </div>

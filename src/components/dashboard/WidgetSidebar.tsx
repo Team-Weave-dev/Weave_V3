@@ -150,6 +150,9 @@ export function WidgetSidebar({
     return widgets.some(w => w.type === type)
   }
 
+  // 드래그 시작 시 위젯 수 저장
+  const [dragStartWidgetCount, setDragStartWidgetCount] = useState(0)
+
   // Handle drag start
   const handleDragStart = (e: React.DragEvent, type: ImprovedWidget['type']) => {
     // 요금제 제한 체크 - 드래그 시작 전에 제한 확인
@@ -162,6 +165,7 @@ export function WidgetSidebar({
     e.dataTransfer.effectAllowed = 'copy'
     e.dataTransfer.setData('widgetType', type)
     setDraggedWidget(type)
+    setDragStartWidgetCount(currentWidgetCount) // 현재 위젯 수 저장
 
     // Create custom drag image
     const config = widgetConfigs.find(c => c.type === type)
@@ -187,8 +191,21 @@ export function WidgetSidebar({
     }
   }
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent) => {
+    const widgetType = draggedWidget
     setDraggedWidget(null)
+
+    // 드래그가 끝났을 때, 드롭이 실패했으면 (위젯이 추가되지 않았으면) 자동으로 추가
+    // 짧은 타임아웃을 주어 드롭 이벤트가 처리될 시간을 줌
+    setTimeout(() => {
+      // 위젯 수가 증가하지 않았으면 드롭이 실패한 것
+      if (widgetType && currentWidgetCount === dragStartWidgetCount) {
+        // dropEffect가 'none'이면 드롭 실패 (대시보드 밖으로 드롭)
+        if (e.dataTransfer.dropEffect === 'none') {
+          handleQuickAdd(widgetType as ImprovedWidget['type'])
+        }
+      }
+    }, 100)
   }
 
   // Quick add widget (without drag)
@@ -227,7 +244,7 @@ export function WidgetSidebar({
       {/* Sidebar Container - 페이지를 밀어내는 방식 */}
       <div
         className={cn(
-          'fixed top-0 right-0 h-full z-40 transition-all duration-300 ease-in-out',
+          'fixed top-0 right-0 h-full z-50 transition-all duration-300 ease-in-out',
           isCollapsed ? 'w-16' : 'w-[280px] sm:w-80',
           isOpen ? 'translate-x-0' : 'translate-x-full',
           className
