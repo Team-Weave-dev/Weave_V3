@@ -16,6 +16,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { useToast } from '@/hooks/use-toast'
 import { cn, formatCurrency } from '@/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getLoadingText, getProjectPageText } from '@/config/brand'
 import type { ProjectTableRow, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types'
@@ -26,6 +35,7 @@ import DocumentGeneratorModal from './DocumentGeneratorModal'
 import DocumentDeleteDialog from '@/components/projects/DocumentDeleteDialog'
 import { clientService } from '@/lib/storage'
 import { createClient } from '@/lib/supabase/client'
+import { usePlanLimits } from '@/hooks/usePlanLimits'
 
 interface ProjectCreateModalProps {
   isOpen: boolean
@@ -58,6 +68,7 @@ const extractNumber = (value: string): number => {
 
 export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }: ProjectCreateModalProps) {
   const { toast } = useToast()
+  const { plan, usage, canCreateProject, refresh: refreshLimits } = usePlanLimits()
   const [isLoading, setIsLoading] = useState(false)
   const [generatedDocuments, setGeneratedDocuments] = useState<GeneratedDocument[]>([])
   const [showDocumentGenerator, setShowDocumentGenerator] = useState(false)
@@ -68,6 +79,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
     documentTitle: string | null;
   }>({ open: false, documentId: null, documentTitle: null })
   const [previewDocument, setPreviewDocument] = useState<GeneratedDocument | null>(null)
+  const [projectLimitAlertOpen, setProjectLimitAlertOpen] = useState(false)
 
   const { control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<ProjectCreateFormData>({
     defaultValues: {
@@ -129,6 +141,7 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
     reset()
     setGeneratedDocuments([])
     setShowDocumentGenerator(false)
+    refreshLimits() // 사용량 새로고침
     onClose()
   }
 
@@ -138,6 +151,14 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
     // 중복 실행 방지 가드
     if (isLoading) {
       console.log('⚠️ 이미 처리 중입니다. 중복 실행을 방지합니다.');
+      return;
+    }
+
+    // 요금제 제한 체크
+    const limitCheck = canCreateProject();
+    if (!limitCheck.allowed) {
+      // 제한 초과 시 모달 표시
+      setProjectLimitAlertOpen(true);
       return;
     }
 
@@ -817,6 +838,29 @@ export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }:
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* 프로젝트 제한 초과 알림 모달 */}
+      <AlertDialog open={projectLimitAlertOpen} onOpenChange={setProjectLimitAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>프로젝트 생성 제한</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>현재 요금제에서는 최대 {usage.projects.limit}개의 프로젝트만 생성할 수 있습니다.</div>
+                <div className="font-medium">현재 사용량: {usage.projects.current} / {usage.projects.limit}</div>
+                <div className="text-sm text-muted-foreground mt-4">
+                  더 많은 프로젝트를 생성하려면 요금제를 업그레이드해주세요.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setProjectLimitAlertOpen(false)}>
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }

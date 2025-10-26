@@ -363,6 +363,17 @@ export const activityLogService = new Proxy({} as ActivityLogService, {
 });
 
 /**
+ * Plan service (Supabase-only, no storage instance needed)
+ */
+import { planService as _planService } from './services/PlanService';
+export const planService = _planService;
+
+/**
+ * Plan limits utility functions
+ */
+export * from './utils/planLimits';
+
+/**
  * Export types for convenience
  */
 export type { StorageManager } from './core/StorageManager';
@@ -375,6 +386,7 @@ export type { Client, ClientCreate, ClientUpdate } from './types/entities/client
 export type { CalendarEvent, CalendarEventCreate, CalendarEventUpdate } from './types/entities/event';
 export type { Document, DocumentCreate, DocumentUpdate } from './types/entities/document';
 export type { Settings, SettingsUpdate, DashboardWidget } from './types/entities/settings';
-export type { User, UserCreate, UserUpdate } from './types/entities/user';
+export type { User, UserCreate, UserUpdate, PlanType as UserPlanType } from './types/entities/user';
 export type { TodoSection, TodoSectionCreate, TodoSectionUpdate } from './types/entities/todo-section';
 export type { ActivityLog, CreateActivityLogInput, ActivityLogFilter } from './types/entities/activity-log';
+export type { Plan, PlanType, PlanLimits, PlanCreate, PlanUpdate } from './types/entities/plan';

@@ -13,6 +13,11 @@ import { isValidEmail, isValidISODate } from '../validators';
 export type BusinessType = 'freelancer' | 'individual' | 'corporation';
 
 /**
+ * Plan type
+ */
+export type PlanType = 'free' | 'basic' | 'pro';
+
+/**
  * User metadata
  */
 export interface UserMetadata {
@@ -51,6 +56,9 @@ export interface User {
 
   /** Business type (optional) */
   businessType?: BusinessType;
+
+  /** Subscription plan (optional, defaults to 'free') */
+  plan?: PlanType;
 
   /** Account creation timestamp (ISO 8601) */
   createdAt: string;
@@ -99,6 +107,14 @@ export function isUser(data: unknown): data is User {
     u.businessType !== 'freelancer' &&
     u.businessType !== 'individual' &&
     u.businessType !== 'corporation'
+  ) {
+    return false;
+  }
+  if (
+    u.plan !== undefined &&
+    u.plan !== 'free' &&
+    u.plan !== 'basic' &&
+    u.plan !== 'pro'
   ) {
     return false;
   }

@@ -142,6 +142,13 @@
 - user.ts 116~141 export isUserMetadata - Validate user metadata structure @param metadata - Metadata object to validate @returns True if metadata is valid
 - user.ts 142~146 export UserUpdate - Partial user type for updates
 - user.ts 147~147 export UserCreate - User creation payload (without auto-generated fields)
+- plan.ts 13~13 export PlanType - Plan type ('free' | 'basic' | 'pro')
+- plan.ts 18~23 export PlanLimits - Plan limits interface (projects, widgets, storage, aiService)
+- plan.ts 28~49 export Plan - Plan entity representing subscription plans
+- plan.ts 57~87 export isPlan - Type guard to check if data is a valid Plan
+- plan.ts 92~103 export isPlanLimits - Type guard for PlanLimits
+- plan.ts 108~108 export PlanUpdate - Partial plan type for updates
+- plan.ts 113~113 export PlanCreate - Plan creation payload (without auto-generated fields)
 
 ## 중앙화·모듈화·캡슐화
 - 엔티티 구조는 entities 디렉터리에서만 정의하고 외부에서 재정의하지 않음

@@ -21,9 +21,9 @@
 
 ## 파일 라인 맵
 - BillingTab.tsx 014~150 export BillingTab - 결제 탭 컴포넌트 결제 수단 및 결제 내역 관리
-- PlanTab.tsx 017~175 export PlanTab - 요금제 탭 컴포넌트 요금제 비교 및 변경
+- PlanTab.tsx 017~175 export PlanTab - 요금제 탭 컴포넌트 요금제 비교 및 변경 사용자 plan 변경 기능 포함 (userService.updatePlan 사용)
 - ProfileTab.tsx 023~566 export ProfileTab - 프로필 탭 컴포넌트 사용자 정보 및 환경설정 관리
-- UsageTab.tsx 015~154 export UsageTab - 사용량 탭 컴포넌트 현재 사용 중인 리소스 현황 표시
+- UsageTab.tsx 015~154 export UsageTab - 사용량 탭 컴포넌트 현재 사용 중인 리소스 현황 표시 Supabase에서 실제 사용자 plan과 프로젝트/위젯 수 조회
 
 ## 중앙화·모듈화·캡슐화
 - 라벨과 설명은 brand 설정 사용

@@ -115,9 +115,20 @@ interface WidgetSidebarProps {
   onClose: () => void
   onCollapseChange?: (collapsed: boolean) => void
   className?: string
+  currentWidgetCount?: number
+  widgetLimit?: number
+  onLimitExceeded?: () => void
 }
 
-export function WidgetSidebar({ isOpen, onClose, onCollapseChange, className }: WidgetSidebarProps) {
+export function WidgetSidebar({
+  isOpen,
+  onClose,
+  onCollapseChange,
+  className,
+  currentWidgetCount = 0,
+  widgetLimit = -1,
+  onLimitExceeded
+}: WidgetSidebarProps) {
   const widgets = useImprovedDashboardStore(useShallow(selectWidgets)) || []
   const addWidget = useImprovedDashboardStore(state => state.addWidget)
   const removeWidget = useImprovedDashboardStore(state => state.removeWidget)
@@ -143,6 +154,13 @@ export function WidgetSidebar({ isOpen, onClose, onCollapseChange, className }: 
 
   // Handle drag start
   const handleDragStart = (e: React.DragEvent, type: ImprovedWidget['type']) => {
+    // 요금제 제한 체크 - 드래그 시작 전에 제한 확인
+    if (widgetLimit !== -1 && currentWidgetCount >= widgetLimit) {
+      e.preventDefault()
+      onLimitExceeded?.()
+      return
+    }
+
     e.dataTransfer.effectAllowed = 'copy'
     e.dataTransfer.setData('widgetType', type)
     setDraggedWidget(type)
@@ -162,9 +180,9 @@ export function WidgetSidebar({ isOpen, onClose, onCollapseChange, className }: 
       dragElement.style.left = '-1000px'
       dragElement.style.width = '200px'
       document.body.appendChild(dragElement)
-      
+
       e.dataTransfer.setDragImage(dragElement, 100, 20)
-      
+
       setTimeout(() => {
         document.body.removeChild(dragElement)
       }, 0)
@@ -195,6 +213,12 @@ export function WidgetSidebar({ isOpen, onClose, onCollapseChange, className }: 
 
   // Quick add widget (without drag)
   const handleQuickAdd = (type: ImprovedWidget['type']) => {
+    // 요금제 제한 체크 - 빠른 추가 전에 제한 확인
+    if (widgetLimit !== -1 && currentWidgetCount >= widgetLimit) {
+      onLimitExceeded?.()
+      return
+    }
+
     const config = widgetConfigs.find(c => c.type === type)
     if (!config) return
 

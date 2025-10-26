@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,9 @@ import { uiText } from '@/config/brand'
 import { plans } from '@/config/constants'
 import { cn } from '@/lib/utils'
 import type { PlanType } from '@/lib/types/settings.types'
+import { userService } from '@/lib/storage'
+import { createClient } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
 /**
  * 요금제 탭 컴포넌트
@@ -16,11 +19,73 @@ import type { PlanType } from '@/lib/types/settings.types'
  */
 export default function PlanTab() {
   const lang = 'ko' as const
-
-  // Mock 데이터 (실제로는 API에서 가져옴)
-  const currentPlan: PlanType = 'free'
+  const { toast } = useToast()
+  const [currentPlan, setCurrentPlan] = useState<PlanType>('free')
+  const [loading, setLoading] = useState(true)
+  const [changingPlan, setChangingPlan] = useState(false)
 
   const planOrder: PlanType[] = useMemo(() => ['free', 'basic', 'pro'], [])
+
+  // 사용자 현재 요금제 가져오기
+  useEffect(() => {
+    async function fetchCurrentPlan() {
+      try {
+        setLoading(true)
+        const supabase = createClient()
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+
+        if (authUser) {
+          const userPlan = await userService.getPlan(authUser.id)
+          setCurrentPlan(userPlan || 'free')
+        }
+      } catch (error) {
+        console.error('Failed to fetch current plan:', error)
+        setCurrentPlan('free')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCurrentPlan()
+  }, [])
+
+  // 요금제 변경 핸들러
+  const handleChangePlan = useCallback(async (newPlan: PlanType) => {
+    if (changingPlan) return
+
+    try {
+      setChangingPlan(true)
+      const supabase = createClient()
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+
+      if (!authUser) {
+        toast({
+          title: '오류',
+          description: '로그인이 필요합니다.',
+          variant: 'destructive'
+        })
+        return
+      }
+
+      // 요금제 변경 (실제로는 결제 프로세스가 필요하지만, 일단 바로 변경)
+      await userService.updatePlan(authUser.id, newPlan)
+      setCurrentPlan(newPlan)
+
+      toast({
+        title: '요금제 변경 완료',
+        description: `${plans[newPlan].name} 요금제로 변경되었습니다.`
+      })
+    } catch (error) {
+      console.error('Failed to change plan:', error)
+      toast({
+        title: '요금제 변경 실패',
+        description: '요금제 변경 중 오류가 발생했습니다.',
+        variant: 'destructive'
+      })
+    } finally {
+      setChangingPlan(false)
+    }
+  }, [changingPlan, toast])
 
   const formatPrice = useCallback((price: number) => {
     if (price === 0) {
@@ -55,18 +120,27 @@ export default function PlanTab() {
 
     if (targetIndex > currentIndex) {
       return (
-        <Button className="w-full">
-          {uiText.settings.plan.actions.upgrade[lang]}
+        <Button
+          className="w-full"
+          onClick={() => handleChangePlan(planId)}
+          disabled={changingPlan}
+        >
+          {changingPlan ? '변경 중...' : uiText.settings.plan.actions.upgrade[lang]}
         </Button>
       )
     }
 
     return (
-      <Button variant="outline" className="w-full">
-        {uiText.settings.plan.actions.downgrade[lang]}
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={() => handleChangePlan(planId)}
+        disabled={changingPlan}
+      >
+        {changingPlan ? '변경 중...' : uiText.settings.plan.actions.downgrade[lang]}
       </Button>
     )
-  }, [currentPlan, planOrder, lang])
+  }, [currentPlan, planOrder, lang, handleChangePlan, changingPlan])
 
   return (
     <div>

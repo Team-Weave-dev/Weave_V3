@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { uiText } from '@/config/brand'
 import { plans } from '@/config/constants'
 import type { Usage, PlanType } from '@/lib/types/settings.types'
-import { projectService, dashboardService } from '@/lib/storage'
+import { projectService, dashboardService, userService } from '@/lib/storage'
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * 사용량 탭 컴포넌트
@@ -18,16 +19,25 @@ export default function UsageTab() {
   const [projectCount, setProjectCount] = useState(0)
   const [widgetCount, setWidgetCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [currentPlan, setCurrentPlan] = useState<PlanType>('free')
 
-  // 현재 요금제 (실제로는 사용자 설정에서 가져와야 함)
-  const currentPlan: PlanType = 'free'
   const planLimits = useMemo(() => plans[currentPlan].limits, [currentPlan])
 
-  // 실제 프로젝트 수와 위젯 수 가져오기
+  // 실제 프로젝트 수, 위젯 수, 사용자 요금제 가져오기
   useEffect(() => {
     async function fetchUsageData() {
       try {
         setLoading(true)
+
+        // 인증된 사용자 정보 가져오기
+        const supabase = createClient()
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+
+        if (authUser) {
+          // 사용자 요금제 가져오기
+          const userPlan = await userService.getPlan(authUser.id)
+          setCurrentPlan(userPlan || 'free')
+        }
 
         // 프로젝트 수 카운트
         const projects = await projectService.getAll()
@@ -43,6 +53,7 @@ export default function UsageTab() {
         // 스토리지가 초기화되지 않았거나 인증이 필요한 경우 기본값 사용
         setProjectCount(0)
         setWidgetCount(0)
+        setCurrentPlan('free')
       } finally {
         setLoading(false)
       }

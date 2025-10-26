@@ -72,7 +72,7 @@ export class UserService extends BaseService<User> {
   async updateProfile(
     userId: string,
     profileData: Partial<
-      Pick<User, 'name' | 'email' | 'avatar' | 'phone' | 'businessNumber' | 'address' | 'addressDetail' | 'businessType'>
+      Pick<User, 'name' | 'email' | 'avatar' | 'phone' | 'businessNumber' | 'address' | 'addressDetail' | 'businessType' | 'plan'>
     >
   ): Promise<User | null> {
     return this.update(userId, profileData);
@@ -144,5 +144,46 @@ export class UserService extends BaseService<User> {
     });
 
     return users.slice(0, limit);
+  }
+
+  // ============================================================================
+  // Plan Management
+  // ============================================================================
+
+  /**
+   * Update user plan (subscription)
+   *
+   * @param userId - User ID
+   * @param plan - New plan type
+   * @returns Updated user or null if not found
+   *
+   * @example
+   * ```typescript
+   * const updated = await userService.updatePlan('user-123', 'pro')
+   * ```
+   */
+  async updatePlan(userId: string, plan: User['plan']): Promise<User | null> {
+    return this.update(userId, { plan });
+  }
+
+  /**
+   * Get user's current plan
+   *
+   * @param userId - User ID
+   * @returns Plan type or 'free' as default
+   */
+  async getPlan(userId: string): Promise<User['plan']> {
+    const user = await this.getById(userId);
+    return user?.plan || 'free';
+  }
+
+  /**
+   * Get users by plan type
+   *
+   * @param plan - Plan type filter
+   * @returns Array of users with the specified plan
+   */
+  async getByPlan(plan: User['plan']): Promise<User[]> {
+    return this.find((user) => (user.plan || 'free') === plan);
   }
 }

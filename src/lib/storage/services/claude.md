@@ -35,6 +35,8 @@ StorageManager 위에서 동작하는 도메인별 CRUD 서비스를 제공합�
 - TodoSectionService.ts 021~158 export TodoSectionService - TodoSectionService TodoSection 엔티티를 위한 도메인 서비스 - 사용자별 섹션 관리 - 정렬 순서 관리 - 섹션 CRUD 작업
 - TodoSectionService.ts 159~164 export getTodoSectionService - TodoSectionService 싱글톤 인스턴스 가져오기 @param storage - StorageManager 인스턴스 @returns TodoSectionService 인스턴스
 - UserService.ts 020~148 export UserService - User domain service Manages user profiles with DualWrite mode support (LocalStorage + Supabase). Provides type-safe operations for user data management.
+- PlanService.ts 021~159 export PlanService - Plan service class **특징**: - Supabase 전용 (LocalStorage 사용하지 않음) - 읽기 전용 (요금제 정보는 시스템 관리) - 모든 사용자가 동일한 데이터 공유
+- PlanService.ts 164~164 export planService - Export singleton instance
 
 ## 중앙화·모듈화·캡슐화
 - 서비스명과 스토리지 키는 types·core 정의를 따름

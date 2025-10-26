@@ -35,6 +35,13 @@
 - deviceId.ts 58~73 export resetDeviceId - Reset the device ID (generate a new one) Useful for testing or when you want to treat this as a "new" device @returns The new device ID
 - deviceId.ts 74~86 export getDeviceInfo - Get device information for debugging/logging @returns Device information object
 - IndexManager.ts 023~500 export IndexManager
+- planLimits.ts 15~17 export isUnlimited - Check if limit is unlimited (-1)
+- planLimits.ts 25~37 export checkProjectLimit - Check project creation limit for plan type @param planType - Plan type @param currentCount - Current project count @returns { allowed: boolean, limit: number, current: number }
+- planLimits.ts 45~57 export checkWidgetLimit - Check widget addition limit for plan type @param planType - Plan type @param currentCount - Current widget count @returns { allowed: boolean, limit: number, current: number }
+- planLimits.ts 65~77 export checkStorageLimit - Check storage usage limit for plan type @param planType - Plan type @param usedStorage - Used storage in MB @returns { allowed: boolean, limit: number, used: number }
+- planLimits.ts 84~87 export checkAIServiceAvailable - Check if AI service is available for plan type @param planType - Plan type @returns AI service availability
+- planLimits.ts 94~102 export getPlanLimits - Get all limits for plan type @param planType - Plan type @returns Plan limits object
+- planLimits.ts 111~150 export checkLimitExceeded - Check if limit is exceeded and return user-friendly message @param planType - Plan type @param resourceType - Resource type ('projects' | 'widgets' | 'storage') @param currentValue - Current usage value @returns { exceeded: boolean, message?: string }
 
 ## 중앙화·모듈화·캡슐화
 - 성능 관련 상수와 정책은 utils 디렉터리에서 정의

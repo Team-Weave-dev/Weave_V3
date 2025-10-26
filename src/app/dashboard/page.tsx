@@ -20,9 +20,22 @@ import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults'
 import { ConfirmDialog } from '@/components/ui/dialogConfirm'
 import { createDefaultWidgets } from '@/components/dashboard/utils/defaultWidgets'
+import { usePlanLimits } from '@/hooks/usePlanLimits'
+import { useToast } from '@/hooks/use-toast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { toast } = useToast()
+  const { plan, usage, canAddWidget, refresh: refreshLimits } = usePlanLimits()
   const [loading, setLoading] = useState(true)
   const storageInitialized = useStorageInitStore((state) => state.isInitialized)
   const [isCompact, setIsCompact] = useState(true)
@@ -31,6 +44,7 @@ export default function DashboardPage() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
+  const [widgetLimitAlertOpen, setWidgetLimitAlertOpen] = useState(false)
   
   // 초기 위젯 설정 (9x9 그리드 기준)
   const initialWidgets = [
@@ -162,6 +176,16 @@ export default function DashboardPage() {
   }
 
   const handleSelectWidget = (type: ImprovedWidget['type']) => {
+    // 요금제 제한 체크 - 현재 화면의 실제 위젯 수로 체크
+    const currentWidgetCount = widgets?.length || 0;
+    const widgetLimit = plan === 'free' ? 3 : -1; // free: 3개, 나머지: 무제한
+
+    if (widgetLimit !== -1 && currentWidgetCount >= widgetLimit) {
+      // 제한 초과 시 모달 표시
+      setWidgetLimitAlertOpen(true);
+      return;
+    }
+
     const defaultSize = getDefaultWidgetSize(type)
     const emptySpace = findSpaceForWidget(defaultSize.width, defaultSize.height)
 
@@ -196,6 +220,7 @@ export default function DashboardPage() {
     }
 
     addWidget(newWidget)
+    refreshLimits() // 사용량 새로고침
   }
 
   // 화면 크기 감지 및 반응형 처리
@@ -395,6 +420,9 @@ export default function DashboardPage() {
         onClose={() => setWidgetSidebarOpen(false)}
         onCollapseChange={setIsCollapsed}
         className={isMobile ? "shadow-2xl" : ""}
+        currentWidgetCount={widgets?.length || 0}
+        widgetLimit={plan === 'free' ? 3 : -1}
+        onLimitExceeded={() => setWidgetLimitAlertOpen(true)}
       />
       
       {/* 위젯 선택 모달 (기존 방식 - 백업용) */}
@@ -416,6 +444,29 @@ export default function DashboardPage() {
         cancelLabel={getDashboardText.resetModal.cancelButton('ko')}
         icon={<RotateCcw className="h-8 w-8 text-primary" />}
       />
+
+      {/* 위젯 제한 초과 알림 모달 */}
+      <AlertDialog open={widgetLimitAlertOpen} onOpenChange={setWidgetLimitAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>위젯 추가 제한</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>현재 요금제에서는 최대 {usage.widgets.limit}개의 위젯만 추가할 수 있습니다.</div>
+                <div className="font-medium">현재 사용량: {widgets?.length || 0} / {usage.widgets.limit}</div>
+                <div className="text-sm text-muted-foreground mt-4">
+                  더 많은 위젯을 사용하려면 요금제를 업그레이드해주세요.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setWidgetLimitAlertOpen(false)}>
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
