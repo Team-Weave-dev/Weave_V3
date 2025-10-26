@@ -95,12 +95,36 @@ export class CalendarService extends BaseService<CalendarEvent> {
           initials: initials.toUpperCase()
         };
       }
+
+      // Try to get name from Supabase Auth as fallback
+      if (typeof window !== 'undefined') {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+
+        if (authUser?.user_metadata?.name) {
+          const name = authUser.user_metadata.name;
+          const nameParts = name.trim().split(/\s+/);
+          let initials = '';
+
+          if (nameParts.length === 1) {
+            initials = nameParts[0].slice(0, 2);
+          } else {
+            initials = nameParts.map((part: string) => part[0]).join('').slice(0, 2);
+          }
+
+          return {
+            name,
+            initials: initials.toUpperCase()
+          };
+        }
+      }
     } catch (error) {
       console.error('[CalendarService] Failed to get user info:', error);
     }
 
-    // Fallback to default values
-    return { name: 'User', initials: 'U' };
+    // Final fallback to default values
+    return { name: '사용자', initials: 'U' };
   }
 
   /**
