@@ -190,13 +190,23 @@ export function WidgetEditSidebar({
   isMobile,
   className
 }: WidgetEditSidebarProps) {
+  const sidebarRef = React.useRef<HTMLDivElement>(null)
+
+  // 사이드바 열릴 때 스크롤을 맨 위로 초기화
+  React.useEffect(() => {
+    if (isOpen && sidebarRef.current) {
+      sidebarRef.current.scrollTop = 0
+    }
+  }, [isOpen])
+
   return (
     <>
       {/* 사이드바 */}
       <div
+        ref={sidebarRef}
         className={cn(
           "fixed right-0 top-0 h-full w-full sm:w-96 bg-background border-l shadow-2xl z-40",
-          "transform transition-transform duration-300 ease-in-out overflow-hidden",
+          "transform transition-transform duration-300 ease-in-out overflow-y-auto",
           "flex flex-col",
           isOpen ? "translate-x-0" : "translate-x-full",
           className
@@ -216,28 +226,17 @@ export function WidgetEditSidebar({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={onOpenWidgetSelector}
-                className="touch-manipulation"
-                title="위젯 추가"
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={onClose}
-                className="touch-manipulation"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onClose}
+              className="touch-manipulation"
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
 
-          {/* 자동 정렬 토글 */}
+          {/* 자동 정렬 토글 + 위젯 추가 버튼 */}
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-muted-foreground" />
@@ -245,12 +244,23 @@ export function WidgetEditSidebar({
                 자동 정렬
               </Label>
             </div>
-            <Switch
-              id="auto-compact"
-              checked={autoCompact}
-              onCheckedChange={onAutoCompactChange}
-              className="touch-manipulation"
-            />
+            <div className="flex items-center gap-2">
+              <Switch
+                id="auto-compact"
+                checked={autoCompact}
+                onCheckedChange={onAutoCompactChange}
+                className="touch-manipulation"
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onOpenWidgetSelector}
+                className="touch-manipulation h-8 w-8 p-0"
+                title="위젯 추가"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
