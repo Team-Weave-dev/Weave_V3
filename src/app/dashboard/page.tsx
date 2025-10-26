@@ -142,6 +142,12 @@ export default function DashboardPage() {
     setWidgetModalOpen(false)
   }
 
+  // 편집 사이드바에서 위젯 추가 사이드바 열기 (모바일 전용)
+  const handleOpenWidgetSelectorFromEdit = () => {
+    setWidgetEditSidebarOpen(false)
+    setWidgetSidebarOpen(true)
+  }
+
   // 위젯 순서 변경 핸들러
   const handleWidgetReorder = (id: string, direction: 'up' | 'down') => {
     reorderWidget(id, direction)
@@ -492,18 +498,16 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* 위젯 추가 사이드바 (데스크톱 또는 모바일 비편집 모드) */}
-      {(!isMobile || !isEditMode) && (
-        <WidgetSidebar
-          isOpen={widgetSidebarOpen}
-          onClose={() => setWidgetSidebarOpen(false)}
-          onCollapseChange={setIsCollapsed}
-          className={isMobile ? "shadow-2xl" : ""}
-          currentWidgetCount={widgets?.length || 0}
-          widgetLimit={plan === 'free' ? 3 : -1}
-          onLimitExceeded={() => setWidgetLimitAlertOpen(true)}
-        />
-      )}
+      {/* 위젯 추가 사이드바 (항상 렌더링, isOpen으로 제어) */}
+      <WidgetSidebar
+        isOpen={widgetSidebarOpen}
+        onClose={() => setWidgetSidebarOpen(false)}
+        onCollapseChange={setIsCollapsed}
+        className={isMobile ? "shadow-2xl" : ""}
+        currentWidgetCount={widgets?.length || 0}
+        widgetLimit={plan === 'free' ? 3 : -1}
+        onLimitExceeded={() => setWidgetLimitAlertOpen(true)}
+      />
 
       {/* 위젯 편집 사이드바 (모바일 편집 모드 전용) */}
       {isMobile && isEditMode && (
@@ -520,6 +524,7 @@ export default function DashboardPage() {
             exitEditMode()
             setWidgetEditSidebarOpen(false)
           }}
+          onOpenWidgetSelector={handleOpenWidgetSelectorFromEdit}
           isMobile={isMobile}
           className="shadow-2xl"
         />

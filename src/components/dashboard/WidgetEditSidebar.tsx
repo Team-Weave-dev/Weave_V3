@@ -16,7 +16,8 @@ import {
   Maximize2,
   Layers,
   Settings,
-  Save
+  Save,
+  Plus
 } from 'lucide-react'
 import { ImprovedWidget } from '@/types/improved-dashboard'
 import { getDashboardText } from '@/config/brand'
@@ -31,6 +32,7 @@ interface WidgetEditSidebarProps {
   autoCompact: boolean
   onAutoCompactChange: (value: boolean) => void
   onComplete: () => void
+  onOpenWidgetSelector: () => void
   isMobile: boolean
   className?: string
 }
@@ -184,6 +186,7 @@ export function WidgetEditSidebar({
   autoCompact,
   onAutoCompactChange,
   onComplete,
+  onOpenWidgetSelector,
   isMobile,
   className
 }: WidgetEditSidebarProps) {
@@ -213,14 +216,25 @@ export function WidgetEditSidebar({
                 </p>
               </div>
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onClose}
-              className="touch-manipulation"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onOpenWidgetSelector}
+                className="touch-manipulation"
+                title="위젯 추가"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onClose}
+                className="touch-manipulation"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
           {/* 자동 정렬 토글 */}
