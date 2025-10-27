@@ -579,30 +579,29 @@ export function useTodoState(props?: {
   }, []);
 
   const handleAddSection = useCallback(async (name: string) => {
-    // 1. Widget TodoSection 생성
-    const newWidgetSection: TodoSection = {
-      id: uuidv4(),
-      name,
-      order: sections.length,
-      isExpanded: true
-    };
-
-    // 2. React 상태 즉시 업데이트 (optimistic update)
-    setSections(prev => [...prev, newWidgetSection]);
-
-    // 3. Storage API에 비동기 저장
+    // 1. Storage API에 먼저 섹션 생성
     try {
       // TODO: Auth 시스템 통합 후 실제 userId 사용
       // 현재는 Supabase RLS가 자동으로 user_id를 처리함
       const userId = 'current-user'; // Placeholder, RLS가 실제 userId로 대체
-      const storagePayload = widgetToStorageSection(newWidgetSection, userId);
+      const storagePayload = {
+        userId,
+        name,
+        orderIndex: sections.length,
+        isExpanded: true
+      };
 
-      // todoSectionService.create를 호출하여 Storage에 저장
-      await todoSectionService.create(storagePayload);
+      // todoSectionService.create를 호출하여 Storage에 저장하고 실제 생성된 섹션 받기
+      const createdSection = await todoSectionService.create(storagePayload);
+
+      // 2. Storage에서 생성된 실제 ID를 가진 Widget TodoSection으로 변환
+      const newWidgetSection = storageToWidgetSection(createdSection);
+
+      // 3. React 상태 업데이트 (Storage ID 사용)
+      setSections(prev => [...prev, newWidgetSection]);
     } catch (error) {
       console.error('Failed to add section to Storage API:', error);
-      // 에러 발생 시 React 상태 롤백
-      setSections(prev => prev.filter(s => s.id !== newWidgetSection.id));
+      // 에러 발생 시에는 섹션이 추가되지 않음 (자동 롤백)
     }
   }, [sections, setSections]);
 
@@ -669,15 +668,15 @@ export function useTodoState(props?: {
     setDragOverSection(sectionId);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, targetSectionId: string) => {
+  const handleDrop = useCallback(async (e: React.DragEvent, targetSectionId: string) => {
     e.preventDefault();
-    
+
     if (!draggedTask) {
       setDraggedTask(null);
       setDragOverSection(null);
       return;
     }
-    
+
     // 섹션이 없으면 기본 섹션 자동 생성
     if (sections.length === 0) {
       const defaultSection: TodoSection = {
@@ -695,19 +694,30 @@ export function useTodoState(props?: {
       // 날짜 뷰에서는 첫 번째 섹션으로 이동하거나 'default' 섹션으로 이동
       actualSectionId = sections.length > 0 ? sections[0].id : 'default';
     }
-    
+
     // 드래그한 작업을 새로운 섹션으로 이동
     if (draggedTask.sectionId !== actualSectionId) {
+      // React state 업데이트 및 Storage 동기화
       setLocalTasks(prev => {
         // 먼저 하위 작업들도 함께 이동
         const moveTaskWithChildren = (tasks: TodoTask[]): TodoTask[] => {
           return tasks.map(task => {
             if (task.id === draggedTask.id) {
-              return { ...task, sectionId: actualSectionId };
+              const movedTask = { ...task, sectionId: actualSectionId };
+              // Storage 동기화 (비동기, skipLog = true로 내부 업데이트)
+              syncTaskToStorage(movedTask, 'update', true).catch(err => {
+                console.error('Failed to sync task section change to Storage:', err);
+              });
+              return movedTask;
             }
             // 부모가 이동하는 경우 자식들도 함께 이동
             if (task.parentId === draggedTask.id) {
-              return { ...task, sectionId: actualSectionId };
+              const movedChild = { ...task, sectionId: actualSectionId };
+              // 자식 태스크도 Storage 동기화
+              syncTaskToStorage(movedChild, 'update', true).catch(err => {
+                console.error('Failed to sync child task section change to Storage:', err);
+              });
+              return movedChild;
             }
             // 자식 작업들 확인
             if (task.children && task.children.length > 0) {
@@ -715,7 +725,12 @@ export function useTodoState(props?: {
                 ...task,
                 children: task.children.map(child => {
                   if (child.id === draggedTask.id || child.parentId === draggedTask.id) {
-                    return { ...child, sectionId: actualSectionId };
+                    const movedChild = { ...child, sectionId: actualSectionId };
+                    // 자식 태스크도 Storage 동기화
+                    syncTaskToStorage(movedChild, 'update', true).catch(err => {
+                      console.error('Failed to sync nested child task section change to Storage:', err);
+                    });
+                    return movedChild;
                   }
                   return child;
                 })
@@ -724,14 +739,14 @@ export function useTodoState(props?: {
             return task;
           });
         };
-        
+
         return moveTaskWithChildren(prev);
       });
     }
-    
+
     setDraggedTask(null);
     setDragOverSection(null);
-  }, [draggedTask, sections, setSections, setLocalTasks]);
+  }, [draggedTask, sections, setSections, setLocalTasks, syncTaskToStorage]);
 
 
   // Date groups for date view
