@@ -609,10 +609,24 @@ export function CalendarWidget({
         // Priority: allDay flag > existing time
         if (event.allDay) {
           // AllDay event - preserve multi-day duration
-          // Calculate original duration in days
+          // Calculate original duration in days (using only dates, ignore time)
           const originalStart = new Date(event.date);
           const originalEnd = event.endDate ? new Date(event.endDate) : originalStart;
-          const durationDays = Math.ceil((originalEnd.getTime() - originalStart.getTime()) / (1000 * 60 * 60 * 24));
+
+          // UTC 날짜만 비교 (시간 무시)
+          const startDateOnly = new Date(Date.UTC(
+            originalStart.getFullYear(),
+            originalStart.getMonth(),
+            originalStart.getDate()
+          ));
+          const endDateOnly = new Date(Date.UTC(
+            originalEnd.getFullYear(),
+            originalEnd.getMonth(),
+            originalEnd.getDate()
+          ));
+
+          // 날짜만 비교하여 duration 계산 (Math.round로 소수점 오차 제거)
+          const durationDays = Math.round((endDateOnly.getTime() - startDateOnly.getTime()) / (1000 * 60 * 60 * 24));
 
           startDate = new Date(Date.UTC(
             newDate.getFullYear(),

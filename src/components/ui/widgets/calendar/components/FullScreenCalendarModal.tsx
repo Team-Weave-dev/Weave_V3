@@ -110,10 +110,16 @@ export default function FullScreenCalendarModal({
     saveSettings,
   } = useCalendarSettings();
 
-  // Listen to todo/tax changes from widgets and refresh integrated items
+  // Listen to calendar/todo/tax changes from widgets and refresh data
   React.useEffect(() => {
     const handleCalendarDataChanged = (event: CustomEvent) => {
       const { source } = event.detail;
+
+      // Refresh when calendar events change (from CalendarWidget)
+      if (source === 'calendar') {
+        console.log('[FullScreenCalendarModal] Calendar data changed, refreshing local events:', event.detail);
+        refreshLocalEvents();
+      }
 
       // Refresh when todo or tax data changes (from widgets)
       if (source === 'todo' || source === 'tax') {
@@ -124,7 +130,7 @@ export default function FullScreenCalendarModal({
 
     const unsubscribe = addCalendarDataChangedListener(handleCalendarDataChanged);
     return () => unsubscribe();
-  }, [refreshIntegratedItems]);
+  }, [refreshIntegratedItems, refreshLocalEvents]);
 
   // Container size detection with ResizeObserver for responsive layout
   React.useEffect(() => {
