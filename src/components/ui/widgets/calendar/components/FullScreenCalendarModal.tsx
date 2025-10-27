@@ -445,6 +445,41 @@ export default function FullScreenCalendarModal({
         const endHour = Math.floor(endMinutes / 60);
         const endMin = endMinutes % 60;
         updatedEvent.endTime = `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+      } else if (event.allDay) {
+        // Handle allDay events - preserve multi-day duration
+        // Calculate original duration in days (using only dates, ignore time)
+        const originalStart = new Date(event.date);
+        const originalEnd = event.endDate ? new Date(event.endDate) : originalStart;
+
+        // UTC 날짜만 비교 (시간 무시)
+        const startDateOnly = new Date(Date.UTC(
+          originalStart.getFullYear(),
+          originalStart.getMonth(),
+          originalStart.getDate()
+        ));
+        const endDateOnly = new Date(Date.UTC(
+          originalEnd.getFullYear(),
+          originalEnd.getMonth(),
+          originalEnd.getDate()
+        ));
+
+        // 날짜만 비교하여 duration 계산 (Math.round로 소수점 오차 제거)
+        const durationDays = Math.round((endDateOnly.getTime() - startDateOnly.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Multi-day event: preserve duration
+        // Same-day event: endDate = startDate 23:59:59 (inclusive end)
+        if (durationDays > 0) {
+          // Multi-day: add duration to new start date
+          const newEndDate = new Date(newDate);
+          newEndDate.setDate(newEndDate.getDate() + durationDays);
+          newEndDate.setHours(23, 59, 59, 999);
+          updatedEvent.endDate = newEndDate;
+        } else {
+          // Same-day: end at 23:59:59 of start date
+          const newEndDate = new Date(newDate);
+          newEndDate.setHours(23, 59, 59, 999);
+          updatedEvent.endDate = newEndDate;
+        }
       }
 
       updateLocalEvent(updatedEvent);
