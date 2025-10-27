@@ -26,6 +26,11 @@ export interface CalendarDataChangedDetail {
    * 변경 발생 시각
    */
   timestamp: number;
+
+  /**
+   * 이벤트 발신자 ID (자기 자신이 보낸 이벤트 필터링용)
+   */
+  originId?: string;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 import type { CalendarEvent } from '@/types/dashboard';
 import { loadCalendarEvents } from '@/lib/mock/calendar-events';
 import { notifyCalendarDataChanged, addCalendarDataChangedListener } from '@/lib/calendar-integration/events';
@@ -159,6 +159,9 @@ function toStorageEvent(dashboardEvent: CalendarEvent): Omit<StorageCalendarEven
  * 캘린더 이벤트 관리를 위한 커스텀 훅
  */
 export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
+  // 컴포넌트 고유 ID 생성 (자기 자신이 보낸 이벤트 필터링용)
+  const componentId = useId();
+
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -196,18 +199,24 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
   // calendarDataChanged 이벤트 리스닝 - 다른 곳에서 변경된 캘린더 이벤트를 실시간 반영
   useEffect(() => {
     const handleCalendarDataChanged = (event: CustomEvent) => {
-      const { source } = event.detail;
+      const { source, originId } = event.detail;
 
-      // calendar 소스의 변경사항만 처리 (자신이 발생시킨 이벤트도 포함)
+      // 자기 자신이 보낸 이벤트는 무시 (중복 새로고침 방지)
+      if (originId === componentId) {
+        console.log('[useCalendarEvents] Ignoring own event:', event.detail);
+        return;
+      }
+
+      // calendar 소스의 변경사항만 처리
       if (source === 'calendar') {
-        console.log('[useCalendarEvents] Calendar data changed, refreshing events:', event.detail);
+        console.log('[useCalendarEvents] Calendar data changed from other component, refreshing:', event.detail);
         refreshEvents();
       }
     };
 
     const unsubscribe = addCalendarDataChangedListener(handleCalendarDataChanged);
     return () => unsubscribe();
-  }, [refreshEvents]);
+  }, [refreshEvents, componentId]);
 
   // 이벤트 추가
   const addEvent = useCallback(async (event: CalendarEvent) => {
@@ -229,8 +238,14 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       // 이벤트 목록 새로고침
       await refreshEvents();
 
-      // NOTE: notifyCalendarDataChanged를 호출하지 않음
-      // 이유: 자기 자신도 이 알림을 듣고 있어서 refreshEvents()가 2번 호출되어 중복 표시됨
+      // 다른 컴포넌트에 알림 (자기 자신은 originId로 필터링)
+      notifyCalendarDataChanged({
+        source: 'calendar',
+        changeType: 'add',
+        itemId: createdEvent.id,
+        timestamp: Date.now(),
+        originId: componentId,
+      });
 
       return true;
     } catch (err) {
@@ -238,7 +253,7 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       setError(err as Error);
       return false;
     }
-  }, [refreshEvents]);
+  }, [refreshEvents, componentId]);
 
   // 이벤트 수정
   const updateEvent = useCallback(async (event: CalendarEvent) => {
@@ -258,8 +273,14 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       // 이벤트 목록 새로고침
       await refreshEvents();
 
-      // NOTE: notifyCalendarDataChanged를 호출하지 않음
-      // 이유: 자기 자신도 이 알림을 듣고 있어서 refreshEvents()가 2번 호출되어 중복 표시됨
+      // 다른 컴포넌트에 알림 (자기 자신은 originId로 필터링)
+      notifyCalendarDataChanged({
+        source: 'calendar',
+        changeType: 'update',
+        itemId: updatedEvent.id,
+        timestamp: Date.now(),
+        originId: componentId,
+      });
 
       return true;
     } catch (err) {
@@ -267,7 +288,7 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       setError(err as Error);
       return false;
     }
-  }, [refreshEvents]);
+  }, [refreshEvents, componentId]);
 
   // 이벤트 삭제
   const deleteEvent = useCallback(async (eventId: string) => {
@@ -284,8 +305,14 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       // 이벤트 목록 새로고침
       await refreshEvents();
 
-      // NOTE: notifyCalendarDataChanged를 호출하지 않음
-      // 이유: 자기 자신도 이 알림을 듣고 있어서 refreshEvents()가 2번 호출되어 중복 표시됨
+      // 다른 컴포넌트에 알림 (자기 자신은 originId로 필터링)
+      notifyCalendarDataChanged({
+        source: 'calendar',
+        changeType: 'delete',
+        itemId: eventId,
+        timestamp: Date.now(),
+        originId: componentId,
+      });
 
       return true;
     } catch (err) {
@@ -293,7 +320,7 @@ export function useCalendarEvents(initialEvents?: CalendarEvent[]) {
       setError(err as Error);
       return false;
     }
-  }, [refreshEvents]);
+  }, [refreshEvents, componentId]);
 
   // 날짜별 이벤트 필터링
   const getEventsByDate = useCallback(
