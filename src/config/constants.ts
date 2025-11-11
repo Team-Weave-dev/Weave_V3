@@ -391,7 +391,7 @@ export const plans = {
     priceMonthly: 0,
     limits: {
       projects: 2,
-      widgets: 3,
+      widgets: -1, // TEMPORARY UNLIMITED (2025-01-11) - 한시적 무료 제한 해제, 원래값: 3
       storage: 200, // MB (증가: 100MB → 200MB)
       aiService: false
     },
