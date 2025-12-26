@@ -37,11 +37,76 @@ import { BackupManager } from './utils/BackupManager';
 import { StorageError, type StorageAdapter } from './types/base';
 
 /**
+ * Create a type-safe lazy proxy for services
+ * This avoids using `as any` while still allowing lazy initialization
+ */
+function createLazyProxy<T extends object>(getter: () => T): T {
+  return new Proxy({} as T, {
+    get(_, prop: string | symbol) {
+      const instance = getter();
+      const key = prop as keyof T;
+      const value = instance[key];
+      if (typeof value === 'function') {
+        return (value as Function).bind(instance);
+      }
+      return value;
+    }
+  });
+}
+
+/**
+ * Type for accessing protected storage property from services
+ * This is intentionally accessing a protected property for cache invalidation
+ */
+type ServiceWithInternalStorage<T> = T & { storage: StorageManager };
+
+/**
+ * Create a cached service proxy that recreates the service when storage changes
+ * Services have a protected `storage` property that we need to access for cache invalidation
+ * @param cache - Object holding the cached service instance
+ * @param ServiceClass - Service constructor
+ */
+function createCachedServiceProxy<T extends object>(
+  cache: { value: T | null },
+  ServiceClass: new (storage: StorageManager) => T
+): T {
+  return new Proxy({} as T, {
+    get(_, prop: string | symbol) {
+      const currentStorage = getStorageOrDefault();
+      // Access protected storage property for cache invalidation check
+      const cached = cache.value as ServiceWithInternalStorage<T> | null;
+      if (!cached || cached.storage !== currentStorage) {
+        cache.value = new ServiceClass(currentStorage);
+      }
+      const key = prop as keyof T;
+      const value = cache.value![key];
+      if (typeof value === 'function') {
+        return (value as Function).bind(cache.value);
+      }
+      return value;
+    }
+  });
+}
+
+/**
  * Global storage manager instance
  * Initialized by initializeStorage()
  */
 let storageManager: StorageManager | null = null;
 let currentAdapter: StorageAdapter | null = null;
+let _defaultStorageManager: StorageManager | null = null;
+
+// Service caches for lazy initialization (must be declared before initializeStorage uses them)
+const _projectServiceCache = { value: null as ProjectService | null };
+const _taskServiceCache = { value: null as TaskService | null };
+const _clientServiceCache = { value: null as ClientService | null };
+const _calendarServiceCache = { value: null as CalendarService | null };
+const _documentServiceCache = { value: null as DocumentService | null };
+const _settingsServiceCache = { value: null as SettingsService | null };
+const _dashboardServiceCache = { value: null as DashboardService | null };
+const _userServiceCache = { value: null as UserService | null };
+const _todoSectionServiceCache = { value: null as TodoSectionService | null };
+const _activityLogServiceCache = { value: null as ActivityLogService | null };
 
 /**
  * Get current user ID from Supabase auth
@@ -105,19 +170,19 @@ export async function initializeStorage(): Promise<void> {
     storageManager = new StorageManager(currentAdapter);
 
     // Clear fallback storage manager
-    defaultStorageManager = null;
+    _defaultStorageManager = null;
 
-    // Recreate services with new storage manager
-    _projectService = null;
-    _taskService = null;
-    _clientService = null;
-    _calendarService = null;
-    _documentService = null;
-    _settingsService = null;
-    _dashboardService = null;
-    _userService = null;
-    _todoSectionService = null;
-    _activityLogService = null;
+    // Clear service caches to force recreation with new storage manager
+    _projectServiceCache.value = null;
+    _taskServiceCache.value = null;
+    _clientServiceCache.value = null;
+    _calendarServiceCache.value = null;
+    _documentServiceCache.value = null;
+    _settingsServiceCache.value = null;
+    _dashboardServiceCache.value = null;
+    _userServiceCache.value = null;
+    _todoSectionServiceCache.value = null;
+    _activityLogServiceCache.value = null;
 
     console.log('✅ Storage system initialized successfully');
   } catch (error) {
@@ -160,19 +225,19 @@ export async function switchToSupabaseMode(userId: string): Promise<void> {
     storageManager = new StorageManager(currentAdapter);
 
     // Clear fallback storage manager
-    defaultStorageManager = null;
+    _defaultStorageManager = null;
 
-    // Recreate services with new storage manager
-    _projectService = null;
-    _taskService = null;
-    _clientService = null;
-    _calendarService = null;
-    _documentService = null;
-    _settingsService = null;
-    _dashboardService = null;
-    _userService = null;
-    _todoSectionService = null;
-    _activityLogService = null;
+    // Clear service caches to force recreation with new storage manager
+    _projectServiceCache.value = null;
+    _taskServiceCache.value = null;
+    _clientServiceCache.value = null;
+    _calendarServiceCache.value = null;
+    _documentServiceCache.value = null;
+    _settingsServiceCache.value = null;
+    _dashboardServiceCache.value = null;
+    _userServiceCache.value = null;
+    _todoSectionServiceCache.value = null;
+    _activityLogServiceCache.value = null;
 
     console.log('✅ Switched to Supabase-only mode successfully');
   } catch (error) {
@@ -222,8 +287,6 @@ export const backupManager = new BackupManager(localAdapterForMigration);
  * Service getter functions
  * These ensure services always use the current storage manager instance
  */
-let defaultStorageManager: StorageManager | null = null;
-
 function getStorageOrDefault(): StorageManager {
   if (storageManager) {
     return storageManager;
@@ -244,123 +307,19 @@ function getStorageOrDefault(): StorageManager {
  * Legacy exports for backward compatibility
  * Note: These dynamically use the current storage instance
  */
-export const storage = new Proxy({} as StorageManager, {
-  get: (_, prop) => {
-    return (getStorageOrDefault() as any)[prop];
-  }
-});
+export const storage = createLazyProxy<StorageManager>(getStorageOrDefault);
 
-// Service singletons that use current storage
-let _projectService: ProjectService | null = null;
-let _taskService: TaskService | null = null;
-let _clientService: ClientService | null = null;
-let _calendarService: CalendarService | null = null;
-let _documentService: DocumentService | null = null;
-let _settingsService: SettingsService | null = null;
-let _dashboardService: DashboardService | null = null;
-let _userService: UserService | null = null;
-let _todoSectionService: TodoSectionService | null = null;
-let _activityLogService: ActivityLogService | null = null;
-
-export const projectService = new Proxy({} as ProjectService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_projectService || (_projectService as any).storage !== currentStorage) {
-      _projectService = new ProjectService(currentStorage);
-    }
-    return (_projectService as any)[prop];
-  }
-});
-
-export const taskService = new Proxy({} as TaskService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_taskService || (_taskService as any).storage !== currentStorage) {
-      _taskService = new TaskService(currentStorage);
-    }
-    return (_taskService as any)[prop];
-  }
-});
-
-export const clientService = new Proxy({} as ClientService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_clientService || (_clientService as any).storage !== currentStorage) {
-      _clientService = new ClientService(currentStorage);
-    }
-    return (_clientService as any)[prop];
-  }
-});
-
-export const calendarService = new Proxy({} as CalendarService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_calendarService || (_calendarService as any).storage !== currentStorage) {
-      _calendarService = new CalendarService(currentStorage);
-    }
-    return (_calendarService as any)[prop];
-  }
-});
-
-export const documentService = new Proxy({} as DocumentService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_documentService || (_documentService as any).storage !== currentStorage) {
-      _documentService = new DocumentService(currentStorage);
-    }
-    return (_documentService as any)[prop];
-  }
-});
-
-export const settingsService = new Proxy({} as SettingsService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_settingsService || (_settingsService as any).storage !== currentStorage) {
-      _settingsService = new SettingsService(currentStorage);
-    }
-    return (_settingsService as any)[prop];
-  }
-});
-
-export const dashboardService = new Proxy({} as DashboardService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_dashboardService || (_dashboardService as any).storage !== currentStorage) {
-      _dashboardService = new DashboardService(currentStorage);
-    }
-    return (_dashboardService as any)[prop];
-  }
-});
-
-export const userService = new Proxy({} as UserService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_userService || (_userService as any).storage !== currentStorage) {
-      _userService = new UserService(currentStorage);
-    }
-    return (_userService as any)[prop];
-  }
-});
-
-export const todoSectionService = new Proxy({} as TodoSectionService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_todoSectionService || (_todoSectionService as any).storage !== currentStorage) {
-      _todoSectionService = new TodoSectionService(currentStorage);
-    }
-    return (_todoSectionService as any)[prop];
-  }
-});
-
-export const activityLogService = new Proxy({} as ActivityLogService, {
-  get: (_, prop) => {
-    const currentStorage = getStorageOrDefault();
-    if (!_activityLogService || (_activityLogService as any).storage !== currentStorage) {
-      _activityLogService = new ActivityLogService(currentStorage);
-    }
-    return (_activityLogService as any)[prop];
-  }
-});
+// Type-safe cached service proxies (cache objects declared at top of file)
+export const projectService = createCachedServiceProxy(_projectServiceCache, ProjectService);
+export const taskService = createCachedServiceProxy(_taskServiceCache, TaskService);
+export const clientService = createCachedServiceProxy(_clientServiceCache, ClientService);
+export const calendarService = createCachedServiceProxy(_calendarServiceCache, CalendarService);
+export const documentService = createCachedServiceProxy(_documentServiceCache, DocumentService);
+export const settingsService = createCachedServiceProxy(_settingsServiceCache, SettingsService);
+export const dashboardService = createCachedServiceProxy(_dashboardServiceCache, DashboardService);
+export const userService = createCachedServiceProxy(_userServiceCache, UserService);
+export const todoSectionService = createCachedServiceProxy(_todoSectionServiceCache, TodoSectionService);
+export const activityLogService = createCachedServiceProxy(_activityLogServiceCache, ActivityLogService);
 
 /**
  * Plan service (Supabase-only, no storage instance needed)

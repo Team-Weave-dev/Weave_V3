@@ -1,9 +1,5 @@
 import type {
-  DocumentInfo,
-  DocumentStatus,
-  ProjectDocumentStatus,
   ProjectTableRow,
-  PaymentStatus,
   WBSTask,
   Currency
 } from '@/lib/types/project-table.types';
@@ -437,7 +433,7 @@ export async function addCustomProject(project: ProjectTableRow): Promise<void> 
   const projectEntity = toProject(projectWithWBS);
 
   // BaseService.create()가 id, createdAt, updatedAt을 자동으로 추가하므로 제거
-  const { id, createdAt, updatedAt, ...projectData } = projectEntity;
+  const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...projectData } = projectEntity;
 
   // Storage API에 저장 (id, createdAt, updatedAt 제외)
   await projectService.create(projectData as Omit<Project, 'id' | 'createdAt' | 'updatedAt'>);

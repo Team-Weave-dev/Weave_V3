@@ -7,7 +7,6 @@
 import { TaskService } from '../TaskService'
 import { StorageManager } from '../../core/StorageManager'
 import { LocalStorageAdapter } from '../../adapters/LocalStorageAdapter'
-import type { Task } from '../../types/entities/task'
 
 describe('TaskService', () => {
   let adapter: LocalStorageAdapter

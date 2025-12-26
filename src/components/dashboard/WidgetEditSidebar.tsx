@@ -9,7 +9,6 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import {
   X,
-  GripVertical,
   ChevronUp,
   ChevronDown,
   Trash2,
@@ -20,7 +19,6 @@ import {
   Plus
 } from 'lucide-react'
 import { ImprovedWidget } from '@/types/improved-dashboard'
-import { getDashboardText } from '@/config/brand'
 
 interface WidgetEditSidebarProps {
   isOpen: boolean

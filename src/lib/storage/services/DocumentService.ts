@@ -6,9 +6,9 @@
 
 import { BaseService } from './BaseService';
 import type { StorageManager } from '../core/StorageManager';
-import type { Document, DocumentCreate, DocumentUpdate, DocumentType, DocumentStatus } from '../types/entities/document';
+import type { Document, DocumentType, DocumentStatus } from '../types/entities/document';
 import { isDocument } from '../types/entities/document';
-import { STORAGE_KEYS, buildKey } from '../config';
+import { STORAGE_KEYS } from '../config';
 import type { CreateActivityLogInput } from '../types/entities/activity-log';
 
 /**
@@ -513,7 +513,7 @@ export class DocumentService extends BaseService<Document> {
    * Get documents by multiple tags (all tags must match)
    */
   async getDocumentsByTags(tags: string[]): Promise<Document[]> {
-    const tagSet = new Set(tags);
+    const _tagSet = new Set(tags);
     return this.find((doc) => {
       if (!doc.tags) return false;
       return tags.every((tag) => doc.tags!.includes(tag));

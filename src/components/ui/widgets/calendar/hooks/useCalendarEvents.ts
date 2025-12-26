@@ -138,7 +138,7 @@ function toStorageEvent(dashboardEvent: CalendarEvent): Omit<StorageCalendarEven
   }
 
   return {
-    userId: 'current-user', // TODO: 실제 사용자 ID로 교체
+    userId: 'current-user', // Placeholder: Auth 통합 시 실제 사용자 ID로 교체
     title: dashboardEvent.title,
     description: dashboardEvent.description,
     location: dashboardEvent.location,

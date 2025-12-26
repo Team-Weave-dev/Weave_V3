@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { Header } from "@/components/ui/header"
 import { Button } from "@/components/ui/button"
@@ -74,8 +75,7 @@ import { BasicHero, CenteredHero } from "@/components/ui/hero-section"
 import { BasicFooter, MinimalFooter } from "@/components/ui/footer"
 import { InteractiveCard } from "@/components/ui/interactive-card"
 import Typography from "@/components/ui/typography"
-import { PaletteSwitcher } from "@/components/ui/palette-switcher"
-import { ViewModeSwitch, ViewModeSwitchItem, SimpleViewModeSwitch, type ViewMode } from "@/components/ui/view-mode-switch"
+import { SimpleViewModeSwitch, type ViewMode } from "@/components/ui/view-mode-switch"
 import { BarChart } from "@/components/ui/bar-chart"
 import { LineChart } from "@/components/ui/line-chart"
 import { PieChart } from "@/components/ui/pie-chart"
@@ -100,16 +100,13 @@ import {
   getLoadingText,
   getProjectStatusDescription,
   getProjectPageText,
-  getDataText,
   getAuthText,
   routes,
 } from "@/config/brand"
-import { defaults, layout, typography } from "@/config/constants"
+import { defaults, layout } from "@/config/constants"
 import type { ProjectTableConfig, ProjectTableRow, ProjectStatus } from "@/lib/types/project-table.types"
 import { cn } from "@/lib/utils"
 import {
-  LayoutGrid,
-  List,
   Loader2,
   Menu,
   Send,
@@ -916,9 +913,11 @@ export default function ComponentsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex justify-center">
-                    <img
+                    <Image
                       src={brand.logo.favicon}
                       alt={getLogoAlt("ko")}
+                      width={48}
+                      height={48}
                       className={cn(layout.heights.logoMedium, mdLogoSize)}
                     />
                   </div>

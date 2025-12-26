@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -99,7 +100,7 @@ export function Header({ variant = 'default', className }: HeaderProps = {}) {
   const menuItems = headerNavigation.menus;
   const loggedOutActions = headerNavigation.auth.loggedOut;
   const profileMenuItems = headerNavigation.auth.profileMenu;
-  const menuTitleKey = headerNavigation.auth.menuTitleKey ?? 'auth.profileMenu';
+  const _menuTitleKey = headerNavigation.auth.menuTitleKey ?? 'auth.profileMenu';
 
   const theme = {
     text: brand.theme?.primaryTextClass ?? 'text-primary',
@@ -180,9 +181,11 @@ export function Header({ variant = 'default', className }: HeaderProps = {}) {
             {/* Logo */}
             <div className="flex items-center">
               <Link href={headerNavigation.brand.href} className="flex items-center gap-2 sm:gap-3">
-                <img
+                <Image
                   src={brand.logo.favicon}
                   alt={brand.logo.alt[lang]}
+                  width={36}
+                  height={36}
                   className="w-8 h-8 sm:w-9 sm:h-9"
                 />
                 <span className={cn('text-lg sm:text-xl font-bold', theme.text)}>

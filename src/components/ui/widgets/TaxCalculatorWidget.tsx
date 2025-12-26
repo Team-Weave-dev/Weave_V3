@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,10 +22,8 @@ import {
   DollarSign,
   Receipt,
   Coins,
-  TrendingDown,
   Info
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { getWidgetText } from '@/config/brand';
 import { typography } from '@/config/constants';
 import { 
@@ -182,7 +180,7 @@ const TaxCalculatorWidget: React.FC<TaxCalculatorWidgetProps> = ({
   const resultRef = React.useRef<HTMLDivElement>(null);
 
   // 세금 타입별 아이콘 매핑
-  const getTaxIcon = (type: TaxType) => {
+  const _getTaxIcon = (type: TaxType) => {
     switch (type) {
       case TaxType.VAT:
         return <Receipt className="h-4 w-4" />;

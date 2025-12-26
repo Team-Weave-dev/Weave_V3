@@ -1,37 +1,10 @@
 // ====================================
-// 핵심 비즈니스 타입 정의
+// 비즈니스 타입 정의
 // ====================================
+// NOTE: Project, Client, Task, Document, User는 storage/types/entities에서 정의됨
+// 해당 타입은 @/lib/storage에서 import하여 사용
 
-// 프로젝트 관련 타입
-export interface Project {
-  id: string
-  name: string
-  description?: string
-  client_id?: string
-  status: 'active' | 'completed' | 'on-hold' | 'cancelled'
-  start_date?: string
-  end_date?: string
-  budget?: number
-  created_at: string
-  updated_at: string
-  user_id: string
-}
-
-// 클라이언트 관련 타입
-export interface Client {
-  id: string
-  name: string
-  email?: string
-  phone?: string
-  company?: string
-  address?: string
-  notes?: string
-  created_at: string
-  updated_at: string
-  user_id: string
-}
-
-// 인보이스 관련 타입
+// 인보이스 관련 타입 (storage 미정의 - 향후 이전 필요)
 export interface Invoice {
   id: string
   invoice_number: string
@@ -75,48 +48,7 @@ export interface Payment {
   user_id: string
 }
 
-// 태스크 관련 타입
-export interface Task {
-  id: string
-  project_id?: string
-  title: string
-  description?: string
-  status: 'todo' | 'in-progress' | 'done' | 'cancelled'
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  due_date?: string
-  assigned_to?: string
-  created_at: string
-  updated_at: string
-  user_id: string
-}
-
-// 문서 관련 타입
-export interface Document {
-  id: string
-  project_id?: string
-  client_id?: string
-  title: string
-  content?: string
-  file_url?: string
-  file_type?: string
-  file_size?: number
-  created_at: string
-  updated_at: string
-  user_id: string
-}
-
-// 사용자 관련 타입
-export interface User {
-  id: string
-  email: string
-  full_name?: string
-  avatar_url?: string
-  role?: 'admin' | 'user' | 'viewer'
-  created_at: string
-  updated_at: string
-}
-
-// 리마인더 관련 타입
+// 리마인더 관련 타입 (storage 미정의 - 향후 이전 필요)
 export interface Reminder {
   id: string
   title: string

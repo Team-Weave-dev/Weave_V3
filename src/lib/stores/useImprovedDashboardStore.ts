@@ -1144,8 +1144,8 @@ function debouncedSave() {
         layouts: state.layouts,
         config: state.config
       };
-      // TODO: dashboardService.save 시그니처 변경 필요
-      // 현재는 임시로 현재 브레이크포인트의 widgets만 저장
+      // REFACTOR: dashboardService.save(layouts, config) 시그니처로 변경 필요
+      // 현재는 단일 브레이크포인트 레이아웃만 저장 (다중 브레이크포인트 지원 예정)
       await dashboardService.save(data.layouts[data.currentBreakpoint] || [], data.config);
       console.log('💾 Dashboard layout saved:', {
         breakpoint: data.currentBreakpoint,

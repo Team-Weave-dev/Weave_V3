@@ -12,10 +12,7 @@ import type {
   CacheEntry,
   CacheStats,
   CacheOptions,
-  EvictionPolicy,
   JsonValue,
-  LRUCacheEntry,
-  LFUCacheEntry,
 } from '../types/base';
 
 export class CacheLayer {

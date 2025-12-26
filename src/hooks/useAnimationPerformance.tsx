@@ -45,7 +45,7 @@ export function useAnimationPerformance(options: AnimationPerformanceOptions = {
     performanceLevel: 'high'
   });
 
-  const animationQueueRef = useRef<Map<string, () => void>>(new Map());
+  const _animationQueueRef = useRef<Map<string, () => void>>(new Map());
   const optimizerRef = useRef(animationOptimizer);
 
   // 성능 레벨 결정

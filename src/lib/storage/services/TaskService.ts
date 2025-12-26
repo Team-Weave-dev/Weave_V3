@@ -6,7 +6,7 @@
 
 import { BaseService } from './BaseService';
 import type { StorageManager } from '../core/StorageManager';
-import type { Task, TaskCreate, TaskUpdate, TaskStatus, TaskPriority, TaskRecurring } from '../types/entities/task';
+import type { Task, TaskStatus, TaskPriority, TaskRecurring } from '../types/entities/task';
 import { isTask } from '../types/entities/task';
 import { STORAGE_KEYS } from '../config';
 import type { CreateActivityLogInput } from '../types/entities/activity-log';

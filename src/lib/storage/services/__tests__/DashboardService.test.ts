@@ -8,7 +8,6 @@ import { DashboardService } from '../DashboardService'
 import { LocalStorageAdapter } from '../../adapters/LocalStorageAdapter'
 import type { StorageManager } from '../../core/StorageManager'
 import type { ImprovedWidget, DashboardConfig } from '@/types/improved-dashboard'
-import type { DashboardData } from '../DashboardService'
 
 // Mock localStorage
 const localStorageMock = (() => {

@@ -111,7 +111,7 @@ export class IntegratedCalendarManager {
   /**
    * 데이터 변경 이벤트 처리
    */
-  private async handleDataChanged(detail: CalendarDataChangedDetail): Promise<void> {
+  private async handleDataChanged(_detail: CalendarDataChangedDetail): Promise<void> {
     // 캐시 무효화
     this.invalidateCache();
 
@@ -125,7 +125,7 @@ export class IntegratedCalendarManager {
   /**
    * localStorage 변경 이벤트 처리 (크로스 탭 동기화)
    */
-  private async handleStorageChange(source: CalendarItemSource): Promise<void> {
+  private async handleStorageChange(_source: CalendarItemSource): Promise<void> {
     // 캐시 무효화
     this.invalidateCache();
 

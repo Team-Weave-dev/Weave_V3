@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import {
   GripVertical,
@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Typography from '@/components/ui/typography';
 import Pagination from '@/components/ui/pagination';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -20,7 +19,6 @@ import type {
   ProjectTableColumn,
   ProjectTableRow,
   ProjectTableConfig,
-  TableFilterState,
   TableSortState,
   PaymentStatus
 } from '@/lib/types/project-table.types';
@@ -50,7 +48,7 @@ export function AdvancedTable({
   config,
   onConfigChange,
   onRowClick,
-  loading = false,
+  loading: _loading = false,
   selectedProjectIndex,
   isDeleteMode = false,
   selectedItems = [],
@@ -337,7 +335,7 @@ export function AdvancedTable({
               <Droppable
                 droppableId="table-header"
                 direction="horizontal"
-                renderClone={(provided, snapshot, rubric) => {
+                renderClone={(provided, _snapshot, rubric) => {
                   const column = visibleColumns[rubric.source.index];
                   return (
                     <div
@@ -365,7 +363,7 @@ export function AdvancedTable({
                 );
               }}
             >
-              {(provided, snapshot) => (
+              {(provided, _snapshot) => (
                 <TableHeader>
                   <TableRow
                     {...provided.droppableProps}
@@ -412,7 +410,7 @@ export function AdvancedTable({
                               <div
                                 {...provided.dragHandleProps}
                                 className="flex items-center gap-2 relative cursor-move"
-                                onClick={(e) => {
+                                onClick={(_e) => {
                                   // 드래그 중이 아닐 때만 정렬 실행
                                   if (!snapshot.isDragging && column.sortable) {
                                     handleSort(column.key as string);
@@ -535,7 +533,7 @@ export function AdvancedTable({
                     {index < visibleColumns.length - 1 && (hoveredColumnIndex === index || hoveredColumnIndex === index + 1 || resizingColumnId === column.id) && (
                       <div
                         className="absolute right-0 top-0 w-1 h-full cursor-col-resize bg-border hover:bg-primary transition-colors z-10"
-                        // TODO: 컬럼 리사이징 기능 구현 예정
+                        // NOTE: 컬럼 리사이징 기능 구현 시 onMouseDown 핸들러 활성화 (P2 Feature)
                         // onMouseDown={(e) => startColumnResize(e, column.id, getColumnWidth(column))}
                         style={{ right: '-2px' }}
                       />

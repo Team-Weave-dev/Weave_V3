@@ -8,8 +8,6 @@ import { BaseService } from './BaseService';
 import type { StorageManager } from '../core/StorageManager';
 import type {
   Project,
-  ProjectCreate,
-  ProjectUpdate,
   WBSTask,
   SettlementMethod,
   PaymentStatus,
@@ -19,7 +17,7 @@ import type {
 } from '../types/entities/project';
 import { isProject } from '../types/entities/project';
 import type { CalendarEvent } from '../types/entities/event';
-import type { DeleteRelationsOptions, DeleteRelationsResult, DeleteError } from '../types/base';
+import type { DeleteRelationsOptions, DeleteRelationsResult } from '../types/base';
 import { STORAGE_KEYS } from '../config';
 import type { CreateActivityLogInput } from '../types/entities/activity-log';
 

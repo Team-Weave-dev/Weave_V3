@@ -338,7 +338,7 @@ describe('StorageManager', () => {
           await tx.set('new', 'value')
           throw new Error('Transaction failed')
         })
-      } catch (error) {
+      } catch (_error) {
         // Expected error
       }
 

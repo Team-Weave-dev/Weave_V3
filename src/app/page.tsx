@@ -9,19 +9,13 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import {
   brand,
   getHomeText,
-  getBrandName,
-  routes
 } from '@/config/brand'
-import { layout, typography } from '@/config/constants'
 import {
   Briefcase,
   Calculator,
   BarChart3,
   Layers,
   CheckCircle,
-  TrendingUp,
-  Users,
-  Shield,
   Code,
   Palette,
   Building,

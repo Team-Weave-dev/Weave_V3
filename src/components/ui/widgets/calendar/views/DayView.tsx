@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { format, isSameDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MiniEvent from '../components/MiniEvent';

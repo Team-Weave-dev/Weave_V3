@@ -10,7 +10,6 @@ import {
   TrendingUp,
   FileText,
   ChartBar,
-  Clock,
   Calculator,
   Activity,
   Cloud,
@@ -172,11 +171,14 @@ export function WidgetSidebar({
     if (config && dragImageRef.current) {
       const dragElement = document.createElement('div')
       dragElement.className = `p-4 rounded-lg shadow-lg ${config.dragColor} border-2 border-dashed opacity-80`
-      dragElement.innerHTML = `
-        <div class="flex items-center gap-2">
-          <span class="text-lg">${config.title}</span>
-        </div>
-      `
+      // Safe DOM manipulation instead of innerHTML
+      const innerDiv = document.createElement('div')
+      innerDiv.className = 'flex items-center gap-2'
+      const span = document.createElement('span')
+      span.className = 'text-lg'
+      span.textContent = config.title
+      innerDiv.appendChild(span)
+      dragElement.appendChild(innerDiv)
       dragElement.style.position = 'fixed'
       dragElement.style.top = '-1000px'
       dragElement.style.left = '-1000px'

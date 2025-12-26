@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DeleteDialog } from '@/components/ui/dialogDelete';
 import {
@@ -40,7 +38,7 @@ export function TodoSection({
   isExpanded,
   onToggleExpand,
   onAddTask,
-  onAddSection,
+  onAddSection: _onAddSection,
   onUpdateSection,
   onDeleteSection,
   onDragOver,

@@ -9,7 +9,8 @@ import { AlertCircle } from 'lucide-react'
 
 export default function AuthCodeErrorPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  // searchParams는 향후 쿼리 파라미터 처리에 사용될 예정
+  const _searchParams = useSearchParams()
   const [errorDetails, setErrorDetails] = useState({
     error: '',
     error_code: '',

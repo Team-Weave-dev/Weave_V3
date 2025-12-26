@@ -4,7 +4,6 @@
  */
 
 import type { ImprovedWidget } from '@/types/improved-dashboard';
-import type { GridPosition } from '@/lib/dashboard/grid-utils';
 
 /**
  * 기본 위젯 위치 정의 (9컬럼 그리드 기준)

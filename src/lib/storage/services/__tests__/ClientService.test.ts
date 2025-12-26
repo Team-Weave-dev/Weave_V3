@@ -7,7 +7,7 @@
 import { ClientService } from '../ClientService'
 import { LocalStorageAdapter } from '../../adapters/LocalStorageAdapter'
 import type { StorageManager } from '../../core/StorageManager'
-import type { Client, ClientContact } from '../../types/entities/client'
+import type { ClientContact } from '../../types/entities/client'
 
 // Mock localStorage
 const localStorageMock = (() => {

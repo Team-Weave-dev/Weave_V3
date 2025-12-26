@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { brand, getCompanyName, getLogoAlt, getCopyright } from "@/config/brand"
@@ -45,9 +46,11 @@ const BasicFooter = React.forwardRef<HTMLDivElement, BasicFooterProps>(
           {/* 회사 정보 */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <img
+              <Image
                 src={brand.logo.favicon}
                 alt={getLogoAlt('ko')}
+                width={24}
+                height={24}
                 className="w-6 h-6"
               />
               <h3 className="text-lg font-semibold text-gray-900">{companyName}</h3>
@@ -142,9 +145,11 @@ const MinimalFooter = React.forwardRef<HTMLDivElement, MinimalFooterProps>(
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-3">
-            <img
+            <Image
               src={brand.logo.favicon}
               alt={getLogoAlt('ko')}
+              width={20}
+              height={20}
               className="w-5 h-5"
             />
             <h3 className="text-sm font-medium text-gray-900">{companyName}</h3>

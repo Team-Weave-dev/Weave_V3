@@ -203,7 +203,7 @@ describe('SafeMigrationManager', () => {
       })
 
       // Mock BackupManager to make restore fail
-      const originalRestore = safeMigrationManager.getBackupManager().restoreBackup
+      const _originalRestore = safeMigrationManager.getBackupManager().restoreBackup
       jest
         .spyOn(safeMigrationManager.getBackupManager(), 'restoreBackup')
         .mockRejectedValueOnce(new Error('Restore failed'))

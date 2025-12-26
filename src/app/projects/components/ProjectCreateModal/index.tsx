@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getLoadingText, getProjectPageText } from '@/config/brand'
+import { uiText, getSettlementMethodText, getPaymentStatusText, getCurrencyText, getLoadingText } from '@/config/brand'
 import type { ProjectTableRow, SettlementMethod, PaymentStatus, Currency } from '@/lib/types/project-table.types'
 import type { ProjectDocumentCategory, GeneratedDocument } from '@/lib/document-generator/templates'
 import { Badge } from '@/components/ui/badge'
@@ -68,7 +68,7 @@ const extractNumber = (value: string): number => {
 
 export default function ProjectCreateModal({ isOpen, onClose, onProjectCreate }: ProjectCreateModalProps) {
   const { toast } = useToast()
-  const { plan, usage, canCreateProject, refresh: refreshLimits } = usePlanLimits()
+  const { plan: _plan, usage, canCreateProject, refresh: refreshLimits } = usePlanLimits()
   const [isLoading, setIsLoading] = useState(false)
   const [generatedDocuments, setGeneratedDocuments] = useState<GeneratedDocument[]>([])
   const [showDocumentGenerator, setShowDocumentGenerator] = useState(false)

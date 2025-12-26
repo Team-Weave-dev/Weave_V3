@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Typography from '@/components/ui/typography'
 import { getTaxManagementText } from '@/config/brand'
-import { layout, typography } from '@/config/constants'
+import { typography } from '@/config/constants'
 import { FileText, Calculator, Building2, Clock } from 'lucide-react'
 import { NewsletterForm } from '@/components/ui/newsletter-form'
 

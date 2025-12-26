@@ -12,7 +12,7 @@
 import type { StorageAdapter, TypeGuard } from '../types/base';
 import { StorageError } from '../types/base';
 import { STORAGE_CONFIG, validateId } from '../config';
-import { CompressionManager, decompressData, hasEnoughSpace, getStorageUsage } from '../utils/compression';
+import { CompressionManager, decompressData, getStorageUsage } from '../utils/compression';
 
 /**
  * Configuration options for LocalStorageAdapter

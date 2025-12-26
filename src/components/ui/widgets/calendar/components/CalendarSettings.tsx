@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -237,11 +236,8 @@ const CalendarSettingsModal = React.memo(({
                     variant="default"
                     className="w-full"
                     onClick={() => {
-                      // TODO: Google OAuth 2.0 구현
-                      // 1. Google Identity Services 라이브러리 로드
-                      // 2. OAuth 인증 팝업 표시
-                      // 3. Access Token 받기
-                      // 4. Calendar API 호출 권한 확보
+                      // NOTE: Google OAuth 2.0 연동 구현 예정 (P2 Feature)
+                      // 구현 시: GIS 라이브러리 → OAuth 팝업 → Access Token → Calendar API 권한
                       alert('구글 캘린더 연동 기능은 향후 업데이트 예정입니다.\n\nOAuth 2.0 방식으로 안전하게 구현될 예정입니다.');
                       setLocalSettings({
                         ...localSettings,

@@ -307,10 +307,8 @@ export class GoogleCalendarService {
       // 구글 캘린더에서 이벤트 가져오기
       const googleEvents = await this.fetchEvents(calendarId);
       
-      // TODO: 실제 동기화 로직 구현
-      // - 로컬 이벤트와 구글 이벤트 비교
-      // - 충돌 해결 전략 적용
-      // - 양방향 업데이트 수행
+      // NOTE: Google Calendar 양방향 동기화 로직 구현 예정 (P2 Feature)
+      // 구현 시 고려사항: 로컬/구글 이벤트 비교, 충돌 해결, 양방향 업데이트
       
       console.log('Sync would be performed here with', localEvents.length, 'local events and', googleEvents.length, 'Google events');
       

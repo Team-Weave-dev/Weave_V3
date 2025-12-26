@@ -40,12 +40,13 @@ interface ProjectHeaderProps {
  * This component is separated from the main view logic for better maintainability
  */
 export default function ProjectHeader({
-  viewMode,
-  onViewModeChange,
+  // viewMode and onViewModeChange currently unused - kept for future use
+  viewMode: _viewMode,
+  onViewModeChange: _onViewModeChange,
   onCreateProject,
   stats,
   projects,
-  loading = false
+  loading: _loading = false
 }: ProjectHeaderProps) {
   return (
     <div className="mb-6">

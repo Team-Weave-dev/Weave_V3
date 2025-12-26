@@ -21,7 +21,7 @@ export default function PlanTab() {
   const lang = 'ko' as const
   const { toast } = useToast()
   const [currentPlan, setCurrentPlan] = useState<PlanType>('free')
-  const [loading, setLoading] = useState(true)
+  const [_loading, setLoading] = useState(true)
   const [changingPlan, setChangingPlan] = useState(false)
 
   const planOrder: PlanType[] = useMemo(() => ['free', 'basic', 'pro'], [])

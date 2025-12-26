@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
@@ -14,11 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Calendar,
   AlertCircle,
   Clock,
   ChevronRight,
-  Filter,
   FileText,
   DollarSign,
   Building2,
@@ -79,7 +76,7 @@ function convertTaxScheduleToDeadline(schedule: TaxSchedule): TaxDeadline {
 }
 
 // 기존 하드코딩 데이터는 폴백용으로만 유지 (self-loading이므로 사용 안 함)
-const KOREAN_TAX_CALENDAR: TaxDeadline[] = [
+const _KOREAN_TAX_CALENDAR: TaxDeadline[] = [
   // 매월 반복
   {
     id: 'monthly-withholding',
@@ -290,7 +287,7 @@ const calculateDday = (deadlineDay: number, deadlineMonth?: number) => {
 
 const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: number; h: number } }> = ({
   title = '세무 일정',
-  selectedMonth,
+  selectedMonth: _selectedMonth,
   showOnlyUpcoming = true,
   maxItems = 10,
   compactMode = false,
@@ -299,7 +296,7 @@ const TaxDeadlineWidget: React.FC<TaxDeadlineWidgetProps & { defaultSize?: { w: 
   onDeadlineClick,
   onMonthChange,
   lang = 'ko',
-  defaultSize = { w: 5, h: 2 }
+  defaultSize: _defaultSize = { w: 5, h: 2 }
 }) => {
   const displayTitle = title || getWidgetText.taxDeadline.title('ko');
   const [viewMode, setViewMode] = useState<'next3months' | 'all' | number>('next3months');

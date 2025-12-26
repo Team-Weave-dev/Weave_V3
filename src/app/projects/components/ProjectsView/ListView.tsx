@@ -5,12 +5,12 @@ import { AdvancedTable } from '@/components/ui/advanced-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+// Checkbox reserved for future use
 import { SimpleViewModeSwitch, ViewMode } from '@/components/ui/view-mode-switch';
 import type { ProjectTableRow, ProjectStatus, ProjectTableColumn, ProjectTableConfig } from '@/lib/types/project-table.types';
 import { calculateProjectProgress } from '@/lib/types/project-table.types';
 import { getProjectPageText, getViewModeText } from '@/config/brand';
-import { layout, defaults } from '@/config/constants';
+import { layout } from '@/config/constants';
 import { ChevronDown, ChevronUp, Filter, Settings, Trash2, RotateCcw, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { ProjectStatus as ProjectStatusComponent } from '@/components/projects/shared/ProjectInfoRenderer/ProjectStatus';
@@ -72,7 +72,7 @@ export default function ListView({
   onProjectClick,
   loading = false,
   showColumnSettings = true, // 기본값은 true (ListView에서는 표시)
-  onProjectsChange,
+  onProjectsChange: _onProjectsChange,
   viewMode,
   onViewModeChange,
   // useProjectTable에서 전달받은 props들
@@ -82,16 +82,16 @@ export default function ListView({
   resetFilters,
   updatePageSize,
   paginatedData,
-  filteredCount,
-  totalCount,
-  totalPages,
-  updatePage,
-  canGoToPreviousPage,
-  canGoToNextPage,
-  goToFirstPage,
-  goToPreviousPage,
-  goToNextPage,
-  goToLastPage,
+  filteredCount: _filteredCount,
+  totalCount: _totalCount,
+  totalPages: _totalPages,
+  updatePage: _updatePage,
+  canGoToPreviousPage: _canGoToPreviousPage,
+  canGoToNextPage: _canGoToNextPage,
+  goToFirstPage: _goToFirstPage,
+  goToPreviousPage: _goToPreviousPage,
+  goToNextPage: _goToNextPage,
+  goToLastPage: _goToLastPage,
   isDeleteMode,
   selectedItems,
   toggleDeleteMode,
@@ -101,13 +101,13 @@ export default function ListView({
   handleDeleteSelected,
   availableClients
 }: ListViewProps) {
-  const [selectedProjectIndex, setSelectedProjectIndex] = useState(-1);
+  const [selectedProjectIndex, _setSelectedProjectIndex] = useState(-1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isColumnSettingsOpen, setIsColumnSettingsOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Stats for display - WBS 기반 진행률 사용 (단일 진실 공급원)
-  const stats = useMemo(() => {
+  const _stats = useMemo(() => {
     if (loading) return { inProgress: 0, completed: 0, avgProgress: 0 };
     return {
       inProgress: projects.filter(p => p.status === 'in_progress').length,

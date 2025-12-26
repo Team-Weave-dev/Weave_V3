@@ -617,7 +617,7 @@ export class SupabaseAdapter implements StorageAdapter {
    */
   async set<T extends JsonValue>(key: string, value: T): Promise<void> {
     try {
-      const { entity, id } = this.parseKey(key)
+      const { entity, id: _id } = this.parseKey(key)
       const tableName = this.getTableName(entity)
 
       // Special handling for dashboard (store in user_settings.dashboard column)

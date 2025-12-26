@@ -7,7 +7,6 @@
 import { CalendarService } from '../CalendarService'
 import { StorageManager } from '../../core/StorageManager'
 import { LocalStorageAdapter } from '../../adapters/LocalStorageAdapter'
-import type { CalendarEvent } from '../../types/entities/event'
 
 describe('CalendarService', () => {
   let adapter: LocalStorageAdapter

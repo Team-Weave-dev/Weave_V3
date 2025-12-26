@@ -5,7 +5,6 @@ import type { CalendarEvent, TaxDeadline, TodoTask } from '@/types/dashboard';
 import type { TaxSchedule } from '@/lib/storage/types/entities/tax-schedule';
 import type { IDataSource } from '../IntegratedCalendarManager';
 import { notifyCalendarDataChanged } from '../events';
-import { taxScheduleService } from '@/lib/storage/services/TaxScheduleService';
 import {
   getCalendarEvents as getStorageCalendarEvents,
   saveCalendarEvents as saveStorageCalendarEvents,

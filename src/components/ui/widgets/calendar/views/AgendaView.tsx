@@ -40,7 +40,7 @@ interface AgendaViewProps {
 const AgendaView = React.memo(({
   events,
   onEventClick,
-  containerHeight
+  containerHeight: _containerHeight
 }: AgendaViewProps) => {
   // 안전한 날짜 파싱 헬퍼
   const parseEventDate = (date: Date | string): Date | null => {

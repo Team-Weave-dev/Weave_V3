@@ -41,7 +41,7 @@ const WeekView = React.memo(({
   // 동적 높이 계산
   const headerHeight = 60;
   const defaultHeight = 600;
-  const scrollAreaHeight = Math.max(300, (containerHeight || defaultHeight) - headerHeight);
+  const _scrollAreaHeight = Math.max(300, (containerHeight || defaultHeight) - headerHeight);
 
   // 종일 이벤트 필터링
   const allDayEvents = events.filter(event => event.allDay);

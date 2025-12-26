@@ -12,11 +12,9 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import {
   Clock,
-  User,
   FileText,
   CheckCircle2,
   XCircle,
@@ -29,7 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 import { getWidgetText, getLoadingText } from '@/config/brand';
 import { typography } from '@/config/constants';
-import type { RecentActivityWidgetProps, ActivityItem, ActivityType } from '@/types/dashboard';
+import type { RecentActivityWidgetProps, ActivityType } from '@/types/dashboard';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 
 // 활동 타입별 색상 및 아이콘 매핑
@@ -97,13 +95,13 @@ export function RecentActivityWidget({
   title,
   maxItems = 10,
   showFilter = true,
-  filterByUser,
+  filterByUser: _filterByUser,
   filterByType,
   onActivityClick,
   lang = 'ko'
 }: RecentActivityWidgetProps) {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
-  const [selectedUserFilter, setSelectedUserFilter] = useState<string>('all');
+  const [_selectedUserFilter, _setSelectedUserFilter] = useState<string>('all');
 
   const displayTitle = title || getWidgetText.recentActivity.title(lang);
 

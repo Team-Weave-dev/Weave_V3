@@ -48,7 +48,6 @@ import type {
   WBSTask
 } from '@/lib/types/project-table.types';
 import { calculateProjectProgress } from '@/lib/types/project-table.types';
-import { getWBSTemplateByType } from '@/lib/wbs/templates';
 import { MiniWBS } from '@/components/projects/shared/MiniWBS';
 
 // 편집 관련 타입
@@ -78,7 +77,6 @@ import {
   CalendarIcon,
   FileTextIcon,
   CreditCardIcon,
-  CheckCircleIcon,
   ClockIcon,
   Edit3Icon,
   XIcon,
@@ -90,8 +88,6 @@ import {
   Loader2,
   Building2,
   Calculator,
-  BarChart3,
-  Flag,
   RotateCcw,
   HelpCircle
 } from 'lucide-react';
@@ -194,7 +190,7 @@ export default function ProjectDetail({
   // 단계 초기화
   onResetStatus
 }: ProjectDetailProps) {
-  const lang = 'ko'; // TODO: 나중에 언어 설정과 연동
+  const lang = 'ko'; // NOTE: 다국어 지원 시 useSettings() 훅의 language 값 사용
   const { toast } = useToast();
 
   // 편집 모드 확인
@@ -211,7 +207,7 @@ export default function ProjectDetail({
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
 
   // Project detail states
-  const [settlementMethod, setSettlementMethod] = useState(project.settlementMethod || 'not_set');
+  const [settlementMethod, _setSettlementMethod] = useState(project.settlementMethod || 'not_set');
   const [generatorState, setGeneratorState] = useState<{
     open: boolean;
     category: ProjectDocumentCategory;
@@ -746,7 +742,7 @@ export default function ProjectDetail({
     }
   };
 
-  const statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
+  const _statusVariantMap: Record<ProjectTableRow['status'], BadgeProps['variant']> = {
     completed: 'status-soft-completed',
     in_progress: 'status-soft-inprogress',
     review: 'status-soft-review',

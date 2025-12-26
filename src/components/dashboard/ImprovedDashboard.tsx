@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getDashboardText } from '@/config/brand';
 import {
-  Settings,
   Save,
   X,
   Plus,
@@ -18,17 +17,15 @@ import {
   ArrowUp,
   RotateCcw
 } from 'lucide-react';
-import { 
+import {
   useImprovedDashboardStore,
   selectWidgets,
   selectConfig,
   selectEditState,
-  selectIsEditMode,
-  shallow
+  selectIsEditMode
 } from '@/lib/stores/useImprovedDashboardStore';
 import {
   GridPosition,
-  deltaToGrid,
   getOverlapRatio,
   canSwapWidgets,
   getTransformStyle
@@ -73,13 +70,13 @@ export function ImprovedDashboard({
   const {
     setWidgets,
     addWidget,
-    updateWidget,
+    updateWidget: _updateWidget,
     removeWidget,
-    moveWidget,
+    moveWidget: _moveWidget,
     moveWidgetWithPush,
-    resizeWidget,
-    resizeWidgetWithPush,
-    resizeWidgetWithShrink,
+    resizeWidget: _resizeWidget,
+    resizeWidgetWithPush: _resizeWidgetWithPush,
+    resizeWidgetWithShrink: _resizeWidgetWithShrink,
     resizeWidgetSmart,
     swapWidgets,
     compactWidgets,
@@ -87,7 +84,7 @@ export function ImprovedDashboard({
     findSpaceForWidget,
     checkCollision,
     setColumns,
-    enterEditMode,
+    enterEditMode: _enterEditMode,
     exitEditMode,
     startDragging,
     updateDragging,
@@ -95,10 +92,10 @@ export function ImprovedDashboard({
     startResizing,
     updateResizing,
     stopResizing,
-    selectWidget,
+    selectWidget: _selectWidget,
     setHoveredPosition,
     setDragOverWidget,
-    resetStore,
+    resetStore: _resetStore,
   } = useImprovedDashboardStore();
   
   // 로컬 상태
@@ -524,10 +521,10 @@ export function ImprovedDashboard({
         const y = e.clientY - rect.top;
 
         // 그리드 좌표로 변환
-        const gridX = Math.floor(x / (cellSize.width + config.gap));
-        const gridY = Math.floor(y / (cellSize.height + config.gap));
+        const _gridX = Math.floor(x / (cellSize.width + config.gap));
+        const _gridY = Math.floor(y / (cellSize.height + config.gap));
 
-        // TODO: 드롭 위치 미리보기 UI 추가 가능
+        // NOTE: 드롭 위치 미리보기 UI 추가 시 _gridX, _gridY 활용 가능 (P3 Enhancement)
       }
     }
   }, [cellSize, config.gap]);

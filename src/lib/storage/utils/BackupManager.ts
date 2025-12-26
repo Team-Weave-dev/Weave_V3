@@ -222,7 +222,7 @@ export class BackupManager {
     let backup: BackupData;
     try {
       backup = JSON.parse(json);
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Failed to parse backup file: invalid JSON');
     }
 

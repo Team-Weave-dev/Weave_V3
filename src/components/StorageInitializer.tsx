@@ -17,7 +17,7 @@ import { useStorageInitStore } from '@/lib/stores/useStorageInitStore'
  */
 export function StorageInitializer() {
   const pathname = usePathname()
-  const [initialized, setInitialized] = useState(false)
+  const [_initialized, setInitialized] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { startInitializing, setInitialized: setGlobalInitialized, setError: setGlobalError } = useStorageInitStore()
 
@@ -86,7 +86,8 @@ export function StorageInitializer() {
     return () => {
       mounted = false
     }
-  }, [pathname])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, setGlobalError, setGlobalInitialized, startInitializing])
 
   // 초기화 중 에러 발생 시 개발 환경에서만 표시
   if (error && process.env.NODE_ENV === 'development') {

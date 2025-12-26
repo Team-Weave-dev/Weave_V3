@@ -8,8 +8,8 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, ChartBar, ChartLine, XCircle } from 'lucide-react';
 import { getWidgetText, getLoadingText } from '@/config/brand';
-import { typography, chart as chartConfig } from '@/config/constants';
-import { useRevenueChart, type RevenueData } from '@/hooks/useRevenueChart';
+import { typography } from '@/config/constants';
+import { useRevenueChart } from '@/hooks/useRevenueChart';
 
 // 차트 뷰 타입
 type ChartView = 'bar' | 'line';

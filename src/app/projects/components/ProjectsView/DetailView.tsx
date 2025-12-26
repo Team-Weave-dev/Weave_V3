@@ -71,7 +71,7 @@ export default function DetailView({
   projects,
   selectedProjectId: initialSelectedId,
   loading = false,
-  showColumnSettings = false, // 기본값은 false (DetailView에서는 숨김)
+  showColumnSettings: _showColumnSettings = false, // 기본값은 false (DetailView에서는 숨김)
   onProjectsChange,
   viewMode,
   onViewModeChange
@@ -444,7 +444,7 @@ export default function DetailView({
     enterEditMode(projectToEdit);
   };
 
-  const handleDeleteProject = (projectId?: string) => {
+  const handleDeleteProject = (_projectId?: string) => {
     setIsDeleteModalOpen(true);
   };
 
@@ -513,7 +513,7 @@ export default function DetailView({
     }
   };
 
-  const handleCancelDelete = () => {
+  const _handleCancelDelete = () => {
     setIsDeleteModalOpen(false);
   };
 

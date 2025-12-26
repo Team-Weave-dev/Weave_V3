@@ -8,8 +8,6 @@ import { BaseService } from './BaseService';
 import type { StorageManager } from '../core/StorageManager';
 import type {
   CalendarEvent,
-  CalendarEventCreate,
-  CalendarEventUpdate,
   EventType,
   EventCategory,
   EventStatus,

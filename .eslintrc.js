@@ -9,13 +9,15 @@ module.exports = {
       {
         args: "after-used",
         argsIgnorePattern: "^_",
-        varsIgnorePattern: "^_"
+        varsIgnorePattern: "^_",
+        caughtErrors: "none"
       }
     ],
     "react/jsx-key": "off",
     "prefer-const": "off",
-    "@next/next/no-img-element": "off",
+    "@next/next/no-img-element": "warn",
     "jsx-a11y/role-supports-aria-props": "off",
-    "react-hooks/exhaustive-deps": "warn"
+    "react-hooks/exhaustive-deps": "warn",
+    "no-console": ["warn", { "allow": ["warn", "error", "info"] }]
   }
 };

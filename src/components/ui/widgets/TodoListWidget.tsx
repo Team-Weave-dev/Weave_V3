@@ -1,28 +1,19 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { 
-  Plus, 
-  Trash2, 
-  ChevronDown, 
-  ChevronRight,
-  GripVertical,
-  Flag,
-  CalendarDays,
+import {
+  Plus,
   List,
   Calendar as CalendarIcon,
   Clock,
   FolderPlus,
   Settings
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { getWidgetText } from '@/config/brand';
 import { typography } from '@/config/constants';
 // TodoListWidgetProps는 로컬 타입에서 import
@@ -37,26 +28,18 @@ import { TodoOptionsModal } from './todo-list/components/TodoOptionsModal';
 
 // 리팩토링된 훅들 import
 import { useTodoState } from './todo-list/hooks/useTodoState';
-import { useDragAndDrop } from './todo-list/hooks/useDragAndDrop';
 
 // 상수들 import
-import { 
-  priorityColors,
-  STORAGE_KEY, 
-  SECTIONS_KEY, 
-  VIEW_MODE_KEY,
+import {
   OPTIONS_KEY,
   DEFAULT_OPTIONS,
   getDateGroups
 } from './todo-list/constants';
 
 // 유틸리티 함수들 import
-import { 
-  startOfDay, 
-  endOfDay, 
-  addDays, 
-  isSameDay, 
-  formatDateBadge 
+import {
+  startOfDay,
+  addDays
 } from './todo-list/utils/date';
 
 export function TodoListWidget({ 
@@ -66,7 +49,7 @@ export function TodoListWidget({
   onTaskToggle,
   onTaskDelete,
   onTaskUpdate,
-  defaultSize = { w: 4, h: 4 }
+  defaultSize: _defaultSize = { w: 4, h: 4 }
 }: TodoListWidgetProps & { defaultSize?: { w: number; h: number } }) {
   const displayTitle = title || getWidgetText.todoList.title('ko');
   
@@ -76,16 +59,16 @@ export function TodoListWidget({
     sections,
     viewMode,
     expandedSections,
-    selectedSectionId,
-    editingTaskId,
-    editingTaskTitle,
-    editingSectionId,
-    editingSectionTitle,
+    selectedSectionId: _selectedSectionId,
+    editingTaskId: _editingTaskId,
+    editingTaskTitle: _editingTaskTitle,
+    editingSectionId: _editingSectionId,
+    editingSectionTitle: _editingSectionTitle,
     draggedTask,
-    dragOverSection,
+    dragOverSection: _dragOverSection,
     isAddingSection,
     newSectionTitle,
-    dateGroups,
+    dateGroups: _dateGroups,
     
     handleToggleTask,
     handleDeleteTask,
@@ -102,10 +85,10 @@ export function TodoListWidget({
     handleDragOver,
     handleDrop,
     
-    setEditingTaskId,
-    setEditingTaskTitle,
-    setEditingSectionId,
-    setEditingSectionTitle,
+    setEditingTaskId: _setEditingTaskId,
+    setEditingTaskTitle: _setEditingTaskTitle,
+    setEditingSectionId: _setEditingSectionId,
+    setEditingSectionTitle: _setEditingSectionTitle,
     setIsAddingSection,
     setNewSectionTitle,
     setViewMode
@@ -118,14 +101,14 @@ export function TodoListWidget({
   });
 
   // UI 상태
-  const [isAdding, setIsAdding] = useState(false);
+  const [_isAdding, setIsAdding] = useState(false);
   const [addingSectionId, setAddingSectionId] = useState<string | null>(null);
   const [addingDateGroupId, setAddingDateGroupId] = useState<string | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<TodoPriority>('p3');
   const [selectedDueDate, setSelectedDueDate] = useState<Date | undefined>(undefined);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
-  const inputRef = useRef<HTMLInputElement>(null);
+  const _inputRef = useRef<HTMLInputElement>(null);
   
   // 옵션 설정 상태
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
@@ -135,7 +118,7 @@ export function TodoListWidget({
       if (saved) {
         try {
           return JSON.parse(saved);
-        } catch (e) {
+        } catch (_e) {
           return DEFAULT_OPTIONS;
         }
       }
@@ -246,7 +229,7 @@ export function TodoListWidget({
   }, [localTasks]);
 
   // 새 작업 추가 핸들러
-  const handleAddNewTask = useCallback((sectionId: string = 'default', parentId?: string) => {
+  const _handleAddNewTask = useCallback((sectionId: string = 'default', parentId?: string) => {
     if (!newTaskTitle.trim()) return;
 
     handleAddTask(newTaskTitle, sectionId, parentId, selectedPriority, selectedDueDate);

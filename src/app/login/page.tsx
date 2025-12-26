@@ -64,7 +64,7 @@ export default function LoginPage() {
         router.push('/dashboard')
         router.refresh()
       }
-    } catch (err) {
+    } catch (_err) {
       setError('로그인 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
@@ -75,7 +75,7 @@ export default function LoginPage() {
     try {
       setIsLoading(true)
       window.location.href = '/api/auth/google'
-    } catch (err) {
+    } catch (_err) {
       setError('Google 로그인 중 오류가 발생했습니다.')
       setIsLoading(false)
     }

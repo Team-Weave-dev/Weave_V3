@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -207,11 +208,15 @@ const SplitHero = React.forwardRef<HTMLDivElement, SplitHeroProps>(
           </div>
           <div className={cn("relative", reversed && "lg:order-1")}>
             {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={imageAlt}
-                className="w-full h-auto rounded-lg shadow-lg"
-              />
+              <div className="relative w-full aspect-video">
+                <Image
+                  src={imageUrl}
+                  alt={imageAlt}
+                  fill
+                  className="object-cover rounded-lg shadow-lg"
+                  unoptimized
+                />
+              </div>
             ) : (
               <Card className="h-80 lg:h-96">
                 <CardContent className="h-full flex items-center justify-center">

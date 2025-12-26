@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { getButtonText, getLoadingText } from "@/config/brand"
+import { getLoadingText } from "@/config/brand"
 import { defaults } from "@/config/constants"
 
 const loadingButtonVariants = cva("", {

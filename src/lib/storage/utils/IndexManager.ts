@@ -8,17 +8,7 @@
  * - Statistics tracking (hit rate, lookup time)
  */
 
-import type { IndexDefinition, IndexStats, IndexLookupResult } from '../types/base';
-
-/**
- * Generic index entry
- */
-interface IndexEntry {
-  /** Indexed field value */
-  key: string;
-  /** Set of item IDs with this value */
-  ids: Set<string>;
-}
+import type { IndexDefinition, IndexStats } from '../types/base';
 
 export class IndexManager {
   /**

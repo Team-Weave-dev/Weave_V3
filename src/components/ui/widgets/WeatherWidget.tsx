@@ -26,7 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { WeatherWidgetProps, WeatherData, WeatherCondition } from '@/types/dashboard';
 import { getWidgetText } from '@/config/brand';
-import { typography, layout, colors } from '@/config/constants';
+import { typography, colors } from '@/config/constants';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -112,10 +112,10 @@ export default function WeatherWidget({
   location = '서울',
   units = 'celsius',
   showForecast = true,
-  maxForecastDays = 5,
+  maxForecastDays: _maxForecastDays = 5,
   updateInterval = 30,
-  useRealData = false,
-  onLocationChange,
+  useRealData: _useRealData = false,
+  onLocationChange: _onLocationChange,
   onRefresh,
   lang = 'ko',
   gridSize
@@ -238,7 +238,7 @@ export default function WeatherWidget({
     );
   }
   
-  const gradient = weatherGradients[weatherData.current.condition];
+  const _gradient = weatherGradients[weatherData.current.condition];
   
   // Minimal 사이즈 (2x1) - 간단한 현재 날씨만
   if (widgetSize === 'minimal') {

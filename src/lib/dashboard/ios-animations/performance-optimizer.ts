@@ -255,7 +255,7 @@ export class AnimationPerformanceOptimizer {
   /**
    * 리플로우 최소화를 위한 배치 DOM 업데이트
    */
-  static batchDOMUpdates(updates: (() => void)[]): void {
+  static batchDOMUpdates(_updates: (() => void)[]): void {
     // 읽기 작업과 쓰기 작업 분리
     const reads: (() => void)[] = [];
     const writes: (() => void)[] = [];

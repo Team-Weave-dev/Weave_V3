@@ -6,7 +6,7 @@
 
 import type { StorageManager } from '../core/StorageManager';
 import { BaseService } from './BaseService';
-import type { TodoSection, TodoSectionCreate, TodoSectionUpdate } from '../types/entities/todo-section';
+import type { TodoSection } from '../types/entities/todo-section';
 import { isTodoSection } from '../types/entities/todo-section';
 import { STORAGE_KEYS } from '../config';
 

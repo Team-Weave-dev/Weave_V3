@@ -28,7 +28,7 @@ import type { NotificationBannerContainerProps } from '@/types/notification-bann
  */
 export function NotificationBannerContainer({
   maxBanners = notificationBanner.limits.maxSimultaneous,
-  position = 'top',
+  position: _position = 'top',
 }: NotificationBannerContainerProps = {}) {
   const { banners, loading, dismissBanner, triggerWebhook } = useNotificationBanner();
 

@@ -9,7 +9,7 @@ import DetailView from './DetailView';
 import ProjectCreateModal from '../ProjectCreateModal';
 import type { ProjectTableRow } from '@/lib/types/project-table.types';
 import { useProjectTable } from '@/lib/hooks/useProjectTable';
-import { getButtonText, getLoadingText } from '@/config/brand';
+import { getLoadingText } from '@/config/brand';
 import { FullPageLoadingSpinner } from '@/components/ui/loading-spinner';
 import { fetchMockProjects, addCustomProject } from '@/lib/mock/projects';
 import { addProjectDocument } from '@/lib/mock/documents';

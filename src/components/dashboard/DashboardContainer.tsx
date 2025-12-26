@@ -4,9 +4,9 @@ import React, { useState, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Grid3x3, Settings, Plus, Save, Undo2, Redo2 } from 'lucide-react';
+import { Grid3x3, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Widget, DashboardLayout } from '@/types/dashboard';
+import type { Widget } from '@/types/dashboard';
 
 interface DashboardContainerProps {
   initialWidgets?: Widget[];
@@ -15,7 +15,7 @@ interface DashboardContainerProps {
 export function DashboardContainer({ initialWidgets = [] }: DashboardContainerProps) {
   const [widgets, setWidgets] = useState<Widget[]>(initialWidgets);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [columns, setColumns] = useState(5);
+  const [columns, _setColumns] = useState(5);
 
   const handleDragEnd = useCallback((result: DropResult) => {
     if (!result.destination) return;

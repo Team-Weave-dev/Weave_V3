@@ -21,7 +21,6 @@ import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import MiniEvent from '../components/MiniEvent';
 import type { CalendarViewProps } from '../types';
-import type { CalendarEvent } from '@/types/dashboard';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 
 interface MonthViewProps extends CalendarViewProps {
@@ -44,7 +43,7 @@ const MonthView = React.memo(({
   containerHeight,
   containerWidth,
   gridSize,
-  defaultSize = { w: 5, h: 4 },
+  defaultSize: _defaultSize = { w: 5, h: 4 },
   weekStartsOn = 0,
   showWeekNumbers = false,
   onTaskDateUpdate
@@ -59,7 +58,7 @@ const MonthView = React.memo(({
   const [dragOverDate, setDragOverDate] = React.useState<Date | null>(null);
   
   // 그리드 크기가 없으면 기본값 사용
-  const effectiveGridSize = gridSize || defaultSize;
+  const effectiveGridSize = gridSize || _defaultSize;
 
   // 요일 배열 (주 시작일에 따라 동적 생성)
   const allWeekDays = ['일', '월', '화', '수', '목', '금', '토'];
@@ -85,7 +84,7 @@ const MonthView = React.memo(({
   // 개선된 반응형 표시 모드 결정 - 점 모드 제거, 최소 2열 지원
   const getDisplayMode = () => {
     // 1. 컨테이너 실제 너비 기반 우선 판단
-    const defaultWidth = 800;
+    const _defaultWidth = 800;
     const actualWidth = containerWidth || ((containerHeight || defaultHeight) * (effectiveGridSize.w || 4) / (effectiveGridSize.h || 3));
     const estimatedCellWidth = actualWidth / 7; // 7일 기준
     
@@ -277,7 +276,7 @@ const MonthView = React.memo(({
                         {dayEvents.slice(0, maxEventsToShow).map((event, index) => {
                           // Check if event is from integrated calendar
                           // 투두와 캘린더 이벤트는 드래그 가능, 세금만 드래그 불가
-                          const isIntegrated =
+                          const _isIntegrated =
                             event.id.startsWith('todo-') ||
                             event.id.startsWith('tax-') ||
                             event.id.startsWith('calendar-event-');

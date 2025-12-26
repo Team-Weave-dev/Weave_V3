@@ -7,7 +7,7 @@
 
 import type { DocumentInfo } from '../types/project-table.types';
 import type { GeneratedDocument } from '../document-generator/templates';
-import type { Document, DocumentCreate, DocumentStatus as StorageDocumentStatus } from '@/lib/storage/types/entities/document';
+import type { Document, DocumentStatus as StorageDocumentStatus } from '@/lib/storage/types/entities/document';
 import { documentService } from '@/lib/storage';
 import { createClient } from '@/lib/supabase/client';
 

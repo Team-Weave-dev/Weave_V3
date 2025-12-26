@@ -7,7 +7,6 @@
 
 import { isValidISODate, isStringArray, isPositiveNumber } from '../validators';
 import type { DashboardData } from '@/lib/storage/services/DashboardService';
-import type { ImprovedWidget, DashboardConfig } from '@/types/improved-dashboard';
 
 /**
  * Theme option

@@ -22,7 +22,7 @@ import { getDefaultWidgetSize } from '@/lib/dashboard/widget-defaults'
 import { ConfirmDialog } from '@/components/ui/dialogConfirm'
 import { createDefaultWidgets } from '@/components/dashboard/utils/defaultWidgets'
 import { usePlanLimits } from '@/hooks/usePlanLimits'
-import { useToast } from '@/hooks/use-toast'
+// useToast는 무료화 이후 미사용 - 향후 유료 플랜 재활성화시 사용
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,8 +35,8 @@ import {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { toast } = useToast()
-  const { plan, usage, canAddWidget, refresh: refreshLimits } = usePlanLimits()
+  // toast, plan, usage, canAddWidget는 무료화 이후 미사용 - 향후 유료 플랜 재활성화시 사용
+  const { refresh: refreshLimits } = usePlanLimits()
   const [loading, setLoading] = useState(true)
   const storageInitialized = useStorageInitStore((state) => state.isInitialized)
   const [isCompact, setIsCompact] = useState(true)
@@ -143,7 +143,7 @@ export default function DashboardPage() {
     }
   }, [isEditMode, isMobile])
   
-  const handleAddWidget = () => {
+  const _handleAddWidget = () => {
     // 사이드바 방식으로 변경
     setWidgetSidebarOpen(true)
     setWidgetModalOpen(false)

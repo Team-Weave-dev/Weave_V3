@@ -595,7 +595,7 @@ export default function ProjectDetailClient({ projectId }: ProjectDetailClientPr
     }
   };
 
-  const handleCancelDelete = () => {
+  const _handleCancelDelete = () => {
     setIsDeleteModalOpen(false);
   };
 

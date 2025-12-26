@@ -4,7 +4,6 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Select,
@@ -17,9 +16,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  DollarSign,
-  Briefcase,
-  CheckCircle2,
   Activity,
   Calendar,
   XCircle,
@@ -27,7 +23,7 @@ import {
 import { cn } from '@/lib/utils';
 import { getWidgetText, getLoadingText } from '@/config/brand';
 import { typography } from '@/config/constants';
-import { useKPIMetrics, type KPIMetric } from '@/hooks/useKPIMetrics';
+import { useKPIMetrics } from '@/hooks/useKPIMetrics';
 
 interface KPIWidgetProps {
   title?: string;
@@ -51,42 +47,6 @@ const TrendIcon = ({ trend, className }: { trend?: 'up' | 'down' | 'stable'; cla
   }
 };
 
-// 색상 변형 매핑 - 다른 위젯과 통일
-const getColorClasses = (color: KPIMetric['color'], isHighlighted: boolean = false) => {
-  if (isHighlighted) {
-    switch (color) {
-      case 'success':
-        return 'bg-green-50/70 border-green-200/50';
-      case 'warning':
-        return 'bg-orange-50/70 border-orange-200/50';
-      case 'error':
-        return 'bg-red-50/70 border-red-200/50';
-      case 'info':
-        return 'bg-blue-50/70 border-blue-200/50';
-      default:
-        return 'bg-gray-50/70 border-gray-200/50';
-    }
-  }
-  // 기본 카드 스타일 - 다른 위젯과 동일
-  return 'bg-background hover:bg-accent';
-};
-
-// 텍스트 색상 매핑
-const getTextColorClass = (color: KPIMetric['color']) => {
-  switch (color) {
-    case 'success':
-      return 'text-green-600';
-    case 'warning':
-      return 'text-orange-600';
-    case 'error':
-      return 'text-red-600';
-    case 'info':
-      return 'text-blue-600';
-    default:
-      return 'text-muted-foreground';
-  }
-};
-
 // 진행률 색상 매핑 - 중앙화된 색상 시스템 사용
 const getProgressColor = (progress?: number) => {
   if (!progress) return 'bg-muted';
@@ -102,7 +62,7 @@ export function KPIWidget({
   variant = 'detailed',
   periodType = 'monthly',
   onPeriodChange,
-  defaultSize = { w: 5, h: 2 }
+  defaultSize: _defaultSize = { w: 5, h: 2 }
 }: KPIWidgetProps & { defaultSize?: { w: number; h: number } }) {
   const displayTitle = title || getWidgetText.kpiMetrics.title(lang);
   const [currentPeriod, setCurrentPeriod] = useState<'monthly' | 'yearly'>(periodType);

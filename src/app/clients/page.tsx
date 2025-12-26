@@ -3,7 +3,23 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Client } from '@/types/business'
+
+/**
+ * 데모용 간소화 클라이언트 타입
+ * NOTE: 실제 구현 시 @/lib/storage의 Client 타입과 clientService 사용
+ */
+interface DemoClient {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  address?: string; // 데모에서는 단순 문자열 사용
+  notes?: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,11 +54,11 @@ import { Textarea } from "@/components/ui/textarea"
 
 export default function ClientsPage() {
   const router = useRouter()
-  const [clients, setClients] = useState<Client[]>([])
+  const [clients, setClients] = useState<DemoClient[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [formData, setFormData] = useState<Partial<Client>>({
+  const [formData, setFormData] = useState<Partial<DemoClient>>({
     name: '',
     email: '',
     phone: '',
@@ -53,6 +69,8 @@ export default function ClientsPage() {
 
   useEffect(() => {
     loadClients()
+    // loadClients는 컴포넌트 마운트 시 한 번만 호출되어야 함
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadClients = async () => {
@@ -71,9 +89,9 @@ export default function ClientsPage() {
           company: 'ABC 컴퍼니',
           address: '서울시 강남구',
           notes: 'VIP 클라이언트',
-          created_at: '2024-01-01',
-          updated_at: '2024-01-01',
-          user_id: userData.id
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z',
+          userId: userData.id
         },
         {
           id: '2',
@@ -82,9 +100,9 @@ export default function ClientsPage() {
           phone: '010-9876-5432',
           company: 'XYZ 코퍼레이션',
           address: '서울시 서초구',
-          created_at: '2024-01-15',
-          updated_at: '2024-01-15',
-          user_id: userData.id
+          createdAt: '2024-01-15T00:00:00.000Z',
+          updatedAt: '2024-01-15T00:00:00.000Z',
+          userId: userData.id
         }
       ])
       
@@ -102,34 +120,32 @@ export default function ClientsPage() {
         return
       }
 
-      // TODO: 실제 데이터베이스에서 로드
-      // 임시 데이터
+      // NOTE: 클라이언트 관리 기능 구현 시 clientService.getAll()로 교체
+      // 현재는 데모용 임시 데이터 (storage Client 타입과 호환)
       setClients([
         {
           id: '1',
+          userId: user.id,
           name: '김철수',
           email: 'kim@example.com',
           phone: '010-1234-5678',
           company: 'ABC 컴퍼니',
-          address: '서울시 강남구',
           notes: 'VIP 클라이언트',
-          created_at: '2024-01-01',
-          updated_at: '2024-01-01',
-          user_id: user.id
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:00:00.000Z'
         },
         {
           id: '2',
+          userId: user.id,
           name: '이영희',
           email: 'lee@example.com',
           phone: '010-9876-5432',
           company: 'XYZ 코퍼레이션',
-          address: '서울시 서초구',
-          created_at: '2024-01-15',
-          updated_at: '2024-01-15',
-          user_id: user.id
+          createdAt: '2024-01-15T00:00:00.000Z',
+          updatedAt: '2024-01-15T00:00:00.000Z'
         }
       ])
-    } catch (err) {
+    } catch (_err) {
       router.push('/login')
     }
     
@@ -137,7 +153,7 @@ export default function ClientsPage() {
   }
 
   const handleSubmit = async () => {
-    // TODO: 실제 데이터베이스에 저장
+    // NOTE: 클라이언트 관리 기능 구현 시 clientService.create(formData)로 교체
     console.log('Saving client:', formData)
     setIsDialogOpen(false)
     setFormData({

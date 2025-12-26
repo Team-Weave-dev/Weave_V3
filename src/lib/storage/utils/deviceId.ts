@@ -41,7 +41,7 @@ export function getDeviceId(): string {
     }
 
     return deviceId
-  } catch (error) {
+  } catch (_error) {
     // Fallback: generate ephemeral device ID (won't persist)
     console.warn('Failed to access localStorage for device ID, using ephemeral ID')
     return generateDeviceId()
@@ -60,7 +60,7 @@ export function resetDeviceId(): string {
   try {
     localStorage.setItem(DEVICE_ID_KEY, newDeviceId)
     console.log('Reset device ID to:', newDeviceId)
-  } catch (error) {
+  } catch (_error) {
     console.warn('Failed to save new device ID to localStorage')
   }
   return newDeviceId

@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -76,12 +75,12 @@ export function CalendarWidget({
   events: propEvents,
   onDateSelect,
   onEventClick,
-  onEventAdd,
+  onEventAdd: _onEventAdd,
   onViewChange,
-  showWeekNumbers = false,
-  showToday = true,
+  showWeekNumbers: _showWeekNumbers = false,
+  showToday: _showToday = true,
   view = 'month',
-  lang = 'ko',
+  lang: _lang = 'ko',
   gridSize,
   defaultSize = { w: 5, h: 4 }
 }: CalendarWidgetProps & { gridSize?: { w: number; h: number }; defaultSize?: { w: number; h: number } }) {
@@ -122,7 +121,7 @@ export function CalendarWidget({
     filteredItems: integratedItems,
     filters: sourceFilters,
     updateFilters: updateSourceFilters,
-    stats: sourceStats,
+    stats: _sourceStats,
     refresh: refreshIntegratedItems,
   } = useIntegratedCalendar({
     fetchOnMount: true,
@@ -138,6 +137,7 @@ export function CalendarWidget({
     if (settings.defaultView && settings.defaultView !== currentView) {
       setCurrentView(settings.defaultView);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.defaultView]);
 
   // Convert UnifiedCalendarItem to CalendarEvent

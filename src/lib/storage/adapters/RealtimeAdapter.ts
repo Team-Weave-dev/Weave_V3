@@ -46,7 +46,7 @@ import { StorageError } from '../types/base'
 /**
  * Realtime 이벤트 타입
  */
-type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE'
+type _RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE'
 
 /**
  * 연결 상태

@@ -1,5 +1,4 @@
-import type { TodoTask, TodoSection, TodoPriority } from '../types';
-import { addDays } from '../utils/date';
+import type { TodoTask, TodoSection } from '../types';
 
 // 초기 목데이터 생성 함수 (Phase 5 테스트를 위해 임시로 비활성화)
 export const generateInitialData = (): { tasks: TodoTask[], sections: TodoSection[] } => {

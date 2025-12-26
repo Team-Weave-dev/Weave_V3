@@ -176,7 +176,7 @@ export class MigrationManager {
 
     // Execute migrations sequentially
     const results: MigrationResult[] = [];
-    let currentMigrationVersion = currentVersion;
+    let _currentMigrationVersion = currentVersion;
 
     for (const migration of migrationsToApply) {
       const result = await this.executeMigration(migration);
@@ -192,7 +192,7 @@ export class MigrationManager {
         );
       }
 
-      currentMigrationVersion = migration.version;
+      const _currentMigrationVersion = migration.version;
 
       // Update schema version after each successful migration
       const schemaVersion = await this.getSchemaVersion();

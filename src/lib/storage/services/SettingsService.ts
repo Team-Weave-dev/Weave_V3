@@ -11,12 +11,10 @@
 import type { StorageManager } from '../core/StorageManager';
 import type {
   Settings,
-  SettingsUpdate,
   CalendarSettings,
   ProjectSettings,
   NotificationSettings,
   UserPreferences,
-  Theme,
   CalendarView,
   ProjectView,
   Language,

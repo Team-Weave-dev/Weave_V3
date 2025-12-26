@@ -8,7 +8,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { getProjectPageText } from '@/config/brand';

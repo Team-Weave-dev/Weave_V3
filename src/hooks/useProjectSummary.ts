@@ -111,7 +111,7 @@ async function convertProjectToReview(project: Project): Promise<ProjectReview> 
     projectId: project.no,
     projectName: project.name,
     client: clientName,
-    pm: project.userId,  // TODO: UserService 통합하여 이름 가져오기
+    pm: project.userId,  // REFACTOR: UserService.getById(userId).name으로 교체 필요
     status: statusMap[project.status],
     statusLabel: statusLabelMap[project.status],
     progress: Math.round(project.progress),

@@ -5,9 +5,9 @@
  * TodoTask (UI type) and Task (Storage API entity type).
  */
 
-import type { TodoTask as WidgetTodoTask, TodoSection, TodoPriority } from '@/components/ui/widgets/todo-list/types';
+import type { TodoPriority } from '@/components/ui/widgets/todo-list/types';
 import type { TodoTask as DashboardTodoTask } from '@/types/dashboard';
-import type { Task, TaskCreate, TaskPriority, TaskStatus } from '@/lib/storage/types/entities/task';
+import type { Task, TaskPriority, TaskStatus } from '@/lib/storage/types/entities/task';
 import { taskService } from '@/lib/storage';
 
 // ============================================================================
@@ -300,7 +300,7 @@ export async function getTodoTasks(): Promise<DashboardTodoTask[]> {
  */
 export async function addTodoTask(todoTask: Omit<DashboardTodoTask, 'id'>): Promise<DashboardTodoTask> {
   const task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> = {
-    userId: '1', // TODO: Get from auth context
+    userId: '1', // Placeholder: Auth 통합 시 실제 사용자 ID로 교체
     title: todoTask.title,
     status: todoTask.completed ? 'completed' : 'pending',
     priority: TODO_TO_TASK_PRIORITY[todoTask.priority] || 'medium',

@@ -18,7 +18,7 @@ export default function UsageTab() {
   const lang = 'ko' as const
   const [projectCount, setProjectCount] = useState(0)
   const [widgetCount, setWidgetCount] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [_loading, setLoading] = useState(true)
   const [currentPlan, setCurrentPlan] = useState<PlanType>('free')
 
   const planLimits = useMemo(() => plans[currentPlan].limits, [currentPlan])
@@ -85,7 +85,7 @@ export default function UsageTab() {
     return limit === -1 ? uiText.settings.usage.unlimited[lang] : limit.toString()
   }, [lang])
 
-  const formatStorage = useCallback((mb: number) => {
+  const _formatStorage = useCallback((mb: number) => {
     if (mb >= 1024) {
       return `${(mb / 1024).toFixed(1)}GB`
     }

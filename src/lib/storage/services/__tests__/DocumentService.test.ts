@@ -362,7 +362,7 @@ describe('DocumentService', () => {
     it('should get documents requiring signature', async () => {
       await service.addSignature(doc.id, { name: 'John Doe' })
 
-      const doc2 = await service.create({
+      const _doc2 = await service.create({
         userId: 'user-1',
         projectId: 'project-1',
         name: 'Contract 2',
@@ -516,7 +516,7 @@ describe('DocumentService', () => {
     it('should get documents by multiple tags', async () => {
       await service.addTags(doc.id, ['urgent', 'important'])
 
-      const doc2 = await service.create({
+      const _doc2 = await service.create({
         userId: 'user-1',
         projectId: 'project-1',
         name: 'Doc 2',

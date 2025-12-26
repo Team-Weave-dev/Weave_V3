@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ColorPalette, colorPalettes, getPalette, generateCSSVariables } from '@/config/color-palette'
+import { colorPalettes, getPalette, generateCSSVariables } from '@/config/color-palette'
 
 const PALETTE_STORAGE_KEY = 'ui-color-palette'
 

@@ -1,37 +1,18 @@
-// 문서 생성 워크플로우 타입 정의
+/**
+ * 문서 생성 워크플로우 타입 정의
+ *
+ * NOTE: 이 파일은 현재 코드에서 사용되지 않습니다.
+ * User, Client, Project는 @/lib/storage에서 정의된 타입을 사용하세요.
+ *
+ * @deprecated 문서 워크플로우 기능 구현 시 이 파일을 정리 필요
+ */
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  company?: string;
-  department?: string;
-}
+import type { User, Client, Project } from '@/lib/storage';
 
-export interface Client {
-  id: string;
-  name: string;
-  companyName: string;
-  contactPerson?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  businessNumber?: string;
-  industry?: string;
-}
+// Re-export for backward compatibility (if any future usage)
+export type { User, Client, Project };
 
-export interface Project {
-  id: string;
-  name: string;
-  clientId: string;
-  description?: string;
-  startDate?: string;
-  endDate?: string;
-  budget?: number;
-  status: 'planning' | 'in_progress' | 'completed' | 'on_hold';
-  type: 'development' | 'consulting' | 'design' | 'marketing' | 'other';
-}
-
+/** 문서 워크플로우 전용 타입 */
 export interface DocumentType {
   id: string;
   name: string;

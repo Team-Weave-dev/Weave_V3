@@ -94,7 +94,7 @@ export default function SignupPage() {
 
       // 회원가입 성공 - 이메일 확인 필요
       router.push('/login?message=회원가입이 완료되었습니다. 이메일을 확인해주세요.')
-    } catch (err) {
+    } catch (_err) {
       setError('회원가입 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
@@ -106,7 +106,7 @@ export default function SignupPage() {
       setIsLoading(true)
       // Google OAuth 회원가입 리다이렉트
       window.location.href = '/api/auth/google'
-    } catch (err) {
+    } catch (_err) {
       setError('Google 회원가입 중 오류가 발생했습니다.')
       setIsLoading(false)
     }

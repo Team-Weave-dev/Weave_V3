@@ -1,5 +1,4 @@
 import { CalendarEvent } from '@/types/dashboard';
-import { addDays, format } from 'date-fns';
 import { storage } from '@/lib/storage';
 import { STORAGE_KEYS } from '@/lib/storage/config';
 
@@ -230,7 +229,7 @@ export const saveCalendarEvents = async (events: CalendarEvent[]): Promise<void>
       // Storage 형식으로 변환
       return {
         id: event.id,
-        userId: 'current-user', // TODO: 실제 사용자 ID로 교체
+        userId: 'current-user', // Placeholder: Auth 통합 시 실제 사용자 ID로 교체
         title: event.title,
         description: event.description,
         location: event.location,

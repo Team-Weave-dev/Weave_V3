@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import type { ButtonProps } from '@/components/ui/button';
-import { getDashboardText } from '@/config/brand';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -40,7 +39,7 @@ export function ConfirmDialog({
   onOpenChange,
   onConfirm
 }: ConfirmDialogProps) {
-  const lang = 'ko';
+  const _lang = 'ko';
   const borderClass = borderClassName ?? 'border-2 border-primary';
   const confirmBtnVariant = confirmVariant ?? 'default';
   const cancelBtnVariant = cancelVariant ?? 'secondary';

@@ -7,7 +7,7 @@
 import { ProjectService } from '../ProjectService'
 import { StorageManager } from '../../core/StorageManager'
 import { LocalStorageAdapter } from '../../adapters/LocalStorageAdapter'
-import type { Project, WBSTask, DocumentInfo } from '../../types/entities/project'
+import type { DocumentInfo } from '../../types/entities/project'
 
 describe('ProjectService', () => {
   let adapter: LocalStorageAdapter
@@ -572,7 +572,7 @@ describe('ProjectService', () => {
         savedAt: new Date().toISOString(),
       }
 
-      const withDoc = await service.addDocument(project.id, document)
+      const _withDoc = await service.addDocument(project.id, document)
       const updated = await service.removeDocument(project.id, 'doc-1')
 
       expect(updated).not.toBeNull()

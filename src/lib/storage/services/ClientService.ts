@@ -6,7 +6,7 @@
 
 import { BaseService } from './BaseService';
 import type { StorageManager } from '../core/StorageManager';
-import type { Client, ClientCreate, ClientUpdate, ClientContact } from '../types/entities/client';
+import type { Client, ClientContact } from '../types/entities/client';
 import { isClient } from '../types/entities/client';
 import { STORAGE_KEYS } from '../config';
 

@@ -8,7 +8,6 @@ import type {
   Priority,
   ItemStatus,
 } from '@/types/integrated-calendar';
-import { SOURCE_COLORS, SOURCE_ICONS } from '@/types/integrated-calendar';
 import { getTaxCategoryColor } from '@/lib/storage/types/entities/tax-schedule';
 
 /**

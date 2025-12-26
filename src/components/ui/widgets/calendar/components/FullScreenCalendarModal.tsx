@@ -32,7 +32,6 @@ import type { CalendarEvent } from '@/types/dashboard';
 import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
 import { taskService } from '@/lib/storage';
 import { useCalendarEvents } from '../hooks/useCalendarEvents';
-import { updateCalendarEvent } from '@/lib/mock/calendar-events';
 import {
   MonthView,
   WeekView,
@@ -71,8 +70,8 @@ export default function FullScreenCalendarModal({
   isOpen,
   onClose,
   initialDate,
-  initialEvents,
-  onEventUpdate,
+  initialEvents: _initialEvents,
+  onEventUpdate: _onEventUpdate,
 }: FullScreenCalendarModalProps) {
   // States
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate || new Date());

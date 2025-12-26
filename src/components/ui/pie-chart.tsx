@@ -148,7 +148,7 @@ const PieChart = React.forwardRef<HTMLDivElement, PieChartProps>(
     showTooltip = true,
     showLegend = false,
     animate = true,
-    labelOffset = chartTypes.pie.labelOffset,
+    labelOffset: _labelOffset = chartTypes.pie.labelOffset,
     customTooltip,
     customLegend,
     customLabel,
@@ -195,7 +195,7 @@ const PieChart = React.forwardRef<HTMLDivElement, PieChartProps>(
     })
 
     // 커스텀 라벨 컴포넌트
-    const CustomLabel = customLabel || (({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name, value }: any) => {
+    const CustomLabel = customLabel || (({ cx, cy, midAngle, innerRadius, outerRadius, percent, index: _index, name, value }: any) => {
       if (!showLabels && !showValues && !showPercent) return null
 
       const RADIAN = Math.PI / 180
@@ -223,7 +223,7 @@ const PieChart = React.forwardRef<HTMLDivElement, PieChartProps>(
     })
 
     // 범례 데이터 생성
-    const legendData = data.map((entry, index) => ({
+    const _legendData = data.map((entry, index) => ({
       value: entry.name,
       type: 'square',
       color: entry.color || chartColors[index % chartColors.length]
