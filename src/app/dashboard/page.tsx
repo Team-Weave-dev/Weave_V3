@@ -48,37 +48,17 @@ export default function DashboardPage() {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
   const [widgetLimitAlertOpen, setWidgetLimitAlertOpen] = useState(false)
   
-  // 초기 위젯 설정 (9x9 그리드 기준)
+  // 초기 위젯 설정 (9컬럼 그리드 기준)
+  // 레이아웃:
+  // - 상단: 캘린더(좌 5칸) + 할 일 목록(우 4칸)
+  // - 중간: 프로젝트 현황(좌 5칸) + 최근 활동(우 4칸)
+  // - 하단: 핵심 성과 지표(좌 5칸)
   const initialWidgets = [
     {
       id: 'calendar_widget_1',
       type: 'calendar' as const,
       title: getDashboardText.widgets.calendar('ko'),
-      position: { x: 0, y: 0, w: 5, h: 4 },
-      minW: 2,
-      minH: 2,
-    },
-    {
-      id: 'project_summary_widget_1',
-      type: 'projectSummary' as const,
-      title: getDashboardText.widgets.projectSummary('ko'),
-      position: { x: 5, y: 0, w: 4, h: 4 },
-      minW: 2,
-      minH: 2,
-    },
-    {
-      id: 'kpi_metrics_widget_1',
-      type: 'kpiMetrics' as const,
-      title: getDashboardText.widgets.kpiMetrics('ko'),
-      position: { x: 0, y: 4, w: 5, h: 2 },
-      minW: 2,
-      minH: 2,
-    },
-    {
-      id: 'tax_deadline_widget_1',
-      type: 'taxDeadline' as const,
-      title: getDashboardText.widgets.taxDeadline('ko'),
-      position: { x: 0, y: 6, w: 5, h: 2 },
+      position: { x: 0, y: 0, w: 5, h: 5 },
       minW: 2,
       minH: 2,
     },
@@ -86,7 +66,31 @@ export default function DashboardPage() {
       id: 'todo_list_widget_1',
       type: 'todoList' as const,
       title: getDashboardText.widgets.todoList('ko'),
-      position: { x: 5, y: 4, w: 4, h: 4 },
+      position: { x: 5, y: 0, w: 4, h: 5 },
+      minW: 2,
+      minH: 2,
+    },
+    {
+      id: 'project_summary_widget_1',
+      type: 'projectSummary' as const,
+      title: getDashboardText.widgets.projectSummary('ko'),
+      position: { x: 0, y: 5, w: 5, h: 3 },
+      minW: 2,
+      minH: 2,
+    },
+    {
+      id: 'recent_activity_widget_1',
+      type: 'recentActivity' as const,
+      title: getDashboardText.widgets.recentActivity('ko'),
+      position: { x: 5, y: 5, w: 4, h: 5 },
+      minW: 2,
+      minH: 2,
+    },
+    {
+      id: 'kpi_metrics_widget_1',
+      type: 'kpiMetrics' as const,
+      title: getDashboardText.widgets.kpiMetrics('ko'),
+      position: { x: 0, y: 8, w: 5, h: 2 },
       minW: 2,
       minH: 2,
     },
