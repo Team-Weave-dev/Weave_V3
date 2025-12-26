@@ -244,15 +244,14 @@ export default function DashboardPage() {
   }
 
   const handleSelectWidget = (type: ImprovedWidget['type']) => {
-    // 요금제 제한 체크 - 현재 화면의 실제 위젯 수로 체크
-    const currentWidgetCount = widgets?.length || 0;
-    const widgetLimit = plan === 'free' ? 3 : -1; // free: 3개, 나머지: 무제한
-
-    if (widgetLimit !== -1 && currentWidgetCount >= widgetLimit) {
-      // 제한 초과 시 모달 표시
-      setWidgetLimitAlertOpen(true);
-      return;
-    }
+    // 무료화: 위젯 제한 제거 - 모든 사용자 무제한
+    // 제한 체크 로직은 향후 재활성화를 위해 주석 처리
+    // const currentWidgetCount = widgets?.length || 0;
+    // const widgetLimit = usage.widgets.limit; // constants.ts의 plans 설정 사용
+    // if (widgetLimit !== -1 && currentWidgetCount >= widgetLimit) {
+    //   setWidgetLimitAlertOpen(true);
+    //   return;
+    // }
 
     const defaultSize = getDefaultWidgetSize(type)
     const emptySpace = findSpaceForWidget(defaultSize.width, defaultSize.height)
@@ -520,7 +519,7 @@ export default function DashboardPage() {
         onCollapseChange={setIsCollapsed}
         className={isMobile ? "shadow-2xl" : ""}
         currentWidgetCount={widgets?.length || 0}
-        widgetLimit={plan === 'free' ? 3 : -1}
+        widgetLimit={-1} // 무료화: 모든 사용자 무제한 (기존: plan === 'free' ? 3 : -1)
         onLimitExceeded={() => setWidgetLimitAlertOpen(true)}
       />
 
@@ -565,17 +564,17 @@ export default function DashboardPage() {
         icon={<RotateCcw className="h-8 w-8 text-primary" />}
       />
 
-      {/* 위젯 제한 초과 알림 모달 */}
+      {/* 위젯 추가 안내 모달 (무료화로 제한 없음) */}
       <AlertDialog open={widgetLimitAlertOpen} onOpenChange={setWidgetLimitAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>위젯 추가 제한</AlertDialogTitle>
+            <AlertDialogTitle>위젯 추가 안내</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
-                <div>현재 요금제에서는 최대 {usage.widgets.limit}개의 위젯만 추가할 수 있습니다.</div>
-                <div className="font-medium">현재 사용량: {widgets?.length || 0} / {usage.widgets.limit}</div>
+                <div>🎉 현재 위브의 모든 기능이 무료로 제공됩니다!</div>
+                <div className="font-medium">현재 위젯 수: {widgets?.length || 0}개</div>
                 <div className="text-sm text-muted-foreground mt-4">
-                  더 많은 위젯을 사용하려면 요금제를 업그레이드해주세요.
+                  위젯을 무제한으로 추가하실 수 있습니다.
                 </div>
               </div>
             </AlertDialogDescription>

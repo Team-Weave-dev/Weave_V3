@@ -383,6 +383,7 @@ export const placeholderIcons = {
 } as const
 
 // 요금제 시스템 (2025-10-07 추가)
+// 2025-12-26: 완전 무료화 - 모든 기능 무제한 제공
 export const plans = {
   free: {
     id: 'free' as const,
@@ -390,35 +391,35 @@ export const plans = {
     price: 0,
     priceMonthly: 0,
     limits: {
-      projects: 2,
-      widgets: -1, // TEMPORARY UNLIMITED (2025-01-11) - 한시적 무료 제한 해제, 원래값: 3
-      storage: 200, // MB (증가: 100MB → 200MB)
-      aiService: false
+      projects: -1, // -1 = unlimited (무료화: 2 → 무제한)
+      widgets: -1, // -1 = unlimited (무료화: 3 → 무제한)
+      storage: 10240, // MB (10GB, 무료화: 200MB → 10GB)
+      aiService: true // 무료화: false → true
     },
-    features: ['community-support']
+    features: ['community-support', 'unlimited-projects', 'unlimited-widgets', 'ai-service']
   },
   basic: {
     id: 'basic' as const,
     name: 'Basic',
-    price: 9900, // 원/월
-    priceMonthly: 9900,
+    price: 0, // 무료화: 9900 → 0
+    priceMonthly: 0,
     limits: {
       projects: -1, // -1 = unlimited
       widgets: -1, // -1 = unlimited
-      storage: 1024, // MB (1GB, 증가: 300MB → 1GB)
-      aiService: false
+      storage: 10240, // MB (10GB, 무료화: 1GB → 10GB)
+      aiService: true // 무료화: false → true
     },
-    features: ['email-support', 'unlimited-projects', 'unlimited-widgets']
+    features: ['email-support', 'unlimited-projects', 'unlimited-widgets', 'ai-service']
   },
   pro: {
     id: 'pro' as const,
     name: 'Pro',
-    price: 29700, // 원/월
-    priceMonthly: 29700,
+    price: 0, // 무료화: 29700 → 0
+    priceMonthly: 0,
     limits: {
       projects: -1, // -1 = unlimited
       widgets: -1, // -1 = unlimited
-      storage: 5120, // MB (5GB, 증가: 1GB → 5GB)
+      storage: 10240, // MB (10GB, 무료화: 5GB → 10GB)
       aiService: true
     },
     features: ['priority-support', 'unlimited-projects', 'unlimited-widgets', 'ai-service']

@@ -107,6 +107,7 @@ export default function PlanTab() {
   }, [lang])
 
   const getPlanAction = useCallback((planId: PlanType) => {
+    // 무료화: 모든 요금제가 무료이므로 현재 요금제만 표시
     if (planId === currentPlan) {
       return (
         <Button variant="outline" className="w-full" disabled>
@@ -115,21 +116,7 @@ export default function PlanTab() {
       )
     }
 
-    const currentIndex = planOrder.indexOf(currentPlan)
-    const targetIndex = planOrder.indexOf(planId)
-
-    if (targetIndex > currentIndex) {
-      return (
-        <Button
-          className="w-full"
-          onClick={() => handleChangePlan(planId)}
-          disabled={changingPlan}
-        >
-          {changingPlan ? '변경 중...' : uiText.settings.plan.actions.upgrade[lang]}
-        </Button>
-      )
-    }
-
+    // 무료화: 업그레이드/다운그레이드 버튼 대신 "무료 사용 중" 표시
     return (
       <Button
         variant="outline"
@@ -137,10 +124,10 @@ export default function PlanTab() {
         onClick={() => handleChangePlan(planId)}
         disabled={changingPlan}
       >
-        {changingPlan ? '변경 중...' : uiText.settings.plan.actions.downgrade[lang]}
+        {changingPlan ? '변경 중...' : '무료 전환'}
       </Button>
     )
-  }, [currentPlan, planOrder, lang, handleChangePlan, changingPlan])
+  }, [currentPlan, lang, handleChangePlan, changingPlan])
 
   return (
     <div>
@@ -149,6 +136,15 @@ export default function PlanTab() {
         <p className="text-muted-foreground mt-2">
           {uiText.settings.plan.description[lang]}
         </p>
+        {/* 무료화 안내 배너 */}
+        <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+          <p className="text-green-800 dark:text-green-200 font-medium">
+            🎉 현재 위브의 모든 기능을 무료로 이용하실 수 있습니다!
+          </p>
+          <p className="text-green-600 dark:text-green-400 text-sm mt-1">
+            프로젝트, 위젯, 스토리지 모두 무제한으로 제공됩니다.
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -231,16 +227,17 @@ export default function PlanTab() {
         })}
       </div>
 
-      {/* 참고사항 */}
+      {/* 무료화 참고사항 */}
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>{uiText.settings.plan.note.title[lang]}</CardTitle>
+          <CardTitle>무료 이용 안내</CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-            <li>{uiText.settings.plan.note.billing[lang]}</li>
-            <li>{uiText.settings.plan.note.upgrade[lang]}</li>
-            <li>{uiText.settings.plan.note.downgrade[lang]}</li>
+            <li>현재 모든 기능이 무료로 제공됩니다.</li>
+            <li>프로젝트와 위젯 개수에 제한이 없습니다.</li>
+            <li>10GB의 넉넉한 스토리지가 제공됩니다.</li>
+            <li>AI 서비스를 포함한 모든 프리미엄 기능을 이용하실 수 있습니다.</li>
           </ul>
         </CardContent>
       </Card>
